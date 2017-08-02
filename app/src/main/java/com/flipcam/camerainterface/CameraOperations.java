@@ -1,5 +1,7 @@
 package com.flipcam.camerainterface;
 
+import android.view.WindowManager;
+
 /**
  * Created by Koushick on 02-08-2017.
  * Contains a lit of camera related operations.
@@ -16,8 +18,10 @@ public interface CameraOperations {
     public void setFPS();
     //To set Resolution
     public void setResolution();
+    //To set Resolution with windowmanager
+    public void setResolution(WindowManager windowManager);
     //To set zoom
-    public void zoomInOrOut();
+    public void zoomInOrOut(boolean zoomInOrOut);
     //To stop preview
     public void stopPreview();
     //To set auto focus
