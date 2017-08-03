@@ -1,5 +1,6 @@
 package com.flipcam.cameramanager;
 
+import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -7,6 +8,7 @@ import android.view.WindowManager;
 
 import com.flipcam.camerainterface.CameraOperations;
 
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 
@@ -25,10 +27,15 @@ public class Camera1Manager implements CameraOperations {
     int MAX_FPS = 15;
     int cameraId;
     Camera.Parameters parameters;
-    private Camera1Manager()
+    private static Camera1Manager camera1Manager;
+    public static Camera1Manager getInstance()
     {
-
+        if(camera1Manager == null){
+            camera1Manager = new Camera1Manager();
+        }
+        return camera1Manager;
     }
+
     @Override
     public void openCamera(boolean backCamera) {
         Camera.CameraInfo info = new Camera.CameraInfo();
@@ -50,6 +57,8 @@ public class Camera1Manager implements CameraOperations {
                 }
             }
         }
+        parameters = mCamera.getParameters();
+        parameters.setFlashMode(null);
     }
 
     @Override
@@ -59,7 +68,6 @@ public class Camera1Manager implements CameraOperations {
 
     @Override
     public void setFPS() {
-        parameters = mCamera.getParameters();
         List<int[]> fps = parameters.getSupportedPreviewFpsRange();
         Iterator<int[]> iter = fps.iterator();
 
@@ -74,6 +82,7 @@ public class Camera1Manager implements CameraOperations {
         }
         Log.d(TAG,"Setting min and max Fps  == "+MIN_FPS+" , "+MAX_FPS);
         parameters.setPreviewFpsRange(MIN_FPS,MAX_FPS);
+        mCamera.setParameters(parameters);
     }
 
     @Override
@@ -82,6 +91,7 @@ public class Camera1Manager implements CameraOperations {
         windowManager.getDefaultDisplay().getMetrics(metrics);
         Log.d(TAG,"Width = "+metrics.widthPixels);
         Log.d(TAG,"Height = "+metrics.heightPixels);
+
         //Aspect ratio needs to be reversed, if orientation is portrait.
         double screenAspectRatio = 1.0f / ((double)metrics.widthPixels/(double)metrics.heightPixels);
         Log.d(TAG,"SCREEN Aspect Ratio = "+screenAspectRatio);
@@ -103,6 +113,7 @@ public class Camera1Manager implements CameraOperations {
         }
         Log.d(TAG,"HEIGTH == "+VIDEO_HEIGHT+", WIDTH == "+VIDEO_WIDTH);
         parameters.setPreviewSize(VIDEO_WIDTH, VIDEO_HEIGHT);
+        mCamera.setParameters(parameters);
     }
 
     @Override
@@ -111,21 +122,25 @@ public class Camera1Manager implements CameraOperations {
     }
 
     @Override
-    public void zoomInOrOut(boolean zoomInOrOut) {
-        Camera.Parameters parameters = mCamera.getParameters();
+    public boolean zoomInOrOut(boolean zoomInOrOut) {
         if(parameters.isZoomSupported())
-            {
-                        int currentZoom = parameters.getZoom();
+        {
+            int currentZoom = parameters.getZoom();
             int MAX_ZOOM = parameters.getMaxZoom();
             if(zoomInOrOut && (currentZoom < MAX_ZOOM && currentZoom >= 0)){ //Zoom in
-                    parameters.setZoom(++currentZoom);
-                    Log.d(TAG,"New zoom in set to ="+currentZoom);
-                }
+                parameters.setZoom(++currentZoom);
+                Log.d(TAG,"New zoom in set to ="+currentZoom);
+            }
             else if(!zoomInOrOut && (currentZoom <= MAX_ZOOM && currentZoom > 0)){ //Zoom out
-                    parameters.setZoom(--currentZoom);
-                    Log.d(TAG,"New zoom out set to ="+currentZoom);
-                }
+                parameters.setZoom(--currentZoom);
+                Log.d(TAG,"New zoom out set to ="+currentZoom);
+            }
             mCamera.setParameters(parameters);
+            return true;
+        }
+        else
+        {
+            return false;
         }
     }
 
@@ -135,7 +150,81 @@ public class Camera1Manager implements CameraOperations {
     }
 
     @Override
-    public void setAutoFocus(){
+    public void startPreview(SurfaceTexture surfaceTexture) {
+        try {
+            mCamera.setPreviewTexture(surfaceTexture);
+        } catch (IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
+        mCamera.startPreview();
+    }
 
+    @Override
+    public boolean setAutoFocus(){
+
+        List<String> focusModes = parameters.getSupportedFocusModes();
+        if(focusModes != null && focusModes.size() > 0){
+            Iterator<String> iterator = focusModes.iterator();
+            while(iterator.hasNext()){
+                String focus = iterator.next();
+                if(focus.equalsIgnoreCase(Camera.Parameters.FOCUS_MODE_AUTO)){
+                    parameters.setFocusMode(focus);
+                    mCamera.autoFocus(new Camera.AutoFocusCallback() {
+                        @Override
+                        public void onAutoFocus(boolean b, Camera camera) {
+                            Log.d(TAG,"auto focus set successfully");
+                        }
+                    });
+                    return true;
+                }
+            }
+            return false;
+        }
+        else{
+            return false;
+        }
+    }
+
+    @Override
+    public boolean setAutoFlash() {
+
+        List<String> flashModes = parameters.getSupportedFlashModes();
+        if(flashModes != null && flashModes.size() > 0){
+            Iterator<String> iterator = flashModes.iterator();
+            while(iterator.hasNext()){
+                String flash = iterator.next();
+                if(flash.equalsIgnoreCase(Camera.Parameters.FLASH_MODE_AUTO)){
+                    parameters.setFlashMode(flash);
+                    return true;
+                }
+            }
+            return false;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean setFlashOnOff() {
+        if(parameters.getFlashMode() != null && parameters.getFlashMode().equalsIgnoreCase(Camera.Parameters.FLASH_MODE_ON)){
+            parameters.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
+            return true;
+        }
+        else if(parameters.getFlashMode() != null && parameters.getFlashMode().equalsIgnoreCase(Camera.Parameters.FLASH_MODE_OFF)){
+            parameters.setFlashMode(Camera.Parameters.FLASH_MODE_ON);
+            return true;
+        }
+        List<String> flashModes = parameters.getSupportedFlashModes();
+        if(flashModes != null && flashModes.size() > 0){
+            Iterator<String> iterator = flashModes.iterator();
+            while(iterator.hasNext()){
+                String flash = iterator.next();
+                if(flash.equalsIgnoreCase(Camera.Parameters.FLASH_MODE_ON)){
+                    parameters.setFlashMode(flash);
+                    return true;
+                }
+            }
+            return false;
+        }
+        return false;
     }
 }

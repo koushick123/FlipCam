@@ -1,5 +1,6 @@
 package com.flipcam.camerainterface;
 
+import android.graphics.SurfaceTexture;
 import android.view.WindowManager;
 
 /**
@@ -21,9 +22,15 @@ public interface CameraOperations {
     //To set Resolution with windowmanager
     public void setResolution(WindowManager windowManager);
     //To set zoom
-    public void zoomInOrOut(boolean zoomInOrOut);
+    public boolean zoomInOrOut(boolean zoomInOrOut);
     //To stop preview
     public void stopPreview();
     //To set auto focus
-    public void setAutoFocus();
+    public boolean setAutoFocus();
+    //To start preview
+    public void startPreview(SurfaceTexture surfaceTexture);
+    //To set auto flash
+    public boolean setAutoFlash();
+    //To set flashlight on
+    public boolean setFlashOnOff();
 }
