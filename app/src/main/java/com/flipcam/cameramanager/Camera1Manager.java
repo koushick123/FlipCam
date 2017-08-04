@@ -160,21 +160,13 @@ public class Camera1Manager implements CameraOperations {
     }
 
     @Override
-    public boolean setAutoFocus(){
-
+    public boolean isFocusModeSupported(String focusMode) {
         List<String> focusModes = parameters.getSupportedFocusModes();
-        if(focusModes != null && focusModes.size() > 0){
+        if (focusModes != null && focusModes.size() > 0) {
             Iterator<String> iterator = focusModes.iterator();
-            while(iterator.hasNext()){
+            while (iterator.hasNext()) {
                 String focus = iterator.next();
-                if(focus.equalsIgnoreCase(Camera.Parameters.FOCUS_MODE_AUTO)){
-                    parameters.setFocusMode(focus);
-                    mCamera.autoFocus(new Camera.AutoFocusCallback() {
-                        @Override
-                        public void onAutoFocus(boolean b, Camera camera) {
-                            Log.d(TAG,"auto focus set successfully");
-                        }
-                    });
+                if(focus.equalsIgnoreCase(focusMode)){
                     return true;
                 }
             }
@@ -185,16 +177,39 @@ public class Camera1Manager implements CameraOperations {
         }
     }
 
-    @Override
-    public boolean setAutoFlash() {
+    boolean focused=false;
+    Camera.AutoFocusCallback autoFocusCallback = new Camera.AutoFocusCallback() {
+        @Override
+        public void onAutoFocus(boolean success, Camera camera) {
+            Log.d(TAG,"auto focus set successfully");
+            focused=success;
+        }
+    };
 
+    //Use this method to keep checking until auto focus is set
+    public boolean isAutoFocus(){
+        return focused;
+    }
+
+    @Override
+    public void setAutoFocus(){
+        parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
+        mCamera.autoFocus(autoFocusCallback);
+    }
+
+    @Override
+    public void setAutoFlash() {
+        parameters.setFlashMode(Camera.Parameters.FLASH_MODE_AUTO);
+    }
+
+    @Override
+    public boolean isFlashModeSupported(String flashMode) {
         List<String> flashModes = parameters.getSupportedFlashModes();
         if(flashModes != null && flashModes.size() > 0){
             Iterator<String> iterator = flashModes.iterator();
             while(iterator.hasNext()){
                 String flash = iterator.next();
-                if(flash.equalsIgnoreCase(Camera.Parameters.FLASH_MODE_AUTO)){
-                    parameters.setFlashMode(flash);
+                if(flash.equalsIgnoreCase(flashMode)){
                     return true;
                 }
             }
@@ -203,28 +218,20 @@ public class Camera1Manager implements CameraOperations {
         return false;
     }
 
+    //Flash On for photo mode
     @Override
-    public boolean setFlashOnOff() {
-        if(parameters.getFlashMode() != null && parameters.getFlashMode().equalsIgnoreCase(Camera.Parameters.FLASH_MODE_ON)){
+    public void setFlashOnOff(boolean flashOn) {
+        if(!flashOn){
             parameters.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
-            return true;
         }
-        else if(parameters.getFlashMode() != null && parameters.getFlashMode().equalsIgnoreCase(Camera.Parameters.FLASH_MODE_OFF)){
+        else{
             parameters.setFlashMode(Camera.Parameters.FLASH_MODE_ON);
-            return true;
         }
-        List<String> flashModes = parameters.getSupportedFlashModes();
-        if(flashModes != null && flashModes.size() > 0){
-            Iterator<String> iterator = flashModes.iterator();
-            while(iterator.hasNext()){
-                String flash = iterator.next();
-                if(flash.equalsIgnoreCase(Camera.Parameters.FLASH_MODE_ON)){
-                    parameters.setFlashMode(flash);
-                    return true;
-                }
-            }
-            return false;
-        }
-        return false;
+    }
+
+    //For video mode
+    @Override
+    public void setTorchLight() {
+        parameters.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
     }
 }

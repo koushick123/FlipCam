@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">FlipCam</string>
+    //For Permission
+    <string name="title">No Permission</string>
+    <string name="message">FlipCam needs permission to use the device\'s Camera and Microphone. Please reopen the application if you wish to grant permission.</string>
+    <string name="exit">EXIT</string>
 </resources>

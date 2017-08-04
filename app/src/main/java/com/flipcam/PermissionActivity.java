@@ -124,8 +124,8 @@ public class PermissionActivity extends AppCompatActivity {
             }
         };
         alertDialog = new AlertDialog.Builder(this);
-        alertDialog.setTitle("No Permission");
-        alertDialog.setMessage("FlipCam needs permission to use the device's Camera and Microphone. Please reopen the application if you wish to grant permission.");
+        alertDialog.setTitle("");
+        alertDialog.setMessage("");
         alertDialog.setNeutralButton("EXIT", exitListener);
         alertDialog.setCancelable(false);
         alertDialog.show();

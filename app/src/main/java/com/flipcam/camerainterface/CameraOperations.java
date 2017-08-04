@@ -7,7 +7,7 @@ import android.view.WindowManager;
  * Created by Koushick on 02-08-2017.
  * Contains a lit of camera related operations.
  * This Interface will be the only way to use a camera in this app. This will have two implementations. One for Camera 1 API and another for Camera 2 API.
- * This is to promote loose coupling.
+ * This is to promote loose coupling, since only the implementation methods will be called in the Photo and Video fragments.
  */
 
 public interface CameraOperations {
@@ -26,11 +26,17 @@ public interface CameraOperations {
     //To stop preview
     public void stopPreview();
     //To set auto focus
-    public boolean setAutoFocus();
+    public void setAutoFocus();
     //To start preview
     public void startPreview(SurfaceTexture surfaceTexture);
     //To set auto flash
-    public boolean setAutoFlash();
-    //To set flashlight on
-    public boolean setFlashOnOff();
+    public void setAutoFlash();
+    //To set flash on/orff
+    public void setFlashOnOff(boolean flashOn);
+    //To check if flash mode is supported
+    public boolean isFlashModeSupported(String flashMode);
+    //To check if focus mode is supported
+    public boolean isFocusModeSupported(String focusMode);
+    //To set flash as torchlight
+    public void setTorchLight();
 }
