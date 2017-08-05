@@ -1,7 +1,10 @@
 package com.flipcam;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -10,7 +13,6 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.widget.Toast;
 
 public class PermissionActivity extends AppCompatActivity {
 
@@ -21,6 +23,7 @@ public class PermissionActivity extends AppCompatActivity {
     static final String CAMERA_PERMISSION = "android.permission.CAMERA";
     boolean cameraPermission = false;
     boolean audioPermission = false;
+    boolean showMessage = false;
     DialogInterface.OnClickListener exitListener;
     AlertDialog.Builder alertDialog;
 
@@ -60,14 +63,43 @@ public class PermissionActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.d(TAG,"onCreate");
         setContentView(R.layout.activity_permission);
         Log.d(TAG,"saved instance state == "+savedInstanceState);
         if(savedInstanceState!=null){
             if(savedInstanceState.getBoolean("restart")){
+                showMessage = true;
                 quitFlipCam();
             }
         }
-        else {
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        Log.d(TAG,"onDestroy");
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        Log.d(TAG,"onStop");
+    }
+
+    @Override
+    protected void onResume() {
+        Log.d(TAG,"onResume");
+        super.onResume();
+        SharedPreferences sharedPreferences = getPreferences(Context.MODE_PRIVATE);
+        if(sharedPreferences.getBoolean("startCamera",false)){
+            Log.d(TAG,"Quit the app");
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putBoolean("startCamera",false);
+            editor.commit();
+            finish();
+        }
+        else if(!showMessage){
+            Log.d(TAG,"Check permissions and Start camera");
             int permission = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.CAMERA);
             if (permission == PackageManager.PERMISSION_GRANTED) {
                 Log.d(TAG, "Camera permission obtained.");
@@ -89,7 +121,14 @@ public class PermissionActivity extends AppCompatActivity {
     {
         if(cameraPermission && audioPermission) {
             //Open VideoFragment under CameraActivity showing camera preview.
-            Toast.makeText(getApplicationContext(), "ALL Permissions in place. Need to open camera now.", Toast.LENGTH_SHORT).show();
+            SharedPreferences sharedPreferences = getPreferences(Context.MODE_PRIVATE);
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putBoolean("startCamera", true);
+            //editor.putBoolean("permissions",true);
+            editor.commit();
+            Intent cameraIntent = new Intent(this, CameraActivity.class);
+            startActivity(cameraIntent);
+            //Toast.makeText(getApplicationContext(), "ALL Permissions in place. Need to open camera now.", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -109,8 +148,10 @@ public class PermissionActivity extends AppCompatActivity {
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
-        outState.putBoolean("restart",true);
-        Log.d(TAG,"Saved restart");
+        if(showMessage) {
+            outState.putBoolean("restart", true);
+            Log.d(TAG, "Saved restart");
+        }
         super.onSaveInstanceState(outState);
     }
 
@@ -124,10 +165,11 @@ public class PermissionActivity extends AppCompatActivity {
             }
         };
         alertDialog = new AlertDialog.Builder(this);
-        alertDialog.setTitle("");
-        alertDialog.setMessage("");
-        alertDialog.setNeutralButton("EXIT", exitListener);
+        alertDialog.setTitle(getString(R.string.title));
+        alertDialog.setMessage(getString(R.string.message));
+        alertDialog.setNeutralButton(R.string.exit, exitListener);
         alertDialog.setCancelable(false);
         alertDialog.show();
+        showMessage = true;
     }
 }

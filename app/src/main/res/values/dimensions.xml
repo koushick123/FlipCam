@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="flashOnHeight">30dp</dimen>
+    <dimen name="flashOnWidth">30dp</dimen>
+    <dimen name="flashOnLeftMargin">15dp</dimen>
+    <dimen name="settingRightMargin">15dp</dimen>
+</resources>
