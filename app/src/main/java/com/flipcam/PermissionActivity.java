@@ -66,6 +66,10 @@ public class PermissionActivity extends AppCompatActivity {
         Log.d(TAG,"onCreate");
         setContentView(R.layout.activity_permission);
         Log.d(TAG,"saved instance state == "+savedInstanceState);
+        SharedPreferences sharedPreferences = getPreferences(Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putBoolean("startCamera",false);
+        editor.commit();
         if(savedInstanceState!=null){
             if(savedInstanceState.getBoolean("restart")){
                 showMessage = true;
@@ -93,9 +97,6 @@ public class PermissionActivity extends AppCompatActivity {
         SharedPreferences sharedPreferences = getPreferences(Context.MODE_PRIVATE);
         if(sharedPreferences.getBoolean("startCamera",false)){
             Log.d(TAG,"Quit the app");
-            SharedPreferences.Editor editor = sharedPreferences.edit();
-            editor.putBoolean("startCamera",false);
-            editor.commit();
             finish();
         }
         else if(!showMessage){

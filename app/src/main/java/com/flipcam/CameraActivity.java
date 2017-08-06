@@ -14,6 +14,7 @@ public class CameraActivity extends AppCompatActivity {
         setContentView(R.layout.activity_camera);
         getSupportActionBar().hide();
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        getSupportFragmentManager().beginTransaction().add(R.id.cameraPreview, VideoFragment.newInstance()).commit();
     }
 
     @Override
