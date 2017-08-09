@@ -19,13 +19,14 @@ import android.widget.Toast;
 
 import java.io.File;
 
+import static android.os.Environment.getExternalStoragePublicDirectory;
+
 
 public class VideoFragment extends Fragment {
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
 
     public static final String TAG = "VideoFragment";
     private int MY_PERMISSIONS_WRITE_STORAGE = 0;
-    boolean storagePerm = false;
     private static final String STORAGE_PERMISSIONS = "android.permission.WRITE_EXTERNAL_STORAGE";
     public VideoFragment() {
         // Required empty public constructor
@@ -55,7 +56,7 @@ public class VideoFragment extends Fragment {
                 Log.d(TAG, "For storage == " + permissions[0]);
                 if (permissions[0].equalsIgnoreCase(STORAGE_PERMISSIONS)) {
                     if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                        storagePerm = true;
+                        fetchMedia();
                     }
                     else{
                         Toast.makeText(getContext(),"FlipCam needs permission to store the video in the Gallery , so that you can play them later." +
@@ -73,7 +74,7 @@ public class VideoFragment extends Fragment {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_video, container, false);
         Log.d(TAG,"Inside video fragment");
-        File file = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
+        File file = getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
         int permission = ContextCompat.checkSelfPermission(getActivity().getApplicationContext(), android.Manifest.permission.WRITE_EXTERNAL_STORAGE);
         Log.d(TAG,"permission == "+permission);
         if(permission != PackageManager.PERMISSION_GRANTED){
@@ -81,26 +82,51 @@ public class VideoFragment extends Fragment {
                     MY_PERMISSIONS_WRITE_STORAGE);
         }
         else{
-            storagePerm=true;
+            fetchMedia();
         }
-        while(!storagePerm){
+        return view;
+    }
 
-        }
+    private void fetchMedia()
+    {
         String[] projection = new String[] {
                 MediaStore.Images.Media._ID,
                 MediaStore.Images.Media.BUCKET_DISPLAY_NAME,
                 MediaStore.Images.Media.DATE_TAKEN,
                 MediaStore.Images.Media.DISPLAY_NAME
         };
+        String[] vid_projection = new String[]{
+            MediaStore.Video.Media._ID,
+            MediaStore.Video.Media.BUCKET_DISPLAY_NAME,
+            MediaStore.Video.Media.DATE_TAKEN,
+            MediaStore.Video.Media.DISPLAY_NAME
+        };
+        File root = Environment.getExternalStorageDirectory();
+        Log.d(TAG,root.getPath());
+        File fc = new File(root.getPath()+"/FlipCam");
+        if(!fc.exists()){
+            fc.mkdir();
+            Log.d(TAG,"FlipCam dir created");
+            File videos = new File(fc.getPath()+"/FC_Videos");
+            if(!videos.exists()){
+                videos.mkdir();
+                Log.d(TAG,"Videos dir created");
+            }
+            File images = new File(fc.getPath()+"/FC_Images");
+            if(!images.exists()){
+                images.mkdir();
+                Log.d(TAG,"Images dir created");
+            }
+        }
+        // content:// style URI for the "primary" external storage volume
+        //Uri images = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
+        //This code is necessary when we want to display all media created by FlipCam, when user clicks on a widget.
+        Uri videos = MediaStore.Video.Media.EXTERNAL_CONTENT_URI;
+        Log.d(TAG,videos+"");
 
-// content:// style URI for the "primary" external storage volume
-        Uri images = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
-        Log.d(TAG,images+"");
-
-// Make the query.
-        Cursor cur = getContext().getContentResolver().query(images,
-                projection, // Which columns to return
-                null,       // Which rows to return (all rows)
+        Cursor cur = getContext().getContentResolver().query(videos,
+                vid_projection, // Which columns to return
+                MediaStore.Video.Media.BUCKET_DISPLAY_NAME+" = 'FC_Videos'",       // Which rows to return (all rows)
                 null,       // Selection arguments (none)
                 MediaStore.Images.Media.DATE_TAKEN + " DESC"        // Ordering
         );
@@ -111,19 +137,19 @@ public class VideoFragment extends Fragment {
             String bucket;
             String date;
             int bucketColumn = cur.getColumnIndex(
-                    MediaStore.Images.Media.BUCKET_DISPLAY_NAME);
+                    MediaStore.Video.Media.BUCKET_DISPLAY_NAME);
 
             int dateColumn = cur.getColumnIndex(
-                    MediaStore.Images.Media.DATE_TAKEN);
+                    MediaStore.Video.Media.DATE_TAKEN);
 
-            int id = cur.getColumnIndex(MediaStore.Images.Media.DISPLAY_NAME);
+            int id = cur.getColumnIndex(MediaStore.Video.Media.DISPLAY_NAME);
 
             do {
                 // Get the field values
                 bucket = cur.getString(bucketColumn);
-                if(bucket.equalsIgnoreCase("CAMERA")) {
+                Log.d(TAG,bucket);
+                if(bucket.equalsIgnoreCase("FC_Videos")) {
                     date = cur.getString(dateColumn);
-
                     // Do something with the values.
                     Log.i("ListingImages", " bucket=" + bucket
                             + "  date_taken=" + date + " id = " + cur.getString(id));
@@ -131,7 +157,6 @@ public class VideoFragment extends Fragment {
             } while (cur.moveToNext());
 
         }
-        return view;
     }
 
     @Override
