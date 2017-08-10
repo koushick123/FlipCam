@@ -1,6 +1,8 @@
 package com.flipcam;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.v4.app.Fragment;
@@ -8,6 +10,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 
 import java.io.File;
 
@@ -43,11 +46,12 @@ public class VideoFragment extends Fragment {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_video, container, false);
         Log.d(TAG,"Inside video fragment");
-        fetchMedia();
+        ImageView thumbnail = (ImageView)view.findViewById(R.id.thumbnail);
+        fetchMedia(thumbnail);
         return view;
     }
 
-    private void fetchMedia()
+    private void fetchMedia(ImageView thumbnail)
     {
         File root = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
         Log.d(TAG,root.getPath());
@@ -67,13 +71,17 @@ public class VideoFragment extends Fragment {
             }
         }
         //Use this for sharing files between apps
-        File videos = new File(root.getPath()+"/FlipCam/FC_Videos/");
+        File videos = new File(root.getPath()+"/FlipCam/FC_Images/");
         if(videos.listFiles() != null){
             Log.d(TAG,"List = "+videos.listFiles());
             Log.d(TAG,"List length = "+videos.listFiles().length);
             for(File file : videos.listFiles()){
                 Log.d(TAG,file.getPath());
-                //Picasso.with(getContext())
+                Bitmap img = BitmapFactory.decodeFile(file.getPath());
+                thumbnail.setImageBitmap(img.createScaledBitmap(img,68,68,false));
+                /*Bitmap vid = ThumbnailUtils.createVideoThumbnail(file.getPath(), MediaStore.Video.Thumbnails.MICRO_KIND);
+                thumbnail.setImageBitmap(vid.createScaledBitmap(vid,68,68,false));*/
+                break;
             }
         }
     }

@@ -5,4 +5,8 @@
     <color name="colorAccent">#FF4081</color>
     //Settings Bar
     <color name="settingsBarColor">#000000</color>
+    //Black Background
+    <color name="permissionBackground">#000000</color>
+    //Placeholder color for thumbnail
+    <color name="thumbnailPlaceholder">#686565</color>
 </resources>

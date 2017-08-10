@@ -19,7 +19,8 @@
         android:layout_gravity="bottom"
         android:background="@color/settingsBarColor"
         android:gravity="center"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:weightSum="1">
 
         <ImageButton
             android:layout_width="wrap_content"
@@ -31,7 +32,7 @@
             android:src="@drawable/switch_camera" />
 
         <ImageButton
-            android:id="@+id/imageButton2"
+            android:id="@+id/cameraRecord"
             android:layout_width="67dp"
             android:layout_height="76dp"
             android:layout_gravity="center"
@@ -42,7 +43,7 @@
             android:src="@drawable/record_start" />
 
         <ImageButton
-            android:id="@+id/imageButton"
+            android:id="@+id/photoMode"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
@@ -51,12 +52,14 @@
             android:background="@color/settingsBarColor"
             android:src="@drawable/photo_mode" />
 
-        <ImageButton
+        <ImageView
+            android:id="@+id/thumbnail"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="65dp"
             android:layout_gravity="center_vertical"
-            android:layout_marginLeft="10dp"
+            android:layout_marginLeft="5dp"
+            android:layout_weight="0.06"
             android:background="@color/settingsBarColor"
-            android:src="@drawable/photo_mode" />
+            android:src="@drawable/placeholder" />
     </LinearLayout>
 </FrameLayout>
