@@ -53,6 +53,19 @@ public class VideoFragment extends Fragment {
 
     private void fetchMedia(ImageView thumbnail)
     {
+        String removableStoragePath;
+        File fileList[] = new File("/storage/").listFiles();
+        for (File file : fileList)
+        {
+            if(!file.getAbsolutePath().equalsIgnoreCase(Environment.getExternalStorageDirectory().getAbsolutePath()) && file.isDirectory() && file.canRead()) {
+                removableStoragePath = file.getAbsolutePath();
+                Log.d(TAG,removableStoragePath);
+                for(File file1 : new File(removableStoragePath).listFiles())
+                {
+                    Log.d(TAG,file1.getPath());
+                }
+            }
+        }
         File root = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
         Log.d(TAG,root.getPath());
         File fc = new File(root.getPath()+"/FlipCam");
