@@ -26,8 +26,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
-            android:layout_marginLeft="50dp"
-            android:layout_marginRight="20dp"
+            android:layout_marginLeft="40dp"
+            android:layout_marginRight="15dp"
             android:background="@color/settingsBarColor"
             android:src="@drawable/switch_camera" />
 
@@ -58,6 +58,7 @@
             android:layout_height="65dp"
             android:layout_gravity="center_vertical"
             android:layout_marginLeft="5dp"
+            android:layout_marginRight="5dp"
             android:layout_weight="0.06"
             android:background="@color/settingsBarColor"
             android:src="@drawable/placeholder" />

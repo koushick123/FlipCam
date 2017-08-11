@@ -18,12 +18,13 @@ import android.view.WindowManager;
 public class PermissionActivity extends AppCompatActivity {
 
     final String TAG = "PermissionActivity";
-    private int MY_PERMISSIONS_REQUEST_CAMERA = 0;
-    private int MY_PERMISSIONS_REQUEST_AUDIO = 1;
-    private int MY_PERMISSIONS_WRITE_STORAGE = 2;
+    private final int MY_PERMISSIONS_REQUEST_CAMERA = 0;
+    private final int MY_PERMISSIONS_REQUEST_AUDIO = 1;
+    private final int MY_PERMISSIONS_WRITE_STORAGE = 2;
     static final String AUDIO_PERMISSION = "android.permission.RECORD_AUDIO";
     static final String CAMERA_PERMISSION = "android.permission.CAMERA";
     static final String STORAGE_PERMISSIONS = "android.permission.WRITE_EXTERNAL_STORAGE";
+    static final String FC_SHARED_PREFERENCE = "FC_Settings";
     boolean cameraPermission = false;
     boolean audioPermission = false;
     boolean storagePermission = false;
@@ -85,7 +86,7 @@ public class PermissionActivity extends AppCompatActivity {
         Log.d(TAG,"onCreate");
         setContentView(R.layout.activity_permission);
         Log.d(TAG,"saved instance state == "+savedInstanceState);
-        SharedPreferences sharedPreferences = getPreferences(Context.MODE_PRIVATE);
+        SharedPreferences sharedPreferences = getSharedPreferences(FC_SHARED_PREFERENCE,Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putBoolean("startCamera",false);
         editor.commit();
@@ -115,7 +116,7 @@ public class PermissionActivity extends AppCompatActivity {
     protected void onResume() {
         Log.d(TAG,"onResume");
         super.onResume();
-        SharedPreferences sharedPreferences = getPreferences(Context.MODE_PRIVATE);
+        SharedPreferences sharedPreferences = getSharedPreferences(FC_SHARED_PREFERENCE,Context.MODE_PRIVATE);
         if(sharedPreferences.getBoolean("startCamera",false)){
             Log.d(TAG,"Quit the app");
             finish();
@@ -143,7 +144,7 @@ public class PermissionActivity extends AppCompatActivity {
     {
         if(cameraPermission && audioPermission) {
             //Open VideoFragment under CameraActivity showing camera preview.
-            SharedPreferences sharedPreferences = getPreferences(Context.MODE_PRIVATE);
+            SharedPreferences sharedPreferences = getSharedPreferences(FC_SHARED_PREFERENCE,Context.MODE_PRIVATE);
             SharedPreferences.Editor editor = sharedPreferences.edit();
             editor.putBoolean("startCamera", true);
             editor.commit();

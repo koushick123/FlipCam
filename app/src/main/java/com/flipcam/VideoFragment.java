@@ -1,8 +1,11 @@
 package com.flipcam;
 
 import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.v4.app.Fragment;
@@ -13,6 +16,8 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 
 import java.io.File;
+
+import static com.flipcam.PermissionActivity.FC_SHARED_PREFERENCE;
 
 
 public class VideoFragment extends Fragment {
@@ -90,13 +95,32 @@ public class VideoFragment extends Fragment {
             Log.d(TAG,"List length = "+videos.listFiles().length);
             for(File file : videos.listFiles()){
                 Log.d(TAG,file.getPath());
-                Bitmap img = BitmapFactory.decodeFile(file.getPath());
+                final Bitmap img = BitmapFactory.decodeFile(file.getPath());
                 thumbnail.setImageBitmap(img.createScaledBitmap(img,68,68,false));
+                final String imgPath = file.getPath();
+                thumbnail.setOnClickListener(new View.OnClickListener(){
+                    @Override
+                    public void onClick(View view)
+                    {
+                        openMedia(imgPath);
+                    }
+                });
                 /*Bitmap vid = ThumbnailUtils.createVideoThumbnail(file.getPath(), MediaStore.Video.Thumbnails.MICRO_KIND);
                 thumbnail.setImageBitmap(vid.createScaledBitmap(vid,68,68,false));*/
                 break;
             }
         }
+    }
+
+    private void openMedia(String path)
+    {
+        SharedPreferences.Editor editor = getActivity().getSharedPreferences(FC_SHARED_PREFERENCE,Context.MODE_PRIVATE).edit();
+        editor.putBoolean("startCamera",false);
+        editor.commit();
+        Intent intent = new Intent();
+        intent.setAction(Intent.ACTION_VIEW);
+        intent.setDataAndType(Uri.parse("file://"+path),"image*//*");
+        startActivity(intent);
     }
 
     @Override
