@@ -119,7 +119,7 @@ public class VideoFragment extends Fragment {
         editor.commit();
         Intent intent = new Intent();
         intent.setAction(Intent.ACTION_VIEW);
-        intent.setDataAndType(Uri.parse("file://"+path),"image*//*");
+        intent.setDataAndType(Uri.parse("file://"+path),"image/*");
         startActivity(intent);
     }
 
