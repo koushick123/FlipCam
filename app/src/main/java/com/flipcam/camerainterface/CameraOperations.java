@@ -31,7 +31,7 @@ public interface CameraOperations {
     public void startPreview(SurfaceTexture surfaceTexture);
     //To set auto flash
     public void setAutoFlash();
-    //To set flash on/orff
+    //To set flash on/off
     public void setFlashOnOff(boolean flashOn);
     //To check if flash mode is supported
     public boolean isFlashModeSupported(String flashMode);
@@ -39,4 +39,10 @@ public interface CameraOperations {
     public boolean isFocusModeSupported(String focusMode);
     //To set flash as torchlight
     public void setTorchLight();
+    //Fetch camera instance
+    public int getCameraId();
+    //Check if camera instance is ready to be used
+    public boolean isCameraReady();
+    //To set display orientation to match that of the activity/frame
+    public void setDisplayOrientation(int result);
 }

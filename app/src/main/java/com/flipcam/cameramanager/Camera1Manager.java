@@ -27,6 +27,7 @@ public class Camera1Manager implements CameraOperations {
     int MAX_FPS = 15;
     int cameraId;
     Camera.Parameters parameters;
+    Camera.CameraInfo info = new Camera.CameraInfo();
     private static Camera1Manager camera1Manager;
     public static Camera1Manager getInstance()
     {
@@ -36,15 +37,28 @@ public class Camera1Manager implements CameraOperations {
         return camera1Manager;
     }
 
+    public int[] getPreviewSizes()
+    {
+        int[] sizes = new int[2];
+        sizes[0] = VIDEO_WIDTH;
+        sizes[1] = VIDEO_HEIGHT;
+        return sizes;
+    }
+
+    public Camera.CameraInfo getCameraInfo()
+    {
+        return info;
+    }
+
     @Override
     public void openCamera(boolean backCamera) {
-        Camera.CameraInfo info = new Camera.CameraInfo();
         for(int i=0;i<Camera.getNumberOfCameras();i++)
         {
             Camera.getCameraInfo(i, info);
             if(backCamera) {
                 if (info.facing == Camera.CameraInfo.CAMERA_FACING_BACK) {
                     mCamera = Camera.open(i);
+                    Log.d(TAG,"Open back facing camera");
                     cameraId = i;
                     break;
                 }
@@ -52,18 +66,20 @@ public class Camera1Manager implements CameraOperations {
             else{
                 if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
                     mCamera = Camera.open(i);
+                    Log.d(TAG,"Open front facing camera");
                     cameraId = i;
                     break;
                 }
             }
         }
         parameters = mCamera.getParameters();
-        parameters.setFlashMode(null);
+        //parameters.setFlashMode(null);
     }
 
     @Override
     public void releaseCamera() {
         mCamera.release();
+        mCamera = null;
     }
 
     @Override
@@ -83,6 +99,11 @@ public class Camera1Manager implements CameraOperations {
         Log.d(TAG,"Setting min and max Fps  == "+MIN_FPS+" , "+MAX_FPS);
         parameters.setPreviewFpsRange(MIN_FPS,MAX_FPS);
         mCamera.setParameters(parameters);
+    }
+
+    @Override
+    public void setDisplayOrientation(int result) {
+        mCamera.setDisplayOrientation(result);
     }
 
     @Override
@@ -233,5 +254,15 @@ public class Camera1Manager implements CameraOperations {
     @Override
     public void setTorchLight() {
         parameters.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
+    }
+
+    @Override
+    public int getCameraId() {
+        return cameraId;
+    }
+
+    @Override
+    public boolean isCameraReady() {
+        return (mCamera != null);
     }
 }

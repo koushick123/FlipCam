@@ -142,7 +142,7 @@ public class PermissionActivity extends AppCompatActivity {
 
     void openCameraFragment()
     {
-        if(cameraPermission && audioPermission) {
+        if(cameraPermission && audioPermission && storagePermission) {
             //Open VideoFragment under CameraActivity showing camera preview.
             SharedPreferences sharedPreferences = getSharedPreferences(FC_SHARED_PREFERENCE,Context.MODE_PRIVATE);
             SharedPreferences.Editor editor = sharedPreferences.edit();
