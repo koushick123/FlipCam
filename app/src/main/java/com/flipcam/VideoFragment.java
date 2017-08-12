@@ -4,10 +4,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
+import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.provider.MediaStore;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -65,9 +66,13 @@ public class VideoFragment extends Fragment {
             if(!file.getAbsolutePath().equalsIgnoreCase(Environment.getExternalStorageDirectory().getAbsolutePath()) && file.isDirectory() && file.canRead()) {
                 removableStoragePath = file.getAbsolutePath();
                 Log.d(TAG,removableStoragePath);
+                File newDir = new File(removableStoragePath+"/FC_Media");
+                if(!newDir.exists()){
+                    newDir.mkdir();
+                }
                 for(File file1 : new File(removableStoragePath).listFiles())
                 {
-                    Log.d(TAG,file1.getPath());
+                    Log.d(TAG,"SD Card path = "+file1.getPath());
                 }
             }
         }
@@ -89,15 +94,17 @@ public class VideoFragment extends Fragment {
             }
         }
         //Use this for sharing files between apps
-        File videos = new File(root.getPath()+"/FlipCam/FC_Images/");
+        File videos = new File(root.getPath()+"/FlipCam/FC_Videos/");
         if(videos.listFiles() != null){
             Log.d(TAG,"List = "+videos.listFiles());
             Log.d(TAG,"List length = "+videos.listFiles().length);
             for(File file : videos.listFiles()){
                 Log.d(TAG,file.getPath());
-                final Bitmap img = BitmapFactory.decodeFile(file.getPath());
-                thumbnail.setImageBitmap(img.createScaledBitmap(img,68,68,false));
+                /*final Bitmap img = BitmapFactory.decodeFile(file.getPath());
+                thumbnail.setImageBitmap(img.createScaledBitmap(img,68,68,false));*/
                 final String imgPath = file.getPath();
+                Bitmap vid = ThumbnailUtils.createVideoThumbnail(file.getPath(), MediaStore.Video.Thumbnails.MICRO_KIND);
+                thumbnail.setImageBitmap(vid.createScaledBitmap(vid,68,68,false));
                 thumbnail.setOnClickListener(new View.OnClickListener(){
                     @Override
                     public void onClick(View view)
@@ -105,8 +112,6 @@ public class VideoFragment extends Fragment {
                         openMedia(imgPath);
                     }
                 });
-                /*Bitmap vid = ThumbnailUtils.createVideoThumbnail(file.getPath(), MediaStore.Video.Thumbnails.MICRO_KIND);
-                thumbnail.setImageBitmap(vid.createScaledBitmap(vid,68,68,false));*/
                 break;
             }
         }
@@ -119,7 +124,7 @@ public class VideoFragment extends Fragment {
         editor.commit();
         Intent intent = new Intent();
         intent.setAction(Intent.ACTION_VIEW);
-        intent.setDataAndType(Uri.parse("file://"+path),"image/*");
+        intent.setDataAndType(Uri.parse("file://"+path),"video/*");
         startActivity(intent);
     }
 
