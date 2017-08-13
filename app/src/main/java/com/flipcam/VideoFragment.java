@@ -33,6 +33,7 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 
 import com.flipcam.cameramanager.Camera1Manager;
@@ -149,6 +150,7 @@ public class VideoFragment extends Fragment implements SurfaceHolder.Callback, S
     volatile int cameraFrameCnt=0;
     volatile int frameCnt=0;
     Camera1Manager camera1;
+    FrameLayout frameLayout;
     public VideoFragment() {
         // Required empty public constructor
     }
@@ -183,6 +185,7 @@ public class VideoFragment extends Fragment implements SurfaceHolder.Callback, S
         cameraView = (SurfaceView) view.findViewById(R.id.cameraSurfaceView);
         cameraView.getHolder().addCallback(this);
         camera1 = Camera1Manager.getInstance();
+        frameLayout =(FrameLayout)view.findViewById(R.id.cameraView);
         return view;
     }
 
