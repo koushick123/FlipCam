@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
@@ -14,6 +15,8 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.WindowManager;
+
+import com.flipcam.util.ScreenReceiver;
 
 public class PermissionActivity extends AppCompatActivity {
 
@@ -102,14 +105,33 @@ public class PermissionActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
+        unregisterReceiver(screenReceiver);
         Log.d(TAG,"onDestroy");
+        super.onDestroy();
+    }
+
+    ScreenReceiver screenReceiver = new ScreenReceiver();
+
+    @Override
+    protected void onStart() {
+        Log.d(TAG,"onStart");
+        super.onStart();
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(Intent.ACTION_SCREEN_OFF);
+        intentFilter.addAction(Intent.ACTION_USER_PRESENT);
+        registerReceiver(screenReceiver,intentFilter);
     }
 
     @Override
     protected void onStop() {
-        super.onStop();
         Log.d(TAG,"onStop");
+        super.onStop();
+    }
+
+    @Override
+    protected void onPause() {
+        Log.d(TAG,"onPause");
+        super.onPause();
     }
 
     @Override

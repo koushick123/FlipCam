@@ -1,7 +1,6 @@
 package com.flipcam.util;
 
 import android.opengl.GLES20;
-import android.opengl.Matrix;
 import android.util.Log;
 
 import java.nio.ByteBuffer;
@@ -14,13 +13,53 @@ import java.nio.FloatBuffer;
 
 public class GLUtil {
     public static final String TAG = "GLUtil";
+    // Simple vertex shader, used for all programs.
+    public static final String VERTEX_SHADER =
+            "uniform mat4 uMVPMatrix;\n" +
+                    "uniform mat4 uTexMatrix;\n" +
+                    "attribute vec4 aPosition;\n" +
+                    "attribute vec4 aTextureCoord;\n" +
+                    "varying vec2 vTextureCoord;\n" +
+                    "void main() {\n" +
+                    "    gl_Position = uMVPMatrix * aPosition;\n" +
+                    "    vTextureCoord = (uTexMatrix * aTextureCoord).xy;\n" +
+                    "}\n";
 
-    /** Identity matrix for general use.  Don't modify or life will get weird. */
-    public static final float[] IDENTITY_MATRIX;
+    // Simple fragment shader for use with external 2D textures (e.g. what we get from
+    // SurfaceTexture).
+    public static final String FRAGMENT_SHADER_EXT =
+            "#extension GL_OES_EGL_image_external : require\n" +
+                    "precision mediump float;\n" +
+                    "varying vec2 vTextureCoord;\n" +
+                    "uniform samplerExternalOES sTexture;\n" +
+                    "void main() {\n" +
+                    "    gl_FragColor = texture2D(sTexture, vTextureCoord);\n" +
+                    "}\n";
+
+    /*public static final float[] IDENTITY_MATRIX;
     static {
         IDENTITY_MATRIX = new float[16];
         Matrix.setIdentityM(IDENTITY_MATRIX, 0);
-    }
+    }*/
+    /**
+     * A "full" square, extending from -1 to +1 in both dimensions.  When the model/view/projection
+     * matrix is identity, this will exactly cover the viewport.
+     * <p>
+     * The texture coordinates are Y-inverted relative to RECTANGLE.  (This seems to work out
+     * right with external textures from SurfaceTexture.)
+     */
+    public static final float FULL_RECTANGLE_COORDS[] = {
+            -1.0f, -1.0f,   // 0 bottom left
+            1.0f, -1.0f,   // 1 bottom right
+            -1.0f,  1.0f,   // 2 top left
+            1.0f,  1.0f,   // 3 top right
+    };
+    public static final float FULL_RECTANGLE_TEX_COORDS[] = {
+            0.0f, 0.0f,     // 0 bottom left
+            1.0f, 0.0f,     // 1 bottom right
+            0.0f, 1.0f,     // 2 top left
+            1.0f, 1.0f      // 3 top right
+    };
 
     private static final int SIZEOF_FLOAT = 4;
 

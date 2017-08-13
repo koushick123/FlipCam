@@ -45,6 +45,5 @@ public class CameraActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         Log.d(TAG,"onPause");
-        finish();
     }
 }

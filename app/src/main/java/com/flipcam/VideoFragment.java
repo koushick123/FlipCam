@@ -403,8 +403,8 @@ public class VideoFragment extends Fragment implements SurfaceHolder.Callback, S
     @Override
     public void onResume() {
         super.onResume();
-        Log.d(TAG,"Setting up camera = "+camSurfHolder);
-        if(camSurfHolder != null && !camera1.isCameraReady()) {
+        Log.d(TAG,"Setting up camera = "+camSurfHolder+", surfaceTexture = "+surfaceTexture);
+        if(camSurfHolder != null && !camera1.isCameraReady() && surfaceTexture!=null) {
             camera1.openCamera(backCamera);
             camera1.setResolution(getActivity().getWindowManager());
             camera1.setFPS();
@@ -489,6 +489,7 @@ public class VideoFragment extends Fragment implements SurfaceHolder.Callback, S
         }
         if(surfaceTexture!=null){
             surfaceTexture.release();
+            surfaceTexture=null;
         }
         camera1.stopPreview();
         camera1.releaseCamera();
