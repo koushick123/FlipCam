@@ -494,8 +494,10 @@ public class VideoFragment extends Fragment implements SurfaceHolder.Callback, S
             surfaceTexture.release();
             surfaceTexture=null;
         }
-        camera1.stopPreview();
-        camera1.releaseCamera();
+        if(camera1.isCameraReady()) {
+            camera1.stopPreview();
+            camera1.releaseCamera();
+        }
         setCameraQuit();
         //orientationEventListener.disable();
         releaseEGLSurface();
