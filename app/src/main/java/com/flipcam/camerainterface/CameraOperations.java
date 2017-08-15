@@ -1,7 +1,6 @@
 package com.flipcam.camerainterface;
 
 import android.graphics.SurfaceTexture;
-import android.view.WindowManager;
 
 /**
  * Created by Koushick on 02-08-2017.
@@ -20,7 +19,7 @@ public interface CameraOperations {
     //To set Resolution
     public void setResolution();
     //To set Resolution with windowmanager
-    public void setResolution(WindowManager windowManager);
+    public void setResolution(int width,int height);
     //To set zoom
     public boolean zoomInOrOut(boolean zoomInOrOut);
     //To stop preview

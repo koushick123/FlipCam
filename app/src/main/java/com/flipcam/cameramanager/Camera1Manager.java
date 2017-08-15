@@ -2,9 +2,7 @@ package com.flipcam.cameramanager;
 
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
-import android.util.DisplayMetrics;
 import android.util.Log;
-import android.view.WindowManager;
 
 import com.flipcam.camerainterface.CameraOperations;
 
@@ -107,14 +105,14 @@ public class Camera1Manager implements CameraOperations {
     }
 
     @Override
-    public void setResolution(WindowManager windowManager) {
-        DisplayMetrics metrics = new DisplayMetrics();
-        windowManager.getDefaultDisplay().getMetrics(metrics);
-        Log.d(TAG,"Width = "+metrics.widthPixels);
-        Log.d(TAG,"Height = "+metrics.heightPixels);
+    public void setResolution(int width, int height) {
+        /*DisplayMetrics metrics = new DisplayMetrics();
+        windowManager.getDefaultDisplay().getMetrics(metrics);*/
+        Log.d(TAG,"Set Width = "+width);
+        Log.d(TAG,"Set Height = "+height);
 
         //Aspect ratio needs to be reversed, if orientation is portrait.
-        double screenAspectRatio = 1.0f / ((double)metrics.widthPixels/(double)metrics.heightPixels);
+        double screenAspectRatio = 1.0f / ((double)width/(double)height);
         Log.d(TAG,"SCREEN Aspect Ratio = "+screenAspectRatio);
         List<Camera.Size> previewSizes = parameters.getSupportedPreviewSizes();
 
