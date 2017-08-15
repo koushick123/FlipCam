@@ -51,6 +51,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     final int RECORD_START = 3000;
     final int SHUTDOWN = 6000;
     final int RECORD_COMPLETE = 7000;
+    final int GET_CAMERA_RENDERER_INSTANCE = 8000;
     SurfaceTexture surfaceTexture;
     private EGLDisplay mEGLDisplay = EGL14.EGL_NO_DISPLAY;
     private EGLContext mEGLContext = EGL14.EGL_NO_CONTEXT;
@@ -353,8 +354,15 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         Log.d(TAG,"surfaceDestroyed = "+surfaceHolder);
         Log.d(TAG,"cameraHandler = "+cameraHandler);
         if(cameraHandler!=null) {
+            CameraRenderer cameraRenderer = cameraHandler.getCameraRendererInstance();
             cameraHandler.sendEmptyMessage(SHUTDOWN);
-            waitUntilReady();
+            try {
+                if(cameraRenderer!=null){
+                    cameraRenderer.join();
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
         if(surfaceTexture!=null){
             surfaceTexture.release();
@@ -622,24 +630,25 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         void shutdown()
         {
             Looper.myLooper().quit();
-            synchronized (renderObj){
-                isReady=true;
-                renderObj.notify();
-            }
-            Log.d(TAG,"Camera thread done... main thread can continue");
         }
 
         class CameraHandler extends Handler
         {
             WeakReference<CameraRenderer> cameraRender;
+            CameraRenderer cameraRenderer;
 
             public CameraHandler(CameraRenderer cameraRenderer){
                 cameraRender = new WeakReference<>(cameraRenderer);
             }
 
+            private CameraRenderer getCameraRendererInstance()
+            {
+                return cameraRenderer;
+            }
+
             @Override
             public void handleMessage(Message msg) {
-                CameraRenderer cameraRenderer = cameraRender.get();
+                cameraRenderer = cameraRender.get();
                 switch(msg.what)
                 {
                     case SHUTDOWN:
@@ -667,6 +676,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         Log.d(TAG,"stop isRecording == "+isRecording);
                         if(VERBOSE)Log.d(TAG, "Exit recording...");
                         Log.d(TAG,"Orig frame = "+frameCount+" , Rendered frame "+frameCnt);
+                        break;
+                    case GET_CAMERA_RENDERER_INSTANCE:
+                        getCameraRendererInstance();
                         break;
                 }
             }

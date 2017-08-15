@@ -168,15 +168,6 @@ public class VideoFragment extends Fragment{
     public void onResume() {
         super.onResume();
         Log.d(TAG,"onResume");
-        //cameraView = new CameraView(getActivity().getApplicationContext(),null);
-        /*Log.d(TAG,"Setting up camera = "+camSurfHolder+", surfaceTexture = "+surfaceTexture);
-        if(camSurfHolder != null && !camera1.isCameraReady() && surfaceTexture!=null) {
-            camera1.openCamera(backCamera);
-            camera1.setResolution(getActivity().getWindowManager());
-            camera1.setFPS();
-            setLayoutAspectRatio();
-            camera1.startPreview(surfaceTexture);
-        }*/
     }
 
 

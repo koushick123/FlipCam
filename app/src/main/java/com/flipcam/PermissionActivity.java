@@ -4,7 +4,6 @@ import android.Manifest;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
@@ -16,14 +15,10 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.WindowManager;
 
-import com.flipcam.util.ScreenReceiver;
-
 public class PermissionActivity extends AppCompatActivity {
 
     final String TAG = "PermissionActivity";
-    private final int MY_PERMISSIONS_REQUEST_CAMERA = 0;
-    private final int MY_PERMISSIONS_REQUEST_AUDIO = 1;
-    private final int MY_PERMISSIONS_WRITE_STORAGE = 2;
+    private final int ALL_PERMISSIONS = 0;
     static final String AUDIO_PERMISSION = "android.permission.RECORD_AUDIO";
     static final String CAMERA_PERMISSION = "android.permission.CAMERA";
     static final String STORAGE_PERMISSIONS = "android.permission.WRITE_EXTERNAL_STORAGE";
@@ -32,47 +27,23 @@ public class PermissionActivity extends AppCompatActivity {
     boolean audioPermission = false;
     boolean storagePermission = false;
     boolean showMessage = false;
+    boolean showPermission = false;
     DialogInterface.OnClickListener exitListener;
     AlertDialog.Builder alertDialog;
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        if (requestCode == MY_PERMISSIONS_REQUEST_CAMERA) {
+        if (requestCode == ALL_PERMISSIONS) {
             if (permissions != null && permissions.length > 0) {
                 Log.d(TAG, "For camera == "+permissions[0]);
-                if (permissions[0].equalsIgnoreCase(CAMERA_PERMISSION)) {
+                if (permissions[0].equalsIgnoreCase(CAMERA_PERMISSION) && permissions[1].equalsIgnoreCase(AUDIO_PERMISSION) &&
+                        permissions[2].equalsIgnoreCase(STORAGE_PERMISSIONS)) {
                     if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                         cameraPermission = true;
-                        checkAudioPermission();
-                    } else {
-                        quitFlipCam();
-                    }
-                }
-            } else {
-                super.onRequestPermissionsResult(requestCode,permissions,grantResults);
-            }
-        } else if (requestCode == MY_PERMISSIONS_REQUEST_AUDIO) {
-            if (permissions != null && permissions.length > 0) {
-                Log.d(TAG, "For audio == "+permissions[0]);
-                if (permissions[0].equalsIgnoreCase(AUDIO_PERMISSION)) {
-                    if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                         audioPermission = true;
-                        checkExternalStoragePermission();
-                        //openCameraFragment();
-                    } else {
-                        quitFlipCam();
-                    }
-                }
-            } else {
-                super.onRequestPermissionsResult(requestCode,permissions,grantResults);
-            }
-        } else if (requestCode == MY_PERMISSIONS_WRITE_STORAGE) {
-            if (permissions != null && permissions.length > 0) {
-                Log.d(TAG, "For audio == "+permissions[0]);
-                if (permissions[0].equalsIgnoreCase(STORAGE_PERMISSIONS)) {
-                    if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                         storagePermission = true;
                         openCameraFragment();
+                        //checkAudioPermission();
                     } else {
                         quitFlipCam();
                     }
@@ -89,6 +60,10 @@ public class PermissionActivity extends AppCompatActivity {
         Log.d(TAG,"onCreate");
         setContentView(R.layout.activity_permission);
         Log.d(TAG,"saved instance state == "+savedInstanceState);
+        if(savedInstanceState!=null) {
+            Log.d(TAG, "saved instance state restart == " + savedInstanceState.getBoolean("restart"));
+            Log.d(TAG, "saved instance state quit == " + savedInstanceState.getBoolean("quit"));
+        }
         SharedPreferences sharedPreferences = getSharedPreferences(FC_SHARED_PREFERENCE,Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putBoolean("startCamera",false);
@@ -105,21 +80,14 @@ public class PermissionActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        unregisterReceiver(screenReceiver);
         Log.d(TAG,"onDestroy");
         super.onDestroy();
     }
-
-    ScreenReceiver screenReceiver = new ScreenReceiver();
 
     @Override
     protected void onStart() {
         Log.d(TAG,"onStart");
         super.onStart();
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(Intent.ACTION_SCREEN_OFF);
-        intentFilter.addAction(Intent.ACTION_USER_PRESENT);
-        registerReceiver(screenReceiver,intentFilter);
     }
 
     @Override
@@ -144,20 +112,23 @@ public class PermissionActivity extends AppCompatActivity {
             finish();
         }
         else if(!showMessage){
-            Log.d(TAG,"Check permissions and Start camera");
-            int permission = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.CAMERA);
-            if (permission == PackageManager.PERMISSION_GRANTED) {
-                Log.d(TAG, "Camera permission obtained.");
+            Log.d(TAG,"Check permissions and Start camera = "+showPermission);
+            int camerapermission = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.CAMERA);
+            int audiopermission = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.RECORD_AUDIO);
+            int storagepermission = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE);
+            if (camerapermission == PackageManager.PERMISSION_GRANTED && audiopermission == PackageManager.PERMISSION_GRANTED &&
+                    storagepermission == PackageManager.PERMISSION_GRANTED) {
+                Log.d(TAG, "ALL permissions obtained.");
                 cameraPermission = true;
-            } else {
-                Log.d(TAG, "Camera permission not obtained. Obtain explicitly");
+                audioPermission = true;
+                storagePermission= true;
+                openCameraFragment();
+            } else if(!showPermission){
+                Log.d(TAG, "Permissions not obtained. Obtain explicitly");
                 ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.CAMERA},
-                        MY_PERMISSIONS_REQUEST_CAMERA);
-            }
-
-            if (cameraPermission) {
-                checkAudioPermission();
+                        new String[]{Manifest.permission.CAMERA,Manifest.permission.RECORD_AUDIO,Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                        ALL_PERMISSIONS);
+                showPermission = true;
             }
         }
     }
@@ -175,45 +146,36 @@ public class PermissionActivity extends AppCompatActivity {
         }
     }
 
-    void checkAudioPermission()
-    {
-        int permission = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.RECORD_AUDIO);
-        if (permission == PackageManager.PERMISSION_GRANTED) {
-            audioPermission = true;
-            //openCameraFragment();
-        } else {
-            Log.d(TAG, "Audio permission not obtained. Obtain explicitly");
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.RECORD_AUDIO},
-                    MY_PERMISSIONS_REQUEST_AUDIO);
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        Log.d(TAG,"Restore state = "+savedInstanceState);
+        if(savedInstanceState!=null && savedInstanceState.getBoolean("quit")) {
+            //The activity was restarted because of possible low memory situation.
+            Log.d(TAG, "Quit app");
+            finish();
         }
-        if(audioPermission){
-            checkExternalStoragePermission();
+        else if(savedInstanceState!= null && savedInstanceState.getBoolean("showPermission")){
+            showPermission = savedInstanceState.getBoolean("showPermission");
+            Log.d(TAG,"show permission = "+showPermission);
         }
-    }
-
-    void checkExternalStoragePermission()
-    {
-        int permission = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE);
-        if (permission == PackageManager.PERMISSION_GRANTED) {
-            storagePermission = true;
-        } else {
-            Log.d(TAG, "Storage permission not obtained. Obtain explicitly");
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
-                    MY_PERMISSIONS_WRITE_STORAGE);
-        }
-        if(storagePermission){
-            openCameraFragment();
-        }
+        super.onRestoreInstanceState(savedInstanceState);
     }
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
+        Log.d(TAG,"Save before restart");
         if(showMessage) {
             outState.putBoolean("restart", true);
+            outState.putBoolean("quit",false);
             Log.d(TAG, "Saved restart");
         }
+        else if(cameraPermission && audioPermission && storagePermission){
+            //The activity could be destroyed because of low memory. Keep a flag to quit the activity when you navigate back here.
+            outState.putBoolean("quit",true);
+            outState.putBoolean("restart",false);
+            Log.d(TAG, "Safe to quit");
+        }
+        outState.putBoolean("showPermission",showPermission);
         super.onSaveInstanceState(outState);
     }
 
