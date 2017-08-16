@@ -22,10 +22,12 @@ public interface CameraOperations {
     public void setResolution(int width,int height);
     //To set zoom
     public boolean zoomInOrOut(boolean zoomInOrOut);
+    //To get max zoom
+    public int getMaxZoom();
     //To stop preview
     public void stopPreview();
     //To set auto focus
-    public void setAutoFocus();
+    public void setAutoFocus(String focusMode);
     //To start preview
     public void startPreview(SurfaceTexture surfaceTexture);
     //To set auto flash

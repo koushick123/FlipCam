@@ -71,7 +71,6 @@ public class Camera1Manager implements CameraOperations {
             }
         }
         parameters = mCamera.getParameters();
-        //parameters.setFlashMode(null);
     }
 
     @Override
@@ -106,8 +105,6 @@ public class Camera1Manager implements CameraOperations {
 
     @Override
     public void setResolution(int width, int height) {
-        /*DisplayMetrics metrics = new DisplayMetrics();
-        windowManager.getDefaultDisplay().getMetrics(metrics);*/
         Log.d(TAG,"Set Width = "+width);
         Log.d(TAG,"Set Height = "+height);
 
@@ -164,6 +161,11 @@ public class Camera1Manager implements CameraOperations {
     }
 
     @Override
+    public int getMaxZoom() {
+        return parameters.getMaxZoom();
+    }
+
+    @Override
     public void stopPreview() {
         mCamera.stopPreview();
     }
@@ -200,8 +202,10 @@ public class Camera1Manager implements CameraOperations {
     Camera.AutoFocusCallback autoFocusCallback = new Camera.AutoFocusCallback() {
         @Override
         public void onAutoFocus(boolean success, Camera camera) {
-            Log.d(TAG,"auto focus set successfully");
-            focused=success;
+            if(success) {
+                Log.d(TAG,"auto focus set successfully");
+                focused = success;
+            }
         }
     };
 
@@ -211,8 +215,8 @@ public class Camera1Manager implements CameraOperations {
     }
 
     @Override
-    public void setAutoFocus(){
-        parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
+    public void setAutoFocus(String focus){
+        parameters.setFocusMode(focus);
         mCamera.autoFocus(autoFocusCallback);
     }
 

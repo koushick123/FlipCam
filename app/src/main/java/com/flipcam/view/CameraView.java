@@ -2,6 +2,7 @@ package com.flipcam.view;
 
 import android.content.Context;
 import android.graphics.SurfaceTexture;
+import android.hardware.Camera;
 import android.media.CamcorderProfile;
 import android.media.MediaRecorder;
 import android.opengl.EGL14;
@@ -148,6 +149,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     volatile int cameraFrameCnt=0;
     volatile int frameCnt=0;
     Camera1Manager camera1;
+    boolean isFocusModeSupported=false;
     public CameraView(Context context, AttributeSet attrs) {
         super(context, attrs);
         Log.d(TAG,"start cameraview");
@@ -265,6 +267,20 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         return configs[0];
     }
 
+    public void zoomIn()
+    {
+        camera1.zoomInOrOut(true);
+    }
+
+    public int getMaxZoom()
+    {
+        return camera1.getMaxZoom();
+    }
+    public void zoomOut()
+    {
+        camera1.zoomInOrOut(false);
+    }
+
     public void setLayoutAspectRatio()
     {
         // Set the preview aspect ratio.
@@ -340,6 +356,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             camera1.setFPS();
             setLayoutAspectRatio();
             camera1.startPreview(surfaceTexture);
+            if(camera1.isFocusModeSupported(Camera.Parameters.FOCUS_MODE_AUTO)) {
+                isFocusModeSupported=true;
+            }
         }
         surfaceTexture.setOnFrameAvailableListener(this);
         //When recreate() is called, this is called again and recording needs to begin.
@@ -608,6 +627,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 if(VERBOSE)Log.d(TAG, "Draw on screen...."+isRecording);
                 //Calls eglSwapBuffers.  Use this to "publish" the current frame.
                 EGL14.eglSwapBuffers(mEGLDisplay, eglSurface);
+                //Try to refocus after every 80 frames
+                if(isFocusModeSupported && frameCount%80 == 0) {
+                    camera1.setAutoFocus(Camera.Parameters.FOCUS_MODE_AUTO);
+                }
 
                 if(isRecording) {
                     makeCurrent(encoderSurface);

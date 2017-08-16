@@ -14,62 +14,75 @@
         />
 
     <LinearLayout
-        android:id="@+id/videoFunctions"
+        android:id="@+id/seekParent"
         android:layout_width="match_parent"
-        android:layout_height="70dp"
+        android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:background="@color/settingsBarColor"
         android:gravity="center"
-        android:orientation="horizontal"
-        android:weightSum="1">
+        android:orientation="vertical">
 
-        <ImageButton
-            android:id="@+id/substitute"
-            android:layout_width="wrap_content"
+        <SeekBar
+            android:id="@+id/zoomBar"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="5dp"
-            android:layout_gravity="center_vertical"
-            android:background="@color/settingsBarColor"
-            android:src="@drawable/placeholder"/>
+            android:layout_marginBottom="10dp" />
 
-        <ImageButton
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
-            android:layout_marginLeft="15dp"
+        <LinearLayout
+            android:id="@+id/videoFunctions"
+            android:layout_width="match_parent"
+            android:layout_height="70dp"
             android:background="@color/settingsBarColor"
-            android:src="@drawable/switch_camera" />
+            android:orientation="horizontal"
+            android:weightSum="1">
 
-        <ImageButton
-            android:id="@+id/cameraRecord"
-            android:layout_width="67dp"
-            android:layout_height="76dp"
-            android:layout_gravity="center"
-            android:layout_marginLeft="15dp"
-            android:layout_marginRight="5dp"
-            android:background="@color/settingsBarColor"
-            android:scaleType="centerCrop"
-            android:src="@drawable/record_start" />
+            <ImageButton
+                android:id="@+id/substitute"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_marginLeft="5dp"
+                android:background="@color/settingsBarColor"
+                android:src="@drawable/placeholder" />
 
-        <ImageButton
-            android:id="@+id/photoMode"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
-            android:layout_marginLeft="10dp"
-            android:layout_marginRight="10dp"
-            android:background="@color/settingsBarColor"
-            android:src="@drawable/photo_mode" />
+            <ImageButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_marginLeft="15dp"
+                android:background="@color/settingsBarColor"
+                android:src="@drawable/switch_camera" />
 
-        <ImageView
-            android:id="@+id/thumbnail"
-            android:layout_width="wrap_content"
-            android:layout_height="65dp"
-            android:layout_gravity="center_vertical"
-            android:layout_marginLeft="5dp"
-            android:layout_marginRight="5dp"
-            android:layout_weight="0.06"
-            android:background="@color/settingsBarColor"
-            android:src="@drawable/placeholder" />
+            <ImageButton
+                android:id="@+id/cameraRecord"
+                android:layout_width="67dp"
+                android:layout_height="76dp"
+                android:layout_gravity="center"
+                android:layout_marginLeft="15dp"
+                android:layout_marginRight="5dp"
+                android:background="@color/settingsBarColor"
+                android:scaleType="centerCrop"
+                android:src="@drawable/record_start" />
+
+            <ImageButton
+                android:id="@+id/photoMode"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_marginLeft="10dp"
+                android:layout_marginRight="10dp"
+                android:background="@color/settingsBarColor"
+                android:src="@drawable/photo_mode" />
+
+            <ImageView
+                android:id="@+id/thumbnail"
+                android:layout_width="wrap_content"
+                android:layout_height="65dp"
+                android:layout_gravity="center_vertical"
+                android:layout_marginLeft="5dp"
+                android:layout_marginRight="5dp"
+                android:layout_weight="0.06"
+                android:background="@color/settingsBarColor"
+                android:src="@drawable/placeholder" />
+        </LinearLayout>
     </LinearLayout>
 </FrameLayout>

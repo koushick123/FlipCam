@@ -15,6 +15,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.SeekBar;
 
 import com.flipcam.view.CameraView;
 
@@ -28,7 +29,8 @@ public class VideoFragment extends Fragment{
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
 
     public static final String TAG = "VideoFragment";
-    private CameraView cameraView;
+    SeekBar zoombar;
+    CameraView cameraView;
 
     public VideoFragment() {
         // Required empty public constructor
@@ -56,9 +58,30 @@ public class VideoFragment extends Fragment{
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_video, container, false);
+
         Log.d(TAG,"Inside video fragment");
         ImageView substitute = (ImageView)view.findViewById(R.id.substitute);
         substitute.setVisibility(View.INVISIBLE);
+        zoombar = (SeekBar)view.findViewById(R.id.zoomBar);
+        zoombar.setProgress(1);
+        //Log.d(TAG,"max zoom = "+cameraView.getMaxZoom());
+        //zoombar.setMax(cameraView.getMaxZoom());
+        zoombar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                Log.d(TAG,"progress = "+progress);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
         //ImageView thumbnail = (ImageView)view.findViewById(R.id.thumbnail);
         //fetchMedia(thumbnail);
         return view;
