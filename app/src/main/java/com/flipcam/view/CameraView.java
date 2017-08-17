@@ -279,6 +279,59 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         this.seekBar = seekBar;
     }
 
+    int measuredWidth = 640;
+    int measuredHeight = 480;
+    public void switchCamera()
+    {
+        if(backCamera)
+        {
+            backCamera = false;
+        }
+        else
+        {
+            backCamera = true;
+        }
+        camera1.stopPreview();
+        camera1.releaseCamera();
+        openCameraAndStartPreview();
+    }
+
+    public void openCameraAndStartPreview()
+    {
+        camera1.openCamera(backCamera);
+        camera1.setResolution(measuredWidth, measuredHeight);
+        camera1.setFPS();
+        setLayoutAspectRatio();
+        camera1.startPreview(surfaceTexture);
+        this.seekBar.setMax(camera1.getMaxZoom());
+        Log.d(TAG,"Setting max zoom = "+camera1.getMaxZoom());
+        if(camera1.isFocusModeSupported(Camera.Parameters.FOCUS_MODE_AUTO)) {
+            isFocusModeSupported=true;
+        }
+        else{
+            isFocusModeSupported = false;
+        }
+    }
+
+    boolean change=true;
+    public void record()
+    {
+        ViewGroup.LayoutParams lp = getLayoutParams();
+        if(change){
+            Log.d(TAG,"111");
+            lp.width=640;
+            lp.height=480;
+            change=false;
+        }
+        else{
+            Log.d(TAG,"222");
+            lp.width=352;
+            lp.height=288;
+            change=true;
+        }
+        setLayoutParams(lp);
+    }
+
     public void setLayoutAspectRatio()
     {
         // Set the preview aspect ratio.
@@ -349,16 +402,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         Log.d(TAG,"surfaceChanged = "+surfaceHolder);
         Log.d(TAG,"Width = "+width+", height = "+height);
         if(!camera1.isCameraReady()) {
-            camera1.openCamera(backCamera);
-            camera1.setResolution(width, height);
-            camera1.setFPS();
-            setLayoutAspectRatio();
-            camera1.startPreview(surfaceTexture);
-            this.seekBar.setMax(camera1.getMaxZoom());
-            Log.d(TAG,"Setting max zoom = "+camera1.getMaxZoom());
-            if(camera1.isFocusModeSupported(Camera.Parameters.FOCUS_MODE_AUTO)) {
-                isFocusModeSupported=true;
-            }
+            measuredWidth = width;
+            measuredHeight = height;
+            openCameraAndStartPreview();
         }
         surfaceTexture.setOnFrameAvailableListener(this);
         //When recreate() is called, this is called again and recording needs to begin.

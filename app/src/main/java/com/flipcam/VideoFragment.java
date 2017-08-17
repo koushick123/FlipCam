@@ -15,6 +15,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.Toast;
@@ -33,6 +34,8 @@ public class VideoFragment extends Fragment{
     public static final String TAG = "VideoFragment";
     SeekBar zoombar;
     CameraView cameraView;
+    ImageButton switchCamera;
+    ImageButton startRecord;
 
     public VideoFragment() {
         // Required empty public constructor
@@ -85,6 +88,21 @@ public class VideoFragment extends Fragment{
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
 
+            }
+        });
+        switchCamera = (ImageButton)view.findViewById(R.id.switchCamera);
+        switchCamera.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                cameraView.switchCamera();
+            }
+        });
+
+        startRecord = (ImageButton)view.findViewById(R.id.cameraRecord);
+        startRecord.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                cameraView.record();
             }
         });
         //ImageView thumbnail = (ImageView)view.findViewById(R.id.thumbnail);
