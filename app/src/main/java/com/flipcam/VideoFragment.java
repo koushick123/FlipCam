@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
+import android.hardware.Camera;
 import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.Bundle;
@@ -36,6 +37,7 @@ public class VideoFragment extends Fragment{
     CameraView cameraView;
     ImageButton switchCamera;
     ImageButton startRecord;
+    ImageButton flash;
 
     public VideoFragment() {
         // Required empty public constructor
@@ -105,9 +107,40 @@ public class VideoFragment extends Fragment{
                 cameraView.record();
             }
         });
+        flash = (ImageButton)getActivity().findViewById(R.id.flashOn);
+        flash.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view)
+            {
+                setFlash();
+            }
+        });
         //ImageView thumbnail = (ImageView)view.findViewById(R.id.thumbnail);
         //fetchMedia(thumbnail);
         return view;
+    }
+
+    boolean flashOn=false;
+    private void setFlash()
+    {
+        if(!flashOn)
+        {
+            Log.d(TAG,"Flash on");
+            if(cameraView.isFlashModeSupported(Camera.Parameters.FLASH_MODE_TORCH)) {
+                flashOn = true;
+                flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_off));
+            }
+            else{
+                Toast.makeText(getContext(),"Torch light not supported for this camera.",Toast.LENGTH_SHORT).show();
+            }
+        }
+        else
+        {
+            Log.d(TAG,"Flash off");
+            flashOn=false;
+            flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_on));
+        }
+        cameraView.flashOnOff(flashOn);
     }
 
     private void fetchMedia(ImageView thumbnail)

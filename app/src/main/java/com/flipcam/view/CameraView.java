@@ -295,6 +295,22 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         camera1.releaseCamera();
         openCameraAndStartPreview();
     }
+    public void flashOnOff(boolean flashOn)
+    {
+        if(flashOn)
+        {
+            camera1.setTorchLight();
+        }
+        else
+        {
+            camera1.setFlashOnOff(false);
+        }
+    }
+
+    public boolean isFlashModeSupported(String flashMode)
+    {
+        return camera1.isFlashModeSupported(flashMode);
+    }
 
     public void openCameraAndStartPreview()
     {

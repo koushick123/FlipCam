@@ -141,16 +141,6 @@ public class Camera1Manager implements CameraOperations {
     public boolean zoomInOrOut(int zoomInOrOut) {
         if(parameters.isZoomSupported())
         {
-            /*int currentZoom = parameters.getZoom();
-            int MAX_ZOOM = parameters.getMaxZoom();
-            if(zoomInOrOut && (currentZoom < MAX_ZOOM && currentZoom >= 0)){ //Zoom in
-                parameters.setZoom(++currentZoom);
-                Log.d(TAG,"New zoom in set to ="+currentZoom);
-            }
-            else if(!zoomInOrOut && (currentZoom <= MAX_ZOOM && currentZoom > 0)){ //Zoom out
-                parameters.setZoom(--currentZoom);
-                Log.d(TAG,"New zoom out set to ="+currentZoom);
-            }*/
             parameters.setZoom(zoomInOrOut);
             mCamera.setParameters(parameters);
             return true;
@@ -251,12 +241,14 @@ public class Camera1Manager implements CameraOperations {
         else{
             parameters.setFlashMode(Camera.Parameters.FLASH_MODE_ON);
         }
+        mCamera.setParameters(parameters);
     }
 
     //For video mode
     @Override
     public void setTorchLight() {
         parameters.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
+        mCamera.setParameters(parameters);
     }
 
     @Override
