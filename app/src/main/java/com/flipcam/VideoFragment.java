@@ -3,6 +3,7 @@ package com.flipcam;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
 import android.media.ThumbnailUtils;
 import android.net.Uri;
@@ -16,6 +17,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.SeekBar;
+import android.widget.Toast;
 
 import com.flipcam.view.CameraView;
 
@@ -50,7 +52,6 @@ public class VideoFragment extends Fragment{
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
     }
 
     @Override
@@ -62,14 +63,18 @@ public class VideoFragment extends Fragment{
         Log.d(TAG,"Inside video fragment");
         ImageView substitute = (ImageView)view.findViewById(R.id.substitute);
         substitute.setVisibility(View.INVISIBLE);
+        cameraView = (CameraView)view.findViewById(R.id.cameraSurfaceView);
         zoombar = (SeekBar)view.findViewById(R.id.zoomBar);
-        zoombar.setProgress(1);
-        //Log.d(TAG,"max zoom = "+cameraView.getMaxZoom());
-        //zoombar.setMax(cameraView.getMaxZoom());
+        zoombar.setProgressTintList(ColorStateList.valueOf(getResources().getColor(R.color.progressFill)));
+        cameraView.setSeekBar(zoombar);
+        zoombar.setProgress(0);
         zoombar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 Log.d(TAG,"progress = "+progress);
+                if(!cameraView.zoomInAndOut(progress)){
+                    Toast.makeText(getContext(),"Zoom not supported by your Camera.",Toast.LENGTH_SHORT).show();
+                }
             }
 
             @Override
@@ -185,15 +190,11 @@ public class VideoFragment extends Fragment{
         super.onDetach();
     }
 
-
-
     @Override
     public void onResume() {
         super.onResume();
         Log.d(TAG,"onResume");
     }
-
-
 
     @Override
     public void onDestroy() {

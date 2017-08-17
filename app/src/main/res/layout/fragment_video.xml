@@ -25,7 +25,10 @@
             android:id="@+id/zoomBar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="10dp" />
+            android:layout_marginBottom="10dp"
+            android:progressBackgroundTint="@color/settingsBarColor"
+            android:thumb="@drawable/greencircle"
+            />
 
         <LinearLayout
             android:id="@+id/videoFunctions"

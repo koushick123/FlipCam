@@ -21,7 +21,7 @@ public interface CameraOperations {
     //To set Resolution with windowmanager
     public void setResolution(int width,int height);
     //To set zoom
-    public boolean zoomInOrOut(boolean zoomInOrOut);
+    public boolean zoomInOrOut(int zoomInOrOut);
     //To get max zoom
     public int getMaxZoom();
     //To stop preview

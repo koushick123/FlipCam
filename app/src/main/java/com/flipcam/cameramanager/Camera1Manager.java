@@ -138,10 +138,10 @@ public class Camera1Manager implements CameraOperations {
     }
 
     @Override
-    public boolean zoomInOrOut(boolean zoomInOrOut) {
+    public boolean zoomInOrOut(int zoomInOrOut) {
         if(parameters.isZoomSupported())
         {
-            int currentZoom = parameters.getZoom();
+            /*int currentZoom = parameters.getZoom();
             int MAX_ZOOM = parameters.getMaxZoom();
             if(zoomInOrOut && (currentZoom < MAX_ZOOM && currentZoom >= 0)){ //Zoom in
                 parameters.setZoom(++currentZoom);
@@ -150,7 +150,8 @@ public class Camera1Manager implements CameraOperations {
             else if(!zoomInOrOut && (currentZoom <= MAX_ZOOM && currentZoom > 0)){ //Zoom out
                 parameters.setZoom(--currentZoom);
                 Log.d(TAG,"New zoom out set to ="+currentZoom);
-            }
+            }*/
+            parameters.setZoom(zoomInOrOut);
             mCamera.setParameters(parameters);
             return true;
         }

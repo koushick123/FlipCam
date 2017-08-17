@@ -26,6 +26,7 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.SeekBar;
 
 import com.flipcam.cameramanager.Camera1Manager;
 import com.flipcam.util.GLUtil;
@@ -267,18 +268,15 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         return configs[0];
     }
 
-    public void zoomIn()
+    public boolean zoomInAndOut(int progress)
     {
-        camera1.zoomInOrOut(true);
+        return camera1.zoomInOrOut(progress);
     }
 
-    public int getMaxZoom()
+    SeekBar seekBar;
+    public void setSeekBar(SeekBar seekBar)
     {
-        return camera1.getMaxZoom();
-    }
-    public void zoomOut()
-    {
-        camera1.zoomInOrOut(false);
+        this.seekBar = seekBar;
     }
 
     public void setLayoutAspectRatio()
@@ -356,6 +354,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             camera1.setFPS();
             setLayoutAspectRatio();
             camera1.startPreview(surfaceTexture);
+            this.seekBar.setMax(camera1.getMaxZoom());
+            Log.d(TAG,"Setting max zoom = "+camera1.getMaxZoom());
             if(camera1.isFocusModeSupported(Camera.Parameters.FOCUS_MODE_AUTO)) {
                 isFocusModeSupported=true;
             }

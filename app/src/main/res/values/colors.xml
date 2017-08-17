@@ -9,4 +9,6 @@
     <color name="permissionBackground">#000000</color>
     //Placeholder color for thumbnail
     <color name="thumbnailPlaceholder">#686565</color>
+    //Progress fill color for zoombar
+    <color name="progressFill">#4dc2a5</color>
 </resources>
