@@ -151,6 +151,11 @@ public class Camera1Manager implements CameraOperations {
         }
     }
 
+    public int getCurrentZoom()
+    {
+        return parameters.getZoom();
+    }
+
     @Override
     public int getMaxZoom() {
         return parameters.getMaxZoom();

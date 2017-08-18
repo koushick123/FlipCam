@@ -274,6 +274,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
 
     int measuredWidth = 640;
     int measuredHeight = 480;
+    int currentZoom = 0;
     public void switchCamera()
     {
         if(backCamera)
@@ -284,6 +285,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         {
             backCamera = true;
         }
+        currentZoom = camera1.getCurrentZoom();
         camera1.stopPreview();
         camera1.releaseCamera();
         openCameraAndStartPreview();
@@ -312,6 +314,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         camera1.setFPS();
         setLayoutAspectRatio();
         camera1.startPreview(surfaceTexture);
+        camera1.zoomInOrOut(currentZoom);
         this.seekBar.setMax(camera1.getMaxZoom());
         Log.d(TAG,"Setting max zoom = "+camera1.getMaxZoom());
         if(camera1.isFocusModeSupported(Camera.Parameters.FOCUS_MODE_AUTO)) {
@@ -335,6 +338,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         }
         else{
             cameraHandler.sendEmptyMessage(RECORD_STOP);
+            //Reset the RECORD Matrix to be portrait.
+            System.arraycopy(IDENTITY_MATRIX,0,RECORD_IDENTITY_MATRIX,0,IDENTITY_MATRIX.length);
+            //Reset Rotation angle
+            rotationAngle = 0f;
             isRecord=false;
             Toast.makeText(getContext(),"Record stopped",Toast.LENGTH_SHORT).show();
         }
@@ -369,6 +376,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     public void setLayoutAspectRatio()
     {
         // Set the preview aspect ratio.
+        requestLayout();
         ViewGroup.LayoutParams layoutParams = getLayoutParams();
         VIDEO_WIDTH = camera1.getPreviewSizes()[0];
         VIDEO_HEIGHT = camera1.getPreviewSizes()[1];
@@ -379,7 +387,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         layoutParams.width = VIDEO_WIDTH;
         Log.d(TAG,"LP Height = "+layoutParams.height);
         Log.d(TAG,"LP Width = "+layoutParams.width);
-        requestLayout();
         if(!portrait) {
             temp = VIDEO_HEIGHT;
             VIDEO_HEIGHT = VIDEO_WIDTH;
@@ -448,14 +455,12 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         if(!camera1.isCameraReady()) {
             measuredWidth = width;
             measuredHeight = height;
+            frameCount=0;
             openCameraAndStartPreview();
         }
-        surfaceTexture.setOnFrameAvailableListener(this);
-        //When recreate() is called, this is called again and recording needs to begin.
-        /*if(isRecord){
-            Log.d(TAG,"send record start");
-            cameraHandler.sendEmptyMessage(RECORD_START);
-        }*/
+        if(surfaceTexture!=null) {
+            surfaceTexture.setOnFrameAvailableListener(this);
+        }
     }
 
     @Override
@@ -482,6 +487,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             camera1.releaseCamera();
         }
         orientationEventListener.disable();
+        frameCount=0;
         releaseEGLSurface();
         releaseProgram();
         releaseEGLContext();
