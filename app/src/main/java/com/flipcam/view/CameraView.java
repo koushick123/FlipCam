@@ -3,6 +3,7 @@ package com.flipcam.view;
 import android.content.Context;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
+import android.hardware.SensorManager;
 import android.media.CamcorderProfile;
 import android.media.MediaRecorder;
 import android.opengl.EGL14;
@@ -14,19 +15,19 @@ import android.opengl.EGLSurface;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import android.opengl.Matrix;
-import android.os.Build;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.OrientationEventListener;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-import android.view.View;
 import android.view.ViewGroup;
 import android.widget.SeekBar;
+import android.widget.Toast;
 
 import com.flipcam.cameramanager.Camera1Manager;
 import com.flipcam.util.GLUtil;
@@ -102,15 +103,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         RECORD_IDENTITY_MATRIX = new float[16];
         Matrix.setIdentityM(RECORD_IDENTITY_MATRIX, 0);}
 
-    @Override
-    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        //Log.d(TAG,"Width = "+widthMeasureSpec+", Height = "+heightMeasureSpec);
-        Log.d(TAG,"onMeasure");
-        Log.d(TAG,"Width = "+View.MeasureSpec.getSize(widthMeasureSpec));
-        Log.d(TAG,"Height = "+View.MeasureSpec.getSize(heightMeasureSpec));
-        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-    }
-
     // Simple vertex shader, used for all programs.
     private static final String VERTEX_SHADER =
             "uniform mat4 uMVPMatrix;\n" +
@@ -141,7 +133,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     boolean VERBOSE=false;
     //Keep in portrait by default.
     boolean portrait=true;
-    int orientation = -1;
     float rotationAngle = 0.0f;
     boolean backCamera = true;
     volatile boolean isRecord = false;
@@ -151,6 +142,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     volatile int frameCnt=0;
     Camera1Manager camera1;
     boolean isFocusModeSupported=false;
+    int orientation = -1;
+    OrientationEventListener orientationEventListener;
     public CameraView(Context context, AttributeSet attrs) {
         super(context, attrs);
         Log.d(TAG,"start cameraview");
@@ -329,23 +322,48 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         }
     }
 
-    boolean change=true;
     public void record()
     {
-        ViewGroup.LayoutParams lp = getLayoutParams();
-        if(change){
-            Log.d(TAG,"111");
-            lp.width=640;
-            lp.height=480;
-            change=false;
+        if(!isRecord) {
+            determineOrientation();
+            Log.d(TAG,"Rot angle == "+rotationAngle+", portrait = "+portrait);
+            Matrix.rotateM(RECORD_IDENTITY_MATRIX, 0, rotationAngle , 0, 0, 1);
+            setLayoutAspectRatio();
+            cameraHandler.sendEmptyMessage(RECORD_START);
+            isRecord=true;
+            Toast.makeText(getContext(),"Record started",Toast.LENGTH_SHORT).show();
         }
         else{
-            Log.d(TAG,"222");
-            lp.width=352;
-            lp.height=288;
-            change=true;
+            cameraHandler.sendEmptyMessage(RECORD_STOP);
+            isRecord=false;
+            Toast.makeText(getContext(),"Record stopped",Toast.LENGTH_SHORT).show();
         }
-        setLayoutParams(lp);
+    }
+
+    public void determineOrientation() {
+
+        if(orientation != -1) {
+            if (((orientation >= 315 && orientation <= 359) || (orientation >= 0 && orientation <= 45)) || (orientation >= 135 && orientation <= 195)) {
+                if (orientation >= 135 && orientation <= 195) {
+                    rotationAngle = 180f;
+                } else {
+                    rotationAngle = 0f;
+                }
+                portrait = true;
+            } else {
+                if (orientation >= 46 && orientation <= 134) {
+                    rotationAngle = 270f;
+                } else {
+                    rotationAngle = 90f;
+                }
+                portrait = false;
+            }
+        }
+        else{
+            //This device is on a flat surface or parallel to the ground. Default to portrait.
+            portrait = true;
+            rotationAngle = 0f;
+        }
     }
 
     public void setLayoutAspectRatio()
@@ -361,6 +379,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         layoutParams.width = VIDEO_WIDTH;
         Log.d(TAG,"LP Height = "+layoutParams.height);
         Log.d(TAG,"LP Width = "+layoutParams.width);
+        requestLayout();
         if(!portrait) {
             temp = VIDEO_HEIGHT;
             VIDEO_HEIGHT = VIDEO_WIDTH;
@@ -411,6 +430,15 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         CameraRenderer cameraRenderer = new CameraRenderer();
         cameraRenderer.start();
         waitUntilReady();
+        orientationEventListener = new OrientationEventListener(getContext(), SensorManager.SENSOR_DELAY_UI){
+            @Override
+            public void onOrientationChanged(int i) {
+                if(orientationEventListener.canDetectOrientation()) {
+                    orientation = i;
+                }
+            }
+        };
+        orientationEventListener.enable();
     }
 
     @Override
@@ -424,10 +452,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         }
         surfaceTexture.setOnFrameAvailableListener(this);
         //When recreate() is called, this is called again and recording needs to begin.
-        if(isRecord){
+        /*if(isRecord){
             Log.d(TAG,"send record start");
             cameraHandler.sendEmptyMessage(RECORD_START);
-        }
+        }*/
     }
 
     @Override
@@ -453,7 +481,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             camera1.stopPreview();
             camera1.releaseCamera();
         }
-        //orientationEventListener.disable();
+        orientationEventListener.disable();
         releaseEGLSurface();
         releaseProgram();
         releaseEGLContext();
@@ -650,9 +678,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                encoderSurface = prepareWindowSurface(mediaRecorder.getSurface());
-            }
+            encoderSurface = prepareWindowSurface(mediaRecorder.getSurface());
         }
 
         private String getVideoFilePath() {
@@ -661,7 +687,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             {
                 dcim.mkdirs();
             }
-            String path = dcim.getPath()+"FC_VID_"+System.currentTimeMillis()+".mp4";
+            String path = dcim.getPath()+"/FC_VID_"+System.currentTimeMillis()+".mp4";
             Log.d(TAG,"Saving media file at = "+path);
             return path;
         }

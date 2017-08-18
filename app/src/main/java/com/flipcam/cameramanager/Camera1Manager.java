@@ -194,7 +194,7 @@ public class Camera1Manager implements CameraOperations {
         @Override
         public void onAutoFocus(boolean success, Camera camera) {
             if(success) {
-                Log.d(TAG,"auto focus set successfully");
+                //Log.d(TAG,"auto focus set successfully");
                 focused = success;
             }
         }
