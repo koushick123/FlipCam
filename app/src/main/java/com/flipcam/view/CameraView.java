@@ -263,6 +263,11 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         return configs[0];
     }
 
+    String mNextVideoAbsolutePath=null;
+    public String getMediaPath(){
+        return mNextVideoAbsolutePath;
+    }
+
     public boolean zoomInAndOut(int progress)
     {
         return camera1.zoomInOrOut(progress);
@@ -707,7 +712,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             return fb;
         }
 
-        String mNextVideoAbsolutePath = null;
         void setupMediaRecorder()
         {
             camcorderProfile = CamcorderProfile.get(camera1.getCameraId(),CamcorderProfile.QUALITY_HIGH);

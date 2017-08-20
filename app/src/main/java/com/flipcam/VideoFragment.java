@@ -18,6 +18,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.Toast;
 
@@ -25,7 +26,6 @@ import com.flipcam.view.CameraView;
 
 import java.io.File;
 
-import static android.os.Environment.getExternalStoragePublicDirectory;
 import static com.flipcam.PermissionActivity.FC_SHARED_PREFERENCE;
 
 
@@ -38,6 +38,9 @@ public class VideoFragment extends Fragment{
     ImageButton switchCamera;
     ImageButton startRecord;
     ImageButton flash;
+    ImageButton photoMode;
+    ImageView substitute;
+    ImageView thumbnail;
 
     public VideoFragment() {
         // Required empty public constructor
@@ -66,7 +69,7 @@ public class VideoFragment extends Fragment{
         View view = inflater.inflate(R.layout.fragment_video, container, false);
 
         Log.d(TAG,"Inside video fragment");
-        ImageView substitute = (ImageView)view.findViewById(R.id.substitute);
+        substitute = (ImageView)view.findViewById(R.id.substitute);
         substitute.setVisibility(View.INVISIBLE);
         cameraView = (CameraView)view.findViewById(R.id.cameraSurfaceView);
         zoombar = (SeekBar)view.findViewById(R.id.zoomBar);
@@ -97,20 +100,46 @@ public class VideoFragment extends Fragment{
 
             }
         });
+        thumbnail = (ImageView)view.findViewById(R.id.thumbnail);
+        thumbnail.setOnClickListener(new View.OnClickListener() {
+             @Override
+             public void onClick(View view) {
+                 fetchMedia(thumbnail);
+             }
+         });
+        photoMode = (ImageButton) view.findViewById(R.id.photoMode);
         switchCamera = (ImageButton)view.findViewById(R.id.switchCamera);
         switchCamera.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                startRecord.setClickable(false);
+                flash.setClickable(false);
+                photoMode.setClickable(false);
+                thumbnail.setClickable(false);
+
                 cameraView.switchCamera();
+
+                startRecord.setClickable(true);
+                flash.setClickable(true);
+                photoMode.setClickable(true);
+                thumbnail.setClickable(true);
             }
         });
         startRecord = (ImageButton)view.findViewById(R.id.cameraRecord);
+        final LinearLayout videoBar = (LinearLayout)view.findViewById(R.id.videoFunctions);
         startRecord.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                videoBar.removeView(startRecord);
+                videoBar.removeView(substitute);
+                videoBar.removeView(photoMode);
+                videoBar.removeView(thumbnail);
+                videoBar.removeView(switchCamera);
+                addStopAndPause(videoBar);
                 cameraView.record();
             }
         });
+
         flash = (ImageButton)getActivity().findViewById(R.id.flashOn);
         cameraView.setFlashButton(flash);
         flash.setOnClickListener(new View.OnClickListener(){
@@ -120,11 +149,43 @@ public class VideoFragment extends Fragment{
                 setFlash();
             }
         });
-        //ImageView thumbnail = (ImageView)view.findViewById(R.id.thumbnail);
-        //fetchMedia(thumbnail);
         return view;
     }
 
+    public void addStopAndPause(final LinearLayout videobar)
+    {
+        videobar.setBackgroundColor(getResources().getColor(R.color.transparentBar));
+        final ImageButton stopRecord;
+        final ImageButton pauseRecord;
+        pauseRecord = new ImageButton(getContext());
+        ViewGroup.MarginLayoutParams pauseLP = new ViewGroup.MarginLayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        pauseRecord.setLayoutParams(pauseLP);
+        pauseRecord.setBackgroundColor(getResources().getColor(R.color.transparentBar));
+        pauseRecord.setImageDrawable(getResources().getDrawable(R.drawable.record_pause));
+        stopRecord = new ImageButton(getContext());
+        stopRecord.setBackgroundColor(getResources().getColor(R.color.transparentBar));
+        stopRecord.setImageDrawable(getResources().getDrawable(R.drawable.record_stop));
+        ViewGroup.LayoutParams stopLP = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        stopLP.height=(int)getResources().getDimension(R.dimen.flashOnHeight);
+        stopLP.width=67;
+        stopRecord.setLayoutParams(stopLP);
+        stopRecord.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                cameraView.record();
+                videobar.setBackgroundColor(getResources().getColor(R.color.settingsBarColor));
+                videobar.removeView(stopRecord);
+                videobar.removeView(pauseRecord);
+                videobar.addView(substitute);
+                videobar.addView(switchCamera);
+                videobar.addView(startRecord);
+                videobar.addView(photoMode);
+                videobar.addView(thumbnail);
+            }
+        });
+        videobar.addView(stopRecord);
+        videobar.addView(pauseRecord);
+    }
     boolean flashOn=false;
     private void setFlash()
     {
@@ -170,44 +231,21 @@ public class VideoFragment extends Fragment{
             }
         }
         //Storing in public folder. This will ensure that the files are visible in other apps as well.
-        File root = getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
-        Log.d(TAG,root.getPath());
-        File fc = new File(root.getPath()+"/FlipCam");
-        if(!fc.exists()){
-            fc.mkdir();
-            Log.d(TAG,"FlipCam dir created");
-            File videos = new File(fc.getPath()+"/FC_Videos");
-            if(!videos.exists()){
-                videos.mkdir();
-                Log.d(TAG,"Videos dir created");
-            }
-            File images = new File(fc.getPath()+"/FC_Images");
-            if(!images.exists()){
-                images.mkdir();
-                Log.d(TAG,"Images dir created");
-            }
-        }
+        String videofilePath = cameraView.getMediaPath();
+
         //Use this for sharing files between apps
-        File videos = new File(root.getPath()+"/FlipCam/FC_Videos/");
-        if(videos.listFiles() != null){
-            Log.d(TAG,"List = "+videos.listFiles());
-            Log.d(TAG,"List length = "+videos.listFiles().length);
-            for(File file : videos.listFiles()){
-                Log.d(TAG,file.getPath());
-                /*final Bitmap img = BitmapFactory.decodeFile(file.getPath());
-                thumbnail.setImageBitmap(img.createScaledBitmap(img,68,68,false));*/
-                final String imgPath = file.getPath();
-                Bitmap vid = ThumbnailUtils.createVideoThumbnail(file.getPath(), MediaStore.Video.Thumbnails.MICRO_KIND);
-                thumbnail.setImageBitmap(vid.createScaledBitmap(vid,68,68,false));
-                thumbnail.setOnClickListener(new View.OnClickListener(){
-                    @Override
-                    public void onClick(View view)
-                    {
-                        openMedia(imgPath);
-                    }
-                });
-                break;
-            }
+        final File videos = new File(videofilePath);
+        if(videos.getName() != null){
+            Log.d(TAG,"Video file name = "+videos.getName());
+            Bitmap vid = ThumbnailUtils.createVideoThumbnail(videos.getPath(), MediaStore.Video.Thumbnails.MICRO_KIND);
+            thumbnail.setImageBitmap(vid.createScaledBitmap(vid,68,68,false));
+            thumbnail.setOnClickListener(new View.OnClickListener(){
+                @Override
+                public void onClick(View view)
+                {
+                    openMedia(videos.getPath());
+                }
+            });
         }
     }
 

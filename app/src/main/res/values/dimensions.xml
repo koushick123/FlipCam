@@ -7,4 +7,7 @@
     <dimen name="settingRightMargin">15dp</dimen>
     //Video fragment bar
     <dimen name="switchBtnLeftMargin">10dp</dimen>
+    //Stop button
+    <dimen name="stopButtonHeight">76dp</dimen>
+    <dimen name="stopButtonWidth">67dp</dimen>
 </resources>
