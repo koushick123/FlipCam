@@ -14,7 +14,7 @@ import java.util.List;
  * Created by Koushick on 02-08-2017.
  */
 
-public class Camera1Manager implements CameraOperations {
+public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeListener {
 
     private Camera mCamera;
     public final String TAG = "Camera1Manager";
@@ -50,6 +50,7 @@ public class Camera1Manager implements CameraOperations {
 
     @Override
     public void openCamera(boolean backCamera) {
+        int cameraId = -1;
         for(int i=0;i<Camera.getNumberOfCameras();i++)
         {
             Camera.getCameraInfo(i, info);
@@ -70,7 +71,12 @@ public class Camera1Manager implements CameraOperations {
                 }
             }
         }
-        parameters = mCamera.getParameters();
+        if(cameraId != -1) {
+            parameters = mCamera.getParameters();
+        }
+        else{
+            mCamera=null;
+        }
     }
 
     @Override
@@ -138,9 +144,16 @@ public class Camera1Manager implements CameraOperations {
     }
 
     @Override
+    public boolean isZoomSupported() {
+        return parameters.isZoomSupported();
+    }
+
+    @Override
     public boolean zoomInOrOut(int zoomInOrOut) {
-        if(parameters.isZoomSupported())
+        Log.d(TAG,"Current zoom = "+zoomInOrOut);
+        if(isZoomSupported() && zoomInOrOut >= 0 && zoomInOrOut <= parameters.getMaxZoom())
         {
+            Log.d(TAG,"Set Current zoom = "+zoomInOrOut);
             parameters.setZoom(zoomInOrOut);
             mCamera.setParameters(parameters);
             return true;
@@ -149,6 +162,21 @@ public class Camera1Manager implements CameraOperations {
         {
             return false;
         }
+    }
+
+    public boolean isSmoothZoomSupported()
+    {
+        Log.d(TAG,"smooth zoom = "+parameters.isSmoothZoomSupported());
+        if(parameters.isSmoothZoomSupported())
+        {
+            mCamera.setZoomChangeListener(this);
+        }
+        return parameters.isSmoothZoomSupported();
+    }
+
+    public void smoothZoomInOrOut(int zoomInOrOut)
+    {
+        mCamera.startSmoothZoom(zoomInOrOut);
     }
 
     public int getCurrentZoom()
@@ -249,6 +277,16 @@ public class Camera1Manager implements CameraOperations {
         mCamera.setParameters(parameters);
     }
 
+    @Override
+    public String getFlashMode() {
+        return mCamera.getParameters().getFlashMode();
+    }
+
+    @Override
+    public String getFocusMode() {
+        return mCamera.getParameters().getFocusMode();
+    }
+
     //For video mode
     @Override
     public void setTorchLight() {
@@ -265,4 +303,14 @@ public class Camera1Manager implements CameraOperations {
     public boolean isCameraReady() {
         return (mCamera != null);
     }
+
+    @Override
+    public void onZoomChange(int zoomvalue, boolean stopped, Camera camera) {
+        Log.d(TAG,"zoom value = "+zoomvalue);
+        if(!stopped) {
+            parameters.setZoom(zoomvalue);
+            mCamera.setParameters(parameters);
+        }
+    }
 }
+

@@ -76,15 +76,20 @@ public class VideoFragment extends Fragment{
         zoombar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                Log.d(TAG,"progress = "+progress);
-                if(!cameraView.zoomInAndOut(progress)){
-                    Toast.makeText(getContext(),"Zoom not supported by your Camera.",Toast.LENGTH_SHORT).show();
+                Log.d(TAG, "progress = " + progress);
+                if (cameraView.isSmoothZoomSupported()) {
+                    Log.d(TAG, "Smooth zoom supported");
+                    cameraView.smoothZoomInOrOut(progress);
+                } else if(cameraView.isZoomSupported()){
+                    cameraView.zoomInAndOut(progress);
                 }
             }
 
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
-
+                if(!cameraView.isSmoothZoomSupported() && !cameraView.isZoomSupported()) {
+                    Toast.makeText(getContext(), "Zoom not supported for this camera.", Toast.LENGTH_SHORT).show();
+                }
             }
 
             @Override
@@ -99,7 +104,6 @@ public class VideoFragment extends Fragment{
                 cameraView.switchCamera();
             }
         });
-
         startRecord = (ImageButton)view.findViewById(R.id.cameraRecord);
         startRecord.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -108,6 +112,7 @@ public class VideoFragment extends Fragment{
             }
         });
         flash = (ImageButton)getActivity().findViewById(R.id.flashOn);
+        cameraView.setFlashButton(flash);
         flash.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view)

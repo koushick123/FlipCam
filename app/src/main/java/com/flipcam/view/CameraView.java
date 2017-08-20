@@ -26,9 +26,11 @@ import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.SeekBar;
 import android.widget.Toast;
 
+import com.flipcam.R;
 import com.flipcam.cameramanager.Camera1Manager;
 import com.flipcam.util.GLUtil;
 
@@ -266,15 +268,36 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         return camera1.zoomInOrOut(progress);
     }
 
+    public boolean isZoomSupported()
+    {
+        return camera1.isZoomSupported();
+    }
+
+    public boolean isSmoothZoomSupported()
+    {
+        return camera1.isSmoothZoomSupported();
+    }
+
+    public void smoothZoomInOrOut(int zoom)
+    {
+        camera1.smoothZoomInOrOut(zoom);
+    }
     SeekBar seekBar;
     public void setSeekBar(SeekBar seekBar)
     {
         this.seekBar = seekBar;
     }
 
+    ImageButton flashBtn;
+    public void setFlashButton(ImageButton flashButton)
+    {
+        flashBtn = flashButton;
+    }
     int measuredWidth = 640;
     int measuredHeight = 480;
     int currentZoom = 0;
+    String focusMode = Camera.Parameters.FOCUS_MODE_AUTO;
+    String flashMode = Camera.Parameters.FLASH_MODE_OFF;
     public void switchCamera()
     {
         if(backCamera)
@@ -286,6 +309,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             backCamera = true;
         }
         currentZoom = camera1.getCurrentZoom();
+        focusMode = camera1.getFocusMode();
+        flashMode = camera1.getFlashMode();
         camera1.stopPreview();
         camera1.releaseCamera();
         openCameraAndStartPreview();
@@ -310,6 +335,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     public void openCameraAndStartPreview()
     {
         camera1.openCamera(backCamera);
+        if(!camera1.isCameraReady()){
+            Toast.makeText(getContext(),"Front facing camera not available in this device.",Toast.LENGTH_SHORT).show();
+            return;
+        }
         camera1.setResolution(measuredWidth, measuredHeight);
         camera1.setFPS();
         setLayoutAspectRatio();
@@ -317,11 +346,27 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         camera1.zoomInOrOut(currentZoom);
         this.seekBar.setMax(camera1.getMaxZoom());
         Log.d(TAG,"Setting max zoom = "+camera1.getMaxZoom());
+        //Set the focus mode of previous camera
         if(camera1.isFocusModeSupported(Camera.Parameters.FOCUS_MODE_AUTO)) {
-            isFocusModeSupported=true;
+            isFocusModeSupported = true;
         }
         else{
             isFocusModeSupported = false;
+        }
+        //Set the flash mode of previous camera
+        if(camera1.isFlashModeSupported(flashMode)){
+            if(flashMode.equalsIgnoreCase(Camera.Parameters.FLASH_MODE_OFF)) {
+                flashOnOff(false);
+                flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.flash_on));
+            }
+            else if(flashMode.equalsIgnoreCase(Camera.Parameters.FLASH_MODE_TORCH)){
+                flashOnOff(true);
+                flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.flash_off));
+            }
+        }
+        else{
+            Toast.makeText(getContext(),"Flash Mode "+flashMode+" not supported by this camera.",Toast.LENGTH_SHORT).show();
+            flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.flash_on));
         }
     }
 
@@ -721,8 +766,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 if(VERBOSE)Log.d(TAG, "Draw on screen...."+isRecording);
                 //Calls eglSwapBuffers.  Use this to "publish" the current frame.
                 EGL14.eglSwapBuffers(mEGLDisplay, eglSurface);
-                //Try to refocus after every 80 frames
-                if(isFocusModeSupported && frameCount%80 == 0) {
+                //Try to refocus after every 120 frames
+                if(isFocusModeSupported && frameCount%120 == 0) {
                     camera1.setAutoFocus(Camera.Parameters.FOCUS_MODE_AUTO);
                 }
 

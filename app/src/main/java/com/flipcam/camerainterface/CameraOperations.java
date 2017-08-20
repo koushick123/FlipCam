@@ -22,6 +22,12 @@ public interface CameraOperations {
     public void setResolution(int width,int height);
     //To set zoom
     public boolean zoomInOrOut(int zoomInOrOut);
+    //To check if smooth zoom is supported
+    public boolean isSmoothZoomSupported();
+    //To zoom in/out smoothly
+    public void smoothZoomInOrOut(int zoomInOrOut);
+    //To check if normal zoom is supported
+    public boolean isZoomSupported();
     //To get max zoom
     public int getMaxZoom();
     //To get current zoom
@@ -36,6 +42,10 @@ public interface CameraOperations {
     public void setAutoFlash();
     //To set flash on/off
     public void setFlashOnOff(boolean flashOn);
+    //To get current flash mode
+    public String getFlashMode();
+    //To get focus mode
+    public String getFocusMode();
     //To check if flash mode is supported
     public boolean isFlashModeSupported(String flashMode);
     //To check if focus mode is supported
