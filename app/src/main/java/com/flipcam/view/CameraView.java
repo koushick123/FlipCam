@@ -619,9 +619,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         {
             eglSurface = prepareWindowSurface(camSurfHolder.getSurface());
             makeCurrent(eglSurface);
-
             mProgramHandle = GLUtil.createProgram(VERTEX_SHADER, FRAGMENT_SHADER_EXT);
-
             maPositionLoc = GLES20.glGetAttribLocation(mProgramHandle, "aPosition");
             GLUtil.checkLocation(maPositionLoc, "aPosition");
             maTextureCoordLoc = GLES20.glGetAttribLocation(mProgramHandle, "aTextureCoord");
@@ -771,7 +769,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 //Calls eglSwapBuffers.  Use this to "publish" the current frame.
                 EGL14.eglSwapBuffers(mEGLDisplay, eglSurface);
                 //Try to refocus after every 120 frames
-                if(isFocusModeSupported && frameCount%120 == 0) {
+                if(isFocusModeSupported && !camera1.isAutoFocus() && recordStop != 1) {
                     camera1.setAutoFocus(Camera.Parameters.FOCUS_MODE_AUTO);
                 }
 
@@ -783,6 +781,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                             createFloatBuffer(FULL_RECTANGLE_TEX_COORDS), mTextureId, 2 * SIZEOF_FLOAT);
                     if (VERBOSE) Log.d(TAG, "Populated to encoder");
                     if (recordStop == -1) {
+                        camera1.setAutoFocus(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
                         mediaRecorder.start();
                         recordStop = 1;
                     }

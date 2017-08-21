@@ -13,6 +13,7 @@ import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.v4.app.Fragment;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -136,7 +137,7 @@ public class VideoFragment extends Fragment{
                 videoBar.removeView(thumbnail);
                 videoBar.removeView(switchCamera);
                 addStopAndPause(videoBar);
-                cameraView.record();
+                //cameraView.record();
             }
         });
 
@@ -154,28 +155,34 @@ public class VideoFragment extends Fragment{
 
     public void addStopAndPause(final LinearLayout videobar)
     {
+        videobar.setGravity(Gravity.CENTER_HORIZONTAL|Gravity.CENTER_VERTICAL);
         videobar.setBackgroundColor(getResources().getColor(R.color.transparentBar));
         final ImageButton stopRecord;
         final ImageButton pauseRecord;
+        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,LinearLayout.LayoutParams.WRAP_CONTENT);
+
+        layoutParams.setMargins(0,0,(int)getResources().getDimension(R.dimen.stopBtnRightMargin)+20,0);
         pauseRecord = new ImageButton(getContext());
-        ViewGroup.MarginLayoutParams pauseLP = new ViewGroup.MarginLayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        pauseRecord.setLayoutParams(pauseLP);
         pauseRecord.setBackgroundColor(getResources().getColor(R.color.transparentBar));
         pauseRecord.setImageDrawable(getResources().getDrawable(R.drawable.record_pause));
+
         stopRecord = new ImageButton(getContext());
+        stopRecord.setScaleType(ImageView.ScaleType.CENTER_CROP);
         stopRecord.setBackgroundColor(getResources().getColor(R.color.transparentBar));
         stopRecord.setImageDrawable(getResources().getDrawable(R.drawable.record_stop));
-        ViewGroup.LayoutParams stopLP = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        stopLP.height=(int)getResources().getDimension(R.dimen.flashOnHeight);
-        stopLP.width=67;
-        stopRecord.setLayoutParams(stopLP);
+
+        layoutParams.height=(int)getResources().getDimension(R.dimen.stopButtonHeight);
+        layoutParams.width=(int)getResources().getDimension(R.dimen.stopButtonWidth);
+        layoutParams.setMargins((int)getResources().getDimension(R.dimen.stopBtnLeftMargin),0,(int)getResources().getDimension(R.dimen.stopBtnRightMargin),0);
+        stopRecord.setLayoutParams(layoutParams);
         stopRecord.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                cameraView.record();
+                //cameraView.record();
                 videobar.setBackgroundColor(getResources().getColor(R.color.settingsBarColor));
                 videobar.removeView(stopRecord);
                 videobar.removeView(pauseRecord);
+                videobar.removeView(switchCamera);
                 videobar.addView(substitute);
                 videobar.addView(switchCamera);
                 videobar.addView(startRecord);
@@ -183,6 +190,8 @@ public class VideoFragment extends Fragment{
                 videobar.addView(thumbnail);
             }
         });
+        switchCamera.setBackgroundColor(getResources().getColor(R.color.transparentBar));
+        videobar.addView(switchCamera);
         videobar.addView(stopRecord);
         videobar.addView(pauseRecord);
     }
