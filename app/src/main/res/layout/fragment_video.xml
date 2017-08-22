@@ -84,6 +84,7 @@
                 android:layout_height="65dp"
                 android:layout_gravity="center_vertical"
                 android:layout_marginLeft="5dp"
+                android:layout_marginRight="5dp"
                 android:layout_weight="0.06"
                 android:background="@color/settingsBarColor"
                 android:src="@drawable/placeholder" />

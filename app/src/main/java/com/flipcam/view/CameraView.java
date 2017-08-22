@@ -318,6 +318,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         flashMode = camera1.getFlashMode();
         camera1.stopPreview();
         camera1.releaseCamera();
+        isFocusModeSupported = false;
         openCameraAndStartPreview();
     }
     public void flashOnOff(boolean flashOn)
@@ -352,11 +353,19 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         this.seekBar.setMax(camera1.getMaxZoom());
         Log.d(TAG,"Setting max zoom = "+camera1.getMaxZoom());
         //Set the focus mode of previous camera
-        if(camera1.isFocusModeSupported(Camera.Parameters.FOCUS_MODE_AUTO)) {
-            isFocusModeSupported = true;
+        if(!isRecord) {
+            if (camera1.isFocusModeSupported(Camera.Parameters.FOCUS_MODE_AUTO)) {
+                isFocusModeSupported = true;
+            } else {
+                isFocusModeSupported = false;
+            }
         }
         else{
-            isFocusModeSupported = false;
+            if (camera1.isFocusModeSupported(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO)) {
+                isFocusModeSupported = true;
+            } else {
+                isFocusModeSupported = false;
+            }
         }
         //Set the flash mode of previous camera
         if(camera1.isFlashModeSupported(flashMode)){
@@ -370,7 +379,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             }
         }
         else{
-            Toast.makeText(getContext(),"Flash Mode "+flashMode+" not supported by this camera.",Toast.LENGTH_SHORT).show();
+            if(flashMode != null && !flashMode.equalsIgnoreCase(Camera.Parameters.FLASH_MODE_OFF)) {
+                Toast.makeText(getContext(), "Flash Mode " + flashMode + " not supported by this camera.", Toast.LENGTH_SHORT).show();
+            }
             flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.flash_on));
         }
     }
@@ -768,7 +779,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 if(VERBOSE)Log.d(TAG, "Draw on screen...."+isRecording);
                 //Calls eglSwapBuffers.  Use this to "publish" the current frame.
                 EGL14.eglSwapBuffers(mEGLDisplay, eglSurface);
-                //Try to refocus after every 120 frames
+                //Try to refocus if focus is lost
                 if(isFocusModeSupported && !camera1.isAutoFocus() && recordStop != 1) {
                     camera1.setAutoFocus(Camera.Parameters.FOCUS_MODE_AUTO);
                 }

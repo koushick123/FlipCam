@@ -155,16 +155,16 @@ public class VideoFragment extends Fragment{
 
     public void addStopAndPause(final LinearLayout videobar)
     {
-        videobar.setGravity(Gravity.CENTER_HORIZONTAL|Gravity.CENTER_VERTICAL);
+        videobar.setGravity(Gravity.CENTER);
         videobar.setBackgroundColor(getResources().getColor(R.color.transparentBar));
         final ImageButton stopRecord;
         final ImageButton pauseRecord;
-        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,LinearLayout.LayoutParams.WRAP_CONTENT);
+        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,LinearLayout.LayoutParams.WRAP_CONTENT);
 
-        layoutParams.setMargins(0,0,(int)getResources().getDimension(R.dimen.stopBtnRightMargin)+20,0);
         pauseRecord = new ImageButton(getContext());
         pauseRecord.setBackgroundColor(getResources().getColor(R.color.transparentBar));
         pauseRecord.setImageDrawable(getResources().getDrawable(R.drawable.record_pause));
+        pauseRecord.setPadding(0,0,(int)getResources().getDimension(R.dimen.pauseBtnRightPadding),0);
 
         stopRecord = new ImageButton(getContext());
         stopRecord.setScaleType(ImageView.ScaleType.CENTER_CROP);

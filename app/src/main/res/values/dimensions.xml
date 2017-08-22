@@ -11,11 +11,13 @@
     <dimen name="stopButtonHeight">76dp</dimen>
     <dimen name="stopButtonWidth">67dp</dimen>
     //Stop button margin
-    <dimen name="stopBtnLeftMargin">25dp</dimen>
-    <dimen name="stopBtnRightMargin">25dp</dimen>
+    <dimen name="stopBtnLeftMargin">30dp</dimen>
+    <dimen name="stopBtnRightMargin">30dp</dimen>
     //Pause button margin
     <dimen name="pauseBtnLeftMargin">25dp</dimen>
     <dimen name="pauseBtnRightMargin">25dp</dimen>
+    //Pause button padding
+    <dimen name="pauseBtnRightPadding">10dp</dimen>
     //Switch camera button margin
     <dimen name="switchButtonLeftMargin">25dp</dimen>
 </resources>
