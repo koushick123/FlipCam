@@ -17,7 +17,7 @@
     <dimen name="pauseBtnLeftMargin">25dp</dimen>
     <dimen name="pauseBtnRightMargin">25dp</dimen>
     //Pause button padding
-    <dimen name="pauseBtnRightPadding">10dp</dimen>
+    <dimen name="pauseBtnRightPadding">15dp</dimen>
     //Switch camera button margin
     <dimen name="switchButtonLeftMargin">25dp</dimen>
 </resources>

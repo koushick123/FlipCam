@@ -11,6 +11,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.Gravity;
@@ -21,6 +22,7 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.flipcam.view.CameraView;
@@ -42,6 +44,10 @@ public class VideoFragment extends Fragment{
     ImageButton photoMode;
     ImageView substitute;
     ImageView thumbnail;
+    ImageButton settings;
+    LinearLayout videoBar;
+    LinearLayout settingsBar;
+    TextView timeElapsed;
 
     public VideoFragment() {
         // Required empty public constructor
@@ -61,6 +67,15 @@ public class VideoFragment extends Fragment{
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+    }
+
+    @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        Log.d(TAG,"onActivityCreated");
+        if(cameraView!=null) {
+            cameraView.setWindowManager(getActivity().getWindowManager());
+        }
     }
 
     @Override
@@ -127,7 +142,9 @@ public class VideoFragment extends Fragment{
             }
         });
         startRecord = (ImageButton)view.findViewById(R.id.cameraRecord);
-        final LinearLayout videoBar = (LinearLayout)view.findViewById(R.id.videoFunctions);
+        videoBar = (LinearLayout)view.findViewById(R.id.videoFunctions);
+        settingsBar = (LinearLayout)getActivity().findViewById(R.id.settingsBar);
+        settings = (ImageButton)getActivity().findViewById(R.id.settings);
         startRecord.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -136,8 +153,9 @@ public class VideoFragment extends Fragment{
                 videoBar.removeView(photoMode);
                 videoBar.removeView(thumbnail);
                 videoBar.removeView(switchCamera);
-                addStopAndPause(videoBar);
-                //cameraView.record();
+                addStopAndPauseIcons();
+                hideSettingsBarAndIcon();
+                cameraView.record();
             }
         });
 
@@ -153,10 +171,10 @@ public class VideoFragment extends Fragment{
         return view;
     }
 
-    public void addStopAndPause(final LinearLayout videobar)
+    public void addStopAndPauseIcons()
     {
-        videobar.setGravity(Gravity.CENTER);
-        videobar.setBackgroundColor(getResources().getColor(R.color.transparentBar));
+        videoBar.setGravity(Gravity.CENTER);
+        videoBar.setBackgroundColor(getResources().getColor(R.color.transparentBar));
         final ImageButton stopRecord;
         final ImageButton pauseRecord;
         LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -178,23 +196,45 @@ public class VideoFragment extends Fragment{
         stopRecord.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                //cameraView.record();
-                videobar.setBackgroundColor(getResources().getColor(R.color.settingsBarColor));
-                videobar.removeView(stopRecord);
-                videobar.removeView(pauseRecord);
-                videobar.removeView(switchCamera);
-                videobar.addView(substitute);
-                videobar.addView(switchCamera);
-                videobar.addView(startRecord);
-                videobar.addView(photoMode);
-                videobar.addView(thumbnail);
+                cameraView.record();
+                videoBar.setBackgroundColor(getResources().getColor(R.color.settingsBarColor));
+                videoBar.removeView(stopRecord);
+                videoBar.removeView(pauseRecord);
+                videoBar.removeView(switchCamera);
+                videoBar.addView(substitute);
+                videoBar.addView(switchCamera);
+                videoBar.addView(startRecord);
+                videoBar.addView(photoMode);
+                videoBar.addView(thumbnail);
+                settingsBar.removeView(timeElapsed);
+                settingsBar.addView(settings);
+                settingsBar.setBackgroundColor(getResources().getColor(R.color.settingsBarColor));
+                flash.setBackgroundColor(getResources().getColor(R.color.settingsBarColor));
             }
         });
         switchCamera.setBackgroundColor(getResources().getColor(R.color.transparentBar));
-        videobar.addView(switchCamera);
-        videobar.addView(stopRecord);
-        videobar.addView(pauseRecord);
+        videoBar.addView(switchCamera);
+        videoBar.addView(stopRecord);
+        videoBar.addView(pauseRecord);
     }
+
+    public void hideSettingsBarAndIcon()
+    {
+        settingsBar.setBackgroundColor(getResources().getColor(R.color.transparentBar));
+        settingsBar.removeView(settings);
+        settingsBar.removeView(flash);
+        settingsBar.addView(flash);
+        flash.setBackgroundColor(getResources().getColor(R.color.transparentBar));
+        timeElapsed = new TextView(getContext());
+        timeElapsed.setGravity(Gravity.CENTER);
+        timeElapsed.setTextColor(getResources().getColor(R.color.timeElapsed));
+        LinearLayout.LayoutParams timeElapParam = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        //timeElapParam.setMargins(0,2,5,0);
+        timeElapsed.setLayoutParams(timeElapParam);
+        settingsBar.addView(timeElapsed);
+        cameraView.setTimeElapsedText(timeElapsed);
+    }
+
     boolean flashOn=false;
     private void setFlash()
     {
