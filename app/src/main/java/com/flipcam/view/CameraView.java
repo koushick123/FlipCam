@@ -325,7 +325,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         {
             backCamera = true;
         }
-        currentZoom = camera1.getCurrentZoom();
         focusMode = camera1.getFocusMode();
         flashMode = camera1.getFlashMode();
         camera1.stopPreview();
@@ -361,7 +360,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         camera1.setFPS();
         setLayoutAspectRatio();
         camera1.startPreview(surfaceTexture);
-        camera1.zoomInOrOut(currentZoom);
         this.seekBar.setMax(camera1.getMaxZoom());
         Log.d(TAG,"Setting max zoom = "+camera1.getMaxZoom());
         //Set the focus mode of previous camera

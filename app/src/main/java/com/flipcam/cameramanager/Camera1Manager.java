@@ -83,6 +83,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     public void releaseCamera() {
         mCamera.release();
         mCamera = null;
+        zoomChangeListener = false;
     }
 
     @Override
@@ -164,12 +165,15 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         }
     }
 
+    boolean zoomChangeListener = false;
     public boolean isSmoothZoomSupported()
     {
         Log.d(TAG,"smooth zoom = "+parameters.isSmoothZoomSupported());
-        if(parameters.isSmoothZoomSupported())
+        //Add a zoomchangelistener flag so that it is not set every time this is called
+        if(parameters.isSmoothZoomSupported() && !zoomChangeListener)
         {
             mCamera.setZoomChangeListener(this);
+            zoomChangeListener = true;
         }
         return parameters.isSmoothZoomSupported();
     }
@@ -177,11 +181,6 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     public void smoothZoomInOrOut(int zoomInOrOut)
     {
         mCamera.startSmoothZoom(zoomInOrOut);
-    }
-
-    public int getCurrentZoom()
-    {
-        return parameters.getZoom();
     }
 
     @Override
@@ -308,8 +307,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     public void onZoomChange(int zoomvalue, boolean stopped, Camera camera) {
         Log.d(TAG,"zoom value = "+zoomvalue);
         if(!stopped) {
-            parameters.setZoom(zoomvalue);
-            mCamera.setParameters(parameters);
+            camera.getParameters().setZoom(zoomvalue);
         }
     }
 }

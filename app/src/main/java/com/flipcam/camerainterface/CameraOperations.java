@@ -30,8 +30,6 @@ public interface CameraOperations {
     public boolean isZoomSupported();
     //To get max zoom
     public int getMaxZoom();
-    //To get current zoom
-    public int getCurrentZoom();
     //To stop preview
     public void stopPreview();
     //To set auto focus

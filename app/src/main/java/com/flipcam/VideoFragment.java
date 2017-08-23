@@ -135,6 +135,7 @@ public class VideoFragment extends Fragment{
 
                 cameraView.switchCamera();
 
+                zoombar.setProgress(0);
                 startRecord.setClickable(true);
                 flash.setClickable(true);
                 photoMode.setClickable(true);
@@ -246,7 +247,7 @@ public class VideoFragment extends Fragment{
                 flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_off));
             }
             else{
-                Toast.makeText(getContext(),"Torch light not supported for this camera.",Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(),"Flash Mode " + Camera.Parameters.FLASH_MODE_TORCH + " not supported by this camera.",Toast.LENGTH_SHORT).show();
             }
         }
         else
