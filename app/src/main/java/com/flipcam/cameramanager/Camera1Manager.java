@@ -244,6 +244,12 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     }
 
     @Override
+    public void setFocusMode(String focusMode) {
+        parameters.setFocusMode(focusMode);
+        mCamera.setParameters(parameters);
+    }
+
+    @Override
     public void setAutoFlash() {
         parameters.setFlashMode(Camera.Parameters.FLASH_MODE_AUTO);
     }

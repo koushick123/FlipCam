@@ -20,4 +20,6 @@
     <dimen name="pauseBtnRightPadding">15dp</dimen>
     //Switch camera button margin
     <dimen name="switchButtonLeftMargin">25dp</dimen>
+    //Top margin for time elapsed and memory texts
+    <dimen name="timeAndMemTopMargin">15dp</dimen>
 </resources>

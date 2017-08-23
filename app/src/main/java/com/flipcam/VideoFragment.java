@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
+import android.graphics.Typeface;
 import android.hardware.Camera;
 import android.media.ThumbnailUtils;
 import android.net.Uri;
@@ -48,6 +49,7 @@ public class VideoFragment extends Fragment{
     LinearLayout videoBar;
     LinearLayout settingsBar;
     TextView timeElapsed;
+    TextView memoryConsumed;
 
     public VideoFragment() {
         // Required empty public constructor
@@ -174,7 +176,6 @@ public class VideoFragment extends Fragment{
 
     public void addStopAndPauseIcons()
     {
-        videoBar.setGravity(Gravity.CENTER);
         videoBar.setBackgroundColor(getResources().getColor(R.color.transparentBar));
         final ImageButton stopRecord;
         final ImageButton pauseRecord;
@@ -208,6 +209,23 @@ public class VideoFragment extends Fragment{
                 videoBar.addView(photoMode);
                 videoBar.addView(thumbnail);
                 settingsBar.removeView(timeElapsed);
+                settingsBar.removeView(memoryConsumed);
+                settingsBar.removeView(flash);
+                flash = new ImageButton(getActivity());
+                flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_on));
+                LinearLayout.LayoutParams flashParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                flashParams.weight=0.5f;
+                flashParams.gravity=Gravity.CENTER;
+                flash.setLayoutParams(flashParams);
+                flash.setOnClickListener(new View.OnClickListener(){
+                    @Override
+                    public void onClick(View view)
+                    {
+                        setFlash();
+                    }
+                });
+                cameraView.setFlashButton(flash);
+                settingsBar.addView(flash);
                 settingsBar.addView(settings);
                 settingsBar.setBackgroundColor(getResources().getColor(R.color.settingsBarColor));
                 flash.setBackgroundColor(getResources().getColor(R.color.settingsBarColor));
@@ -224,16 +242,47 @@ public class VideoFragment extends Fragment{
         settingsBar.setBackgroundColor(getResources().getColor(R.color.transparentBar));
         settingsBar.removeView(settings);
         settingsBar.removeView(flash);
-        settingsBar.addView(flash);
+        flash = new ImageButton(getActivity());
+        flash.setImageDrawable(getResources().getDrawable(R.drawable.flashon));
+        flash.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view)
+            {
+                setFlash();
+            }
+        });
+        LinearLayout.LayoutParams flashParam = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        flashParam.weight=0.3f;
+        flash.setLayoutParams(flashParam);
         flash.setBackgroundColor(getResources().getColor(R.color.transparentBar));
-        timeElapsed = new TextView(getContext());
-        timeElapsed.setGravity(Gravity.CENTER);
+        settingsBar.addView(flash);
+        cameraView.setFlashButton(flash);
+
+        //Add time elapsed text
+        timeElapsed = new TextView(getActivity());
+        timeElapsed.setGravity(Gravity.CENTER_HORIZONTAL);
+        timeElapsed.setTypeface(Typeface.DEFAULT_BOLD);
+        timeElapsed.setBackgroundColor(getResources().getColor(R.color.transparentBar));
         timeElapsed.setTextColor(getResources().getColor(R.color.timeElapsed));
-        LinearLayout.LayoutParams timeElapParam = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        //timeElapParam.setMargins(0,2,5,0);
+        LinearLayout.LayoutParams timeElapParam = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        timeElapParam.setMargins(0,(int)getResources().getDimension(R.dimen.timeAndMemTopMargin),0,0);
+        timeElapParam.weight=0.3f;
         timeElapsed.setLayoutParams(timeElapParam);
         settingsBar.addView(timeElapsed);
         cameraView.setTimeElapsedText(timeElapsed);
+
+        //Add memory consumed text
+        memoryConsumed = new TextView(getActivity());
+        memoryConsumed.setGravity(Gravity.CENTER_HORIZONTAL);
+        memoryConsumed.setTextColor(getResources().getColor(R.color.memoryConsumed));
+        memoryConsumed.setTypeface(Typeface.DEFAULT_BOLD);
+        memoryConsumed.setBackgroundColor(getResources().getColor(R.color.transparentBar));
+        memoryConsumed.setText("1000K");
+        LinearLayout.LayoutParams memConsumed = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        memConsumed.setMargins(0,(int)getResources().getDimension(R.dimen.timeAndMemTopMargin),0,0);
+        memConsumed.weight=0.3f;
+        memoryConsumed.setLayoutParams(memConsumed);
+        settingsBar.addView(memoryConsumed);
     }
 
     boolean flashOn=false;

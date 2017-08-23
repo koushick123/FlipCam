@@ -4,6 +4,9 @@ import android.content.Context;
 import android.graphics.Point;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.media.CamcorderProfile;
 import android.media.MediaRecorder;
@@ -45,11 +48,13 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 
+import static android.content.Context.SENSOR_SERVICE;
+
 /**
  * Created by Koushick on 15-08-2017.
  */
 
-public class CameraView extends SurfaceView implements SurfaceHolder.Callback, SurfaceTexture.OnFrameAvailableListener {
+public class CameraView extends SurfaceView implements SurfaceHolder.Callback, SurfaceTexture.OnFrameAvailableListener, SensorEventListener {
 
     public static final String TAG = "CameraView";
     private static int VIDEO_WIDTH = 640;  // dimensions for VGA
@@ -113,16 +118,45 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     //Default display sizes in case windowManager is not able to return screen size.
     int measuredWidth = 800;
     int measuredHeight = 600;
-    int currentZoom = 0;
     String focusMode = Camera.Parameters.FOCUS_MODE_AUTO;
     String flashMode = Camera.Parameters.FLASH_MODE_OFF;
     ImageButton flashBtn;
+    private final SensorManager mSensorManager;
+    private final Sensor mAccelerometer;
+    long previousTime = 0;
+    float sensorValues[] = new float[3];
 
     public CameraView(Context context, AttributeSet attrs) {
         super(context, attrs);
         Log.d(TAG,"start cameraview");
         getHolder().addCallback(this);
         camera1 = Camera1Manager.getInstance();
+        mSensorManager = (SensorManager)getContext().getSystemService(SENSOR_SERVICE);
+        mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+    }
+
+    @Override
+    public void onSensorChanged(SensorEvent sensorEvent) {
+
+        //Use accelerometer to check if the device is moving among the x,y or z axes every half second. This means the user is moving the camera and
+        //trying to refocus.
+        if(Math.abs(System.currentTimeMillis() - previousTime) >= 500){
+            if(Math.abs(sensorEvent.values[0]-sensorValues[0]) > 0 || Math.abs(sensorEvent.values[1]-sensorValues[1]) > 0
+                    || Math.abs(sensorEvent.values[2]-sensorValues[2]) > 0) {
+                Log.d(TAG, "onSensorChanged x =" + sensorEvent.values[0]);
+                Log.d(TAG, "onSensorChanged y =" + sensorEvent.values[1]);
+                Log.d(TAG, "onSensorChanged z =" + sensorEvent.values[2]);
+                sensorValues[0] = sensorEvent.values[0];
+                sensorValues[1] = sensorEvent.values[1];
+                sensorValues[2] = sensorEvent.values[2];
+            }
+            previousTime = System.currentTimeMillis();
+        }
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+        Log.d(TAG,"onAccuracyChanged");
     }
 
     class MainHandler extends Handler {
@@ -140,7 +174,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             {
                 case Constants.SHOW_ELAPSED_TIME:
                     //displayComplete();
-                    Log.d(TAG,"show time now");
+                    if(VERBOSE)Log.d(TAG,"show time now");
                     camView.showTimeElapsed();
                     break;
             }
@@ -283,7 +317,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
 
     public void showTimeElapsed()
     {
-        Log.d(TAG,"displaying time = "+second);
+        if(VERBOSE)Log.d(TAG,"displaying time = "+second);
         String showSec = "0";
         String showMin = "0";
         String showHr = "0";
@@ -362,37 +396,49 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         camera1.startPreview(surfaceTexture);
         this.seekBar.setMax(camera1.getMaxZoom());
         Log.d(TAG,"Setting max zoom = "+camera1.getMaxZoom());
-        //Set the focus mode of previous camera
-        if(!isRecord) {
-            if (camera1.isFocusModeSupported(Camera.Parameters.FOCUS_MODE_AUTO)) {
-                isFocusModeSupported = true;
-            } else {
-                isFocusModeSupported = false;
+        //Set the focus mode to continuous focus if recording in progress
+        if(isRecord)
+        {
+            if (camera1.isFocusModeSupported(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO)) {
+                camera1.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
             }
         }
         else{
-            if (camera1.isFocusModeSupported(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO)) {
-                isFocusModeSupported = true;
-            } else {
-                isFocusModeSupported = false;
+            if (camera1.isFocusModeSupported(Camera.Parameters.FOCUS_MODE_AUTO)) {
+                camera1.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
             }
         }
         //Set the flash mode of previous camera
         if(camera1.isFlashModeSupported(flashMode)){
             if(flashMode.equalsIgnoreCase(Camera.Parameters.FLASH_MODE_OFF)) {
                 flashOnOff(false);
-                flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.flash_on));
+                if(!isRecord) {
+                    flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.flash_on));
+                }
+                else{
+                    flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.flashon));
+                }
             }
             else if(flashMode.equalsIgnoreCase(Camera.Parameters.FLASH_MODE_TORCH)){
                 flashOnOff(true);
-                flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.flash_off));
+                if(!isRecord) {
+                    flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.flash_off));
+                }
+                else{
+                    flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.flashoff));
+                }
             }
         }
         else{
             if(flashMode != null && !flashMode.equalsIgnoreCase(Camera.Parameters.FLASH_MODE_OFF)) {
                 Toast.makeText(getContext(), "Flash Mode " + flashMode + " not supported by this camera.", Toast.LENGTH_SHORT).show();
             }
-            flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.flash_on));
+            if(!isRecord) {
+                flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.flash_on));
+            }
+            else{
+                flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.flashon));
+            }
         }
     }
 
@@ -414,6 +460,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         }
         else{
             isRecord=false;
+            if (camera1.isFocusModeSupported(Camera.Parameters.FOCUS_MODE_AUTO)) {
+                camera1.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
+            }
             //timeElapsedHandler.sendEmptyMessage(Constants.STOP_TIMER);
             /*cameraHandler.sendEmptyMessage(Constants.RECORD_STOP);
             //Reset the RECORD Matrix to be portrait.
@@ -523,6 +572,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             }
         };
         orientationEventListener.enable();
+        mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
     }
 
     @Override
@@ -564,6 +614,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             camera1.releaseCamera();
         }
         orientationEventListener.disable();
+        mSensorManager.unregisterListener(this);
         frameCount=0;
         releaseEGLSurface();
         releaseProgram();
@@ -795,10 +846,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 if(VERBOSE)Log.d(TAG, "Draw on screen...."+isRecording);
                 //Calls eglSwapBuffers.  Use this to "publish" the current frame.
                 EGL14.eglSwapBuffers(mEGLDisplay, eglSurface);
-                //Try to refocus if focus is lost
-                if(isFocusModeSupported && !camera1.isAutoFocus() && recordStop != 1) {
-                    camera1.setAutoFocus(Camera.Parameters.FOCUS_MODE_AUTO);
-                }
 
                 if(isRecording) {
                     makeCurrent(encoderSurface);
@@ -808,7 +855,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                             createFloatBuffer(GLUtil.FULL_RECTANGLE_TEX_COORDS), mTextureId, 2 * SIZEOF_FLOAT);
                     if (VERBOSE) Log.d(TAG, "Populated to encoder");
                     if (recordStop == -1) {
-                        camera1.setAutoFocus(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
+                        if (camera1.isFocusModeSupported(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO)) {
+                            camera1.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
+                        }
                         mediaRecorder.start();
                         recordStop = 1;
                     }
@@ -911,18 +960,18 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             while(isRecord) {
                 if(second < 59) {
                     second++;
-                    Log.d(TAG,"second = "+second);
+                    if(VERBOSE)Log.d(TAG,"second = "+second);
                 }
                 else if(minute < 59){
                     second = 0;
                     minute++;
-                    Log.d(TAG,"minute = "+minute);
+                    if(VERBOSE)Log.d(TAG,"minute = "+minute);
                 }
                 else{
                     second = 0;
                     minute = 0;
                     hour++;
-                    Log.d(TAG,"hour = "+hour);
+                    if(VERBOSE)Log.d(TAG,"hour = "+hour);
                 }
                 mainHandler.sendEmptyMessage(Constants.SHOW_ELAPSED_TIME);
                 try {

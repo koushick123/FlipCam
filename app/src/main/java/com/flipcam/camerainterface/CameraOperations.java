@@ -34,6 +34,8 @@ public interface CameraOperations {
     public void stopPreview();
     //To set auto focus
     public void setAutoFocus(String focusMode);
+    //To set a particular focus mode
+    public void setFocusMode(String focusMode);
     //To start preview
     public void startPreview(SurfaceTexture surfaceTexture);
     //To set auto flash
