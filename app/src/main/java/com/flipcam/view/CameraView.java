@@ -125,6 +125,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     private final Sensor mAccelerometer;
     long previousTime = 0;
     float sensorValues[] = new float[3];
+    boolean autoFocus = false;
 
     public CameraView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -141,14 +142,15 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         //Use accelerometer to check if the device is moving among the x,y or z axes every half second. This means the user is moving the camera and
         //trying to refocus.
         if(Math.abs(System.currentTimeMillis() - previousTime) >= 500){
-            if(Math.abs(sensorEvent.values[0]-sensorValues[0]) > 0 || Math.abs(sensorEvent.values[1]-sensorValues[1]) > 0
-                    || Math.abs(sensorEvent.values[2]-sensorValues[2]) > 0) {
+            if(Math.abs(sensorEvent.values[0]-sensorValues[0]) > 0.5 || Math.abs(sensorEvent.values[1]-sensorValues[1]) > 0.5
+                    || Math.abs(sensorEvent.values[2]-sensorValues[2]) > 0.5) {
                 Log.d(TAG, "onSensorChanged x =" + sensorEvent.values[0]);
                 Log.d(TAG, "onSensorChanged y =" + sensorEvent.values[1]);
                 Log.d(TAG, "onSensorChanged z =" + sensorEvent.values[2]);
                 sensorValues[0] = sensorEvent.values[0];
                 sensorValues[1] = sensorEvent.values[1];
                 sensorValues[2] = sensorEvent.values[2];
+                camera1.setAutoFocus();
             }
             previousTime = System.currentTimeMillis();
         }
@@ -315,6 +317,21 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         timeElapsed = timeElapsedText;
     }
 
+    public boolean isRecording()
+    {
+        return isRecord;
+    }
+
+    public boolean isFlashOn()
+    {
+        if(camera1.getFlashMode().equalsIgnoreCase(Camera.Parameters.FLASH_MODE_OFF)){
+            return false;
+        }
+        else{
+            return true;
+        }
+    }
+
     public void showTimeElapsed()
     {
         if(VERBOSE)Log.d(TAG,"displaying time = "+second);
@@ -455,6 +472,11 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             isReady = false;
             waitUntilReady();
             timeElapsedHandler.sendEmptyMessage(Constants.START_TIMER);
+            orientationEventListener.disable();
+            if(autoFocus) {
+                mSensorManager.unregisterListener(this);
+                camera1.cancelAutoFocus();
+            }
             //cameraHandler.sendEmptyMessage(Constants.RECORD_START);
             Toast.makeText(getContext(),"Record started",Toast.LENGTH_SHORT).show();
         }
@@ -463,6 +485,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             if (camera1.isFocusModeSupported(Camera.Parameters.FOCUS_MODE_AUTO)) {
                 camera1.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
             }
+            if(autoFocus) {
+                mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+            }
+            orientationEventListener.enable();
             //timeElapsedHandler.sendEmptyMessage(Constants.STOP_TIMER);
             /*cameraHandler.sendEmptyMessage(Constants.RECORD_STOP);
             //Reset the RECORD Matrix to be portrait.
@@ -572,7 +598,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             }
         };
         orientationEventListener.enable();
-        mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
     }
 
     @Override
@@ -584,6 +609,13 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             measuredHeight = height;
             frameCount=0;
             openCameraAndStartPreview();
+        }
+        if(camera1.isFocusModeSupported(Camera.Parameters.FOCUS_MODE_AUTO)){
+            autoFocus = true;
+            mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+        }
+        else{
+            autoFocus = false;
         }
         if(surfaceTexture!=null) {
             surfaceTexture.setOnFrameAvailableListener(this);

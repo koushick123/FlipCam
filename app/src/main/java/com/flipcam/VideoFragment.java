@@ -243,7 +243,22 @@ public class VideoFragment extends Fragment{
         settingsBar.removeView(settings);
         settingsBar.removeView(flash);
         flash = new ImageButton(getActivity());
-        flash.setImageDrawable(getResources().getDrawable(R.drawable.flashon));
+        if(cameraView.isRecording()){
+            if(cameraView.isFlashOn()) {
+                flash.setImageDrawable(getResources().getDrawable(R.drawable.flashoff));
+            }
+            else{
+                flash.setImageDrawable(getResources().getDrawable(R.drawable.flashon));
+            }
+        }
+        else{
+            if(cameraView.isFlashOn()) {
+                flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_off));
+            }
+            else{
+                flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_on));
+            }
+        }
         flash.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view)
@@ -293,7 +308,12 @@ public class VideoFragment extends Fragment{
             Log.d(TAG,"Flash on");
             if(cameraView.isFlashModeSupported(Camera.Parameters.FLASH_MODE_TORCH)) {
                 flashOn = true;
-                flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_off));
+                if(!cameraView.isRecording()) {
+                    flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_off));
+                }
+                else{
+                    flash.setImageDrawable(getResources().getDrawable(R.drawable.flashoff));
+                }
             }
             else{
                 Toast.makeText(getContext(),"Flash Mode " + Camera.Parameters.FLASH_MODE_TORCH + " not supported by this camera.",Toast.LENGTH_SHORT).show();
@@ -303,7 +323,12 @@ public class VideoFragment extends Fragment{
         {
             Log.d(TAG,"Flash off");
             flashOn=false;
-            flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_on));
+            if(!cameraView.isRecording()) {
+                flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_on));
+            }
+            else{
+                flash.setImageDrawable(getResources().getDrawable(R.drawable.flashon));
+            }
         }
         cameraView.flashOnOff(flashOn);
     }

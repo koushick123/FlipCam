@@ -238,8 +238,12 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     }
 
     @Override
-    public void setAutoFocus(String focus){
-        parameters.setFocusMode(focus);
+    public void cancelAutoFocus() {
+        mCamera.cancelAutoFocus();
+    }
+
+    @Override
+    public void setAutoFocus(){
         mCamera.autoFocus(autoFocusCallback);
     }
 
