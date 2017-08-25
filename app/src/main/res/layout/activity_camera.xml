@@ -21,16 +21,16 @@
         android:id="@+id/settingsBar"
         android:background="@color/settingsBarColor"
         >
+
         <ImageButton
+            android:id="@+id/flashOn"
             android:layout_width="@dimen/flashOnWidth"
             android:layout_height="@dimen/flashOnHeight"
-            android:id="@+id/flashOn"
-            android:layout_marginLeft="@dimen/flashOnLeftMargin"
             android:layout_gravity="center"
+            android:layout_marginLeft="@dimen/flashOnLeftMargin"
             android:layout_weight="0.5"
             android:background="@color/settingsBarColor"
-            android:src="@drawable/flash_on"
-            />
+            android:src="@drawable/flash_on" />
 
         <ImageButton
             android:id="@+id/settings"

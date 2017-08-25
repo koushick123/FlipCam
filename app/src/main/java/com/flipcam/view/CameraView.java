@@ -317,14 +317,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         timeElapsed = timeElapsedText;
     }
 
-    public boolean isRecording()
-    {
-        return isRecord;
-    }
-
     public boolean isFlashOn()
     {
-        if(camera1.getFlashMode().equalsIgnoreCase(Camera.Parameters.FLASH_MODE_OFF)){
+        if(camera1.getFlashMode() == null || camera1.getFlashMode().equalsIgnoreCase(Camera.Parameters.FLASH_MODE_OFF)){
             return false;
         }
         else{
@@ -429,33 +424,18 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         if(camera1.isFlashModeSupported(flashMode)){
             if(flashMode.equalsIgnoreCase(Camera.Parameters.FLASH_MODE_OFF)) {
                 flashOnOff(false);
-                if(!isRecord) {
-                    flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.flash_on));
-                }
-                else{
-                    flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.flashon));
-                }
+                flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.flash_on));
             }
             else if(flashMode.equalsIgnoreCase(Camera.Parameters.FLASH_MODE_TORCH)){
                 flashOnOff(true);
-                if(!isRecord) {
-                    flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.flash_off));
-                }
-                else{
-                    flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.flashoff));
-                }
+                flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.flash_off));
             }
         }
         else{
             if(flashMode != null && !flashMode.equalsIgnoreCase(Camera.Parameters.FLASH_MODE_OFF)) {
                 Toast.makeText(getContext(), "Flash Mode " + flashMode + " not supported by this camera.", Toast.LENGTH_SHORT).show();
             }
-            if(!isRecord) {
-                flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.flash_on));
-            }
-            else{
-                flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.flashon));
-            }
+            flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.flash_on));
         }
     }
 
@@ -483,7 +463,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         else{
             isRecord=false;
             if (camera1.isFocusModeSupported(Camera.Parameters.FOCUS_MODE_AUTO)) {
-                camera1.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
+                //camera1.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
             }
             if(autoFocus) {
                 mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);

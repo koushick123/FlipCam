@@ -212,9 +212,17 @@ public class VideoFragment extends Fragment{
                 settingsBar.removeView(memoryConsumed);
                 settingsBar.removeView(flash);
                 flash = new ImageButton(getActivity());
-                flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_on));
+                if(cameraView.isFlashOn()) {
+                    flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_off));
+                }
+                else{
+                    flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_on));
+                }
                 LinearLayout.LayoutParams flashParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
                 flashParams.weight=0.5f;
+                flashParams.height = (int)getResources().getDimension(R.dimen.flashOnHeight);
+                flashParams.width = (int)getResources().getDimension(R.dimen.flashOnWidth);
+                flashParams.setMargins((int)getResources().getDimension(R.dimen.flashOnLeftMargin),0,0,0);
                 flashParams.gravity=Gravity.CENTER;
                 flash.setLayoutParams(flashParams);
                 flash.setOnClickListener(new View.OnClickListener(){
@@ -243,21 +251,11 @@ public class VideoFragment extends Fragment{
         settingsBar.removeView(settings);
         settingsBar.removeView(flash);
         flash = new ImageButton(getActivity());
-        if(cameraView.isRecording()){
-            if(cameraView.isFlashOn()) {
-                flash.setImageDrawable(getResources().getDrawable(R.drawable.flashoff));
-            }
-            else{
-                flash.setImageDrawable(getResources().getDrawable(R.drawable.flashon));
-            }
+        if(cameraView.isFlashOn()) {
+            flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_off));
         }
         else{
-            if(cameraView.isFlashOn()) {
-                flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_off));
-            }
-            else{
-                flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_on));
-            }
+            flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_on));
         }
         flash.setOnClickListener(new View.OnClickListener(){
             @Override
@@ -308,12 +306,7 @@ public class VideoFragment extends Fragment{
             Log.d(TAG,"Flash on");
             if(cameraView.isFlashModeSupported(Camera.Parameters.FLASH_MODE_TORCH)) {
                 flashOn = true;
-                if(!cameraView.isRecording()) {
-                    flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_off));
-                }
-                else{
-                    flash.setImageDrawable(getResources().getDrawable(R.drawable.flashoff));
-                }
+                flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_off));
             }
             else{
                 Toast.makeText(getContext(),"Flash Mode " + Camera.Parameters.FLASH_MODE_TORCH + " not supported by this camera.",Toast.LENGTH_SHORT).show();
@@ -323,12 +316,7 @@ public class VideoFragment extends Fragment{
         {
             Log.d(TAG,"Flash off");
             flashOn=false;
-            if(!cameraView.isRecording()) {
-                flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_on));
-            }
-            else{
-                flash.setImageDrawable(getResources().getDrawable(R.drawable.flashon));
-            }
+            flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_on));
         }
         cameraView.flashOnOff(flashOn);
     }
