@@ -4,6 +4,6 @@
     <solid
         android:color="@color/progressFill"/>
     <size
-        android:width="20dp"
-        android:height="20dp"/>
+        android:width="17dp"
+        android:height="17dp"/>
 </shape>
