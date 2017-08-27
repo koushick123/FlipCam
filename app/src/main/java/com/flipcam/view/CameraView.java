@@ -126,6 +126,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     long previousTime = 0;
     float sensorValues[] = new float[3];
     boolean autoFocus = false;
+    float diff[] = new float[3];
 
     public CameraView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -142,15 +143,18 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         //Use accelerometer to check if the device is moving among the x,y or z axes every half second. This means the user is moving the camera and
         //trying to refocus.
         if(Math.abs(System.currentTimeMillis() - previousTime) >= 500){
-            if(Math.abs(sensorEvent.values[0]-sensorValues[0]) > 0.5 || Math.abs(sensorEvent.values[1]-sensorValues[1]) > 0.5
-                    || Math.abs(sensorEvent.values[2]-sensorValues[2]) > 0.5) {
-                Log.d(TAG, "onSensorChanged x =" + sensorEvent.values[0]);
-                Log.d(TAG, "onSensorChanged y =" + sensorEvent.values[1]);
-                Log.d(TAG, "onSensorChanged z =" + sensorEvent.values[2]);
+            diff[0] = Math.abs(sensorEvent.values[0]-sensorValues[0]);
+            //diff[1] = Math.abs(sensorEvent.values[0]-sensorValues[1]);
+            //diff[2] = Math.abs(sensorEvent.values[0]-sensorValues[2]);
+            //if(diff[0] > 0.5 || diff[1] > 0.5 || diff[2] > 0.5){
+            if(diff[0] > 0.5){
+                Log.d(TAG, "diff x =" + diff[0]);
+                Log.d(TAG, "diff y =" + diff[1]);
+                Log.d(TAG, "diff z =" + diff[2]);
                 sensorValues[0] = sensorEvent.values[0];
                 sensorValues[1] = sensorEvent.values[1];
                 sensorValues[2] = sensorEvent.values[2];
-                camera1.setAutoFocus();
+                //camera1.setAutoFocus();
             }
             previousTime = System.currentTimeMillis();
         }
