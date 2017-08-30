@@ -141,25 +141,35 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
 
-        //Use accelerometer to check if the device is moving among the x,y or z axes every half second. This means the user is moving the camera and
+        //Use accelerometer to check if the device is moving among the x,y or z axes. This means the user is moving the camera and
         //trying to refocus.
         if(Math.abs(System.currentTimeMillis() - previousTime) >= 240){
             diff[0] = Math.abs(sensorEvent.values[0]-sensorValues[0]);
-            //Log.d(TAG,"diff in y = "+diff[1]);
-            //diff[2] = Math.abs(sensorEvent.values[0]-sensorValues[2]);
-            //if(diff[0] > 0.5 || diff[1] > 0.5 || diff[2] > 0.5){
-            if(diff[0] > 0.6){
+            diff[1] = Math.abs(sensorEvent.values[1]-sensorValues[1]);
+            determineOrientation();
+            if(rotationAngle == 90 || rotationAngle == 270){
+                if(diff[1] > 0.35){
+                    Log.d(TAG,"diff y ="+diff[1]);
+                    sensorValues[1] = sensorEvent.values[1];
+                    focusNow = true;
+                }
+                else{
+                    if(focusNow) {
+                        Log.d(TAG, "Focus now in landscape");
+                        camera1.setAutoFocus();
+                        focusNow = false;
+                    }
+                }
+            }
+            else if(diff[0] > 0.6){
                 Log.d(TAG, "diff x =" + diff[0]);
-                //Log.d(TAG, "diff y =" + diff[1]);
-                //Log.d(TAG, "diff z =" + diff[2]);
                 sensorValues[0] = sensorEvent.values[0];
-                sensorValues[2] = sensorEvent.values[2];
                 focusNow = true;
-                //camera1.setAutoFocus();
             }
             else{
                 if(focusNow) {
                     Log.d(TAG, "Focus now");
+                    camera1.setAutoFocus();
                     focusNow = false;
                 }
             }
