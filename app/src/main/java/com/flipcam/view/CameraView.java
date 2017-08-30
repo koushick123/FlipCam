@@ -143,17 +143,16 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
 
         //Use accelerometer to check if the device is moving among the x,y or z axes every half second. This means the user is moving the camera and
         //trying to refocus.
-        if(Math.abs(System.currentTimeMillis() - previousTime) >= 300){
+        if(Math.abs(System.currentTimeMillis() - previousTime) >= 240){
             diff[0] = Math.abs(sensorEvent.values[0]-sensorValues[0]);
-            //diff[1] = Math.abs(sensorEvent.values[0]-sensorValues[1]);
+            //Log.d(TAG,"diff in y = "+diff[1]);
             //diff[2] = Math.abs(sensorEvent.values[0]-sensorValues[2]);
             //if(diff[0] > 0.5 || diff[1] > 0.5 || diff[2] > 0.5){
-            if(diff[0] > 0.5){
+            if(diff[0] > 0.6){
                 Log.d(TAG, "diff x =" + diff[0]);
                 //Log.d(TAG, "diff y =" + diff[1]);
                 //Log.d(TAG, "diff z =" + diff[2]);
                 sensorValues[0] = sensorEvent.values[0];
-                sensorValues[1] = sensorEvent.values[1];
                 sensorValues[2] = sensorEvent.values[2];
                 focusNow = true;
                 //camera1.setAutoFocus();
