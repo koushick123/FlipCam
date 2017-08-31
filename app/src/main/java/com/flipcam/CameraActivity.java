@@ -1,9 +1,14 @@
 package com.flipcam;
 
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.WindowManager;
+
+import static com.flipcam.PermissionActivity.FC_SHARED_PREFERENCE;
 
 public class CameraActivity extends AppCompatActivity {
 
@@ -14,7 +19,17 @@ public class CameraActivity extends AppCompatActivity {
         setContentView(R.layout.activity_camera);
         getSupportActionBar().hide();
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        getSupportFragmentManager().beginTransaction().add(R.id.cameraPreview, VideoFragment.newInstance()).commit();
+        SharedPreferences sharedPreferences = getSharedPreferences(FC_SHARED_PREFERENCE, Context.MODE_PRIVATE);
+        if(sharedPreferences.getBoolean("permission",false)){
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putBoolean("permission",false);
+            editor.commit();
+            Intent permission = new Intent(this,PermissionActivity.class);
+            startActivity(permission);
+        }
+        else {
+            getSupportFragmentManager().beginTransaction().add(R.id.cameraPreview, VideoFragment.newInstance()).commit();
+        }
     }
 
     @Override

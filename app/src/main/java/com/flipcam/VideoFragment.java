@@ -30,8 +30,6 @@ import com.flipcam.view.CameraView;
 
 import java.io.File;
 
-import static com.flipcam.PermissionActivity.FC_SHARED_PREFERENCE;
-
 
 public class VideoFragment extends Fragment{
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -50,6 +48,7 @@ public class VideoFragment extends Fragment{
     LinearLayout settingsBar;
     TextView timeElapsed;
     TextView memoryConsumed;
+    CameraActivity cameraActivity;
 
     public VideoFragment() {
         // Required empty public constructor
@@ -78,6 +77,7 @@ public class VideoFragment extends Fragment{
         if(cameraView!=null) {
             cameraView.setWindowManager(getActivity().getWindowManager());
         }
+        cameraActivity = (CameraActivity)getActivity();
     }
 
     @Override
@@ -321,6 +321,16 @@ public class VideoFragment extends Fragment{
         cameraView.flashOnOff(flashOn);
     }
 
+    public void askForPermissionAgain()
+    {
+        SharedPreferences sharedPreferences = PermissionActivity.getSharedPreferences();
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putBoolean("permission",true);
+        editor.commit();
+        Intent permission = new Intent(getActivity(),CameraActivity.class);
+        startActivity(permission);
+    }
+
     private void fetchMedia(ImageView thumbnail)
     {
         String removableStoragePath;
@@ -373,7 +383,7 @@ public class VideoFragment extends Fragment{
     private void setCameraClose()
     {
         //Set this if you want to continue when the launcher activity resumes.
-        SharedPreferences.Editor editor = getActivity().getSharedPreferences(FC_SHARED_PREFERENCE,Context.MODE_PRIVATE).edit();
+        SharedPreferences.Editor editor = PermissionActivity.getSharedPreferences().edit();
         editor.putBoolean("startCamera",false);
         editor.commit();
     }
@@ -381,7 +391,7 @@ public class VideoFragment extends Fragment{
     private void setCameraQuit()
     {
         //Set this if you want to quit the app when launcher activity resumes.
-        SharedPreferences.Editor editor = getActivity().getSharedPreferences(FC_SHARED_PREFERENCE,Context.MODE_PRIVATE).edit();
+        SharedPreferences.Editor editor = PermissionActivity.getSharedPreferences().edit();
         editor.putBoolean("startCamera",true);
         editor.commit();
     }

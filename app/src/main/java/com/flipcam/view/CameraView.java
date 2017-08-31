@@ -1,6 +1,8 @@
 package com.flipcam.view;
 
+import android.Manifest;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.graphics.Point;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
@@ -23,6 +25,7 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.support.v4.content.ContextCompat;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.OrientationEventListener;
@@ -37,6 +40,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.flipcam.R;
+import com.flipcam.VideoFragment;
 import com.flipcam.cameramanager.Camera1Manager;
 import com.flipcam.constants.Constants;
 import com.flipcam.util.GLUtil;
@@ -47,8 +51,6 @@ import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
-
-import static android.content.Context.SENSOR_SERVICE;
 
 /**
  * Created by Koushick on 15-08-2017.
@@ -121,21 +123,22 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     String focusMode = Camera.Parameters.FOCUS_MODE_AUTO;
     String flashMode = Camera.Parameters.FLASH_MODE_OFF;
     ImageButton flashBtn;
-    private final SensorManager mSensorManager;
-    private final Sensor mAccelerometer;
+    /*private final SensorManager mSensorManager;
+    private final Sensor mAccelerometer;*/
     long previousTime = 0;
     float sensorValues[] = new float[3];
     boolean autoFocus = false;
     float diff[] = new float[3];
     boolean focusNow = false;
+    VideoFragment videoFragment = VideoFragment.newInstance();
 
     public CameraView(Context context, AttributeSet attrs) {
         super(context, attrs);
         Log.d(TAG,"start cameraview");
         getHolder().addCallback(this);
         camera1 = Camera1Manager.getInstance();
-        mSensorManager = (SensorManager)getContext().getSystemService(SENSOR_SERVICE);
-        mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        /*mSensorManager = (SensorManager)getContext().getSystemService(SENSOR_SERVICE);
+        mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);*/
     }
 
     @Override
@@ -418,6 +421,15 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
 
     public void openCameraAndStartPreview()
     {
+        int camerapermission = ContextCompat.checkSelfPermission(getContext(), Manifest.permission.CAMERA);
+        int audiopermission = ContextCompat.checkSelfPermission(getContext(), Manifest.permission.RECORD_AUDIO);
+        int storagepermission = ContextCompat.checkSelfPermission(getContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        if (camerapermission != PackageManager.PERMISSION_GRANTED || audiopermission != PackageManager.PERMISSION_GRANTED ||
+                storagepermission != PackageManager.PERMISSION_GRANTED) {
+            Log.d(TAG,"Permission turned off mostly at settings");
+            videoFragment.askForPermissionAgain();
+            return;
+        }
         camera1.openCamera(backCamera);
         if(!camera1.isCameraReady()){
             Toast.makeText(getContext(),"Front facing camera not available in this device.",Toast.LENGTH_SHORT).show();
@@ -463,10 +475,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     public void record()
     {
         if(!isRecord) {
-            /*determineOrientation();
+            determineOrientation();
             Log.d(TAG,"Rot angle == "+rotationAngle+", portrait = "+portrait);
             Matrix.rotateM(RECORD_IDENTITY_MATRIX, 0, rotationAngle , 0, 0, 1);
-            setLayoutAspectRatio();*/
+            setLayoutAspectRatio();
             isRecord=true;
             timeElapsedUpdate = new TimeElapsed();
             timeElapsedUpdate.start();
@@ -475,28 +487,26 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             timeElapsedHandler.sendEmptyMessage(Constants.START_TIMER);
             orientationEventListener.disable();
             if(autoFocus) {
-                mSensorManager.unregisterListener(this);
+                //mSensorManager.unregisterListener(this);
                 camera1.cancelAutoFocus();
             }
-            //cameraHandler.sendEmptyMessage(Constants.RECORD_START);
-            Toast.makeText(getContext(),"Record started",Toast.LENGTH_SHORT).show();
+            cameraHandler.sendEmptyMessage(Constants.RECORD_START);
         }
         else{
             isRecord=false;
             if (camera1.isFocusModeSupported(Camera.Parameters.FOCUS_MODE_AUTO)) {
                 //camera1.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
             }
-            if(autoFocus) {
+            /*if(autoFocus) {
                 mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
-            }
+            }*/
             orientationEventListener.enable();
-            //timeElapsedHandler.sendEmptyMessage(Constants.STOP_TIMER);
-            /*cameraHandler.sendEmptyMessage(Constants.RECORD_STOP);
+            timeElapsedHandler.sendEmptyMessage(Constants.STOP_TIMER);
+            cameraHandler.sendEmptyMessage(Constants.RECORD_STOP);
             //Reset the RECORD Matrix to be portrait.
             System.arraycopy(IDENTITY_MATRIX,0,RECORD_IDENTITY_MATRIX,0,IDENTITY_MATRIX.length);
             //Reset Rotation angle
-            rotationAngle = 0f;*/
-            Toast.makeText(getContext(),"Record stopped",Toast.LENGTH_SHORT).show();
+            rotationAngle = 0f;
         }
     }
 
@@ -611,13 +621,13 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             frameCount=0;
             openCameraAndStartPreview();
         }
-        if(camera1.isFocusModeSupported(Camera.Parameters.FOCUS_MODE_AUTO)){
+        /*if(camera1.isFocusModeSupported(Camera.Parameters.FOCUS_MODE_AUTO)){
             autoFocus = true;
             mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
         }
         else{
             autoFocus = false;
-        }
+        }*/
         if(surfaceTexture!=null) {
             surfaceTexture.setOnFrameAvailableListener(this);
         }
@@ -647,7 +657,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             camera1.releaseCamera();
         }
         orientationEventListener.disable();
-        mSensorManager.unregisterListener(this);
+        //mSensorManager.unregisterListener(this);
         frameCount=0;
         releaseEGLSurface();
         releaseProgram();

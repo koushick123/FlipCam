@@ -30,6 +30,7 @@ public class PermissionActivity extends AppCompatActivity {
     boolean showPermission = false;
     DialogInterface.OnClickListener exitListener;
     AlertDialog.Builder alertDialog;
+    private static SharedPreferences sharedPreferences;
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -38,10 +39,17 @@ public class PermissionActivity extends AppCompatActivity {
                 Log.d(TAG, "For camera == "+permissions[0]);
                 if (permissions[0].equalsIgnoreCase(CAMERA_PERMISSION) && permissions[1].equalsIgnoreCase(AUDIO_PERMISSION) &&
                         permissions[2].equalsIgnoreCase(STORAGE_PERMISSIONS)) {
-                    if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED && grantResults[1] == PackageManager.PERMISSION_GRANTED
+                            && grantResults[2] == PackageManager.PERMISSION_GRANTED) {
                         cameraPermission = true;
                         audioPermission = true;
                         storagePermission = true;
+                        SharedPreferences sharedPreferences = getSharedPreferences();
+                        SharedPreferences.Editor edit = sharedPreferences.edit();
+                        edit.putBoolean("cameraPermission",cameraPermission);
+                        edit.putBoolean("audioPermission",audioPermission);
+                        edit.putBoolean("storagePermission",storagePermission);
+                        edit.commit();
                         openCameraFragment();
                         //checkAudioPermission();
                     } else {
@@ -64,7 +72,7 @@ public class PermissionActivity extends AppCompatActivity {
             Log.d(TAG, "saved instance state restart == " + savedInstanceState.getBoolean("restart"));
             Log.d(TAG, "saved instance state quit == " + savedInstanceState.getBoolean("quit"));
         }
-        SharedPreferences sharedPreferences = getSharedPreferences(FC_SHARED_PREFERENCE,Context.MODE_PRIVATE);
+        sharedPreferences = getSharedPreferences(FC_SHARED_PREFERENCE, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putBoolean("startCamera",false);
         editor.commit();
@@ -76,6 +84,11 @@ public class PermissionActivity extends AppCompatActivity {
                 quitFlipCam();
             }
         }
+    }
+
+    public static SharedPreferences getSharedPreferences()
+    {
+        return sharedPreferences;
     }
 
     @Override
@@ -106,7 +119,7 @@ public class PermissionActivity extends AppCompatActivity {
     protected void onResume() {
         Log.d(TAG,"onResume");
         super.onResume();
-        SharedPreferences sharedPreferences = getSharedPreferences(FC_SHARED_PREFERENCE,Context.MODE_PRIVATE);
+        SharedPreferences sharedPreferences = getSharedPreferences();
         if(sharedPreferences.getBoolean("startCamera",false)){
             Log.d(TAG,"Quit the app");
             finish();
@@ -137,7 +150,7 @@ public class PermissionActivity extends AppCompatActivity {
     {
         if(cameraPermission && audioPermission && storagePermission) {
             //Open VideoFragment under CameraActivity showing camera preview.
-            SharedPreferences sharedPreferences = getSharedPreferences(FC_SHARED_PREFERENCE,Context.MODE_PRIVATE);
+            SharedPreferences sharedPreferences = getSharedPreferences();
             SharedPreferences.Editor editor = sharedPreferences.edit();
             editor.putBoolean("startCamera", true);
             editor.commit();
