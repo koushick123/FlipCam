@@ -1,6 +1,5 @@
 package com.flipcam;
 
-import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
@@ -26,6 +25,7 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.flipcam.permissioninterface.PermissionInterface;
 import com.flipcam.view.CameraView;
 
 import java.io.File;
@@ -48,7 +48,7 @@ public class VideoFragment extends Fragment{
     LinearLayout settingsBar;
     TextView timeElapsed;
     TextView memoryConsumed;
-    CameraActivity cameraActivity;
+    PermissionInterface permissionInterface;
 
     public VideoFragment() {
         // Required empty public constructor
@@ -77,7 +77,6 @@ public class VideoFragment extends Fragment{
         if(cameraView!=null) {
             cameraView.setWindowManager(getActivity().getWindowManager());
         }
-        cameraActivity = (CameraActivity)getActivity();
     }
 
     @Override
@@ -171,6 +170,7 @@ public class VideoFragment extends Fragment{
                 setFlash();
             }
         });
+        permissionInterface = (PermissionInterface)getActivity();
         return view;
     }
 
@@ -323,12 +323,8 @@ public class VideoFragment extends Fragment{
 
     public void askForPermissionAgain()
     {
-        SharedPreferences sharedPreferences = PermissionActivity.getSharedPreferences();
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putBoolean("permission",true);
-        editor.commit();
-        Intent permission = new Intent(getActivity(),CameraActivity.class);
-        startActivity(permission);
+        Log.d(TAG,"permissionInterface = "+permissionInterface);
+        permissionInterface.askPermission();
     }
 
     private void fetchMedia(ImageView thumbnail)
@@ -397,13 +393,9 @@ public class VideoFragment extends Fragment{
     }
 
     @Override
-    public void onAttach(Context context) {
-        super.onAttach(context);
-    }
-
-    @Override
     public void onDetach() {
         super.onDetach();
+        Log.d(TAG,"Detached");
     }
 
     @Override
