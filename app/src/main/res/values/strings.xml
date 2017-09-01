@@ -3,6 +3,6 @@
     //For Permission
     <string name="title">No Permission</string>
     <string name="message">Unavailability of permissions will render FlipCam not to function correctly.\n\n
-        Please reopen the application if you wish to grant permission.</string>
+        Please reopen the application or go to Settings, if you wish to grant permission.</string>
     <string name="exit">EXIT</string>
 </resources>

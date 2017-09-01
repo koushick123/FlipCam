@@ -44,14 +44,7 @@ public class PermissionActivity extends AppCompatActivity {
                         cameraPermission = true;
                         audioPermission = true;
                         storagePermission = true;
-                        SharedPreferences sharedPreferences = getSharedPreferences();
-                        SharedPreferences.Editor edit = sharedPreferences.edit();
-                        edit.putBoolean("cameraPermission",cameraPermission);
-                        edit.putBoolean("audioPermission",audioPermission);
-                        edit.putBoolean("storagePermission",storagePermission);
-                        edit.commit();
                         openCameraFragment();
-                        //checkAudioPermission();
                     } else {
                         quitFlipCam();
                     }

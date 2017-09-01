@@ -419,6 +419,11 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         return camera1.isFlashModeSupported(flashMode);
     }
 
+    public void setFragmentInstance(VideoFragment videoFragment)
+    {
+        this.videoFragment = videoFragment;
+    }
+
     public void openCameraAndStartPreview()
     {
         int camerapermission = ContextCompat.checkSelfPermission(getContext(), Manifest.permission.CAMERA);
@@ -427,7 +432,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         if (camerapermission != PackageManager.PERMISSION_GRANTED || audiopermission != PackageManager.PERMISSION_GRANTED ||
                 storagepermission != PackageManager.PERMISSION_GRANTED) {
             Log.d(TAG,"Permission turned off mostly at settings");
-            videoFragment.askForPermissionAgain();
+            this.videoFragment.askForPermissionAgain();
             return;
         }
         camera1.openCamera(backCamera);

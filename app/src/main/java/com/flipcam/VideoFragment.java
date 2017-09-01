@@ -1,5 +1,6 @@
 package com.flipcam;
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
@@ -29,6 +30,8 @@ import com.flipcam.permissioninterface.PermissionInterface;
 import com.flipcam.view.CameraView;
 
 import java.io.File;
+
+import static com.flipcam.PermissionActivity.FC_SHARED_PREFERENCE;
 
 
 public class VideoFragment extends Fragment{
@@ -170,6 +173,8 @@ public class VideoFragment extends Fragment{
                 setFlash();
             }
         });
+        Log.d(TAG,"passing videofragment to cameraview");
+        cameraView.setFragmentInstance(this);
         permissionInterface = (PermissionInterface)getActivity();
         return view;
     }
@@ -379,7 +384,7 @@ public class VideoFragment extends Fragment{
     private void setCameraClose()
     {
         //Set this if you want to continue when the launcher activity resumes.
-        SharedPreferences.Editor editor = PermissionActivity.getSharedPreferences().edit();
+        SharedPreferences.Editor editor = getActivity().getSharedPreferences(FC_SHARED_PREFERENCE, Context.MODE_PRIVATE).edit();
         editor.putBoolean("startCamera",false);
         editor.commit();
     }
@@ -387,7 +392,7 @@ public class VideoFragment extends Fragment{
     private void setCameraQuit()
     {
         //Set this if you want to quit the app when launcher activity resumes.
-        SharedPreferences.Editor editor = PermissionActivity.getSharedPreferences().edit();
+        SharedPreferences.Editor editor = getActivity().getSharedPreferences(FC_SHARED_PREFERENCE, Context.MODE_PRIVATE).edit();
         editor.putBoolean("startCamera",true);
         editor.commit();
     }

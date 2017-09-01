@@ -52,7 +52,10 @@ public class CameraActivity extends AppCompatActivity implements PermissionInter
 
     @Override
     public void askPermission() {
+        Log.d(TAG,"start permission act to get permissions");
         Intent permission = new Intent(this,PermissionActivity.class);
+        permission.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(permission);
+        finish();
     }
 }
