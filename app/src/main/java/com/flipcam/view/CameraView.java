@@ -130,7 +130,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     boolean autoFocus = false;
     float diff[] = new float[3];
     boolean focusNow = false;
-    VideoFragment videoFragment = VideoFragment.newInstance();
+    VideoFragment videoFragment;
 
     public CameraView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -199,7 +199,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             switch(msg.what)
             {
                 case Constants.SHOW_ELAPSED_TIME:
-                    //displayComplete();
                     if(VERBOSE)Log.d(TAG,"show time now");
                     camView.showTimeElapsed();
                     break;
@@ -444,19 +443,13 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         camera1.setFPS();
         setLayoutAspectRatio();
         camera1.startPreview(surfaceTexture);
+        this.seekBar.setProgress(0);
         this.seekBar.setMax(camera1.getMaxZoom());
         Log.d(TAG,"Setting max zoom = "+camera1.getMaxZoom());
         //Set the focus mode to continuous focus if recording in progress
-        if(isRecord)
-        {
-            if (camera1.isFocusModeSupported(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO)) {
-                camera1.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
-            }
-        }
-        else{
-            if (camera1.isFocusModeSupported(Camera.Parameters.FOCUS_MODE_AUTO)) {
-                camera1.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
-            }
+        if (camera1.isFocusModeSupported(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO)) {
+            Log.d(TAG, "Continuous AF");
+            camera1.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
         }
         //Set the flash mode of previous camera
         if(camera1.isFlashModeSupported(flashMode)){
@@ -489,24 +482,14 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             timeElapsedUpdate.start();
             isReady = false;
             waitUntilReady();
-            timeElapsedHandler.sendEmptyMessage(Constants.START_TIMER);
             orientationEventListener.disable();
-            if(autoFocus) {
-                //mSensorManager.unregisterListener(this);
-                camera1.cancelAutoFocus();
-            }
+            camera1.setRecordingHint();
             cameraHandler.sendEmptyMessage(Constants.RECORD_START);
         }
         else{
             isRecord=false;
-            if (camera1.isFocusModeSupported(Camera.Parameters.FOCUS_MODE_AUTO)) {
-                //camera1.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
-            }
-            /*if(autoFocus) {
-                mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
-            }*/
             orientationEventListener.enable();
-            timeElapsedHandler.sendEmptyMessage(Constants.STOP_TIMER);
+            camera1.disableRecordingHint();
             cameraHandler.sendEmptyMessage(Constants.RECORD_STOP);
             //Reset the RECORD Matrix to be portrait.
             System.arraycopy(IDENTITY_MATRIX,0,RECORD_IDENTITY_MATRIX,0,IDENTITY_MATRIX.length);
@@ -626,13 +609,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             frameCount=0;
             openCameraAndStartPreview();
         }
-        /*if(camera1.isFocusModeSupported(Camera.Parameters.FOCUS_MODE_AUTO)){
-            autoFocus = true;
-            mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
-        }
-        else{
-            autoFocus = false;
-        }*/
         if(surfaceTexture!=null) {
             surfaceTexture.setOnFrameAvailableListener(this);
         }
@@ -662,7 +638,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             camera1.releaseCamera();
         }
         orientationEventListener.disable();
-        //mSensorManager.unregisterListener(this);
         frameCount=0;
         releaseEGLSurface();
         releaseProgram();
@@ -903,9 +878,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                             createFloatBuffer(GLUtil.FULL_RECTANGLE_TEX_COORDS), mTextureId, 2 * SIZEOF_FLOAT);
                     if (VERBOSE) Log.d(TAG, "Populated to encoder");
                     if (recordStop == -1) {
-                        if (camera1.isFocusModeSupported(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO)) {
-                            camera1.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
-                        }
+                        timeElapsedHandler.sendEmptyMessage(Constants.START_TIMER);
                         mediaRecorder.start();
                         recordStop = 1;
                     }
@@ -960,6 +933,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         isRecording = false;
                         recordStop = -1;
                         mediaRecorder.stop();
+                        timeElapsedHandler.sendEmptyMessage(Constants.STOP_TIMER);
                         mediaRecorder.release();
                         mediaRecorder = null;
                         Log.d(TAG,"stop isRecording == "+isRecording);

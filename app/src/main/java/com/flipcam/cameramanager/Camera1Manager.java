@@ -248,6 +248,16 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     }
 
     @Override
+    public void disableRecordingHint() {
+        mCamera.getParameters().setRecordingHint(false);
+    }
+
+    @Override
+    public void setRecordingHint() {
+        mCamera.getParameters().setRecordingHint(true);
+    }
+
+    @Override
     public void setFocusMode(String focusMode) {
         parameters.setFocusMode(focusMode);
         mCamera.setParameters(parameters);

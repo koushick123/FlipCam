@@ -34,6 +34,10 @@ public interface CameraOperations {
     public void stopPreview();
     //To set auto focus
     public void setAutoFocus();
+    //To set recording hint for certain optimization done by camera
+    public void setRecordingHint();
+    //To disable recording hint
+    public void disableRecordingHint();
     //To cancel auto focus
     public void cancelAutoFocus();
     //To set a particular focus mode
