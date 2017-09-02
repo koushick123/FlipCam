@@ -9,6 +9,7 @@ import android.graphics.Typeface;
 import android.hardware.Camera;
 import android.media.ThumbnailUtils;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
@@ -52,6 +53,7 @@ public class VideoFragment extends Fragment{
     TextView timeElapsed;
     TextView memoryConsumed;
     PermissionInterface permissionInterface;
+    ImageButton stopRecord;
 
     public VideoFragment() {
         // Required empty public constructor
@@ -164,6 +166,7 @@ public class VideoFragment extends Fragment{
             }
         });
 
+
         flash = (ImageButton)getActivity().findViewById(R.id.flashOn);
         cameraView.setFlashButton(flash);
         flash.setOnClickListener(new View.OnClickListener(){
@@ -179,17 +182,35 @@ public class VideoFragment extends Fragment{
         return view;
     }
 
+    ImageButton pauseRecord;
+    View.OnClickListener pauseListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View view) {
+            if (!cameraView.isPaused()) {
+                pauseRecord.setImageDrawable(getResources().getDrawable(R.drawable.record_start));
+                cameraView.pause();
+            } else {
+                pauseRecord.setImageDrawable(getResources().getDrawable(R.drawable.record_pause));
+                cameraView.resume();
+            }
+        }
+    };
+
+    public boolean isNougatAndAbove()
+    {
+        return (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N);
+    }
+
     public void addStopAndPauseIcons()
     {
         videoBar.setBackgroundColor(getResources().getColor(R.color.transparentBar));
-        final ImageButton stopRecord;
-        final ImageButton pauseRecord;
         LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,LinearLayout.LayoutParams.WRAP_CONTENT);
 
-        pauseRecord = new ImageButton(getContext());
+        pauseRecord=new ImageButton(getContext());
         pauseRecord.setBackgroundColor(getResources().getColor(R.color.transparentBar));
         pauseRecord.setImageDrawable(getResources().getDrawable(R.drawable.record_pause));
-        pauseRecord.setPadding(0,0,(int)getResources().getDimension(R.dimen.pauseBtnRightPadding),0);
+        pauseRecord.setPadding(0, 0, (int) getResources().getDimension(R.dimen.pauseBtnRightPadding), 0);
+        pauseRecord.setOnClickListener(pauseListener);
 
         stopRecord = new ImageButton(getContext());
         stopRecord.setScaleType(ImageView.ScaleType.CENTER_CROP);
@@ -248,6 +269,9 @@ public class VideoFragment extends Fragment{
         videoBar.addView(switchCamera);
         videoBar.addView(stopRecord);
         videoBar.addView(pauseRecord);
+        if(!isNougatAndAbove()) {
+            pauseRecord.setVisibility(View.INVISIBLE);
+        }
     }
 
     public void hideSettingsBarAndIcon()
@@ -301,6 +325,7 @@ public class VideoFragment extends Fragment{
         memConsumed.weight=0.3f;
         memoryConsumed.setLayoutParams(memConsumed);
         settingsBar.addView(memoryConsumed);
+        cameraView.setMemoryConsumedText(memoryConsumed);
     }
 
     boolean flashOn=false;

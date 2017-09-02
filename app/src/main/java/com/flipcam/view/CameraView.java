@@ -6,9 +6,6 @@ import android.content.pm.PackageManager;
 import android.graphics.Point;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.media.CamcorderProfile;
 import android.media.MediaRecorder;
@@ -21,6 +18,7 @@ import android.opengl.EGLSurface;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import android.opengl.Matrix;
+import android.os.Build;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
@@ -51,12 +49,14 @@ import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 /**
  * Created by Koushick on 15-08-2017.
  */
 
-public class CameraView extends SurfaceView implements SurfaceHolder.Callback, SurfaceTexture.OnFrameAvailableListener, SensorEventListener {
+public class CameraView extends SurfaceView implements SurfaceHolder.Callback, SurfaceTexture.OnFrameAvailableListener{
 
     public static final String TAG = "CameraView";
     private static int VIDEO_WIDTH = 640;  // dimensions for VGA
@@ -123,66 +123,15 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     String focusMode = Camera.Parameters.FOCUS_MODE_AUTO;
     String flashMode = Camera.Parameters.FLASH_MODE_OFF;
     ImageButton flashBtn;
-    /*private final SensorManager mSensorManager;
-    private final Sensor mAccelerometer;*/
-    long previousTime = 0;
-    float sensorValues[] = new float[3];
-    boolean autoFocus = false;
-    float diff[] = new float[3];
-    boolean focusNow = false;
     VideoFragment videoFragment;
+    volatile boolean isPause = false;
+    File videoFile;
 
     public CameraView(Context context, AttributeSet attrs) {
         super(context, attrs);
         Log.d(TAG,"start cameraview");
         getHolder().addCallback(this);
         camera1 = Camera1Manager.getInstance();
-        /*mSensorManager = (SensorManager)getContext().getSystemService(SENSOR_SERVICE);
-        mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);*/
-    }
-
-    @Override
-    public void onSensorChanged(SensorEvent sensorEvent) {
-
-        //Use accelerometer to check if the device is moving among the x,y or z axes. This means the user is moving the camera and
-        //trying to refocus.
-        if(Math.abs(System.currentTimeMillis() - previousTime) >= 240){
-            diff[0] = Math.abs(sensorEvent.values[0]-sensorValues[0]);
-            diff[1] = Math.abs(sensorEvent.values[1]-sensorValues[1]);
-            determineOrientation();
-            if(rotationAngle == 90 || rotationAngle == 270){
-                if(diff[1] > 0.35){
-                    Log.d(TAG,"diff y ="+diff[1]);
-                    sensorValues[1] = sensorEvent.values[1];
-                    focusNow = true;
-                }
-                else{
-                    if(focusNow) {
-                        Log.d(TAG, "Focus now in landscape");
-                        camera1.setAutoFocus();
-                        focusNow = false;
-                    }
-                }
-            }
-            else if(diff[0] > 0.6){
-                Log.d(TAG, "diff x =" + diff[0]);
-                sensorValues[0] = sensorEvent.values[0];
-                focusNow = true;
-            }
-            else{
-                if(focusNow) {
-                    Log.d(TAG, "Focus now");
-                    camera1.setAutoFocus();
-                    focusNow = false;
-                }
-            }
-            previousTime = System.currentTimeMillis();
-        }
-    }
-
-    @Override
-    public void onAccuracyChanged(Sensor sensor, int accuracy) {
-        Log.d(TAG,"onAccuracyChanged");
     }
 
     class MainHandler extends Handler {
@@ -200,7 +149,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             {
                 case Constants.SHOW_ELAPSED_TIME:
                     if(VERBOSE)Log.d(TAG,"show time now");
-                    camView.showTimeElapsed();
+                    showTimeElapsed();
+                    break;
+                case Constants.SHOW_MEMORY_CONSUMED:
+                    showMemoryConsumed();
                     break;
             }
         }
@@ -340,6 +292,12 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         timeElapsed = timeElapsedText;
     }
 
+    public void setMemoryConsumedText(TextView memoryConsumedText)
+    {
+        Log.d(TAG,"Memory consumed");
+        memoryConsumed = memoryConsumedText;
+    }
+
     public boolean isFlashOn()
     {
         if(camera1.getFlashMode() == null || camera1.getFlashMode().equalsIgnoreCase(Camera.Parameters.FLASH_MODE_OFF)){
@@ -377,6 +335,22 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             showHr = hour+"";
         }
         timeElapsed.setText(showHr + " : " + showMin + " : " + showSec);
+    }
+
+    public void showMemoryConsumed()
+    {
+        if(videoFile.length() < 1024) {
+            if(VERBOSE)Log.d(TAG,"Bytes = "+videoFile.length());
+            memoryConsumed.setText(videoFile.length() + " Bytes");
+        }
+        else if(videoFile.length() >= 1024 && videoFile.length() < 1048576){
+            if(VERBOSE)Log.d(TAG,"KB = "+videoFile.length());
+            memoryConsumed.setText(Math.ceil(videoFile.length()/1024.0d) + " KB");
+        }
+        else{
+            if(VERBOSE)Log.d(TAG,"MB = "+videoFile.length());
+            memoryConsumed.setText(Math.ceil(videoFile.length()/1048576.0d) + " MB");
+        }
     }
 
     public void setFlashButton(ImageButton flashButton)
@@ -468,6 +442,23 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             }
             flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.flash_on));
         }
+    }
+
+    public void pause()
+    {
+        Log.d(TAG,"sending pause msg");
+        cameraHandler.sendEmptyMessage(Constants.RECORD_PAUSE);
+    }
+
+    public void resume()
+    {
+        Log.d(TAG,"sending resume msg");
+        cameraHandler.sendEmptyMessage(Constants.RECORD_RESUME);
+    }
+
+    public boolean isPaused()
+    {
+        return isPause;
     }
 
     public void record()
@@ -818,9 +809,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
             mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
             mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-            if (mNextVideoAbsolutePath == null || mNextVideoAbsolutePath.isEmpty()) {
-                mNextVideoAbsolutePath = getVideoFilePath();
-            }
+            mNextVideoAbsolutePath = getVideoFilePath();
+            videoFile = new File(mNextVideoAbsolutePath);
             mediaRecorder.setOutputFile(mNextVideoAbsolutePath);
             mediaRecorder.setVideoEncodingBitRate(camcorderProfile.videoBitRate);
             mediaRecorder.setVideoFrameRate(camcorderProfile.videoFrameRate);
@@ -841,7 +831,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             {
                 dcim.mkdirs();
             }
-            String path = dcim.getPath()+"/FC_VID_"+System.currentTimeMillis()+".mp4";
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
+            String filename = sdf.format(new Date());
+            Log.d(TAG,"filename = "+filename);
+            String path = dcim.getPath()+"/FC_VID_"+filename+".mp4";
             Log.d(TAG,"Saving media file at = "+path);
             return path;
         }
@@ -884,6 +877,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                     }
                     EGLExt.eglPresentationTimeANDROID(mEGLDisplay, encoderSurface, surfaceTexture.getTimestamp());
                     EGL14.eglSwapBuffers(mEGLDisplay, encoderSurface);
+                    mainHandler.sendEmptyMessage(Constants.SHOW_MEMORY_CONSUMED);
                 }
             }
             frameCount++;
@@ -927,13 +921,13 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         break;
                     case Constants.RECORD_START:
                         isRecording = true;
+                        isPause = false;
                         cameraRenderer.setupMediaRecorder();
                         break;
                     case Constants.RECORD_STOP:
                         isRecording = false;
                         recordStop = -1;
                         mediaRecorder.stop();
-                        timeElapsedHandler.sendEmptyMessage(Constants.STOP_TIMER);
                         mediaRecorder.release();
                         mediaRecorder = null;
                         Log.d(TAG,"stop isRecording == "+isRecording);
@@ -942,6 +936,22 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         break;
                     case Constants.GET_CAMERA_RENDERER_INSTANCE:
                         getCameraRendererInstance();
+                        break;
+                    case Constants.RECORD_PAUSE:
+                        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                            Log.d(TAG,"Version Nougat and above");
+                            isRecording = false;
+                            mediaRecorder.pause();
+                        }
+                        isPause = true;
+                        break;
+                    case Constants.RECORD_RESUME:
+                        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N){
+                            Log.d(TAG,"Version Nougat and above...resume");
+                            mediaRecorder.resume();
+                            isRecording = true;
+                        }
+                        isPause = false;
                         break;
                 }
             }
@@ -971,7 +981,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
 
         public void stopTimer()
         {
-            //timerStart = false;
             Log.d(TAG,"stop timer");
             Looper.myLooper().quit();
         }
@@ -980,6 +989,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         {
             hour = 0; minute = 0; second = -1;
             while(isRecord) {
+                while(isPause){
+                    //Keep looping....do not update the time.
+                }
                 if(second < 59) {
                     second++;
                     if(VERBOSE)Log.d(TAG,"second = "+second);
