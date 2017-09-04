@@ -123,12 +123,6 @@ public class VideoFragment extends Fragment{
             }
         });
         thumbnail = (ImageView)view.findViewById(R.id.thumbnail);
-        thumbnail.setOnClickListener(new View.OnClickListener() {
-             @Override
-             public void onClick(View view) {
-                 fetchMedia(thumbnail);
-             }
-         });
         photoMode = (ImageButton) view.findViewById(R.id.photoMode);
         switchCamera = (ImageButton)view.findViewById(R.id.switchCamera);
         switchCamera.setOnClickListener(new View.OnClickListener() {
@@ -263,6 +257,7 @@ public class VideoFragment extends Fragment{
                 settingsBar.addView(settings);
                 settingsBar.setBackgroundColor(getResources().getColor(R.color.settingsBarColor));
                 flash.setBackgroundColor(getResources().getColor(R.color.settingsBarColor));
+                createAndShowThumbnail();
             }
         });
         switchCamera.setBackgroundColor(getResources().getColor(R.color.transparentBar));
@@ -357,6 +352,32 @@ public class VideoFragment extends Fragment{
         permissionInterface.askPermission();
     }
 
+    public void createAndShowThumbnail()
+    {
+        //Storing in public folder. This will ensure that the files are visible in other apps as well.
+        final String videofilePath = cameraView.getMediaPath();
+
+        //Use this for sharing files between apps
+        final File videos = new File(videofilePath);
+        if(videos.getName() != null){
+            Log.d(TAG,"Video file name = "+videos.getName()+", path = "+videos.getPath());
+            Bitmap vid = ThumbnailUtils.createVideoThumbnail(videos.getPath(), MediaStore.Video.Thumbnails.MICRO_KIND);
+            if(vid == null){
+                Log.d(TAG,"NULL bitmap");
+                return;
+            }
+            Log.d(TAG,"width = "+vid.getWidth()+" , height = "+vid.getHeight());
+            thumbnail.setImageBitmap(Bitmap.createScaledBitmap(vid,68,68,false));
+            thumbnail.setOnClickListener(new View.OnClickListener(){
+                @Override
+                public void onClick(View view)
+                {
+                    openMedia(videofilePath);
+                }
+            });
+        }
+    }
+
     private void fetchMedia(ImageView thumbnail)
     {
         String removableStoragePath;
@@ -377,23 +398,6 @@ public class VideoFragment extends Fragment{
                     Log.d(TAG,"SD Card path = "+file1.getPath());
                 }*/
             }
-        }
-        //Storing in public folder. This will ensure that the files are visible in other apps as well.
-        String videofilePath = cameraView.getMediaPath();
-
-        //Use this for sharing files between apps
-        final File videos = new File(videofilePath);
-        if(videos.getName() != null){
-            Log.d(TAG,"Video file name = "+videos.getName());
-            Bitmap vid = ThumbnailUtils.createVideoThumbnail(videos.getPath(), MediaStore.Video.Thumbnails.MICRO_KIND);
-            thumbnail.setImageBitmap(vid.createScaledBitmap(vid,68,68,false));
-            thumbnail.setOnClickListener(new View.OnClickListener(){
-                @Override
-                public void onClick(View view)
-                {
-                    openMedia(videos.getPath());
-                }
-            });
         }
     }
 

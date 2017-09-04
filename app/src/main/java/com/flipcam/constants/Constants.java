@@ -6,6 +6,7 @@ package com.flipcam.constants;
 
 public class Constants
 {
+    //Message to be sent to threads
     public final static int FRAME_AVAILABLE = 1000;
     public final static int RECORD_STOP = 2000;
     public final static int RECORD_START = 3000;
@@ -17,4 +18,8 @@ public class Constants
     public final static int SHOW_ELAPSED_TIME = 10000;
     public final static int RECORD_PAUSE = 11000;
     public final static int RECORD_RESUME = 12000;
+
+    //File size for calculating memory consumed
+    public final static double KILO_BYTE = 1024;
+    public final static double MEGA_BYTE = 1024 * KILO_BYTE;
 }
