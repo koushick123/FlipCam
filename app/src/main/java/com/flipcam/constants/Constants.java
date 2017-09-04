@@ -10,6 +10,7 @@ public class Constants
     public final static int FRAME_AVAILABLE = 1000;
     public final static int RECORD_STOP = 2000;
     public final static int RECORD_START = 3000;
+    public final static int RECORD_COMPLETE = 13000;
     public final static int SHUTDOWN = 6000;
     public final static int GET_CAMERA_RENDERER_INSTANCE = 8000;
     public final static int GET_TIME_ELAPSED_REFERENCE = 9000;

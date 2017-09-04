@@ -154,6 +154,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 case Constants.SHOW_MEMORY_CONSUMED:
                     showMemoryConsumed();
                     break;
+                case Constants.RECORD_COMPLETE:
+                    Log.d(TAG,"Update thumbnail now");
+                    videoFragment.createAndShowThumbnail(getMediaPath());
+                    break;
             }
         }
     }
@@ -933,8 +937,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         mediaRecorder.release();
                         mediaRecorder = null;
                         Log.d(TAG,"stop isRecording == "+isRecording);
+                        mainHandler.sendEmptyMessage(Constants.RECORD_COMPLETE);
                         if(VERBOSE)Log.d(TAG, "Exit recording...");
-                        Log.d(TAG,"Orig frame = "+frameCount+" , Rendered frame "+frameCnt);
+                        if(VERBOSE)Log.d(TAG,"Orig frame = "+frameCount+" , Rendered frame "+frameCnt);
                         break;
                     case Constants.GET_CAMERA_RENDERER_INSTANCE:
                         getCameraRendererInstance();
