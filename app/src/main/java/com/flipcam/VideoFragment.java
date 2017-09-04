@@ -31,6 +31,7 @@ import com.flipcam.permissioninterface.PermissionInterface;
 import com.flipcam.view.CameraView;
 
 import java.io.File;
+import java.util.Arrays;
 
 import static com.flipcam.PermissionActivity.FC_SHARED_PREFERENCE;
 
@@ -82,6 +83,18 @@ public class VideoFragment extends Fragment{
         if(cameraView!=null) {
             cameraView.setWindowManager(getActivity().getWindowManager());
         }
+        settingsBar = (LinearLayout)getActivity().findViewById(R.id.settingsBar);
+        settings = (ImageButton)getActivity().findViewById(R.id.settings);
+        flash = (ImageButton)getActivity().findViewById(R.id.flashOn);
+        flash.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view)
+            {
+                setFlash();
+            }
+        });
+        cameraView.setFlashButton(flash);
+        permissionInterface = (PermissionInterface)getActivity();
     }
 
     @Override
@@ -144,8 +157,6 @@ public class VideoFragment extends Fragment{
         });
         startRecord = (ImageButton)view.findViewById(R.id.cameraRecord);
         videoBar = (LinearLayout)view.findViewById(R.id.videoFunctions);
-        settingsBar = (LinearLayout)getActivity().findViewById(R.id.settingsBar);
-        settings = (ImageButton)getActivity().findViewById(R.id.settings);
         startRecord.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -159,20 +170,8 @@ public class VideoFragment extends Fragment{
                 cameraView.record();
             }
         });
-
-
-        flash = (ImageButton)getActivity().findViewById(R.id.flashOn);
-        cameraView.setFlashButton(flash);
-        flash.setOnClickListener(new View.OnClickListener(){
-            @Override
-            public void onClick(View view)
-            {
-                setFlash();
-            }
-        });
         Log.d(TAG,"passing videofragment to cameraview");
         cameraView.setFragmentInstance(this);
-        permissionInterface = (PermissionInterface)getActivity();
         return view;
     }
 
@@ -247,11 +246,12 @@ public class VideoFragment extends Fragment{
         settingsBar.removeView(memoryConsumed);
         settingsBar.removeView(flash);
         flash = new ImageButton(getActivity());
-        if(cameraView.isFlashOn()) {
-            flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_off));
-        }
-        else{
-            flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_on));
+        if(cameraView.isCameraReady()) {
+            if (cameraView.isFlashOn()) {
+                flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_off));
+            } else {
+                flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_on));
+            }
         }
         LinearLayout.LayoutParams flashParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         flashParams.weight=0.5f;
@@ -375,6 +375,33 @@ public class VideoFragment extends Fragment{
                     openMedia(videos.getPath());
                 }
             });
+        }
+    }
+
+    public void getLatestFileIfExists()
+    {
+        File dcimFc = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM+getResources().getString(R.string.FC_VIDEO));
+        if(dcimFc.exists())
+        {
+            File[] videos = dcimFc.listFiles();
+            Arrays.sort(videos);
+            Log.d(TAG,"Latest file is = "+videos[videos.length-1].getPath());
+            final String filePath = videos[videos.length-1].getPath();
+            Bitmap vid = ThumbnailUtils.createVideoThumbnail(filePath, MediaStore.Video.Thumbnails.MICRO_KIND);
+            thumbnail.setImageBitmap(vid);
+            thumbnail.setClickable(true);
+            thumbnail.setOnClickListener(new View.OnClickListener(){
+                @Override
+                public void onClick(View view)
+                {
+                    openMedia(filePath);
+                }
+            });
+        }
+        else
+        {
+            thumbnail.setImageDrawable(getResources().getDrawable(R.drawable.placeholder));
+            thumbnail.setClickable(false);
         }
     }
 

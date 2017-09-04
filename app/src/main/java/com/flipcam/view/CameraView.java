@@ -312,6 +312,11 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         }
     }
 
+    public boolean isCameraReady()
+    {
+        return camera1.isCameraReady();
+    }
+
     public void showTimeElapsed()
     {
         if(VERBOSE)Log.d(TAG,"displaying time = "+second);
@@ -600,6 +605,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     public void surfaceChanged(SurfaceHolder surfaceHolder, int i, int width, int height) {
         Log.d(TAG,"surfaceChanged = "+surfaceHolder);
         Log.d(TAG,"Width = "+width+", height = "+height);
+        this.videoFragment.getLatestFileIfExists();
         if(!camera1.isCameraReady()) {
             measuredWidth = width;
             measuredHeight = height;
@@ -615,21 +621,39 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
         Log.d(TAG,"surfaceDestroyed = "+surfaceHolder);
         Log.d(TAG,"cameraHandler = "+cameraHandler);
+        orientationEventListener.disable();
         if(cameraHandler!=null) {
             CameraRenderer cameraRenderer = cameraHandler.getCameraRendererInstance();
+            if(camera1.isCameraReady()) {
+                //Switch of flash light if used during recording.
+                camera1.setFlashOnOff(false);
+                camera1.stopPreview();
+                camera1.releaseCamera();
+            }
+            cameraHandler.removeMessages(Constants.FRAME_AVAILABLE);
+            if(surfaceTexture!=null){
+                surfaceTexture.release();
+                surfaceTexture=null;
+            }
+            frameCount=0;
+            releaseEGLSurface();
+            releaseProgram();
+            releaseEGLContext();
             if(isRecord) {
                 Log.d(TAG,"Recording in progress.... Stop now");
                 isRecord=false;
-                camera1.disableRecordingHint();
                 //Reset the RECORD Matrix to be portrait.
                 System.arraycopy(IDENTITY_MATRIX,0,RECORD_IDENTITY_MATRIX,0,IDENTITY_MATRIX.length);
                 //Reset Rotation angle
                 rotationAngle = 0f;
-                isRecording = false;
+                /*isRecording = false;
                 recordStop = -1;
                 mediaRecorder.stop();
                 mediaRecorder.release();
-                mediaRecorder = null;
+                mediaRecorder = null;*/
+                Message recordStop = new Message();
+                recordStop.what = Constants.RECORD_STOP;
+                cameraHandler.sendMessageAtFrontOfQueue(recordStop);
                 this.videoFragment.showRecordAndThumbnail();
                 Log.d(TAG,"Recording STOPPED");
             }
@@ -642,21 +666,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 e.printStackTrace();
             }
         }
-        if(surfaceTexture!=null){
-            surfaceTexture.release();
-            surfaceTexture=null;
-        }
-        //Switch of flash light if used during recording.
-        camera1.setFlashOnOff(false);
-        if(camera1.isCameraReady()) {
-            camera1.stopPreview();
-            camera1.releaseCamera();
-        }
-        orientationEventListener.disable();
-        frameCount=0;
-        releaseEGLSurface();
-        releaseProgram();
-        releaseEGLContext();
     }
 
     volatile int recordStop = -1;
@@ -850,15 +859,15 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         }
 
         private String getVideoFilePath() {
-            File dcim = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM+"/FlipCam/FC_Videos/");
+            File dcim = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM+getResources().getString(R.string.FC_VIDEO));
             if(!dcim.exists())
             {
                 dcim.mkdirs();
             }
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
+            SimpleDateFormat sdf = new SimpleDateFormat(getResources().getString(R.string.DATE_FORMAT_FOR_FILE));
             String filename = sdf.format(new Date());
             Log.d(TAG,"filename = "+filename);
-            String path = dcim.getPath()+"/FC_VID_"+filename+".mp4";
+            String path = dcim.getPath()+getResources().getString(R.string.FC_VID_PREFIX)+filename+getResources().getString(R.string.VID_EXT);
             Log.d(TAG,"Saving media file at = "+path);
             return path;
         }
