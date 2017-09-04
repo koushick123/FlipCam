@@ -219,45 +219,7 @@ public class VideoFragment extends Fragment{
             @Override
             public void onClick(View view) {
                 cameraView.record();
-                videoBar.setBackgroundColor(getResources().getColor(R.color.settingsBarColor));
-                videoBar.removeView(stopRecord);
-                videoBar.removeView(pauseRecord);
-                videoBar.removeView(switchCamera);
-                videoBar.addView(substitute);
-                videoBar.addView(switchCamera);
-                videoBar.addView(startRecord);
-                videoBar.addView(photoMode);
-                videoBar.addView(thumbnail);
-                thumbnail.setClickable(false);
-                settingsBar.removeView(timeElapsed);
-                settingsBar.removeView(memoryConsumed);
-                settingsBar.removeView(flash);
-                flash = new ImageButton(getActivity());
-                if(cameraView.isFlashOn()) {
-                    flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_off));
-                }
-                else{
-                    flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_on));
-                }
-                LinearLayout.LayoutParams flashParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-                flashParams.weight=0.5f;
-                flashParams.height = (int)getResources().getDimension(R.dimen.flashOnHeight);
-                flashParams.width = (int)getResources().getDimension(R.dimen.flashOnWidth);
-                flashParams.setMargins((int)getResources().getDimension(R.dimen.flashOnLeftMargin),0,0,0);
-                flashParams.gravity=Gravity.CENTER;
-                flash.setLayoutParams(flashParams);
-                flash.setOnClickListener(new View.OnClickListener(){
-                    @Override
-                    public void onClick(View view)
-                    {
-                        setFlash();
-                    }
-                });
-                cameraView.setFlashButton(flash);
-                settingsBar.addView(flash);
-                settingsBar.addView(settings);
-                settingsBar.setBackgroundColor(getResources().getColor(R.color.settingsBarColor));
-                flash.setBackgroundColor(getResources().getColor(R.color.settingsBarColor));
+                showRecordAndThumbnail();
             }
         });
         switchCamera.setBackgroundColor(getResources().getColor(R.color.transparentBar));
@@ -267,6 +229,49 @@ public class VideoFragment extends Fragment{
         if(!isNougatAndAbove()) {
             pauseRecord.setVisibility(View.INVISIBLE);
         }
+    }
+
+    public void showRecordAndThumbnail()
+    {
+        videoBar.setBackgroundColor(getResources().getColor(R.color.settingsBarColor));
+        videoBar.removeView(stopRecord);
+        videoBar.removeView(pauseRecord);
+        videoBar.removeView(switchCamera);
+        videoBar.addView(substitute);
+        videoBar.addView(switchCamera);
+        videoBar.addView(startRecord);
+        videoBar.addView(photoMode);
+        videoBar.addView(thumbnail);
+        thumbnail.setClickable(false);
+        settingsBar.removeView(timeElapsed);
+        settingsBar.removeView(memoryConsumed);
+        settingsBar.removeView(flash);
+        flash = new ImageButton(getActivity());
+        if(cameraView.isFlashOn()) {
+            flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_off));
+        }
+        else{
+            flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_on));
+        }
+        LinearLayout.LayoutParams flashParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        flashParams.weight=0.5f;
+        flashParams.height = (int)getResources().getDimension(R.dimen.flashOnHeight);
+        flashParams.width = (int)getResources().getDimension(R.dimen.flashOnWidth);
+        flashParams.setMargins((int)getResources().getDimension(R.dimen.flashOnLeftMargin),0,0,0);
+        flashParams.gravity=Gravity.CENTER;
+        flash.setLayoutParams(flashParams);
+        flash.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view)
+            {
+                setFlash();
+            }
+        });
+        cameraView.setFlashButton(flash);
+        settingsBar.addView(flash);
+        settingsBar.addView(settings);
+        settingsBar.setBackgroundColor(getResources().getColor(R.color.settingsBarColor));
+        flash.setBackgroundColor(getResources().getColor(R.color.settingsBarColor));
     }
 
     public void hideSettingsBarAndIcon()

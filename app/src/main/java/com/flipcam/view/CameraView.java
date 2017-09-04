@@ -617,6 +617,22 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         Log.d(TAG,"cameraHandler = "+cameraHandler);
         if(cameraHandler!=null) {
             CameraRenderer cameraRenderer = cameraHandler.getCameraRendererInstance();
+            if(isRecord) {
+                Log.d(TAG,"Recording in progress.... Stop now");
+                isRecord=false;
+                camera1.disableRecordingHint();
+                //Reset the RECORD Matrix to be portrait.
+                System.arraycopy(IDENTITY_MATRIX,0,RECORD_IDENTITY_MATRIX,0,IDENTITY_MATRIX.length);
+                //Reset Rotation angle
+                rotationAngle = 0f;
+                isRecording = false;
+                recordStop = -1;
+                mediaRecorder.stop();
+                mediaRecorder.release();
+                mediaRecorder = null;
+                this.videoFragment.showRecordAndThumbnail();
+                Log.d(TAG,"Recording STOPPED");
+            }
             cameraHandler.sendEmptyMessage(Constants.SHUTDOWN);
             try {
                 if(cameraRenderer!=null){
@@ -630,6 +646,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             surfaceTexture.release();
             surfaceTexture=null;
         }
+        //Switch of flash light if used during recording.
+        camera1.setFlashOnOff(false);
         if(camera1.isCameraReady()) {
             camera1.stopPreview();
             camera1.releaseCamera();
@@ -641,10 +659,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         releaseEGLContext();
     }
 
+    volatile int recordStop = -1;
+    volatile boolean isRecording = false;
     class CameraRenderer extends Thread
     {
-        int recordStop = -1;
-        boolean isRecording = false;
 
         public CameraRenderer()
         {
