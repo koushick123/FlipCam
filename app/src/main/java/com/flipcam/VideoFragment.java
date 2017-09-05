@@ -381,7 +381,7 @@ public class VideoFragment extends Fragment{
     public void getLatestFileIfExists()
     {
         File dcimFc = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM+getResources().getString(R.string.FC_VIDEO));
-        if(dcimFc.exists())
+        if(dcimFc.exists() && dcimFc.isDirectory() && dcimFc.listFiles().length > 0)
         {
             File[] videos = dcimFc.listFiles();
             Arrays.sort(videos);

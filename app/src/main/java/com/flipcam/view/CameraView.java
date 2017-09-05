@@ -646,11 +646,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 System.arraycopy(IDENTITY_MATRIX,0,RECORD_IDENTITY_MATRIX,0,IDENTITY_MATRIX.length);
                 //Reset Rotation angle
                 rotationAngle = 0f;
-                /*isRecording = false;
-                recordStop = -1;
-                mediaRecorder.stop();
-                mediaRecorder.release();
-                mediaRecorder = null;*/
                 Message recordStop = new Message();
                 recordStop.what = Constants.RECORD_STOP;
                 cameraHandler.sendMessageAtFrontOfQueue(recordStop);
@@ -668,11 +663,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         }
     }
 
-    volatile int recordStop = -1;
-    volatile boolean isRecording = false;
     class CameraRenderer extends Thread
     {
-
+        int recordStop = -1;
+        boolean isRecording = false;
         public CameraRenderer()
         {
             //Empty constructor
@@ -904,8 +898,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                             createFloatBuffer(GLUtil.FULL_RECTANGLE_TEX_COORDS), mTextureId, 2 * SIZEOF_FLOAT);
                     if (VERBOSE) Log.d(TAG, "Populated to encoder");
                     if (recordStop == -1) {
-                        timeElapsedHandler.sendEmptyMessage(Constants.START_TIMER);
                         mediaRecorder.start();
+                        timeElapsedHandler.sendEmptyMessage(Constants.START_TIMER);
                         recordStop = 1;
                     }
                     EGLExt.eglPresentationTimeANDROID(mEGLDisplay, encoderSurface, surfaceTexture.getTimestamp());
@@ -953,9 +947,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         }
                         break;
                     case Constants.RECORD_START:
+                        cameraRenderer.setupMediaRecorder();
                         isRecording = true;
                         isPause = false;
-                        cameraRenderer.setupMediaRecorder();
                         break;
                     case Constants.RECORD_STOP:
                         isRecording = false;
@@ -1002,7 +996,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         @Override
         public void run()
         {
-            Log.d(TAG,"Time thread start");
+            Log.d(TAG,"Timer thread start");
             Looper.prepare();
             timeElapsedHandler = new TimeElapsedHandler(this);
             synchronized (renderObj){
