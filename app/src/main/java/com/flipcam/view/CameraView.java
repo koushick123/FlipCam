@@ -350,17 +350,18 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     {
         double kb = Constants.KILO_BYTE;
         double mb = Constants.MEGA_BYTE;
-        if(videoFile.length() < kb) {
-            if(VERBOSE)Log.d(TAG,"Bytes = "+videoFile.length());
-            memoryConsumed.setText(videoFile.length() + " Bytes");
-        }
-        else if(videoFile.length() >= kb && videoFile.length() < mb){
+        double gb = Constants.GIGA_BYTE;
+        if(videoFile.length() >= kb && videoFile.length() < mb){
             if(VERBOSE)Log.d(TAG,"KB = "+videoFile.length());
-            memoryConsumed.setText(Math.ceil(videoFile.length()/kb) + " KB");
+            memoryConsumed.setText(Math.ceil(videoFile.length()/kb) + getResources().getString(R.string.MEM_PF_KB));
         }
-        else{
+        else if(videoFile.length() >= mb && videoFile.length() < gb){
             if(VERBOSE)Log.d(TAG,"MB = "+videoFile.length());
-            memoryConsumed.setText(Math.ceil(videoFile.length()/mb) + " MB");
+            memoryConsumed.setText(Math.ceil(videoFile.length()/mb) + getResources().getString(R.string.MEM_PF_MB));
+        }
+        else {
+            if(VERBOSE)Log.d(TAG,"GB = "+videoFile.length());
+            memoryConsumed.setText(Math.ceil(videoFile.length()/gb) + getResources().getString(R.string.MEM_PF_GB));
         }
     }
 
@@ -919,6 +920,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         {
             WeakReference<CameraRenderer> cameraRender;
             CameraRenderer cameraRenderer;
+            boolean recordIncomplete = false;
 
             public CameraHandler(CameraRenderer cameraRenderer){
                 cameraRender = new WeakReference<>(cameraRenderer);
@@ -954,11 +956,23 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                     case Constants.RECORD_STOP:
                         isRecording = false;
                         recordStop = -1;
-                        mediaRecorder.stop();
+                        recordIncomplete = false;
+                        try {
+                            mediaRecorder.stop();
+                        }
+                        catch(RuntimeException runtime){
+                            Log.d(TAG,"Video data not received... delete file = "+videoFile.getPath());
+                            if(videoFile.delete()){
+                                Log.d(TAG,"File deleted");
+                            }
+                            recordIncomplete = true;
+                        }
                         mediaRecorder.release();
                         mediaRecorder = null;
                         Log.d(TAG,"stop isRecording == "+isRecording);
-                        mainHandler.sendEmptyMessage(Constants.RECORD_COMPLETE);
+                        if(!recordIncomplete){
+                            mainHandler.sendEmptyMessage(Constants.RECORD_COMPLETE);
+                        }
                         if(VERBOSE)Log.d(TAG, "Exit recording...");
                         if(VERBOSE)Log.d(TAG,"Orig frame = "+frameCount+" , Rendered frame "+frameCnt);
                         break;

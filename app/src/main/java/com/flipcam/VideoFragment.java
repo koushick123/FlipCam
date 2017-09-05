@@ -7,6 +7,7 @@ import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
 import android.graphics.Typeface;
 import android.hardware.Camera;
+import android.media.MediaMetadataRetriever;
 import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.Build;
@@ -361,10 +362,20 @@ public class VideoFragment extends Fragment{
     {
         //Storing in public folder. This will ensure that the files are visible in other apps as well.
         //Use this for sharing files between apps
-        final File videos = new File(mediaPath);
-        if(videos.getName() != null){
-            Log.d(TAG,"Video file name = "+videos.getName()+", path = "+videos.getPath());
-            Bitmap vid = ThumbnailUtils.createVideoThumbnail(videos.getPath(), MediaStore.Video.Thumbnails.MICRO_KIND);
+        final File video = new File(mediaPath);
+        MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
+        mediaMetadataRetriever.setDataSource(mediaPath);
+        Bitmap firstFrame = mediaMetadataRetriever.getFrameAtTime(1000000);
+        if(firstFrame == null){
+            Log.d(TAG,"NOT A VALID video file");
+            if(video != null && video.delete()){
+                Log.d(TAG,"Removed file = "+mediaPath);
+            }
+            return;
+        }
+        if(video.getName() != null){
+            Log.d(TAG,"Video file name = "+video.getName()+", path = "+video.getPath());
+            Bitmap vid = ThumbnailUtils.createVideoThumbnail(video.getPath(), MediaStore.Video.Thumbnails.MICRO_KIND);
             Log.d(TAG,"width = "+vid.getWidth()+" , height = "+vid.getHeight());
             thumbnail.setImageBitmap(vid);
             thumbnail.setClickable(true);
@@ -372,7 +383,7 @@ public class VideoFragment extends Fragment{
                 @Override
                 public void onClick(View view)
                 {
-                    openMedia(videos.getPath());
+                    openMedia(video.getPath());
                 }
             });
         }
@@ -388,15 +399,40 @@ public class VideoFragment extends Fragment{
             Log.d(TAG,"Latest file is = "+videos[videos.length-1].getPath());
             final String filePath = videos[videos.length-1].getPath();
             Bitmap vid = ThumbnailUtils.createVideoThumbnail(filePath, MediaStore.Video.Thumbnails.MICRO_KIND);
-            thumbnail.setImageBitmap(vid);
-            thumbnail.setClickable(true);
-            thumbnail.setOnClickListener(new View.OnClickListener(){
-                @Override
-                public void onClick(View view)
-                {
-                    openMedia(filePath);
+            //If video cannot be played for whatever reason
+            if(vid != null) {
+                thumbnail.setImageBitmap(vid);
+                thumbnail.setClickable(true);
+                thumbnail.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        openMedia(filePath);
+                    }
+                });
+            }
+            else{
+                if(videos.length >= 2) {
+                    for (int i = videos.length - 2; i >= 0; i--) {
+                        vid = ThumbnailUtils.createVideoThumbnail(videos[i].getPath(), MediaStore.Video.Thumbnails.MICRO_KIND);
+                        //If video cannot be played for whatever reason
+                        if (vid != null) {
+                            thumbnail.setImageBitmap(vid);
+                            thumbnail.setClickable(true);
+                            thumbnail.setOnClickListener(new View.OnClickListener() {
+                                @Override
+                                public void onClick(View view) {
+                                    openMedia(filePath);
+                                }
+                            });
+                            break;
+                        }
+                    }
                 }
-            });
+                else {
+                    thumbnail.setImageDrawable(getResources().getDrawable(R.drawable.placeholder));
+                    thumbnail.setClickable(false);
+                }
+            }
         }
         else
         {
