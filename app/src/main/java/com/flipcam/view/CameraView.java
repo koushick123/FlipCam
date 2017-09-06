@@ -92,8 +92,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         Matrix.setIdentityM(RECORD_IDENTITY_MATRIX, 0);}
 
     CameraRenderer.CameraHandler cameraHandler;
-    TimeElapsed.TimeElapsedHandler timeElapsedHandler;
-    TimeElapsed timeElapsedUpdate;
     MainHandler mainHandler;
     Object renderObj = new Object();
     volatile boolean isReady=false;
@@ -125,6 +123,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     ImageButton flashBtn;
     VideoFragment videoFragment;
     volatile boolean isPause = false;
+    double kBDelimiter = Constants.KILO_BYTE;
+    double mBDelimiter = Constants.MEGA_BYTE;
+    double gBDelimiter = Constants.GIGA_BYTE;
     File videoFile;
 
     public CameraView(Context context, AttributeSet attrs) {
@@ -348,20 +349,20 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
 
     public void showMemoryConsumed()
     {
-        double kb = Constants.KILO_BYTE;
-        double mb = Constants.MEGA_BYTE;
-        double gb = Constants.GIGA_BYTE;
-        if(videoFile.length() >= kb && videoFile.length() < mb){
+        if(videoFile.length() >= kBDelimiter && videoFile.length() < mBDelimiter){
             if(VERBOSE)Log.d(TAG,"KB = "+videoFile.length());
-            memoryConsumed.setText(Math.ceil(videoFile.length()/kb) + getResources().getString(R.string.MEM_PF_KB));
+            double kbconsumed = videoFile.length()/kBDelimiter;
+            memoryConsumed.setText((Math.floor(kbconsumed * 100.0))/100.0 + getResources().getString(R.string.MEM_PF_KB));
         }
-        else if(videoFile.length() >= mb && videoFile.length() < gb){
-            if(VERBOSE)Log.d(TAG,"MB = "+videoFile.length());
-            memoryConsumed.setText(Math.ceil(videoFile.length()/mb) + getResources().getString(R.string.MEM_PF_MB));
+        else if(videoFile.length() >= mBDelimiter && videoFile.length() < gBDelimiter){
+            Log.d(TAG,"MB = "+videoFile.length());
+            double mbconsumed = videoFile.length()/mBDelimiter;
+            memoryConsumed.setText((Math.floor(mbconsumed * 100.0))/100.0 + getResources().getString(R.string.MEM_PF_MB));
         }
         else {
             if(VERBOSE)Log.d(TAG,"GB = "+videoFile.length());
-            memoryConsumed.setText(Math.ceil(videoFile.length()/gb) + getResources().getString(R.string.MEM_PF_GB));
+            double gbconsumed = videoFile.length()/gBDelimiter;
+            memoryConsumed.setText((Math.floor(gbconsumed * 100.0))/100.0 + getResources().getString(R.string.MEM_PF_GB));
         }
     }
 
@@ -481,10 +482,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             Matrix.rotateM(RECORD_IDENTITY_MATRIX, 0, rotationAngle , 0, 0, 1);
             setLayoutAspectRatio();
             isRecord=true;
-            timeElapsedUpdate = new TimeElapsed();
-            timeElapsedUpdate.start();
-            isReady = false;
-            waitUntilReady();
             orientationEventListener.disable();
             camera1.setRecordingHint();
             cameraHandler.sendEmptyMessage(Constants.RECORD_START);
@@ -664,6 +661,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         }
     }
 
+    long previousTime = 0;
     class CameraRenderer extends Thread
     {
         int recordStop = -1;
@@ -904,14 +902,41 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                     draw(RECORD_IDENTITY_MATRIX, createFloatBuffer(GLUtil.FULL_RECTANGLE_COORDS), 0, (GLUtil.FULL_RECTANGLE_COORDS.length / 2), 2, 2 * SIZEOF_FLOAT, mTmpMatrix,
                             createFloatBuffer(GLUtil.FULL_RECTANGLE_TEX_COORDS), mTextureId, 2 * SIZEOF_FLOAT);
                     if (VERBOSE) Log.d(TAG, "Populated to encoder");
-                    if (recordStop == -1) {
-                        mediaRecorder.start();
-                        timeElapsedHandler.sendEmptyMessage(Constants.START_TIMER);
-                        recordStop = 1;
+
+                    if(Math.abs(System.currentTimeMillis() - previousTime) >= 1000){
+                        if(second < 59) {
+                            second++;
+                            if(VERBOSE)Log.d(TAG,"second = "+second);
+                        }
+                        else if(minute < 59){
+                            second = 0;
+                            minute++;
+                            if(VERBOSE)Log.d(TAG,"minute = "+minute);
+                        }
+                        else{
+                            second = 0;
+                            minute = 0;
+                            hour++;
+                            if(VERBOSE)Log.d(TAG,"hour = "+hour);
+                        }
+                        previousTime = System.currentTimeMillis();
+                        if (recordStop == -1) {
+                            mediaRecorder.start();
+                            //timeElapsedHandler.sendEmptyMessage(Constants.START_TIMER);
+                            recordStop = 1;
+                        }
+                        if(second >= 0 || minute > 0 || hour > 0) {
+                            mainHandler.sendEmptyMessage(Constants.SHOW_ELAPSED_TIME);
+                        }
+                        if(second >= 1 || minute > 0 || hour > 0) {
+                            mainHandler.sendEmptyMessage(Constants.SHOW_MEMORY_CONSUMED);
+                        }
+                    }
+                    else if(previousTime == 0){
+                        previousTime = System.currentTimeMillis();
                     }
                     EGLExt.eglPresentationTimeANDROID(mEGLDisplay, encoderSurface, surfaceTexture.getTimestamp());
                     EGL14.eglSwapBuffers(mEGLDisplay, encoderSurface);
-                    mainHandler.sendEmptyMessage(Constants.SHOW_MEMORY_CONSUMED);
                 }
             }
             frameCount++;
@@ -956,6 +981,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         break;
                     case Constants.RECORD_START:
                         cameraRenderer.setupMediaRecorder();
+                        hour = 0; minute = 0; second = -1;
                         isRecording = true;
                         isPause = false;
                         break;
@@ -1000,98 +1026,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                             isRecording = true;
                         }
                         isPause = false;
-                        break;
-                }
-            }
-        }
-    }
-
-    class TimeElapsed extends Thread
-    {
-        public TimeElapsed()
-        {
-            //Empty constructor
-        }
-
-        @Override
-        public void run()
-        {
-            Log.d(TAG,"Timer thread start");
-            Looper.prepare();
-            timeElapsedHandler = new TimeElapsedHandler(this);
-            synchronized (renderObj){
-                isReady = true;
-                renderObj.notify();
-            }
-            Looper.loop();
-            Log.d(TAG,"Timer thread STOPPED");
-        }
-
-        public void stopTimer()
-        {
-            Log.d(TAG,"stop timer");
-            Looper.myLooper().quit();
-        }
-
-        public void showUpdatedTime()
-        {
-            hour = 0; minute = 0; second = -1;
-            while(isRecord) {
-                while(isPause){
-                    //Keep looping....do not update the time.
-                }
-                if(second < 59) {
-                    second++;
-                    if(VERBOSE)Log.d(TAG,"second = "+second);
-                }
-                else if(minute < 59){
-                    second = 0;
-                    minute++;
-                    if(VERBOSE)Log.d(TAG,"minute = "+minute);
-                }
-                else{
-                    second = 0;
-                    minute = 0;
-                    hour++;
-                    if(VERBOSE)Log.d(TAG,"hour = "+hour);
-                }
-                mainHandler.sendEmptyMessage(Constants.SHOW_ELAPSED_TIME);
-                try {
-                    //To update time every 1 second
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-            Log.d(TAG,"timer done");
-            stopTimer();
-        }
-
-        class TimeElapsedHandler extends Handler
-        {
-            WeakReference<TimeElapsed> timeElapsedRef;
-            TimeElapsed timeElapsed;
-
-            private TimeElapsed getTimeElapsedReference()
-            {
-                return timeElapsed;
-            }
-
-            public TimeElapsedHandler(TimeElapsed timeElapsed1)
-            {
-                timeElapsedRef = new WeakReference<>(timeElapsed1);
-            }
-
-            @Override
-            public void handleMessage(Message msg) {
-                timeElapsed = timeElapsedRef.get();
-                switch (msg.what)
-                {
-                    case Constants.GET_TIME_ELAPSED_REFERENCE:
-                        getTimeElapsedReference();
-                        break;
-                    case Constants.START_TIMER:
-                        timeElapsed.showUpdatedTime();
                         break;
                 }
             }

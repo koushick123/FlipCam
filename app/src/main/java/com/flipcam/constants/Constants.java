@@ -21,7 +21,7 @@ public class Constants
     public final static int RECORD_RESUME = 12000;
 
     //File size for calculating memory consumed
-    public final static double KILO_BYTE = 1024;
+    public final static double KILO_BYTE = 1024.0;
     public final static double MEGA_BYTE = KILO_BYTE * KILO_BYTE;
     public final static double GIGA_BYTE = KILO_BYTE * MEGA_BYTE;
 }

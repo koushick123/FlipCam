@@ -307,6 +307,7 @@ public class VideoFragment extends Fragment{
         timeElapsed.setTypeface(Typeface.DEFAULT_BOLD);
         timeElapsed.setBackgroundColor(getResources().getColor(R.color.transparentBar));
         timeElapsed.setTextColor(getResources().getColor(R.color.timeElapsed));
+        timeElapsed.setText(getResources().getString(R.string.START_TIME));
         LinearLayout.LayoutParams timeElapParam = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         timeElapParam.setMargins(0,(int)getResources().getDimension(R.dimen.timeAndMemTopMargin),0,0);
         timeElapParam.weight=0.3f;
@@ -320,7 +321,7 @@ public class VideoFragment extends Fragment{
         memoryConsumed.setTextColor(getResources().getColor(R.color.memoryConsumed));
         memoryConsumed.setTypeface(Typeface.DEFAULT_BOLD);
         memoryConsumed.setBackgroundColor(getResources().getColor(R.color.transparentBar));
-        memoryConsumed.setText("1000K");
+        memoryConsumed.setText(getResources().getString(R.string.START_MEMORY));
         LinearLayout.LayoutParams memConsumed = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         memConsumed.setMargins(0,(int)getResources().getDimension(R.dimen.timeAndMemTopMargin),0,0);
         memConsumed.weight=0.3f;

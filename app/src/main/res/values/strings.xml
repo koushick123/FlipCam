@@ -14,4 +14,6 @@
     <string name="MEM_PF_KB"> KB</string>
     <string name="MEM_PF_MB"> MB</string>
     <string name="MEM_PF_GB"> GB</string>
+    <string name="START_TIME">00 : 00 : 00</string>
+    <string name="START_MEMORY">0 KB</string>
 </resources>
