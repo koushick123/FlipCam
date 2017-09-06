@@ -73,6 +73,9 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         }
         if(cameraId != -1) {
             parameters = mCamera.getParameters();
+            parameters.setExposureCompensation(parameters.getMaxExposureCompensation()/2);
+            mCamera.setParameters(parameters);
+            Log.d(TAG,"exp comp set = "+parameters.getExposureCompensation());
         }
         else{
             mCamera=null;
