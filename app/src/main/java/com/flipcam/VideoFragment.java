@@ -115,9 +115,9 @@ public class VideoFragment extends Fragment{
         zoombar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                Log.d(TAG, "progress = " + progress);
+                //Log.d(TAG, "progress = " + progress);
                 if (cameraView.isSmoothZoomSupported()) {
-                    Log.d(TAG, "Smooth zoom supported");
+                    //Log.d(TAG, "Smooth zoom supported");
                     cameraView.smoothZoomInOrOut(progress);
                 } else if(cameraView.isZoomSupported()){
                     cameraView.zoomInAndOut(progress);
@@ -210,6 +210,7 @@ public class VideoFragment extends Fragment{
         stopRecord.setScaleType(ImageView.ScaleType.CENTER_CROP);
         stopRecord.setBackgroundColor(getResources().getColor(R.color.transparentBar));
         stopRecord.setImageDrawable(getResources().getDrawable(R.drawable.record_stop));
+        cameraView.setStopButton(stopRecord);
 
         layoutParams.height=(int)getResources().getDimension(R.dimen.stopButtonHeight);
         layoutParams.width=(int)getResources().getDimension(R.dimen.stopButtonWidth);
@@ -242,7 +243,7 @@ public class VideoFragment extends Fragment{
         videoBar.addView(startRecord);
         videoBar.addView(photoMode);
         videoBar.addView(thumbnail);
-        thumbnail.setClickable(false);
+        //thumbnail.setClickable(false);
         settingsBar.removeView(timeElapsed);
         settingsBar.removeView(memoryConsumed);
         settingsBar.removeView(flash);

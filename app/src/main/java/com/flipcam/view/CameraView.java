@@ -127,6 +127,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     double mBDelimiter = Constants.MEGA_BYTE;
     double gBDelimiter = Constants.GIGA_BYTE;
     File videoFile;
+    ImageButton stopButton;
 
     public CameraView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -158,6 +159,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 case Constants.RECORD_COMPLETE:
                     Log.d(TAG,"Update thumbnail now");
                     videoFragment.createAndShowThumbnail(getMediaPath());
+                    break;
+                case Constants.RECORD_STOP_ENABLE:
+                    Log.d(TAG,"Enable stop record");
+                    enableStopButton();
                     break;
             }
         }
@@ -355,7 +360,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             memoryConsumed.setText((Math.floor(kbconsumed * 100.0))/100.0 + getResources().getString(R.string.MEM_PF_KB));
         }
         else if(videoFile.length() >= mBDelimiter && videoFile.length() < gBDelimiter){
-            Log.d(TAG,"MB = "+videoFile.length());
+            if(VERBOSE)Log.d(TAG,"MB = "+videoFile.length());
             double mbconsumed = videoFile.length()/mBDelimiter;
             memoryConsumed.setText((Math.floor(mbconsumed * 100.0))/100.0 + getResources().getString(R.string.MEM_PF_MB));
         }
@@ -369,6 +374,18 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     public void setFlashButton(ImageButton flashButton)
     {
         flashBtn = flashButton;
+    }
+
+    public void setStopButton(ImageButton stopButton1)
+    {
+        stopButton = stopButton1;
+        Log.d(TAG,"disable stopbutton");
+        stopButton.setEnabled(false);
+    }
+
+    private void enableStopButton()
+    {
+        stopButton.setEnabled(true);
     }
 
     public void switchCamera()
@@ -920,20 +937,19 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                             if(VERBOSE)Log.d(TAG,"hour = "+hour);
                         }
                         previousTime = System.currentTimeMillis();
-                        if (recordStop == -1) {
-                            mediaRecorder.start();
-                            //timeElapsedHandler.sendEmptyMessage(Constants.START_TIMER);
-                            recordStop = 1;
-                        }
-                        if(second >= 0 || minute > 0 || hour > 0) {
+                        if(recordStop == 1) {
                             mainHandler.sendEmptyMessage(Constants.SHOW_ELAPSED_TIME);
-                        }
-                        if(second >= 1 || minute > 0 || hour > 0) {
-                            mainHandler.sendEmptyMessage(Constants.SHOW_MEMORY_CONSUMED);
+                            //Log.d(TAG,"enable stop button");
+                            mainHandler.sendEmptyMessage(Constants.RECORD_STOP_ENABLE);
                         }
                     }
                     else if(previousTime == 0){
                         previousTime = System.currentTimeMillis();
+                    }
+                    mainHandler.sendEmptyMessage(Constants.SHOW_MEMORY_CONSUMED);
+                    if (recordStop == -1) {
+                        mediaRecorder.start();
+                        recordStop = 1;
                     }
                     EGLExt.eglPresentationTimeANDROID(mEGLDisplay, encoderSurface, surfaceTexture.getTimestamp());
                     EGL14.eglSwapBuffers(mEGLDisplay, encoderSurface);
