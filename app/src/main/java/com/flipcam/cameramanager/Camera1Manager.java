@@ -49,6 +49,11 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     }
 
     @Override
+    public List<Camera.Size> getSupportedPictureSizes() {
+        return mCamera.getParameters().getSupportedPictureSizes();
+    }
+
+    @Override
     public void openCamera(boolean backCamera) {
         int cameraId = -1;
         for(int i=0;i<Camera.getNumberOfCameras();i++)

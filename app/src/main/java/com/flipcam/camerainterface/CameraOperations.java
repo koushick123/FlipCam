@@ -1,6 +1,9 @@
 package com.flipcam.camerainterface;
 
 import android.graphics.SurfaceTexture;
+import android.hardware.Camera;
+
+import java.util.List;
 
 /**
  * Created by Koushick on 02-08-2017.
@@ -64,4 +67,6 @@ public interface CameraOperations {
     public boolean isCameraReady();
     //To set display orientation to match that of the activity/frame
     public void setDisplayOrientation(int result);
+    //To get supported picture sizes
+    public List<Camera.Size> getSupportedPictureSizes();
 }
