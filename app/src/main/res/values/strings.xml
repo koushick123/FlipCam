@@ -10,6 +10,7 @@
     <string name="FC_VID_PREFIX">/FC_VID_</string>
     <string name="FC_IMG_PREFIX">/FC_IMG_</string>
     <string name="VID_EXT">.mp4</string>
+    <string name="IMG_EXT">.jpg</string>
     <string name="DATE_FORMAT_FOR_FILE">yyyy-MM-dd-HH-mm-ss</string>
     <string name="MEM_PF_KB"> KB</string>
     <string name="MEM_PF_MB"> MB</string>
@@ -17,6 +18,4 @@
     <string name="START_TIME">00 : 00 : 00</string>
     <string name="START_MEMORY">0 KB</string>
 
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

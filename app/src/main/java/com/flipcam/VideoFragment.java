@@ -209,6 +209,17 @@ public class VideoFragment extends Fragment{
         videoBar.addView(substitute);
         videoBar.addView(switchCamera);
         capturePic = new ImageButton(getContext());
+        capturePic.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(cameraView.capturePhoto()){
+                    createAndShowThumbnail(cameraView.getPhotoMediaPath());
+                }
+                else{
+                    Log.d(TAG,"Something went wront with picture capture");
+                }
+            }
+        });
         capturePic.setImageDrawable(getResources().getDrawable(R.drawable.capture_picture));
         layoutParams.height=(int)getResources().getDimension(R.dimen.pictureButtonHeight);
         layoutParams.width=(int)getResources().getDimension(R.dimen.pictureButtonWidth);

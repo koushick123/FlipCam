@@ -1,10 +1,11 @@
 package com.flipcam.cameramanager;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.util.Log;
-import android.view.SurfaceHolder;
 
 import com.flipcam.camerainterface.CameraOperations;
 
@@ -16,7 +17,7 @@ import java.util.List;
  * Created by Koushick on 02-08-2017.
  */
 
-public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeListener {
+public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeListener, Camera.ShutterCallback,Camera.PictureCallback {
 
     private Camera mCamera;
     public final String TAG = "Camera1Manager";
@@ -28,7 +29,9 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     int cameraId;
     Camera.Parameters parameters;
     Camera.CameraInfo info = new Camera.CameraInfo();
+    boolean pictureReady = false;
     private static Camera1Manager camera1Manager;
+    Bitmap photo;
     public static Camera1Manager getInstance()
     {
         if(camera1Manager == null){
@@ -214,13 +217,37 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     }
 
     @Override
-    public void startPreview(SurfaceHolder surfaceHolder) {
-        try {
-            mCamera.setPreviewDisplay(surfaceHolder);
-        } catch (IOException e) {
-            e.printStackTrace();
+    public boolean capturePicture() {
+        if(!isAutoFocus()){
+            Log.d(TAG,"Setting auto focus");
+            setAutoFocus();
         }
-        mCamera.startPreview();
+        photo = null;
+        mCamera.takePicture(this,null,this);
+        while(!pictureReady){
+            //Wait till picture is taken, since the takePicture() call is asynchronous.
+        }
+        pictureReady = false;
+        if(photo == null){
+            return false;
+        }
+        else{
+            return true;
+        }
+    }
+
+    @Override
+    public void onPictureTaken(byte[] bytes, Camera camera) {
+        Log.d(TAG,"Photo available");
+        photo = BitmapFactory.decodeByteArray(bytes,0,bytes.length);
+        Log.d(TAG,"photo saved");
+        pictureReady = true;
+        cancelAutoFocus();
+    }
+
+    @Override
+    public void onShutter() {
+        Log.d(TAG,"Photo captured");
     }
 
     @Override

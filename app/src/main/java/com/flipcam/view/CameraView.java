@@ -115,6 +115,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     volatile int minute=0;
     volatile int second=0;
     String mNextVideoAbsolutePath=null;
+    String mNextPhotoAbsolutePath=null;
     TextView timeElapsed;
     TextView memoryConsumed;
     //Default display sizes in case windowManager is not able to return screen size.
@@ -263,6 +264,11 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
 
     public String getMediaPath(){
         return mNextVideoAbsolutePath;
+    }
+
+    public String getPhotoMediaPath()
+    {
+        return mNextPhotoAbsolutePath;
     }
 
     public boolean zoomInAndOut(int progress)
@@ -634,6 +640,11 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         }
     }
 
+    public boolean capturePhoto()
+    {
+        return camera1.capturePicture();
+    }
+
     @Override
     public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
         Log.d(TAG,"surfaceDestroyed = "+surfaceHolder);
@@ -860,7 +871,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             }
             mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
             mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-            mNextVideoAbsolutePath = getVideoFilePath();
+            mNextVideoAbsolutePath = getFilePath(true);
             videoFile = new File(mNextVideoAbsolutePath);
             mediaRecorder.setOutputFile(mNextVideoAbsolutePath);
             mediaRecorder.setVideoEncodingBitRate(camcorderProfile.videoBitRate);
@@ -876,8 +887,14 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             encoderSurface = prepareWindowSurface(mediaRecorder.getSurface());
         }
 
-        private String getVideoFilePath() {
-            File dcim = getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM+getResources().getString(R.string.FC_VIDEO));
+        private String getFilePath(boolean video) {
+            File dcim;
+            if(video) {
+                dcim = getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + getResources().getString(R.string.FC_VIDEO));
+            }
+            else{
+                dcim = getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + getResources().getString(R.string.FC_PICTURE));
+            }
             if(!dcim.exists())
             {
                 dcim.mkdirs();
@@ -885,7 +902,13 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             SimpleDateFormat sdf = new SimpleDateFormat(getResources().getString(R.string.DATE_FORMAT_FOR_FILE));
             String filename = sdf.format(new Date());
             Log.d(TAG,"filename = "+filename);
-            String path = dcim.getPath()+getResources().getString(R.string.FC_VID_PREFIX)+filename+getResources().getString(R.string.VID_EXT);
+            String path;
+            if(video) {
+                path = dcim.getPath() + getResources().getString(R.string.FC_VID_PREFIX) + filename + getResources().getString(R.string.VID_EXT);
+            }
+            else{
+                path = dcim.getPath() + getResources().getString(R.string.FC_IMG_PREFIX) + filename + getResources().getString(R.string.IMG_EXT);
+            }
             Log.d(TAG,"Saving media file at = "+path);
             return path;
         }
