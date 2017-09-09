@@ -2,6 +2,7 @@ package com.flipcam.camerainterface;
 
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
+import android.view.SurfaceHolder;
 
 import java.util.List;
 
@@ -21,7 +22,7 @@ public interface CameraOperations {
     public void setFPS();
     //To set Resolution
     public void setResolution();
-    //To set Resolution with windowmanager
+    //To set Resolution with width and height
     public void setResolution(int width,int height);
     //To set zoom
     public boolean zoomInOrOut(int zoomInOrOut);
@@ -47,6 +48,8 @@ public interface CameraOperations {
     public void setFocusMode(String focusMode);
     //To start preview
     public void startPreview(SurfaceTexture surfaceTexture);
+    //To start preview with surfaceholder
+    public void startPreview(SurfaceHolder surfaceHolder);
     //To set auto flash
     public void setAutoFlash();
     //To set flash on/off
@@ -69,4 +72,6 @@ public interface CameraOperations {
     public void setDisplayOrientation(int result);
     //To get supported picture sizes
     public List<Camera.Size> getSupportedPictureSizes();
+    //To set picture size
+    public void setPictureSize(int width, int height);
 }

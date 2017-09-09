@@ -8,12 +8,10 @@ import android.graphics.Bitmap;
 import android.graphics.Typeface;
 import android.hardware.Camera;
 import android.media.MediaMetadataRetriever;
-import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-import android.provider.MediaStore;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.util.Log;
@@ -28,7 +26,7 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.flipcam.permissioninterface.PermissionInterface;
+import com.flipcam.constants.Constants;
 import com.flipcam.view.CameraView;
 
 import java.io.File;
@@ -38,7 +36,6 @@ import static com.flipcam.PermissionActivity.FC_SHARED_PREFERENCE;
 
 
 public class VideoFragment extends Fragment{
-    // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
 
     public static final String TAG = "VideoFragment";
     SeekBar zoombar;
@@ -56,20 +53,20 @@ public class VideoFragment extends Fragment{
     TextView memoryConsumed;
     PermissionInterface permissionInterface;
     ImageButton stopRecord;
+    ImageButton videoMode;
+    ImageButton capturePic;
 
     public VideoFragment() {
         // Required empty public constructor
     }
 
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     *
-     * @return A new instance of fragment VideoFragment.
-     */
     public static VideoFragment newInstance() {
         VideoFragment fragment = new VideoFragment();
         return fragment;
+    }
+
+    public interface PermissionInterface{
+        void askPermission();
     }
 
     @Override
@@ -138,6 +135,12 @@ public class VideoFragment extends Fragment{
         });
         thumbnail = (ImageView)view.findViewById(R.id.thumbnail);
         photoMode = (ImageButton) view.findViewById(R.id.photoMode);
+        photoMode.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view1){
+                showPhotoIcons();
+            }
+        });
         switchCamera = (ImageButton)view.findViewById(R.id.switchCamera);
         switchCamera.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -193,6 +196,67 @@ public class VideoFragment extends Fragment{
     public boolean isNougatAndAbove()
     {
         return (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N);
+    }
+
+    public void showPhotoIcons()
+    {
+        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,LinearLayout.LayoutParams.WRAP_CONTENT);
+        videoBar.removeView(substitute);
+        videoBar.removeView(switchCamera);
+        videoBar.removeView(startRecord);
+        videoBar.removeView(photoMode);
+        videoBar.removeView(thumbnail);
+        videoBar.addView(substitute);
+        videoBar.addView(switchCamera);
+        capturePic = new ImageButton(getContext());
+        capturePic.setImageDrawable(getResources().getDrawable(R.drawable.capture_picture));
+        layoutParams.height=(int)getResources().getDimension(R.dimen.pictureButtonHeight);
+        layoutParams.width=(int)getResources().getDimension(R.dimen.pictureButtonWidth);
+        layoutParams.setMargins((int)getResources().getDimension(R.dimen.picBtnLeftMargin),0,(int)getResources().getDimension(R.dimen.picBtnRightMargin),0);
+        capturePic.setLayoutParams(layoutParams);
+        capturePic.setBackgroundColor(getResources().getColor(R.color.settingsBarColor));
+        capturePic.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        videoBar.addView(capturePic);
+        videoMode = new ImageButton(getContext());
+        videoMode.setImageDrawable(getResources().getDrawable(R.drawable.video_mode));
+        videoMode.setBackgroundColor(getResources().getColor(R.color.settingsBarColor));
+        layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,LinearLayout.LayoutParams.WRAP_CONTENT);
+        layoutParams.setMargins((int)getResources().getDimension(R.dimen.videoModeBtnLeftMargin),0,(int)getResources().getDimension(R.dimen.videoModeBtnRightMargin),0);
+        videoMode.setLayoutParams(layoutParams);
+        videoMode.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                showVideoIcons();
+            }
+        });
+        videoBar.addView(videoMode);
+        videoBar.addView(thumbnail);
+    }
+
+    public void showVideoIcons()
+    {
+        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,LinearLayout.LayoutParams.WRAP_CONTENT);
+        videoBar.removeView(substitute);
+        videoBar.removeView(switchCamera);
+        videoBar.removeView(capturePic);
+        videoBar.removeView(videoMode);
+        videoBar.removeView(thumbnail);
+        videoBar.addView(substitute);
+        videoBar.addView(switchCamera);
+        layoutParams.height=(int)getResources().getDimension(R.dimen.stopButtonHeight);
+        layoutParams.width=(int)getResources().getDimension(R.dimen.stopButtonWidth);
+        layoutParams.setMargins((int)getResources().getDimension(R.dimen.stopBtnLeftMargin),0,(int)getResources().getDimension(R.dimen.stopBtnRightMargin),0);
+        startRecord.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        startRecord.setLayoutParams(layoutParams);
+        videoBar.addView(startRecord);
+        layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,LinearLayout.LayoutParams.WRAP_CONTENT);
+        layoutParams.setMargins((int)getResources().getDimension(R.dimen.photoModeBtnLeftMargin),0,(int)getResources().getDimension(R.dimen.photoModeBtnRightMargin),0);
+        photoMode.setLayoutParams(layoutParams);
+        videoBar.addView(photoMode);
+        layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,LinearLayout.LayoutParams.WRAP_CONTENT);
+        layoutParams.setMargins((int)getResources().getDimension(R.dimen.thumbBtnLeftMargin),0,(int)getResources().getDimension(R.dimen.thumbBtnRightMargin),0);
+        thumbnail.setLayoutParams(layoutParams);
+        videoBar.addView(thumbnail);
     }
 
     public void addStopAndPauseIcons()
@@ -367,7 +431,7 @@ public class VideoFragment extends Fragment{
         final File video = new File(mediaPath);
         MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
         mediaMetadataRetriever.setDataSource(mediaPath);
-        Bitmap firstFrame = mediaMetadataRetriever.getFrameAtTime(1000000);
+        Bitmap firstFrame = mediaMetadataRetriever.getFrameAtTime(Constants.FIRST_SEC_MICRO);
         if(firstFrame == null){
             Log.d(TAG,"NOT A VALID video file");
             if(video != null && video.delete()){
@@ -377,9 +441,10 @@ public class VideoFragment extends Fragment{
         }
         if(video.getName() != null){
             Log.d(TAG,"Video file name = "+video.getName()+", path = "+video.getPath());
-            Bitmap vid = ThumbnailUtils.createVideoThumbnail(video.getPath(), MediaStore.Video.Thumbnails.MICRO_KIND);
-            Log.d(TAG,"width = "+vid.getWidth()+" , height = "+vid.getHeight());
-            thumbnail.setImageBitmap(vid);
+            Log.d(TAG,"width = "+firstFrame.getWidth()+" , height = "+firstFrame.getHeight());
+            firstFrame = Bitmap.createScaledBitmap(firstFrame,(int)getResources().getDimension(R.dimen.thumbnailWidth),
+                    (int)getResources().getDimension(R.dimen.thumbnailHeight),false);
+            thumbnail.setImageBitmap(firstFrame);
             thumbnail.setClickable(true);
             thumbnail.setOnClickListener(new View.OnClickListener(){
                 @Override
@@ -400,9 +465,13 @@ public class VideoFragment extends Fragment{
             Arrays.sort(videos);
             Log.d(TAG,"Latest file is = "+videos[videos.length-1].getPath());
             final String filePath = videos[videos.length-1].getPath();
-            Bitmap vid = ThumbnailUtils.createVideoThumbnail(filePath, MediaStore.Video.Thumbnails.MICRO_KIND);
+            MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
+            mediaMetadataRetriever.setDataSource(filePath);
+            Bitmap vid = mediaMetadataRetriever.getFrameAtTime(Constants.FIRST_SEC_MICRO);
             //If video cannot be played for whatever reason
             if(vid != null) {
+                vid = Bitmap.createScaledBitmap(vid,(int)getResources().getDimension(R.dimen.thumbnailWidth),
+                        (int)getResources().getDimension(R.dimen.thumbnailHeight),false);
                 thumbnail.setImageBitmap(vid);
                 thumbnail.setClickable(true);
                 thumbnail.setOnClickListener(new View.OnClickListener() {
@@ -415,9 +484,11 @@ public class VideoFragment extends Fragment{
             else{
                 if(videos.length >= 2) {
                     for (int i = videos.length - 2; i >= 0; i--) {
-                        vid = ThumbnailUtils.createVideoThumbnail(videos[i].getPath(), MediaStore.Video.Thumbnails.MICRO_KIND);
+                        vid = mediaMetadataRetriever.getFrameAtTime(Constants.FIRST_SEC_MICRO);
                         //If video cannot be played for whatever reason
                         if (vid != null) {
+                            vid = Bitmap.createScaledBitmap(vid,(int)getResources().getDimension(R.dimen.thumbnailWidth),
+                                    (int)getResources().getDimension(R.dimen.thumbnailHeight),false);
                             thumbnail.setImageBitmap(vid);
                             thumbnail.setClickable(true);
                             thumbnail.setOnClickListener(new View.OnClickListener() {

@@ -10,9 +10,24 @@
     //Stop button
     <dimen name="stopButtonHeight">76dp</dimen>
     <dimen name="stopButtonWidth">67dp</dimen>
+    //Picture button
+    <dimen name="pictureButtonWidth">67dp</dimen>
+    <dimen name="pictureButtonHeight">76dp</dimen>
+    //Picture button margin
+    <dimen name="picBtnLeftMargin">15dp</dimen>
+    <dimen name="picBtnRightMargin">15dp</dimen>
+    //Video Mode button margin
+    <dimen name="videoModeBtnLeftMargin">0dp</dimen>
+    <dimen name="videoModeBtnRightMargin">10dp</dimen>
     //Stop button margin
-    <dimen name="stopBtnLeftMargin">30dp</dimen>
-    <dimen name="stopBtnRightMargin">30dp</dimen>
+    <dimen name="stopBtnLeftMargin">15dp</dimen>
+    <dimen name="stopBtnRightMargin">15dp</dimen>
+    //Thumbnail button margin
+    <dimen name="thumbBtnLeftMargin">5dp</dimen>
+    <dimen name="thumbBtnRightMargin">5dp</dimen>
+    //Photo mode button margin
+    <dimen name="photoModeBtnLeftMargin">0dp</dimen>
+    <dimen name="photoModeBtnRightMargin">10dp</dimen>
     //Pause button margin
     <dimen name="pauseBtnLeftMargin">25dp</dimen>
     <dimen name="pauseBtnRightMargin">25dp</dimen>
@@ -22,4 +37,7 @@
     <dimen name="switchButtonLeftMargin">25dp</dimen>
     //Top margin for time elapsed and memory texts
     <dimen name="timeAndMemTopMargin">15dp</dimen>
+    //Thumbnail dimensions
+    <dimen name="thumbnailWidth">96dp</dimen>
+    <dimen name="thumbnailHeight">96dp</dimen>
 </resources>

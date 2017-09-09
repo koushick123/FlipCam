@@ -1,8 +1,10 @@
 package com.flipcam.cameramanager;
 
+import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.util.Log;
+import android.view.SurfaceHolder;
 
 import com.flipcam.camerainterface.CameraOperations;
 
@@ -209,6 +211,29 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
             throw new RuntimeException(ioe);
         }
         mCamera.startPreview();
+    }
+
+    @Override
+    public void startPreview(SurfaceHolder surfaceHolder) {
+        try {
+            mCamera.setPreviewDisplay(surfaceHolder);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        mCamera.startPreview();
+    }
+
+    @Override
+    public void setPictureSize(int width, int height) {
+        List<Integer> formats = mCamera.getParameters().getSupportedPictureFormats();
+        for(int i=0;i<formats.size();i++)
+        {
+            if(formats.get(i) == ImageFormat.NV21){
+                mCamera.getParameters().setPreviewFormat(formats.get(i));
+                break;
+            }
+        }
+        mCamera.getParameters().setPictureSize(width,height);
     }
 
     @Override

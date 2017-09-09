@@ -3,7 +3,6 @@ package com.flipcam.view;
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
@@ -45,8 +44,6 @@ import com.flipcam.constants.Constants;
 import com.flipcam.util.GLUtil;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
@@ -54,8 +51,6 @@ import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
 
 import static android.os.Environment.getExternalStoragePublicDirectory;
 
@@ -506,15 +501,15 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             Matrix.rotateM(RECORD_IDENTITY_MATRIX, 0, rotationAngle , 0, 0, 1);
             setLayoutAspectRatio();
             isRecord=true;
+            cameraHandler.sendEmptyMessage(Constants.RECORD_START);
             orientationEventListener.disable();
             camera1.setRecordingHint();
-            cameraHandler.sendEmptyMessage(Constants.RECORD_START);
         }
         else{
             isRecord=false;
+            cameraHandler.sendEmptyMessage(Constants.RECORD_STOP);
             orientationEventListener.enable();
             camera1.disableRecordingHint();
-            cameraHandler.sendEmptyMessage(Constants.RECORD_STOP);
             //Reset the RECORD Matrix to be portrait.
             System.arraycopy(IDENTITY_MATRIX,0,RECORD_IDENTITY_MATRIX,0,IDENTITY_MATRIX.length);
             //Reset Rotation angle
@@ -957,30 +952,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                     if (recordStop == -1) {
                         mediaRecorder.start();
                         recordStop = 1;
-                        List sizes = camera1.getSupportedPictureSizes();
-                        Iterator<Camera.Size> iterator = sizes.iterator();
-                        while(iterator.hasNext()){
-                            Camera.Size temp = iterator.next();
-                            Log.d(TAG,"size = "+temp.width+", "+temp.height);
-                        }
-                        Bitmap photo = Bitmap.createBitmap(VIDEO_WIDTH,VIDEO_HEIGHT, Bitmap.Config.ARGB_8888);
-                        try {
-                            File image = getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM+getResources().getString(R.string.FC_PICTURE));
-                            if(!image.exists())
-                            {
-                                image.mkdir();
-                            }
-                            String filename = image.getPath()+"/photo.jpg";
-                            FileOutputStream fileOutputStream = new FileOutputStream(filename);
-                            photo.compress(Bitmap.CompressFormat.JPEG,100,fileOutputStream);
-                            fileOutputStream.close();
-                            Log.d(TAG,"bitmap created");
-                            //File dcimFc = getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM+getResources().getString(R.string.FC_VIDEO));
-                        } catch (FileNotFoundException e) {
-                            e.printStackTrace();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
                     }
                     EGLExt.eglPresentationTimeANDROID(mEGLDisplay, encoderSurface, surfaceTexture.getTimestamp());
                     EGL14.eglSwapBuffers(mEGLDisplay, encoderSurface);
