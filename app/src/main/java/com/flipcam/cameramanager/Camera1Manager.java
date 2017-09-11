@@ -218,9 +218,13 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
 
     @Override
     public boolean capturePicture() {
-        if(!isAutoFocus()){
+        if(isFocusModeSupported(Camera.Parameters.FLASH_MODE_AUTO) && !isAutoFocus()){
             Log.d(TAG,"Setting auto focus");
+            setFocusMode(Camera.Parameters.FLASH_MODE_AUTO);
             setAutoFocus();
+        }
+        while(!isAutoFocus()){
+            //Keep waiting till AF is found.
         }
         photo = null;
         mCamera.takePicture(this,null,this);
@@ -242,6 +246,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         photo = BitmapFactory.decodeByteArray(bytes,0,bytes.length);
         Log.d(TAG,"photo saved");
         pictureReady = true;
+        camera.startPreview();
         cancelAutoFocus();
     }
 
@@ -286,7 +291,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         @Override
         public void onAutoFocus(boolean success, Camera camera) {
             if(success) {
-                //Log.d(TAG,"auto focus set successfully");
+                Log.d(TAG,"auto focus set successfully");
                 focused = success;
             }
         }
@@ -300,6 +305,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     @Override
     public void cancelAutoFocus() {
         mCamera.cancelAutoFocus();
+        focused = false;
     }
 
     @Override

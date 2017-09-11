@@ -38,6 +38,6 @@
     //Top margin for time elapsed and memory texts
     <dimen name="timeAndMemTopMargin">15dp</dimen>
     //Thumbnail dimensions
-    <dimen name="thumbnailWidth">96dp</dimen>
-    <dimen name="thumbnailHeight">96dp</dimen>
+    <dimen name="thumbnailWidth">45dp</dimen>
+    <dimen name="thumbnailHeight">45dp</dimen>
 </resources>
