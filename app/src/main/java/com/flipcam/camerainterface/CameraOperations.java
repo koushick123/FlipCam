@@ -72,5 +72,5 @@ public interface CameraOperations {
     //To set picture size
     public void setPictureSize(int width, int height);
     //To capture picture
-    public boolean capturePicture();
+    public void capturePicture();
 }

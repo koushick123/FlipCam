@@ -212,12 +212,8 @@ public class VideoFragment extends Fragment{
         capturePic.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(cameraView.capturePhoto()){
-                    createAndShowThumbnail(cameraView.getPhotoMediaPath());
-                }
-                else{
-                    Log.d(TAG,"Something went wront with picture capture");
-                }
+                cameraView.capturePhoto();
+                //createAndShowThumbnail(cameraView.getPhotoMediaPath());
             }
         });
         capturePic.setImageDrawable(getResources().getDrawable(R.drawable.capture_picture));
@@ -242,6 +238,7 @@ public class VideoFragment extends Fragment{
         });
         videoBar.addView(videoMode);
         videoBar.addView(thumbnail);
+        cameraView.setPhotoMode();
     }
 
     public void showVideoIcons()
@@ -268,6 +265,7 @@ public class VideoFragment extends Fragment{
         layoutParams.setMargins((int)getResources().getDimension(R.dimen.thumbBtnLeftMargin),0,(int)getResources().getDimension(R.dimen.thumbBtnRightMargin),0);
         thumbnail.setLayoutParams(layoutParams);
         videoBar.addView(thumbnail);
+        cameraView.setVideoMode();
     }
 
     public void addStopAndPauseIcons()

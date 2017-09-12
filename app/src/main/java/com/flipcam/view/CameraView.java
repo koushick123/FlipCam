@@ -3,9 +3,13 @@ package com.flipcam.view;
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.media.CamcorderProfile;
 import android.media.MediaRecorder;
@@ -52,13 +56,14 @@ import java.nio.FloatBuffer;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import static android.content.Context.SENSOR_SERVICE;
 import static android.os.Environment.getExternalStoragePublicDirectory;
 
 /**
  * Created by Koushick on 15-08-2017.
  */
 
-public class CameraView extends SurfaceView implements SurfaceHolder.Callback, SurfaceTexture.OnFrameAvailableListener{
+public class CameraView extends SurfaceView implements SurfaceHolder.Callback, SurfaceTexture.OnFrameAvailableListener, SensorEventListener{
 
     public static final String TAG = "CameraView";
     private static int VIDEO_WIDTH = 640;  // dimensions for VGA
@@ -129,6 +134,11 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     double kBDelimiter = Constants.KILO_BYTE;
     double mBDelimiter = Constants.MEGA_BYTE;
     double gBDelimiter = Constants.GIGA_BYTE;
+    private final SensorManager mSensorManager;
+    private final Sensor mAccelerometer;
+    float diff[] = new float[3];
+    boolean focusNow = false;
+    float sensorValues[] = new float[3];
     File videoFile;
     ImageButton stopButton;
 
@@ -137,6 +147,51 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         Log.d(TAG,"start cameraview");
         getHolder().addCallback(this);
         camera1 = Camera1Manager.getInstance();
+        mSensorManager = (SensorManager)getContext().getSystemService(SENSOR_SERVICE);
+        mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+    }
+
+    @Override
+    public void onSensorChanged(SensorEvent sensorEvent) {
+        //Use accelerometer to check if the device is moving among the x,y or z axes. This means the user is moving the camera and
+        //trying to refocus.
+        if(Math.abs(System.currentTimeMillis() - previousTime) >= 240){
+            diff[0] = Math.abs(sensorEvent.values[0]-sensorValues[0]);
+            diff[1] = Math.abs(sensorEvent.values[1]-sensorValues[1]);
+            determineOrientation();
+            if(rotationAngle == 90 || rotationAngle == 270){
+                if(diff[1] > 0.35){
+                    Log.d(TAG,"diff y ="+diff[1]);
+                    sensorValues[1] = sensorEvent.values[1];
+                    focusNow = true;
+                }
+                else{
+                    if(focusNow) {
+                        Log.d(TAG, "Focus now in landscape");
+                        camera1.setAutoFocus();
+                        focusNow = false;
+                    }
+                }
+            }
+            else if(diff[0] > 0.6){
+                Log.d(TAG, "diff x =" + diff[0]);
+                sensorValues[0] = sensorEvent.values[0];
+                focusNow = true;
+            }
+            else{
+                if(focusNow) {
+                    Log.d(TAG, "Focus now");
+                    camera1.setAutoFocus();
+                    focusNow = false;
+                }
+            }
+            previousTime = System.currentTimeMillis();
+        }
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int i) {
+        Log.d(TAG,"onAccuracyChanged");
     }
 
     class MainHandler extends Handler {
@@ -324,6 +379,20 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         else{
             return true;
         }
+    }
+
+    public void setPhotoMode()
+    {
+        Log.d(TAG,"start sensor");
+        camera1.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
+        mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+    }
+
+    public void setVideoMode()
+    {
+        Log.d(TAG,"stop sensor");
+        camera1.cancelAutoFocus();
+        mSensorManager.unregisterListener(this);
     }
 
     public boolean isCameraReady()
@@ -640,9 +709,15 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         }
     }
 
-    public boolean capturePhoto()
+    public void capturePhoto()
     {
-        return camera1.capturePicture();
+        camera1.setAutoFocus();
+        camera1.capturePicture();
+    }
+
+    public Bitmap getPhoto()
+    {
+        return camera1.returnPhoto();
     }
 
     @Override
@@ -650,6 +725,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         Log.d(TAG,"surfaceDestroyed = "+surfaceHolder);
         Log.d(TAG,"cameraHandler = "+cameraHandler);
         orientationEventListener.disable();
+        mSensorManager.unregisterListener(this);
         if(cameraHandler!=null) {
             CameraRenderer cameraRenderer = cameraHandler.getCameraRendererInstance();
             if(camera1.isCameraReady()) {

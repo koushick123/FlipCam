@@ -217,27 +217,13 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     }
 
     @Override
-    public boolean capturePicture() {
-        if(isFocusModeSupported(Camera.Parameters.FLASH_MODE_AUTO) && !isAutoFocus()){
-            Log.d(TAG,"Setting auto focus");
-            setFocusMode(Camera.Parameters.FLASH_MODE_AUTO);
-            setAutoFocus();
-        }
-        while(!isAutoFocus()){
-            //Keep waiting till AF is found.
-        }
+    public void capturePicture() {
         photo = null;
         mCamera.takePicture(this,null,this);
-        while(!pictureReady){
-            //Wait till picture is taken, since the takePicture() call is asynchronous.
-        }
-        pictureReady = false;
-        if(photo == null){
-            return false;
-        }
-        else{
-            return true;
-        }
+    }
+
+    public Bitmap returnPhoto(){
+        return photo;
     }
 
     @Override
