@@ -3,12 +3,16 @@ package com.flipcam.cameramanager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
+import android.graphics.Matrix;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.util.Log;
 
+import com.flipcam.VideoFragment;
 import com.flipcam.camerainterface.CameraOperations;
 
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
@@ -29,7 +33,9 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     int cameraId;
     Camera.Parameters parameters;
     Camera.CameraInfo info = new Camera.CameraInfo();
-    boolean pictureReady = false;
+    private VideoFragment vFrag;
+    String photoPath;
+
     private static Camera1Manager camera1Manager;
     Bitmap photo;
     public static Camera1Manager getInstance()
@@ -222,18 +228,33 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         mCamera.takePicture(this,null,this);
     }
 
-    public Bitmap returnPhoto(){
-        return photo;
+    public void setFragmentInstance(VideoFragment fragmentInstance){
+        vFrag = fragmentInstance;
+    }
+
+    public void setPhotoPath(String mediaPath)
+    {
+        photoPath = mediaPath;
     }
 
     @Override
     public void onPictureTaken(byte[] bytes, Camera camera) {
+        camera.startPreview();
         Log.d(TAG,"Photo available");
         photo = BitmapFactory.decodeByteArray(bytes,0,bytes.length);
         Log.d(TAG,"photo saved");
-        pictureReady = true;
-        camera.startPreview();
-        cancelAutoFocus();
+        FileOutputStream picture = null;
+        try {
+            picture = new FileOutputStream(photoPath);
+            Log.d(TAG,"Picture saved at loc = "+photoPath);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        Matrix rotate = new Matrix();
+        rotate.setRotate(90);
+        photo = Bitmap.createBitmap(photo,0,0,photo.getWidth(),photo.getHeight(),rotate,true);
+        photo.compress(Bitmap.CompressFormat.JPEG,100,picture);
+        vFrag.createAndShowPhotoThumbnail(photo);
     }
 
     @Override

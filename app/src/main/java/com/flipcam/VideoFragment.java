@@ -433,6 +433,22 @@ public class VideoFragment extends Fragment{
         permissionInterface.askPermission();
     }
 
+    public void createAndShowPhotoThumbnail(Bitmap photo)
+    {
+        Log.d(TAG,"create photo thumbnail");
+        Bitmap firstFrame = Bitmap.createScaledBitmap(photo,(int)getResources().getDimension(R.dimen.thumbnailWidth),
+                (int)getResources().getDimension(R.dimen.thumbnailHeight),false);
+        thumbnail.setImageBitmap(firstFrame);
+        thumbnail.setClickable(true);
+        thumbnail.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view)
+            {
+                openMedia(cameraView.getPhotoMediaPath(),false);
+            }
+        });
+    }
+
     public void createAndShowThumbnail(String mediaPath)
     {
         //Storing in public folder. This will ensure that the files are visible in other apps as well.
@@ -459,7 +475,7 @@ public class VideoFragment extends Fragment{
                 @Override
                 public void onClick(View view)
                 {
-                    openMedia(video.getPath());
+                    openMedia(video.getPath(),true);
                 }
             });
         }
@@ -486,7 +502,7 @@ public class VideoFragment extends Fragment{
                 thumbnail.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
-                        openMedia(filePath);
+                        openMedia(filePath,true);
                     }
                 });
             }
@@ -503,7 +519,7 @@ public class VideoFragment extends Fragment{
                             thumbnail.setOnClickListener(new View.OnClickListener() {
                                 @Override
                                 public void onClick(View view) {
-                                    openMedia(filePath);
+                                    openMedia(filePath,true);
                                 }
                             });
                             break;
@@ -546,12 +562,17 @@ public class VideoFragment extends Fragment{
         }
     }
 
-    private void openMedia(String path)
+    private void openMedia(String path,boolean videoType)
     {
         setCameraClose();
         Intent intent = new Intent();
         intent.setAction(Intent.ACTION_VIEW);
-        intent.setDataAndType(Uri.parse("file://"+path),"video/*");
+        if(videoType) {
+            intent.setDataAndType(Uri.parse("file://" + path), "video/*");
+        }
+        else{
+            intent.setDataAndType(Uri.parse("file://" + path), "image/*");
+        }
         startActivity(intent);
     }
 

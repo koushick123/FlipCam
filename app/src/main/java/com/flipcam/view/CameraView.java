@@ -3,7 +3,6 @@ package com.flipcam.view;
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
@@ -709,15 +708,39 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         }
     }
 
-    public void capturePhoto()
-    {
-        camera1.setAutoFocus();
-        camera1.capturePicture();
+    public String getFilePath(boolean video) {
+        File dcim;
+        if(video) {
+            dcim = getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + getResources().getString(R.string.FC_VIDEO));
+        }
+        else{
+            dcim = getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + getResources().getString(R.string.FC_PICTURE));
+        }
+        if(!dcim.exists())
+        {
+            dcim.mkdirs();
+        }
+        SimpleDateFormat sdf = new SimpleDateFormat(getResources().getString(R.string.DATE_FORMAT_FOR_FILE));
+        String filename = sdf.format(new Date());
+        Log.d(TAG,"filename = "+filename);
+        String path;
+        if(video) {
+            path = dcim.getPath() + getResources().getString(R.string.FC_VID_PREFIX) + filename + getResources().getString(R.string.VID_EXT);
+        }
+        else{
+            path = dcim.getPath() + getResources().getString(R.string.FC_IMG_PREFIX) + filename + getResources().getString(R.string.IMG_EXT);
+        }
+        Log.d(TAG,"Saving media file at = "+path);
+        return path;
     }
 
-    public Bitmap getPhoto()
+    public void capturePhoto()
     {
-        return camera1.returnPhoto();
+        camera1.setFragmentInstance(this.videoFragment);
+        mNextPhotoAbsolutePath = getFilePath(false);
+        camera1.setPhotoPath(mNextPhotoAbsolutePath);
+        camera1.setAutoFocus();
+        camera1.capturePicture();
     }
 
     @Override
@@ -729,7 +752,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         if(cameraHandler!=null) {
             CameraRenderer cameraRenderer = cameraHandler.getCameraRendererInstance();
             if(camera1.isCameraReady()) {
-                //Switch of flash light if used during recording.
+                //Switch off flash light if used during recording.
                 camera1.setFlashOnOff(false);
                 camera1.stopPreview();
                 camera1.releaseCamera();
@@ -963,7 +986,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             encoderSurface = prepareWindowSurface(mediaRecorder.getSurface());
         }
 
-        private String getFilePath(boolean video) {
+        public String getFilePath(boolean video) {
             File dcim;
             if(video) {
                 dcim = getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + getResources().getString(R.string.FC_VIDEO));
