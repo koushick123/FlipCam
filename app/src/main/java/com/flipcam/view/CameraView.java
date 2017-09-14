@@ -140,6 +140,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     float sensorValues[] = new float[3];
     File videoFile;
     ImageButton stopButton;
+    float imageRotationAngle = 0.0f;
 
     public CameraView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -596,16 +597,23 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         if(orientation != -1) {
             if (((orientation >= 315 && orientation <= 359) || (orientation >= 0 && orientation <= 45)) || (orientation >= 135 && orientation <= 195)) {
                 if (orientation >= 135 && orientation <= 195) {
-                    rotationAngle = 180f;
+                    //Reverse portrait
+                    imageRotationAngle = rotationAngle = 180f;
                 } else {
+                    //Portrait
                     rotationAngle = 0f;
+                    imageRotationAngle = 90f;
                 }
                 portrait = true;
             } else {
                 if (orientation >= 46 && orientation <= 134) {
+                    //Reverse Landscape
                     rotationAngle = 270f;
+                    imageRotationAngle = 180f;
                 } else {
+                    //Landscape
                     rotationAngle = 90f;
+                    imageRotationAngle = 0f;
                 }
                 portrait = false;
             }
@@ -740,6 +748,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         mNextPhotoAbsolutePath = getFilePath(false);
         camera1.setPhotoPath(mNextPhotoAbsolutePath);
         camera1.setAutoFocus();
+        determineOrientation();
+        camera1.setRotation(imageRotationAngle);
         camera1.capturePicture();
     }
 

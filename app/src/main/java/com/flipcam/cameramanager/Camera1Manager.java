@@ -35,7 +35,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     Camera.CameraInfo info = new Camera.CameraInfo();
     private VideoFragment vFrag;
     String photoPath;
-
+    float rotation;
     private static Camera1Manager camera1Manager;
     Bitmap photo;
     public static Camera1Manager getInstance()
@@ -89,7 +89,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         }
         if(cameraId != -1) {
             parameters = mCamera.getParameters();
-            parameters.setExposureCompensation(parameters.getMaxExposureCompensation()/2);
+            parameters.setExposureCompensation((parameters.getMaxExposureCompensation()-3) > 0 ? parameters.getMaxExposureCompensation()-3 : 0);
             mCamera.setParameters(parameters);
             Log.d(TAG,"exp comp set = "+parameters.getExposureCompensation());
         }
@@ -235,6 +235,16 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     public void setPhotoPath(String mediaPath)
     {
         photoPath = mediaPath;
+        List<Camera.Size> imgSizes = mCamera.getParameters().getSupportedPictureSizes();
+        Iterator<Camera.Size> iterator = imgSizes.iterator();
+        while(iterator.hasNext()){
+            Camera.Size size = iterator.next();
+            Log.d(TAG,"Image size = "+size.width+" , "+size.height);
+        }
+    }
+
+    public void setRotation(float rot){
+        rotation = rot;
     }
 
     @Override
@@ -242,7 +252,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         camera.startPreview();
         Log.d(TAG,"Photo available");
         photo = BitmapFactory.decodeByteArray(bytes,0,bytes.length);
-        Log.d(TAG,"photo saved");
+        Log.d(TAG,"photo saved == "+photo.getWidth()+" , "+photo.getHeight());
         FileOutputStream picture = null;
         try {
             picture = new FileOutputStream(photoPath);
@@ -251,9 +261,16 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
             e.printStackTrace();
         }
         Matrix rotate = new Matrix();
-        rotate.setRotate(90);
+        Log.d(TAG,"Rotate = "+rotation);
+        rotate.setRotate(rotation);
         photo = Bitmap.createBitmap(photo,0,0,photo.getWidth(),photo.getHeight(),rotate,true);
-        photo.compress(Bitmap.CompressFormat.JPEG,100,picture);
+        photo.compress(Bitmap.CompressFormat.JPEG,96,picture);
+        try {
+            picture.flush();
+            picture.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         vFrag.createAndShowPhotoThumbnail(photo);
     }
 

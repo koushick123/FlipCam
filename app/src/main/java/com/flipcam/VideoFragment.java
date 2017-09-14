@@ -464,21 +464,18 @@ public class VideoFragment extends Fragment{
             }
             return;
         }
-        if(video.getName() != null){
-            Log.d(TAG,"Video file name = "+video.getName()+", path = "+video.getPath());
-            Log.d(TAG,"width = "+firstFrame.getWidth()+" , height = "+firstFrame.getHeight());
-            firstFrame = Bitmap.createScaledBitmap(firstFrame,(int)getResources().getDimension(R.dimen.thumbnailWidth),
-                    (int)getResources().getDimension(R.dimen.thumbnailHeight),false);
-            thumbnail.setImageBitmap(firstFrame);
-            thumbnail.setClickable(true);
-            thumbnail.setOnClickListener(new View.OnClickListener(){
-                @Override
-                public void onClick(View view)
-                {
-                    openMedia(video.getPath(),true);
-                }
-            });
-        }
+        Log.d(TAG,"width = "+firstFrame.getWidth()+" , height = "+firstFrame.getHeight());
+        firstFrame = Bitmap.createScaledBitmap(firstFrame,(int)getResources().getDimension(R.dimen.thumbnailWidth),
+                (int)getResources().getDimension(R.dimen.thumbnailHeight),false);
+        thumbnail.setImageBitmap(firstFrame);
+        thumbnail.setClickable(true);
+        thumbnail.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view)
+            {
+                openMedia(cameraView.getMediaPath(),true);
+            }
+        });
     }
 
     public void getLatestFileIfExists()
