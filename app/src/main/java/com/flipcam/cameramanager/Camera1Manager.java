@@ -92,6 +92,14 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
             parameters.setExposureCompensation((parameters.getMaxExposureCompensation()-3) > 0 ? parameters.getMaxExposureCompensation()-3 : 0);
             mCamera.setParameters(parameters);
             Log.d(TAG,"exp comp set = "+parameters.getExposureCompensation());
+            List<Camera.Size> imgSizes = mCamera.getParameters().getSupportedPictureSizes();
+            Iterator<Camera.Size> iterator = imgSizes.iterator();
+            while(iterator.hasNext()){
+                Camera.Size size = iterator.next();
+                Log.d(TAG,"Image size = "+size.width+" , "+size.height);
+                setPictureSize(size.width,size.height);
+                break;
+            }
         }
         else{
             mCamera=null;
@@ -235,12 +243,6 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     public void setPhotoPath(String mediaPath)
     {
         photoPath = mediaPath;
-        List<Camera.Size> imgSizes = mCamera.getParameters().getSupportedPictureSizes();
-        Iterator<Camera.Size> iterator = imgSizes.iterator();
-        while(iterator.hasNext()){
-            Camera.Size size = iterator.next();
-            Log.d(TAG,"Image size = "+size.width+" , "+size.height);
-        }
     }
 
     public void setRotation(float rot){
