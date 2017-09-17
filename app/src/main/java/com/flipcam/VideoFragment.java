@@ -32,6 +32,7 @@ import com.flipcam.view.CameraView;
 import java.io.File;
 import java.util.Arrays;
 
+import static android.support.v4.content.FileProvider.getUriForFile;
 import static com.flipcam.PermissionActivity.FC_SHARED_PREFERENCE;
 
 
@@ -563,12 +564,31 @@ public class VideoFragment extends Fragment{
     {
         setCameraClose();
         Intent intent = new Intent();
-        intent.setAction(Intent.ACTION_VIEW);
-        if(videoType) {
-            intent.setDataAndType(Uri.parse("file://" + path), "video/*");
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N){
+            File media = Environment.getExternalStorageDirectory();
+            if(!videoType) {
+                media = new File(media.getPath()+getResources().getString(R.string.FC_PICTURE));
+            }
+            else{
+                media = new File(media.getPath()+getResources().getString(R.string.FC_VIDEO));
+            }
+            Log.d(TAG,"media path = "+media.getPath());
+            String fileName = path.substring(path.lastIndexOf("/")+1,path.length());
+            Log.d(TAG,"File name = "+fileName);
+            File newFile = new File(media, fileName);
+            Uri contentUri = getUriForFile(getContext(), "com.flipcam.fileprovider", newFile);
+            Log.d(TAG,"content uri = "+contentUri.getPath());
+            getContext().grantUriPermission("com.flipcam.fileprovider",contentUri,Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            intent.setData(contentUri);
+            intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
         }
         else{
-            intent.setDataAndType(Uri.parse("file://" + path), "image/*");
+            intent.setAction(Intent.ACTION_VIEW);
+            if (videoType) {
+                intent.setDataAndType(Uri.parse("file://" + path), "video/*");
+            } else {
+                intent.setDataAndType(Uri.parse("file://" + path), "image/*");
+            }
         }
         startActivity(intent);
     }

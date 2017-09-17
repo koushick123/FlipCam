@@ -56,6 +56,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import static android.content.Context.SENSOR_SERVICE;
+import static android.os.Environment.getExternalStorageDirectory;
 import static android.os.Environment.getExternalStoragePublicDirectory;
 
 /**
@@ -719,11 +720,24 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     public String getFilePath(boolean video) {
         File dcim;
         if(video) {
-            dcim = getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + getResources().getString(R.string.FC_VIDEO));
+            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N){
+                dcim = getExternalStorageDirectory();
+                dcim = new File(dcim.getPath()+getResources().getString(R.string.FC_VIDEO));
+            }
+            else {
+                dcim = getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + getResources().getString(R.string.FC_VIDEO));
+            }
         }
         else{
-            dcim = getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + getResources().getString(R.string.FC_PICTURE));
+            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N){
+                dcim = getExternalStorageDirectory();
+                dcim = new File(dcim.getPath()+getResources().getString(R.string.FC_PICTURE));
+            }
+            else {
+                dcim = getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + getResources().getString(R.string.FC_PICTURE));
+            }
         }
+
         if(!dcim.exists())
         {
             dcim.mkdirs();
@@ -750,7 +764,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         camera1.setAutoFocus();
         determineOrientation();
         camera1.setRotation(imageRotationAngle);
-        camera1.capturePicture();
+        camera1.setCapture(true);
+        camera1.savePicture();
+        //camera1.capturePicture();
     }
 
     @Override

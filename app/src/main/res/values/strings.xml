@@ -10,7 +10,7 @@
     <string name="FC_VID_PREFIX">/FC_VID_</string>
     <string name="FC_IMG_PREFIX">/FC_IMG_</string>
     <string name="VID_EXT">.mp4</string>
-    <string name="IMG_EXT">.jpg</string>
+    <string name="IMG_EXT">.jpeg</string>
     <string name="DATE_FORMAT_FOR_FILE">yyyy-MM-dd-HH-mm-ss</string>
     <string name="MEM_PF_KB"> KB</string>
     <string name="MEM_PF_MB"> MB</string>
