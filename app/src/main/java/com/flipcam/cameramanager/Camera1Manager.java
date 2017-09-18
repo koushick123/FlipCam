@@ -292,7 +292,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
                     YuvImage yuv = new YuvImage(bytes, ImageFormat.NV21, width, height, null);
 
                     ByteArrayOutputStream out = new ByteArrayOutputStream();
-                    yuv.compressToJpeg(new Rect(0, 0, width, height), 90, out);
+                    yuv.compressToJpeg(new Rect(0, 0, width, height), 100, out);
 
                     byte[] photo = out.toByteArray();
                     Bitmap bitmap = BitmapFactory.decodeByteArray(photo, 0, photo.length);
@@ -302,7 +302,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
                         Matrix rotate = new Matrix();
                         rotate.setRotate(rotation);
                         bitmap = Bitmap.createBitmap(bitmap,0,0,bitmap.getWidth(),bitmap.getHeight(),rotate,false);
-                        bitmap.compress(Bitmap.CompressFormat.JPEG,96,picture);
+                        bitmap.compress(Bitmap.CompressFormat.JPEG,100,picture);
                         picture.flush();
                         picture.close();
                         Log.d(TAG,"Picture saved at loc = "+photoPath);
