@@ -214,7 +214,6 @@ public class VideoFragment extends Fragment{
             @Override
             public void onClick(View view) {
                 cameraView.capturePhoto();
-                //createAndShowThumbnail(cameraView.getPhotoMediaPath());
             }
         });
         capturePic.setImageDrawable(getResources().getDrawable(R.drawable.capture_picture));

@@ -4,16 +4,13 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
-import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
-import android.graphics.YuvImage;
 import android.hardware.Camera;
 import android.util.Log;
 
 import com.flipcam.VideoFragment;
 import com.flipcam.camerainterface.CameraOperations;
 
-import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -225,7 +222,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         }
         mCamera.startPreview();
     }
-
+    FileOutputStream picture = null;
     @Override
     public void capturePicture() {
         photo = null;
@@ -246,77 +243,43 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     }
 
     @Override
-    public void onPictureTaken(byte[] bytes, Camera camera) {
-        camera.startPreview();
-        Log.d(TAG,"Photo available");
-        BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inPreferredConfig = Bitmap.Config.RGB_565;
-        photo = BitmapFactory.decodeByteArray(bytes,0,bytes.length,options);
-        Log.d(TAG,"photo saved == "+photo.getWidth()+" , "+photo.getHeight());
+    public void onPictureTaken(byte[] data, Camera camera) {
+        long startTime = System.currentTimeMillis();
+        final Camera camera1 = camera;
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                camera1.startPreview();
+            }
+        }).start();
+        photo = BitmapFactory.decodeByteArray(data,0,data.length,null);
         Matrix rotate = new Matrix();
-        Log.d(TAG,"Rotate = "+rotation);
         rotate.setRotate(rotation);
         photo = Bitmap.createBitmap(photo,0,0,photo.getWidth(),photo.getHeight(),rotate,true);
-        /*FileOutputStream picture = null;
-        try {
-            picture = new FileOutputStream(photoPath);
-            Log.d(TAG,"Picture saved at loc = "+photoPath);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-        photo.compress(Bitmap.CompressFormat.JPEG,96,picture);
-        try {
-            picture.flush();
-            picture.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }*/
+        long endTime = System.currentTimeMillis();
+        Log.d(TAG,"Time taken = "+(endTime-startTime)/1000);
         vFrag.createAndShowPhotoThumbnail(photo);
-    }
-
-    public void setCapture(boolean cap){
-        capture = cap;
-    }
-    boolean capture=false;
-    public void savePicture()
-    {
-        mCamera.setPreviewCallback(new Camera.PreviewCallback() {
+        new Thread(new Runnable() {
             @Override
-            public void onPreviewFrame(byte[] bytes, Camera camera) {
-                if(capture) {
-                    Camera.Parameters parameters = camera.getParameters();
-                    int width = parameters.getPreviewSize().width;
-                    int height = parameters.getPreviewSize().height;
-                    Log.d(TAG,"width = "+width+" , height = "+height);
-
-                    YuvImage yuv = new YuvImage(bytes, ImageFormat.NV21, width, height, null);
-
-                    ByteArrayOutputStream out = new ByteArrayOutputStream();
-                    yuv.compressToJpeg(new Rect(0, 0, width, height), 100, out);
-
-                    byte[] photo = out.toByteArray();
-                    Bitmap bitmap = BitmapFactory.decodeByteArray(photo, 0, photo.length);
-                    FileOutputStream picture = null;
-                    try {
-                        picture = new FileOutputStream(photoPath);
-                        Matrix rotate = new Matrix();
-                        rotate.setRotate(rotation);
-                        bitmap = Bitmap.createBitmap(bitmap,0,0,bitmap.getWidth(),bitmap.getHeight(),rotate,false);
-                        bitmap.compress(Bitmap.CompressFormat.JPEG,100,picture);
-                        picture.flush();
-                        picture.close();
-                        Log.d(TAG,"Picture saved at loc = "+photoPath);
-                    } catch (FileNotFoundException e) {
-                        e.printStackTrace();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    vFrag.createAndShowPhotoThumbnail(bitmap);
-                    capture=false;
+            public void run() {
+                try {
+                    picture = new FileOutputStream(photoPath);
+                    Log.d(TAG,"Picture wil be saved at loc = "+photoPath);
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                }
+                photo.compress(Bitmap.CompressFormat.JPEG,96,picture);
+                Log.d(TAG,"photo is ready");
+                try {
+                    picture.flush();
+                    picture.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
             }
-        });
+        }).start();
     }
+
     @Override
     public void onShutter() {
         Log.d(TAG,"Photo captured");
