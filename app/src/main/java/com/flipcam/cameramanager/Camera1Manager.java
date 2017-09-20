@@ -4,13 +4,16 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
+import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
+import android.graphics.YuvImage;
 import android.hardware.Camera;
 import android.util.Log;
 
 import com.flipcam.VideoFragment;
 import com.flipcam.camerainterface.CameraOperations;
 
+import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -21,7 +24,7 @@ import java.util.List;
  * Created by Koushick on 02-08-2017.
  */
 
-public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeListener, Camera.ShutterCallback,Camera.PictureCallback {
+public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeListener, Camera.ShutterCallback,Camera.PictureCallback, Camera.PreviewCallback {
 
     private Camera mCamera;
     public final String TAG = "Camera1Manager";
@@ -92,6 +95,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
             parameters.setExposureCompensation((parameters.getMaxExposureCompensation()-3) > 0 ? parameters.getMaxExposureCompensation()-3 : 0);
             mCamera.setParameters(parameters);
             Log.d(TAG,"exp comp set = "+parameters.getExposureCompensation());
+            mCamera.setPreviewCallback(this);
         }
         else{
             mCamera=null;
@@ -103,6 +107,11 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         mCamera.release();
         mCamera = null;
         zoomChangeListener = false;
+    }
+
+    public void removePreviewCallback()
+    {
+        mCamera.setPreviewCallback(null);
     }
 
     @Override
@@ -252,33 +261,31 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
                 camera1.startPreview();
             }
         }).start();
-        photo = BitmapFactory.decodeByteArray(data,0,data.length,null);
+        final byte[] bytes = data;
+        long endTime = System.currentTimeMillis();
+        Log.d(TAG,"Time taken = "+(endTime-startTime)/1000);
+        //vFrag.createAndShowPhotoThumbnail(photo);
+        try {
+            picture = new FileOutputStream(photoPath);
+            Log.d(TAG,"Picture wil be saved at loc = "+photoPath);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        photo = BitmapFactory.decodeByteArray(bytes,0,bytes.length,null);
         Matrix rotate = new Matrix();
         rotate.setRotate(rotation);
         photo = Bitmap.createBitmap(photo,0,0,photo.getWidth(),photo.getHeight(),rotate,true);
-        long endTime = System.currentTimeMillis();
-        Log.d(TAG,"Time taken = "+(endTime-startTime)/1000);
-        vFrag.createAndShowPhotoThumbnail(photo);
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    picture = new FileOutputStream(photoPath);
-                    Log.d(TAG,"Picture wil be saved at loc = "+photoPath);
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
-                }
-                photo.compress(Bitmap.CompressFormat.JPEG,96,picture);
-                Log.d(TAG,"photo is ready");
-                try {
-                    picture.flush();
-                    picture.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }).start();
+        photo.compress(Bitmap.CompressFormat.JPEG,96,picture);
+        Log.d(TAG,"photo is ready");
+        try {
+            picture.flush();
+            picture.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
+
+
 
     @Override
     public void onShutter() {
@@ -424,6 +431,30 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         Log.d(TAG,"zoom value = "+zoomvalue);
         if(!stopped) {
             camera.getParameters().setZoom(zoomvalue);
+        }
+    }
+    public void setCapture(boolean cap)
+    {
+        capture = cap;
+    }
+    boolean capture=false;
+    @Override
+    public void onPreviewFrame(byte[] bytes, Camera camera) {
+        if(capture)
+        {
+            capture=false;
+            Log.d(TAG,"inside onpreviewframe");
+            int previewWidth = camera.getParameters().getPreviewSize().width;
+            int previewHeight = camera.getParameters().getPreviewSize().height;
+            YuvImage yuvImage = new YuvImage(bytes,ImageFormat.NV21,previewWidth,previewHeight,null);
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            yuvImage.compressToJpeg(new Rect(0,0,previewWidth,previewHeight),100,baos);
+            Bitmap thumb = BitmapFactory.decodeByteArray(baos.toByteArray(),0,baos.size());
+            Matrix rotate = new Matrix();
+            rotate.setRotate(rotation);
+            thumb = Bitmap.createBitmap(thumb,0,0,previewWidth,previewHeight,rotate,false);
+            vFrag.createAndShowPhotoThumbnail(thumb);
+            Log.d(TAG,"photo thumbnail created");
         }
     }
 }

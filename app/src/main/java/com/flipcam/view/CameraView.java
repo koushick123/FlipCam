@@ -771,7 +771,13 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         camera1.setPhotoPath(mNextPhotoAbsolutePath);
         determineOrientation();
         camera1.setRotation(imageRotationAngle);
-        camera1.capturePicture();
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                camera1.capturePicture();
+            }
+        }).start();
+        camera1.setCapture(true);
     }
 
     @Override
@@ -785,6 +791,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             if(camera1.isCameraReady()) {
                 //Switch off flash light if used during recording.
                 camera1.setFlashOnOff(false);
+                camera1.removePreviewCallback();
                 camera1.stopPreview();
                 camera1.releaseCamera();
             }
