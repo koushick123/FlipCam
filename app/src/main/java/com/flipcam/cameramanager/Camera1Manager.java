@@ -255,6 +255,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     public void onPictureTaken(byte[] data, Camera camera) {
         long startTime = System.currentTimeMillis();
         final Camera camera1 = camera;
+        //camera1.startPreview();
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -443,6 +444,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         if(capture)
         {
             capture=false;
+            capturePicture();
             Log.d(TAG,"inside onpreviewframe");
             int previewWidth = camera.getParameters().getPreviewSize().width;
             int previewHeight = camera.getParameters().getPreviewSize().height;

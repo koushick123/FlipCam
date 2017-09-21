@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Typeface;
 import android.hardware.Camera;
 import android.media.MediaMetadataRetriever;
@@ -172,6 +173,9 @@ public class VideoFragment extends Fragment{
                 videoBar.removeView(switchCamera);
                 addStopAndPauseIcons();
                 hideSettingsBarAndIcon();
+                SharedPreferences.Editor editor = getActivity().getSharedPreferences(FC_SHARED_PREFERENCE, Context.MODE_PRIVATE).edit();
+                editor.putBoolean("videoCapture",true);
+                editor.commit();
                 cameraView.record();
             }
         });
@@ -213,6 +217,9 @@ public class VideoFragment extends Fragment{
         capturePic.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                SharedPreferences.Editor editor = getActivity().getSharedPreferences(FC_SHARED_PREFERENCE, Context.MODE_PRIVATE).edit();
+                editor.putBoolean("videoCapture",false);
+                editor.commit();
                 cameraView.capturePhoto();
             }
         });
@@ -444,6 +451,7 @@ public class VideoFragment extends Fragment{
             @Override
             public void onClick(View view)
             {
+                Toast.makeText(getContext(),"Open file",Toast.LENGTH_SHORT).show();
                 openMedia(cameraView.getPhotoMediaPath(),false);
             }
         });
@@ -480,60 +488,86 @@ public class VideoFragment extends Fragment{
 
     public void getLatestFileIfExists()
     {
-        File dcimFc = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM+getResources().getString(R.string.FC_VIDEO));
-        if(dcimFc.exists() && dcimFc.isDirectory() && dcimFc.listFiles().length > 0)
+        SharedPreferences prefs = getActivity().getSharedPreferences(FC_SHARED_PREFERENCE, Context.MODE_PRIVATE);
+        if(prefs.getBoolean("videoCapture",false))
         {
-            File[] videos = dcimFc.listFiles();
-            Arrays.sort(videos);
-            Log.d(TAG,"Latest file is = "+videos[videos.length-1].getPath());
-            final String filePath = videos[videos.length-1].getPath();
-            MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
-            mediaMetadataRetriever.setDataSource(filePath);
-            Bitmap vid = mediaMetadataRetriever.getFrameAtTime(Constants.FIRST_SEC_MICRO);
-            //If video cannot be played for whatever reason
-            if(vid != null) {
-                vid = Bitmap.createScaledBitmap(vid,(int)getResources().getDimension(R.dimen.thumbnailWidth),
-                        (int)getResources().getDimension(R.dimen.thumbnailHeight),false);
-                thumbnail.setImageBitmap(vid);
+            File dcimFc = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + getResources().getString(R.string.FC_VIDEO));
+            if (dcimFc.exists() && dcimFc.isDirectory() && dcimFc.listFiles().length > 0) {
+                File[] videos = dcimFc.listFiles();
+                Arrays.sort(videos);
+                Log.d(TAG, "Latest file is = " + videos[videos.length - 1].getPath());
+                final String filePath = videos[videos.length - 1].getPath();
+                MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
+                mediaMetadataRetriever.setDataSource(filePath);
+                Bitmap vid = mediaMetadataRetriever.getFrameAtTime(Constants.FIRST_SEC_MICRO);
+                //If video cannot be played for whatever reason
+                if (vid != null) {
+                    vid = Bitmap.createScaledBitmap(vid, (int) getResources().getDimension(R.dimen.thumbnailWidth),
+                            (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
+                    thumbnail.setImageBitmap(vid);
+                    thumbnail.setClickable(true);
+                    thumbnail.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            openMedia(filePath, true);
+                        }
+                    });
+                } else {
+                    if (videos.length >= 2) {
+                        for (int i = videos.length - 2; i >= 0; i--) {
+                            vid = mediaMetadataRetriever.getFrameAtTime(Constants.FIRST_SEC_MICRO);
+                            //If video cannot be played for whatever reason
+                            if (vid != null) {
+                                vid = Bitmap.createScaledBitmap(vid, (int) getResources().getDimension(R.dimen.thumbnailWidth),
+                                        (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
+                                thumbnail.setImageBitmap(vid);
+                                thumbnail.setClickable(true);
+                                thumbnail.setOnClickListener(new View.OnClickListener() {
+                                    @Override
+                                    public void onClick(View view) {
+                                        openMedia(filePath, true);
+                                    }
+                                });
+                                break;
+                            }
+                        }
+                    } else {
+                        setPlaceholderThumbnail();
+                    }
+                }
+            } else {
+                setPlaceholderThumbnail();
+            }
+        }
+        else {
+            File dcimFc = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + getResources().getString(R.string.FC_PICTURE));
+            if (dcimFc.exists() && dcimFc.isDirectory() && dcimFc.listFiles().length > 0) {
+                File[] pictures = dcimFc.listFiles();
+                Arrays.sort(pictures);
+                Log.d(TAG, "Latest file is = " + pictures[pictures.length - 1].getPath());
+                final String filePath = pictures[pictures.length - 1].getPath();
+                Bitmap pic = BitmapFactory.decodeFile(filePath);
+                pic = Bitmap.createScaledBitmap(pic, (int) getResources().getDimension(R.dimen.thumbnailWidth),
+                        (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
+                thumbnail.setImageBitmap(pic);
                 thumbnail.setClickable(true);
                 thumbnail.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
-                        openMedia(filePath,true);
+                        openMedia(filePath, false);
                     }
                 });
             }
             else{
-                if(videos.length >= 2) {
-                    for (int i = videos.length - 2; i >= 0; i--) {
-                        vid = mediaMetadataRetriever.getFrameAtTime(Constants.FIRST_SEC_MICRO);
-                        //If video cannot be played for whatever reason
-                        if (vid != null) {
-                            vid = Bitmap.createScaledBitmap(vid,(int)getResources().getDimension(R.dimen.thumbnailWidth),
-                                    (int)getResources().getDimension(R.dimen.thumbnailHeight),false);
-                            thumbnail.setImageBitmap(vid);
-                            thumbnail.setClickable(true);
-                            thumbnail.setOnClickListener(new View.OnClickListener() {
-                                @Override
-                                public void onClick(View view) {
-                                    openMedia(filePath,true);
-                                }
-                            });
-                            break;
-                        }
-                    }
-                }
-                else {
-                    thumbnail.setImageDrawable(getResources().getDrawable(R.drawable.placeholder));
-                    thumbnail.setClickable(false);
-                }
+                setPlaceholderThumbnail();
             }
         }
-        else
-        {
-            thumbnail.setImageDrawable(getResources().getDrawable(R.drawable.placeholder));
-            thumbnail.setClickable(false);
-        }
+    }
+
+    public void setPlaceholderThumbnail()
+    {
+        thumbnail.setImageDrawable(getResources().getDrawable(R.drawable.placeholder));
+        thumbnail.setClickable(false);
     }
 
     private void fetchMedia(ImageView thumbnail)

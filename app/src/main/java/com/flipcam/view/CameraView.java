@@ -683,42 +683,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         mEGLConfig = null;
     }
 
-    @Override
-    public void surfaceCreated(SurfaceHolder surfaceHolder) {
-        Log.d(TAG, "surfCreated holder = " + surfaceHolder);
-        camSurfHolder = surfaceHolder;
-        mainHandler = new MainHandler(this);
-        prepareEGLDisplayandContext();
-        CameraRenderer cameraRenderer = new CameraRenderer();
-        cameraRenderer.start();
-        waitUntilReady();
-        orientationEventListener = new OrientationEventListener(getContext(), SensorManager.SENSOR_DELAY_UI){
-            @Override
-            public void onOrientationChanged(int i) {
-                if(orientationEventListener.canDetectOrientation()) {
-                    orientation = i;
-                }
-            }
-        };
-        orientationEventListener.enable();
-    }
-
-    @Override
-    public void surfaceChanged(SurfaceHolder surfaceHolder, int i, int width, int height) {
-        Log.d(TAG,"surfaceChanged = "+surfaceHolder);
-        Log.d(TAG,"Width = "+width+", height = "+height);
-        this.videoFragment.getLatestFileIfExists();
-        if(!camera1.isCameraReady()) {
-            measuredWidth = width;
-            measuredHeight = height;
-            frameCount=0;
-            openCameraAndStartPreview();
-        }
-        if(surfaceTexture!=null) {
-            surfaceTexture.setOnFrameAvailableListener(this);
-        }
-    }
-
     public String getFilePath(boolean video) {
         File dcim;
         if(video) {
@@ -766,18 +730,55 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
 
     public void capturePhoto()
     {
-        camera1.setFragmentInstance(this.videoFragment);
-        mNextPhotoAbsolutePath = getFilePath(false);
-        camera1.setPhotoPath(mNextPhotoAbsolutePath);
         determineOrientation();
         camera1.setRotation(imageRotationAngle);
-        new Thread(new Runnable() {
+        camera1.setCapture(true);
+        mNextPhotoAbsolutePath = getFilePath(false);
+        camera1.setPhotoPath(mNextPhotoAbsolutePath);
+        //camera1.capturePicture();
+        /*new Thread(new Runnable() {
             @Override
             public void run() {
                 camera1.capturePicture();
             }
-        }).start();
-        camera1.setCapture(true);
+        }).start();*/
+    }
+
+    @Override
+    public void surfaceCreated(SurfaceHolder surfaceHolder) {
+        Log.d(TAG, "surfCreated holder = " + surfaceHolder);
+        camSurfHolder = surfaceHolder;
+        mainHandler = new MainHandler(this);
+        prepareEGLDisplayandContext();
+        CameraRenderer cameraRenderer = new CameraRenderer();
+        cameraRenderer.start();
+        waitUntilReady();
+        orientationEventListener = new OrientationEventListener(getContext(), SensorManager.SENSOR_DELAY_UI){
+            @Override
+            public void onOrientationChanged(int i) {
+                if(orientationEventListener.canDetectOrientation()) {
+                    orientation = i;
+                }
+            }
+        };
+        orientationEventListener.enable();
+    }
+
+    @Override
+    public void surfaceChanged(SurfaceHolder surfaceHolder, int i, int width, int height) {
+        Log.d(TAG,"surfaceChanged = "+surfaceHolder);
+        Log.d(TAG,"Width = "+width+", height = "+height);
+        this.videoFragment.getLatestFileIfExists();
+        camera1.setFragmentInstance(this.videoFragment);
+        if(!camera1.isCameraReady()) {
+            measuredWidth = width;
+            measuredHeight = height;
+            frameCount=0;
+            openCameraAndStartPreview();
+        }
+        if(surfaceTexture!=null) {
+            surfaceTexture.setOnFrameAvailableListener(this);
+        }
     }
 
     @Override
