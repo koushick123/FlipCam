@@ -735,7 +735,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         camera1.setCapture(true);
         mNextPhotoAbsolutePath = getFilePath(false);
         camera1.setPhotoPath(mNextPhotoAbsolutePath);
-        //camera1.capturePicture();
+        camera1.startCaptureImageThread();
+        camera1.capturePicture();
         /*new Thread(new Runnable() {
             @Override
             public void run() {
@@ -787,6 +788,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         Log.d(TAG,"cameraHandler = "+cameraHandler);
         orientationEventListener.disable();
         mSensorManager.unregisterListener(this);
+        camera1.stopCaptureImage();
         if(cameraHandler!=null) {
             CameraRenderer cameraRenderer = cameraHandler.getCameraRendererInstance();
             if(camera1.isCameraReady()) {
