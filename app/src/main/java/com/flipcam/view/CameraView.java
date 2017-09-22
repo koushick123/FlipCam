@@ -54,8 +54,6 @@ import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.LinkedList;
-import java.util.Queue;
 
 import static android.content.Context.SENSOR_SERVICE;
 import static android.os.Environment.getExternalStorageDirectory;
@@ -722,12 +720,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         return path;
     }
 
-    Queue images = new LinkedList();
-    public Queue getImages()
-    {
-        return images;
-    }
-
     public void capturePhoto()
     {
         determineOrientation();
@@ -735,14 +727,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         camera1.setCapture(true);
         mNextPhotoAbsolutePath = getFilePath(false);
         camera1.setPhotoPath(mNextPhotoAbsolutePath);
-        camera1.startCaptureImageThread();
         camera1.capturePicture();
-        /*new Thread(new Runnable() {
-            @Override
-            public void run() {
-                camera1.capturePicture();
-            }
-        }).start();*/
     }
 
     @Override
@@ -788,7 +773,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         Log.d(TAG,"cameraHandler = "+cameraHandler);
         orientationEventListener.disable();
         mSensorManager.unregisterListener(this);
-        camera1.stopCaptureImage();
         if(cameraHandler!=null) {
             CameraRenderer cameraRenderer = cameraHandler.getCameraRendererInstance();
             if(camera1.isCameraReady()) {

@@ -8,9 +8,6 @@ import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
 import android.graphics.YuvImage;
 import android.hardware.Camera;
-import android.os.Handler;
-import android.os.Looper;
-import android.os.Message;
 import android.util.Log;
 
 import com.flipcam.VideoFragment;
@@ -20,7 +17,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.lang.ref.WeakReference;
 import java.util.Iterator;
 import java.util.List;
 
@@ -239,39 +235,9 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     @Override
     public void capturePicture() {
         photo = null;
-        mCamera.takePicture(this,null,postView,this);
+        mCamera.takePicture(this,null,null,this);
     }
 
-    Object capImageSync = new Object();
-    public void startCaptureImageThread()
-    {
-        if(captureImageHandler == null) {
-            Log.d(TAG,"Start the Thread");
-            CaptureImage captureImage = new CaptureImage();
-            captureImage.start();
-            synchronized (capImageSync) {
-                try {
-                    capImageSync.wait();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-        Log.d(TAG,"Continue main thread");
-    }
-
-    public void stopCaptureImage()
-    {
-        captureImageHandler.sendEmptyMessage(2000);
-    }
-    Camera.PictureCallback postView = new Camera.PictureCallback()
-    {
-        @Override
-        public void onPictureTaken(byte[] bytes, Camera camera) {
-            Bitmap postPhoto = BitmapFactory.decodeByteArray(bytes,0,bytes.length,null);
-            Log.d(TAG,"post view width = "+postPhoto.getWidth()+", height ="+postPhoto.getHeight());
-        }
-    };
     public void setFragmentInstance(VideoFragment fragmentInstance){
         vFrag = fragmentInstance;
     }
@@ -287,14 +253,18 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
 
     @Override
     public void onPictureTaken(byte[] data, Camera camera) {
-        final Camera camera1 = camera;
-        final byte[] bytes = data;
-        //vFrag.createAndShowPhotoThumbnail(photo);
-        Message msg = new Message();
-        msg.what=1000;
-        msg.getData().putByteArray("capturedImage",data);
-        captureImageHandler.sendMessage(msg);
-        camera1.startPreview();
+        Log.d(TAG, "Picture wil be saved at loc = " + photoPath);
+        try {
+            picture = new FileOutputStream(photoPath);
+            picture.write(data);
+            picture.close();
+        } catch (FileNotFoundException e1) {
+            e1.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        Log.d(TAG, "photo is ready");
+        camera.startPreview();
     }
 
     @Override
@@ -466,72 +436,6 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
             thumb = Bitmap.createBitmap(thumb,0,0,previewWidth,previewHeight,rotate,false);
             vFrag.createAndShowPhotoThumbnail(thumb);
             Log.d(TAG,"photo thumbnail created");
-        }
-    }
-
-    /*public CaptureImage.CaptureImageHandler getCaptureImageHandler()
-    {
-        return captureImageHandler;
-    }*/
-
-    CaptureImage.CaptureImageHandler captureImageHandler=null;
-    class CaptureImage extends Thread
-    {
-        @Override
-        public void run() {
-            Log.d(TAG,"Starting capture Image thread");
-            Looper.prepare();
-            captureImageHandler = new CaptureImageHandler(this);
-            synchronized (capImageSync){
-                capImageSync.notify();
-            }
-            Looper.loop();
-            Log.d(TAG,"STOPPING capture image thread");
-        }
-
-        class CaptureImageHandler extends Handler
-        {
-            WeakReference<CaptureImage> captureImageWeakReference;
-            CaptureImage captureImage;
-            public CaptureImageHandler(CaptureImage captureImage1)
-            {
-                captureImageWeakReference = new WeakReference<>(captureImage1);
-            }
-
-            @Override
-            public void handleMessage(Message msg) {
-                captureImage = captureImageWeakReference.get();
-                switch(msg.what)
-                {
-                    case 1000:
-                        byte[] bytes=msg.getData().getByteArray("capturedImage");
-                        if(bytes!=null) {
-                            Log.d(TAG, "bytes data = " + bytes.length);
-                            try {
-                                picture = new FileOutputStream(photoPath);
-                                Log.d(TAG, "Picture wil be saved at loc = " + photoPath);
-                                photo = BitmapFactory.decodeByteArray(bytes, 0, bytes.length, null);
-                                Matrix rotate = new Matrix();
-                                rotate.setRotate(rotation);
-                                photo = Bitmap.createBitmap(photo, 0, 0, photo.getWidth(), photo.getHeight(), rotate, true);
-                                photo.compress(Bitmap.CompressFormat.JPEG, 96, picture);
-                                Log.d(TAG, "photo is ready");
-                                try {
-                                    picture.flush();
-                                    picture.close();
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                }
-                            } catch (FileNotFoundException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                        break;
-                    case 2000:
-                        Looper.myLooper().quit();
-                        break;
-                }
-            }
         }
     }
 }
