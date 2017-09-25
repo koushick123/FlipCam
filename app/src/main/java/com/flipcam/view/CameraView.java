@@ -386,14 +386,24 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     {
         Log.d(TAG,"start sensor");
         camera1.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
+        registerAccelSensor();
+    }
+
+    public void registerAccelSensor()
+    {
         mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+    }
+
+    public void unregisterAccelSensor()
+    {
+        mSensorManager.unregisterListener(this);
     }
 
     public void setVideoMode()
     {
         Log.d(TAG,"stop sensor");
         camera1.cancelAutoFocus();
-        mSensorManager.unregisterListener(this);
+        unregisterAccelSensor();
     }
 
     public boolean isCameraReady()
@@ -604,6 +614,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                     //Portrait
                     rotationAngle = 0f;
                     imageRotationAngle = 90f;
+                    if(!backCamera){
+                        imageRotationAngle = 270f;
+                    }
                 }
                 portrait = true;
             } else {
@@ -613,8 +626,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                     imageRotationAngle = 180f;
                 } else {
                     //Landscape
-                    rotationAngle = 90f;
-                    imageRotationAngle = 0f;
+                    imageRotationAngle = rotationAngle = 90f;
                 }
                 portrait = false;
             }
@@ -624,6 +636,15 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             portrait = true;
             rotationAngle = 0f;
         }
+        orientation = (orientation + 45) / 90 * 90;
+        int rotation = 0;
+        if(!backCamera){
+            rotation = (camera1.getCameraInfo().orientation - orientation + 360) % 360;
+        } else {  // back-facing camera
+            rotation = (camera1.getCameraInfo().orientation + orientation) % 360;
+        }
+        //Log.d(TAG,"Rotation = "+rotation);
+        camera1.setRotation(rotation);
     }
 
     public void setLayoutAspectRatio()

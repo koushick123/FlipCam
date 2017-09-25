@@ -167,6 +167,12 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         mCamera.setParameters(parameters);
     }
 
+    public void setRotation(int rotation)
+    {
+        parameters.setRotation(rotation);
+        mCamera.setParameters(parameters);
+    }
+
     @Override
     public void setResolution() {
         //This can be used for Camera 2 API implementation if necessary.
@@ -251,8 +257,10 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         rotation = rot;
     }
 
+    boolean startPreview=false;
     @Override
     public void onPictureTaken(byte[] data, Camera camera) {
+        startPreview=false;
         Log.d(TAG, "Picture wil be saved at loc = " + photoPath);
         try {
             picture = new FileOutputStream(photoPath);
@@ -264,7 +272,17 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
             e.printStackTrace();
         }
         Log.d(TAG, "photo is ready");
-        camera.startPreview();
+        int zoomedVal = vFrag.getZoomBar().getProgress();
+        vFrag.getZoomBar().setProgress(zoomedVal);
+        if(isSmoothZoomSupported()){
+            //smoothZoomInOrOut(zoomedVal);
+            camera.startSmoothZoom(zoomedVal);
+        }
+        else if(isZoomSupported()){
+            //zoomInOrOut(zoomedVal);
+            camera.getParameters().setZoom(zoomedVal);
+        }
+        //camera.startPreview();
     }
 
     @Override
@@ -411,6 +429,10 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         Log.d(TAG,"zoom value = "+zoomvalue);
         if(!stopped) {
             camera.getParameters().setZoom(zoomvalue);
+        }
+        if (!startPreview) {
+            startPreview = true;
+            camera.startPreview();
         }
     }
     public void setCapture(boolean cap)
