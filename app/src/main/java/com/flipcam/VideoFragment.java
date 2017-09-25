@@ -231,6 +231,7 @@ public class VideoFragment extends Fragment{
                 SharedPreferences.Editor editor = getActivity().getSharedPreferences(FC_SHARED_PREFERENCE, Context.MODE_PRIVATE).edit();
                 editor.putBoolean("videoCapture",false);
                 editor.commit();
+                capturePic.setClickable(false);
                 cameraView.capturePhoto();
             }
         });
@@ -257,6 +258,11 @@ public class VideoFragment extends Fragment{
         videoBar.addView(videoMode);
         videoBar.addView(thumbnail);
         cameraView.setPhotoMode();
+    }
+
+    public ImageButton getCapturePic()
+    {
+        return capturePic;
     }
 
     public void showVideoIcons()
