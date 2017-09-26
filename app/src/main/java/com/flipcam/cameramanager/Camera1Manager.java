@@ -264,6 +264,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         rotation = rot;
     }
 
+    boolean startPreview=false;
     @Override
     public void onPictureTaken(byte[] data, Camera camera) {
         Log.d(TAG, "Picture wil be saved at loc = " + photoPath);
@@ -276,9 +277,14 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         } catch (IOException e) {
             e.printStackTrace();
         }
-        Log.d(TAG, "photo is ready");
-        camera.startPreview();
-        vFrag.getCapturePic().setClickable(true);
+        finally {
+            //Start the preview no matter if photo is saved or not.
+            Log.d(TAG, "photo is ready");
+            camera.startPreview();
+            startPreview=true;
+            vFrag.getCapturePic().setClickable(true);
+            vFrag.hideImagePreview();
+        }
     }
 
     @Override
@@ -435,19 +441,31 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     public void onPreviewFrame(byte[] bytes, Camera camera) {
         if(capture)
         {
-            capture=false;
-            Log.d(TAG,"inside onpreviewframe");
-            int previewWidth = camera.getParameters().getPreviewSize().width;
-            int previewHeight = camera.getParameters().getPreviewSize().height;
-            YuvImage yuvImage = new YuvImage(bytes,ImageFormat.NV21,previewWidth,previewHeight,null);
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            yuvImage.compressToJpeg(new Rect(0,0,previewWidth,previewHeight),100,baos);
-            Bitmap thumb = BitmapFactory.decodeByteArray(baos.toByteArray(),0,baos.size());
-            Matrix rotate = new Matrix();
-            rotate.setRotate(rotation);
-            thumb = Bitmap.createBitmap(thumb,0,0,previewWidth,previewHeight,rotate,false);
-            vFrag.createAndShowPhotoThumbnail(thumb);
-            Log.d(TAG,"photo thumbnail created");
+            try {
+                capture = false;
+                Log.d(TAG, "inside onpreviewframe");
+                int previewWidth = camera.getParameters().getPreviewSize().width;
+                int previewHeight = camera.getParameters().getPreviewSize().height;
+                YuvImage yuvImage = new YuvImage(bytes, ImageFormat.NV21, previewWidth, previewHeight, null);
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                yuvImage.compressToJpeg(new Rect(0, 0, previewWidth, previewHeight), 100, baos);
+                Bitmap thumb = BitmapFactory.decodeByteArray(baos.toByteArray(), 0, baos.size());
+                baos.close();
+                Matrix rotate = new Matrix();
+                rotate.setRotate(rotation);
+                thumb = Bitmap.createBitmap(thumb, 0, 0, previewWidth, previewHeight, rotate, false);
+                vFrag.createAndShowPhotoThumbnail(thumb);
+                Log.d(TAG, "photo thumbnail created");
+                vFrag.getImagePreview().setImageBitmap(thumb);
+                vFrag.showImagePreview();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+                if(startPreview) {
+                    vFrag.hideImagePreview();
+                    startPreview=false;
+                }
+            }
         }
     }
 }

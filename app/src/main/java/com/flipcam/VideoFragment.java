@@ -57,6 +57,7 @@ public class VideoFragment extends Fragment{
     ImageButton stopRecord;
     ImageButton videoMode;
     ImageButton capturePic;
+    ImageView imagePreview;
 
     public VideoFragment() {
         // Required empty public constructor
@@ -187,6 +188,7 @@ public class VideoFragment extends Fragment{
         });
         Log.d(TAG,"passing videofragment to cameraview");
         cameraView.setFragmentInstance(this);
+        imagePreview = (ImageView)view.findViewById(R.id.imagePreview);
         return view;
     }
 
@@ -260,9 +262,24 @@ public class VideoFragment extends Fragment{
         cameraView.setPhotoMode();
     }
 
+    public ImageView getImagePreview()
+    {
+        return imagePreview;
+    }
+
     public ImageButton getCapturePic()
     {
         return capturePic;
+    }
+
+    public void showImagePreview()
+    {
+        imagePreview.setVisibility(View.VISIBLE);
+    }
+
+    public void hideImagePreview()
+    {
+        imagePreview.setVisibility(View.INVISIBLE);
     }
 
     public void showVideoIcons()

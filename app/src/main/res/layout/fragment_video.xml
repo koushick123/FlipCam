@@ -13,6 +13,16 @@
         android:id="@+id/cameraSurfaceView"
         />
 
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="center"
+        android:id="@+id/imagePreview"
+        android:src="@drawable/record_pause"
+        android:visibility="invisible"
+        android:background="@color/transparentBar"
+        />
+
     <LinearLayout
         android:id="@+id/seekParent"
         android:layout_width="match_parent"
