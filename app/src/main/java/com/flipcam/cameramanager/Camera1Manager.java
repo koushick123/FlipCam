@@ -241,7 +241,14 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     @Override
     public void capturePicture() {
         photo = null;
+        if(!isAutoFocus()){
+            setAutoFocus();
+        }
+        Camera.Parameters parameters = mCamera.getParameters();
+        int zoomedVal = vFrag.getZoomBar().getProgress();
+        parameters.setZoom(zoomedVal);
         mCamera.takePicture(this,null,null,this);
+        mCamera.setParameters(parameters);
     }
 
     public void setFragmentInstance(VideoFragment fragmentInstance){
@@ -415,7 +422,6 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
 
     @Override
     public void onZoomChange(int zoomvalue, boolean stopped, Camera camera) {
-        Log.d(TAG,"zoom value = "+zoomvalue);
         if(!stopped) {
             camera.getParameters().setZoom(zoomvalue);
         }
@@ -429,10 +435,6 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     public void onPreviewFrame(byte[] bytes, Camera camera) {
         if(capture)
         {
-            Camera.Parameters parameters = camera.getParameters();
-            int zoomedVal = vFrag.getZoomBar().getProgress();
-            parameters.setZoom(zoomedVal);
-            camera.setParameters(parameters);
             capture=false;
             Log.d(TAG,"inside onpreviewframe");
             int previewWidth = camera.getParameters().getPreviewSize().width;
