@@ -234,7 +234,7 @@ public class VideoFragment extends Fragment{
                 editor.putBoolean("videoCapture",false);
                 editor.commit();
                 capturePic.setClickable(false);
-                cameraView.capturePhoto();
+                showImagePreview();
             }
         });
         capturePic.setImageDrawable(getResources().getDrawable(R.drawable.capture_picture));
@@ -267,6 +267,11 @@ public class VideoFragment extends Fragment{
         return imagePreview;
     }
 
+    public CameraView getCameraView()
+    {
+        return cameraView;
+    }
+
     public ImageButton getCapturePic()
     {
         return capturePic;
@@ -274,7 +279,14 @@ public class VideoFragment extends Fragment{
 
     public void showImagePreview()
     {
+        imagePreview.setImageBitmap(cameraView.getDrawingCache());
         imagePreview.setVisibility(View.VISIBLE);
+        try {
+            Thread.sleep(200);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        cameraView.capturePhoto();
     }
 
     public void hideImagePreview()

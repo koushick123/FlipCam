@@ -747,7 +747,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         camera1.setRotation(imageRotationAngle);
         mNextPhotoAbsolutePath = getFilePath(false);
         camera1.setPhotoPath(mNextPhotoAbsolutePath);
-        camera1.setCapture(true);
         camera1.capturePicture();
     }
 

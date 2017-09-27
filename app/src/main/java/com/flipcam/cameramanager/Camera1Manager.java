@@ -240,15 +240,20 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     FileOutputStream picture = null;
     @Override
     public void capturePicture() {
-        photo = null;
-        if(!isAutoFocus()){
+        photo=null;
+        int zoomedVal = vFrag.getZoomBar().getProgress();
+        //Focus only if no focus and zoomed out. AF zooms out completely.
+        if(!isAutoFocus() && zoomedVal == 0){
+            takePic=true;
             setAutoFocus();
         }
-        Camera.Parameters parameters = mCamera.getParameters();
-        int zoomedVal = vFrag.getZoomBar().getProgress();
-        parameters.setZoom(zoomedVal);
-        mCamera.takePicture(this,null,null,this);
-        mCamera.setParameters(parameters);
+        else {
+            capture=true;
+            Camera.Parameters parameters = mCamera.getParameters();
+            parameters.setZoom(zoomedVal);
+            mCamera.takePicture(this, null, null, this);
+            mCamera.setParameters(parameters);
+        }
     }
 
     public void setFragmentInstance(VideoFragment fragmentInstance){
@@ -264,7 +269,6 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         rotation = rot;
     }
 
-    boolean startPreview=false;
     @Override
     public void onPictureTaken(byte[] data, Camera camera) {
         Log.d(TAG, "Picture wil be saved at loc = " + photoPath);
@@ -281,7 +285,6 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
             //Start the preview no matter if photo is saved or not.
             Log.d(TAG, "photo is ready");
             camera.startPreview();
-            startPreview=true;
             vFrag.getCapturePic().setClickable(true);
             vFrag.hideImagePreview();
         }
@@ -324,12 +327,26 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     }
 
     boolean focused=false;
+    boolean takePic=false;
     Camera.AutoFocusCallback autoFocusCallback = new Camera.AutoFocusCallback() {
         @Override
         public void onAutoFocus(boolean success, Camera camera) {
             if(success) {
                 Log.d(TAG,"auto focus set successfully");
                 focused = success;
+                if(takePic)
+                {
+                    capture=true;
+                    takePic=false;
+                    /*ImageView imageView = vFrag.getImagePreview();
+                    imageView.setImageBitmap(vFrag.getCameraView().getDrawingCache());
+                    imageView.setVisibility(View.VISIBLE);*/
+                    Camera.Parameters parameters = camera.getParameters();
+                    int zoomedVal = vFrag.getZoomBar().getProgress();
+                    parameters.setZoom(zoomedVal);
+                    camera.takePicture(camera1Manager, null, null, camera1Manager);
+                    camera.setParameters(parameters);
+                }
             }
         }
     };
@@ -456,15 +473,8 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
                 thumb = Bitmap.createBitmap(thumb, 0, 0, previewWidth, previewHeight, rotate, false);
                 vFrag.createAndShowPhotoThumbnail(thumb);
                 Log.d(TAG, "photo thumbnail created");
-                vFrag.getImagePreview().setImageBitmap(thumb);
-                vFrag.showImagePreview();
             } catch (IOException e) {
                 e.printStackTrace();
-            } finally {
-                if(startPreview) {
-                    vFrag.hideImagePreview();
-                    startPreview=false;
-                }
             }
         }
     }
