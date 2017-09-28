@@ -230,6 +230,7 @@ public class VideoFragment extends Fragment{
         capturePic.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                Log.d(TAG,"click capture picture");
                 SharedPreferences.Editor editor = getActivity().getSharedPreferences(FC_SHARED_PREFERENCE, Context.MODE_PRIVATE).edit();
                 editor.putBoolean("videoCapture",false);
                 editor.commit();
@@ -260,16 +261,6 @@ public class VideoFragment extends Fragment{
         videoBar.addView(videoMode);
         videoBar.addView(thumbnail);
         cameraView.setPhotoMode();
-    }
-
-    public ImageView getImagePreview()
-    {
-        return imagePreview;
-    }
-
-    public CameraView getCameraView()
-    {
-        return cameraView;
     }
 
     public ImageButton getCapturePic()
