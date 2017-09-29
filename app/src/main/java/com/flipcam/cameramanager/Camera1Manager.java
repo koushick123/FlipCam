@@ -243,11 +243,13 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         photo=null;
         int zoomedVal = vFrag.getZoomBar().getProgress();
         //Focus only if no focus and zoomed out. AF zooms out completely.
-        if(!isAutoFocus() && zoomedVal == 0){
+        if(isFocusModeSupported(Camera.Parameters.FOCUS_MODE_AUTO) && !isAutoFocus() && zoomedVal == 0){
+            Log.d(TAG,"AF and take pic");
             takePic=true;
             setAutoFocus();
         }
         else {
+            Log.d(TAG,"take pic");
             capture=true;
             Camera.Parameters parameters = mCamera.getParameters();
             parameters.setZoom(zoomedVal);
@@ -324,6 +326,11 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         else{
             return false;
         }
+    }
+
+    public void setTakePic(boolean takePic1)
+    {
+        takePic = takePic1;
     }
 
     boolean focused=false;
@@ -470,6 +477,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
                 baos.close();
                 Matrix rotate = new Matrix();
                 rotate.setRotate(rotation);
+                Log.d(TAG,"rotation = "+rotation);
                 thumb = Bitmap.createBitmap(thumb, 0, 0, previewWidth, previewHeight, rotate, false);
                 vFrag.createAndShowPhotoThumbnail(thumb);
                 Log.d(TAG, "photo thumbnail created");

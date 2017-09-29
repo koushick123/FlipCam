@@ -122,11 +122,13 @@ public class VideoFragment extends Fragment{
                 else if(progress == 0){
                     cameraView.registerAccelSensor();
                 }
-                if (cameraView.isSmoothZoomSupported()) {
-                    //Log.d(TAG, "Smooth zoom supported");
-                    cameraView.smoothZoomInOrOut(progress);
-                } else if(cameraView.isZoomSupported()){
-                    cameraView.zoomInAndOut(progress);
+                if(cameraView.isCameraReady()) {
+                    if (cameraView.isSmoothZoomSupported()) {
+                        //Log.d(TAG, "Smooth zoom supported");
+                        cameraView.smoothZoomInOrOut(progress);
+                    } else if (cameraView.isZoomSupported()) {
+                        cameraView.zoomInAndOut(progress);
+                    }
                 }
             }
 
@@ -218,6 +220,7 @@ public class VideoFragment extends Fragment{
 
     public void showPhotoIcons()
     {
+        Log.d(TAG,"inside showphotoicons");
         LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,LinearLayout.LayoutParams.WRAP_CONTENT);
         videoBar.removeView(substitute);
         videoBar.removeView(switchCamera);
@@ -230,7 +233,6 @@ public class VideoFragment extends Fragment{
         capturePic.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Log.d(TAG,"click capture picture");
                 SharedPreferences.Editor editor = getActivity().getSharedPreferences(FC_SHARED_PREFERENCE, Context.MODE_PRIVATE).edit();
                 editor.putBoolean("videoCapture",false);
                 editor.commit();
@@ -287,6 +289,7 @@ public class VideoFragment extends Fragment{
 
     public void showVideoIcons()
     {
+        Log.d(TAG,"inside showvideoicons");
         LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,LinearLayout.LayoutParams.WRAP_CONTENT);
         videoBar.removeView(substitute);
         videoBar.removeView(switchCamera);

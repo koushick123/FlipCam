@@ -142,6 +142,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     File videoFile;
     ImageButton stopButton;
     float imageRotationAngle = 0.0f;
+    long previousTime = 0;
+    long focusPreviousTime=0;
 
     public CameraView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -156,7 +158,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     public void onSensorChanged(SensorEvent sensorEvent) {
         //Use accelerometer to check if the device is moving among the x,y or z axes. This means the user is moving the camera and
         //trying to refocus.
-        if(Math.abs(System.currentTimeMillis() - previousTime) >= 240){
+        if(Math.abs(System.currentTimeMillis() - focusPreviousTime) >= 240){
             diff[0] = Math.abs(sensorEvent.values[0]-sensorValues[0]);
             diff[1] = Math.abs(sensorEvent.values[1]-sensorValues[1]);
             determineOrientation();
@@ -186,7 +188,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                     focusNow = false;
                 }
             }
-            previousTime = System.currentTimeMillis();
+            focusPreviousTime = System.currentTimeMillis();
         }
     }
 
@@ -606,7 +608,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     public void determineOrientation() {
 
         if(orientation != -1) {
-            if (((orientation >= 315 && orientation <= 359) || (orientation >= 0 && orientation <= 45)) || (orientation >= 135 && orientation <= 195)) {
+            if (((orientation >= 315 && orientation <= 360) || (orientation >= 0 && orientation <= 45)) || (orientation >= 135 && orientation <= 195)) {
                 if (orientation >= 135 && orientation <= 195) {
                     //Reverse portrait
                     imageRotationAngle = rotationAngle = 180f;
@@ -780,6 +782,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             measuredWidth = width;
             measuredHeight = height;
             frameCount=0;
+            camera1.setTakePic(false);
             openCameraAndStartPreview();
         }
         if(surfaceTexture!=null) {
@@ -835,7 +838,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         }
     }
 
-    long previousTime = 0;
     class CameraRenderer extends Thread
     {
         int recordStop = -1;
@@ -1105,6 +1107,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                             hour++;
                             if(VERBOSE)Log.d(TAG,"hour = "+hour);
                         }
+                        Log.d(TAG,"difference of 1 sec");
                         previousTime = System.currentTimeMillis();
                         if(recordStop == 1) {
                             mainHandler.sendEmptyMessage(Constants.SHOW_ELAPSED_TIME);
