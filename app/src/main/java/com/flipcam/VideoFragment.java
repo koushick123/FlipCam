@@ -663,6 +663,8 @@ public class VideoFragment extends Fragment{
                 intent.setDataAndType(Uri.parse("file://" + path), "image/*");
             }
         }
+        Log.d(TAG,"flags = "+intent.getFlags());
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(intent);
     }
 
