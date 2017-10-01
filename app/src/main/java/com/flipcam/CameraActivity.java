@@ -9,14 +9,17 @@ import android.view.WindowManager;
 public class CameraActivity extends AppCompatActivity implements VideoFragment.PermissionInterface {
 
     private static final String TAG = "CameraActivity";
-    VideoFragment videoFragment = VideoFragment.newInstance();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_camera);
         getSupportActionBar().hide();
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        getSupportFragmentManager().beginTransaction().add(R.id.cameraPreview, videoFragment).commit();
+        if(savedInstanceState == null) {
+            VideoFragment videoFragment = VideoFragment.newInstance();
+            Log.d(TAG,"videoFragment = "+videoFragment);
+            getSupportFragmentManager().beginTransaction().add(R.id.cameraPreview, videoFragment).commit();
+        }
     }
 
     @Override
