@@ -18,7 +18,7 @@ public class CameraActivity extends AppCompatActivity implements VideoFragment.P
         if(savedInstanceState == null) {
             VideoFragment videoFragment = VideoFragment.newInstance();
             Log.d(TAG,"videoFragment = "+videoFragment);
-            getSupportFragmentManager().beginTransaction().add(R.id.cameraPreview, videoFragment).commit();
+            getFragmentManager().beginTransaction().add(R.id.cameraPreview, videoFragment).commit();
         }
     }
 

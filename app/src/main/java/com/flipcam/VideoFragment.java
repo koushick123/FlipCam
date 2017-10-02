@@ -14,7 +14,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.annotation.Nullable;
-import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -37,7 +36,7 @@ import static android.support.v4.content.FileProvider.getUriForFile;
 import static com.flipcam.PermissionActivity.FC_SHARED_PREFERENCE;
 
 
-public class VideoFragment extends Fragment{
+public class VideoFragment extends android.app.Fragment{
 
     public static final String TAG = "VideoFragment";
     SeekBar zoombar;
@@ -70,11 +69,6 @@ public class VideoFragment extends Fragment{
 
     public interface PermissionInterface{
         void askPermission();
-    }
-
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
     }
 
     @Override
@@ -135,7 +129,7 @@ public class VideoFragment extends Fragment{
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
                 if(!cameraView.isSmoothZoomSupported() && !cameraView.isZoomSupported()) {
-                    Toast.makeText(getContext(), "Zoom not supported for this camera.", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getActivity().getApplicationContext(), "Zoom not supported for this camera.", Toast.LENGTH_SHORT).show();
                 }
             }
 
@@ -221,6 +215,9 @@ public class VideoFragment extends Fragment{
     public void showPhotoIcons()
     {
         Log.d(TAG,"inside showphotoicons");
+        SharedPreferences.Editor editor = getActivity().getSharedPreferences(FC_SHARED_PREFERENCE, Context.MODE_PRIVATE).edit();
+        editor.putBoolean("videoMode",false);
+        editor.commit();
         LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,LinearLayout.LayoutParams.WRAP_CONTENT);
         videoBar.removeView(substitute);
         videoBar.removeView(switchCamera);
@@ -229,7 +226,7 @@ public class VideoFragment extends Fragment{
         videoBar.removeView(thumbnail);
         videoBar.addView(substitute);
         videoBar.addView(switchCamera);
-        capturePic = new ImageButton(getContext());
+        capturePic = new ImageButton(getActivity().getApplicationContext());
         capturePic.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -248,7 +245,7 @@ public class VideoFragment extends Fragment{
         capturePic.setBackgroundColor(getResources().getColor(R.color.settingsBarColor));
         capturePic.setScaleType(ImageView.ScaleType.CENTER_CROP);
         videoBar.addView(capturePic);
-        videoMode = new ImageButton(getContext());
+        videoMode = new ImageButton(getActivity().getApplicationContext());
         videoMode.setImageDrawable(getResources().getDrawable(R.drawable.video_mode));
         videoMode.setBackgroundColor(getResources().getColor(R.color.settingsBarColor));
         layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -290,6 +287,9 @@ public class VideoFragment extends Fragment{
     public void showVideoIcons()
     {
         Log.d(TAG,"inside showvideoicons");
+        SharedPreferences.Editor editor = getActivity().getSharedPreferences(FC_SHARED_PREFERENCE, Context.MODE_PRIVATE).edit();
+        editor.putBoolean("videoMode",true);
+        editor.commit();
         LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,LinearLayout.LayoutParams.WRAP_CONTENT);
         videoBar.removeView(substitute);
         videoBar.removeView(switchCamera);
@@ -320,13 +320,13 @@ public class VideoFragment extends Fragment{
         videoBar.setBackgroundColor(getResources().getColor(R.color.transparentBar));
         LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,LinearLayout.LayoutParams.WRAP_CONTENT);
 
-        pauseRecord=new ImageButton(getContext());
+        pauseRecord=new ImageButton(getActivity().getApplicationContext());
         pauseRecord.setBackgroundColor(getResources().getColor(R.color.transparentBar));
         pauseRecord.setImageDrawable(getResources().getDrawable(R.drawable.record_pause));
         pauseRecord.setPadding(0, 0, (int) getResources().getDimension(R.dimen.pauseBtnRightPadding), 0);
         pauseRecord.setOnClickListener(pauseListener);
 
-        stopRecord = new ImageButton(getContext());
+        stopRecord = new ImageButton(getActivity().getApplicationContext());
         stopRecord.setScaleType(ImageView.ScaleType.CENTER_CROP);
         stopRecord.setBackgroundColor(getResources().getColor(R.color.transparentBar));
         stopRecord.setImageDrawable(getResources().getDrawable(R.drawable.record_stop));
@@ -462,7 +462,7 @@ public class VideoFragment extends Fragment{
                 flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_off));
             }
             else{
-                Toast.makeText(getContext(),"Flash Mode " + Camera.Parameters.FLASH_MODE_TORCH + " not supported by this camera.",Toast.LENGTH_SHORT).show();
+                Toast.makeText(getActivity().getApplicationContext(),"Flash Mode " + Camera.Parameters.FLASH_MODE_TORCH + " not supported by this camera.",Toast.LENGTH_SHORT).show();
             }
         }
         else
@@ -491,7 +491,7 @@ public class VideoFragment extends Fragment{
             @Override
             public void onClick(View view)
             {
-                Toast.makeText(getContext(),"Open file",Toast.LENGTH_SHORT).show();
+                Toast.makeText(getActivity().getApplicationContext(),"Open file",Toast.LENGTH_SHORT).show();
                 openMedia(cameraView.getPhotoMediaPath(),false);
             }
         });
