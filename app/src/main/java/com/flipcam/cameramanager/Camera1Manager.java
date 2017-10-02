@@ -10,6 +10,7 @@ import android.graphics.YuvImage;
 import android.hardware.Camera;
 import android.util.Log;
 
+import com.flipcam.PhotoFragment;
 import com.flipcam.VideoFragment;
 import com.flipcam.camerainterface.CameraOperations;
 
@@ -37,6 +38,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     Camera.Parameters parameters;
     Camera.CameraInfo info = new Camera.CameraInfo();
     private VideoFragment vFrag;
+    private PhotoFragment photoFrag;
     String photoPath;
     float rotation;
     private static Camera1Manager camera1Manager;
@@ -262,6 +264,10 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         vFrag = fragmentInstance;
     }
 
+    public void setPhotoFragmentInstance(PhotoFragment photoFragment){
+        photoFrag = photoFragment;
+    }
+
     public void setPhotoPath(String mediaPath)
     {
         photoPath = mediaPath;
@@ -287,8 +293,8 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
             //Start the preview no matter if photo is saved or not.
             Log.d(TAG, "photo is ready");
             camera.startPreview();
-            vFrag.getCapturePic().setClickable(true);
-            vFrag.hideImagePreview();
+            photoFrag.getCapturePic().setClickable(true);
+            photoFrag.hideImagePreview();
         }
     }
 
@@ -345,11 +351,8 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
                 {
                     capture=true;
                     takePic=false;
-                    /*ImageView imageView = vFrag.getImagePreview();
-                    imageView.setImageBitmap(vFrag.getCameraView().getDrawingCache());
-                    imageView.setVisibility(View.VISIBLE);*/
                     Camera.Parameters parameters = camera.getParameters();
-                    int zoomedVal = vFrag.getZoomBar().getProgress();
+                    int zoomedVal = photoFrag.getZoomBar().getProgress();
                     parameters.setZoom(zoomedVal);
                     camera.takePicture(camera1Manager, null, null, camera1Manager);
                     camera.setParameters(parameters);
@@ -479,7 +482,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
                 rotate.setRotate(rotation);
                 Log.d(TAG,"rotation = "+rotation);
                 thumb = Bitmap.createBitmap(thumb, 0, 0, previewWidth, previewHeight, rotate, false);
-                vFrag.createAndShowPhotoThumbnail(thumb);
+                photoFrag.createAndShowPhotoThumbnail(thumb);
                 Log.d(TAG, "photo thumbnail created");
             } catch (IOException e) {
                 e.printStackTrace();

@@ -1,12 +1,12 @@
 package com.flipcam;
 
+import android.app.Fragment;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Typeface;
 import android.hardware.Camera;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
@@ -15,7 +15,6 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.support.annotation.Nullable;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,7 +22,6 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.flipcam.constants.Constants;
@@ -35,45 +33,41 @@ import java.util.Arrays;
 import static android.support.v4.content.FileProvider.getUriForFile;
 import static com.flipcam.PermissionActivity.FC_SHARED_PREFERENCE;
 
+/**
+ * Created by koushick on 02-Oct-17.
+ */
 
-public class VideoFragment extends android.app.Fragment{
+public class PhotoFragment extends Fragment {
 
-    public static final String TAG = "VideoFragment";
+    public static final String TAG="PhotoFragment";
     SeekBar zoombar;
     CameraView cameraView;
     ImageButton switchCamera;
-    ImageButton startRecord;
     ImageButton flash;
-    ImageButton photoMode;
+    ImageButton videoMode;
     ImageView substitute;
     ImageView thumbnail;
     ImageButton settings;
-    LinearLayout videoBar;
+    LinearLayout photoBar;
     LinearLayout settingsBar;
-    TextView timeElapsed;
-    TextView memoryConsumed;
-    PermissionInterface permissionInterface;
-    SwitchInterface switchInterface;
-    ImageButton stopRecord;
-    ImageButton videoMode;
+    PhotoPermission photoPermission;
+    SwitchPhoto switchPhoto;
     ImageButton capturePic;
     ImageView imagePreview;
 
-    public VideoFragment() {
-        // Required empty public constructor
+    public interface PhotoPermission{
+        void askPhotoPermission();
+    }
+    public interface SwitchPhoto{
+        void switchToVideo();
+    }
+    public PhotoFragment() {
+        //Required empty public constructor
     }
 
-    public static VideoFragment newInstance() {
-        VideoFragment fragment = new VideoFragment();
-        return fragment;
-    }
-
-    public interface PermissionInterface{
-        void askPermission();
-    }
-
-    public interface SwitchInterface{
-        void switchToPhoto();
+    public static PhotoFragment newInstance(){
+        PhotoFragment photoFragment = new PhotoFragment();
+        return photoFragment;
     }
 
     @Override
@@ -86,7 +80,7 @@ public class VideoFragment extends android.app.Fragment{
         settingsBar = (LinearLayout)getActivity().findViewById(R.id.settingsBar);
         settings = (ImageButton)getActivity().findViewById(R.id.settings);
         flash = (ImageButton)getActivity().findViewById(R.id.flashOn);
-        if(flash == null){
+        if(flash == null) {
             flash = new ImageButton(getActivity());
             flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_on));
         }
@@ -98,21 +92,21 @@ public class VideoFragment extends android.app.Fragment{
             }
         });
         cameraView.setFlashButton(flash);
-        permissionInterface = (PermissionInterface)getActivity();
-        switchInterface = (SwitchInterface)getActivity();
+        photoPermission = (PhotoFragment.PhotoPermission)getActivity();
+        switchPhoto = (PhotoFragment.SwitchPhoto)getActivity();
     }
 
+    @Nullable
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
+    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        View view = inflater.inflate(R.layout.fragment_video, container, false);
+        View view = inflater.inflate(R.layout.fragment_photo, container, false);
 
-        Log.d(TAG,"Inside video fragment");
-        substitute = (ImageView)view.findViewById(R.id.substitute);
+        Log.d(TAG,"Inside photo fragment");
+        substitute = (ImageView)view.findViewById(R.id.photoSubstitute);
         substitute.setVisibility(View.INVISIBLE);
-        cameraView = (CameraView)view.findViewById(R.id.cameraSurfaceView);
-        zoombar = (SeekBar)view.findViewById(R.id.zoomBar);
+        cameraView = (CameraView)view.findViewById(R.id.photocameraSurfaceView);
+        zoombar = (SeekBar)view.findViewById(R.id.photoZoomBar);
         zoombar.setProgressTintList(ColorStateList.valueOf(getResources().getColor(R.color.progressFill)));
         cameraView.setSeekBar(zoombar);
         zoombar.setProgress(0);
@@ -148,73 +142,45 @@ public class VideoFragment extends android.app.Fragment{
 
             }
         });
-        thumbnail = (ImageView)view.findViewById(R.id.thumbnail);
-        photoMode = (ImageButton) view.findViewById(R.id.photoMode);
-        photoMode.setOnClickListener(new View.OnClickListener(){
+        thumbnail = (ImageView)view.findViewById(R.id.photoThumbnail);
+        videoMode = (ImageButton) view.findViewById(R.id.videoMode);
+        videoMode.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view1){
-                switchInterface.switchToPhoto();
+                switchPhoto.switchToVideo();
             }
         });
-        switchCamera = (ImageButton)view.findViewById(R.id.switchCamera);
+        capturePic = (ImageButton)view.findViewById(R.id.cameraCapture);
+        capturePic.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view) {
+                showImagePreview();
+            }
+        });
+        switchCamera = (ImageButton)view.findViewById(R.id.photoSwitchCamera);
         switchCamera.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                startRecord.setClickable(false);
+                capturePic.setClickable(false);
                 flash.setClickable(false);
-                photoMode.setClickable(false);
+                videoMode.setClickable(false);
                 thumbnail.setClickable(false);
 
                 cameraView.switchCamera();
 
                 zoombar.setProgress(0);
-                startRecord.setClickable(true);
+                capturePic.setClickable(true);
                 flash.setClickable(true);
-                photoMode.setClickable(true);
+                videoMode.setClickable(true);
                 thumbnail.setClickable(true);
             }
         });
-        startRecord = (ImageButton)view.findViewById(R.id.cameraRecord);
-        videoBar = (LinearLayout)view.findViewById(R.id.videoFunctions);
-        startRecord.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                videoBar.removeView(startRecord);
-                videoBar.removeView(substitute);
-                videoBar.removeView(photoMode);
-                videoBar.removeView(thumbnail);
-                videoBar.removeView(switchCamera);
-                addStopAndPauseIcons();
-                hideSettingsBarAndIcon();
-                SharedPreferences.Editor editor = getActivity().getSharedPreferences(FC_SHARED_PREFERENCE, Context.MODE_PRIVATE).edit();
-                editor.putBoolean("videoCapture",true);
-                editor.commit();
-                cameraView.record();
-            }
-        });
-        Log.d(TAG,"passing videofragment to cameraview");
-        cameraView.setFragmentInstance(this);
+
+        photoBar = (LinearLayout)view.findViewById(R.id.photoFunctions);
+        Log.d(TAG,"passing photofragment to cameraview");
+        cameraView.setPhotoFragmentInstance(this);
         imagePreview = (ImageView)view.findViewById(R.id.imagePreview);
         return view;
-    }
-
-    ImageButton pauseRecord;
-    View.OnClickListener pauseListener = new View.OnClickListener() {
-        @Override
-        public void onClick(View view) {
-            if (!cameraView.isPaused()) {
-                pauseRecord.setImageDrawable(getResources().getDrawable(R.drawable.record_start));
-                cameraView.pause();
-            } else {
-                pauseRecord.setImageDrawable(getResources().getDrawable(R.drawable.record_pause));
-                cameraView.resume();
-            }
-        }
-    };
-
-    public boolean isNougatAndAbove()
-    {
-        return (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N);
     }
 
     public SeekBar getZoomBar()
@@ -222,140 +188,26 @@ public class VideoFragment extends android.app.Fragment{
         return zoombar;
     }
 
-    public void addStopAndPauseIcons()
+    public ImageButton getCapturePic()
     {
-        videoBar.setBackgroundColor(getResources().getColor(R.color.transparentBar));
-        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,LinearLayout.LayoutParams.WRAP_CONTENT);
-
-        pauseRecord=new ImageButton(getActivity().getApplicationContext());
-        pauseRecord.setBackgroundColor(getResources().getColor(R.color.transparentBar));
-        pauseRecord.setImageDrawable(getResources().getDrawable(R.drawable.record_pause));
-        pauseRecord.setPadding(0, 0, (int) getResources().getDimension(R.dimen.pauseBtnRightPadding), 0);
-        pauseRecord.setOnClickListener(pauseListener);
-
-        stopRecord = new ImageButton(getActivity().getApplicationContext());
-        stopRecord.setScaleType(ImageView.ScaleType.CENTER_CROP);
-        stopRecord.setBackgroundColor(getResources().getColor(R.color.transparentBar));
-        stopRecord.setImageDrawable(getResources().getDrawable(R.drawable.record_stop));
-        cameraView.setStopButton(stopRecord);
-
-        layoutParams.height=(int)getResources().getDimension(R.dimen.stopButtonHeight);
-        layoutParams.width=(int)getResources().getDimension(R.dimen.stopButtonWidth);
-        layoutParams.setMargins((int)getResources().getDimension(R.dimen.stopBtnLeftMargin),0,(int)getResources().getDimension(R.dimen.stopBtnRightMargin),0);
-        stopRecord.setLayoutParams(layoutParams);
-        stopRecord.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                cameraView.record();
-                showRecordAndThumbnail();
-            }
-        });
-        switchCamera.setBackgroundColor(getResources().getColor(R.color.transparentBar));
-        videoBar.addView(switchCamera);
-        videoBar.addView(stopRecord);
-        videoBar.addView(pauseRecord);
-        if(!isNougatAndAbove()) {
-            pauseRecord.setVisibility(View.INVISIBLE);
-        }
+        return capturePic;
     }
 
-    public void showRecordAndThumbnail()
+    public void showImagePreview()
     {
-        videoBar.setBackgroundColor(getResources().getColor(R.color.settingsBarColor));
-        videoBar.removeView(stopRecord);
-        videoBar.removeView(pauseRecord);
-        videoBar.removeView(switchCamera);
-        videoBar.addView(substitute);
-        videoBar.addView(switchCamera);
-        videoBar.addView(startRecord);
-        videoBar.addView(photoMode);
-        videoBar.addView(thumbnail);
-        //thumbnail.setClickable(false);
-        settingsBar.removeView(timeElapsed);
-        settingsBar.removeView(memoryConsumed);
-        settingsBar.removeView(flash);
-        flash = new ImageButton(getActivity());
-        if(cameraView.isCameraReady()) {
-            if (cameraView.isFlashOn()) {
-                flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_off));
-            } else {
-                flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_on));
-            }
+        imagePreview.setImageBitmap(cameraView.getDrawingCache());
+        imagePreview.setVisibility(View.VISIBLE);
+        try {
+            Thread.sleep(200);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
-        LinearLayout.LayoutParams flashParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        flashParams.weight=0.5f;
-        flashParams.height = (int)getResources().getDimension(R.dimen.flashOnHeight);
-        flashParams.width = (int)getResources().getDimension(R.dimen.flashOnWidth);
-        flashParams.setMargins((int)getResources().getDimension(R.dimen.flashOnLeftMargin),0,0,0);
-        flashParams.gravity=Gravity.CENTER;
-        flash.setLayoutParams(flashParams);
-        flash.setOnClickListener(new View.OnClickListener(){
-            @Override
-            public void onClick(View view)
-            {
-                setFlash();
-            }
-        });
-        cameraView.setFlashButton(flash);
-        settingsBar.addView(flash);
-        settingsBar.addView(settings);
-        settingsBar.setBackgroundColor(getResources().getColor(R.color.settingsBarColor));
-        flash.setBackgroundColor(getResources().getColor(R.color.settingsBarColor));
+        cameraView.capturePhoto();
     }
 
-    public void hideSettingsBarAndIcon()
+    public void hideImagePreview()
     {
-        settingsBar.setBackgroundColor(getResources().getColor(R.color.transparentBar));
-        settingsBar.removeView(settings);
-        settingsBar.removeView(flash);
-        flash = new ImageButton(getActivity());
-        if(cameraView.isFlashOn()) {
-            flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_off));
-        }
-        else{
-            flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_on));
-        }
-        flash.setOnClickListener(new View.OnClickListener(){
-            @Override
-            public void onClick(View view)
-            {
-                setFlash();
-            }
-        });
-        LinearLayout.LayoutParams flashParam = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        flashParam.weight=0.3f;
-        flash.setLayoutParams(flashParam);
-        flash.setBackgroundColor(getResources().getColor(R.color.transparentBar));
-        settingsBar.addView(flash);
-        cameraView.setFlashButton(flash);
-
-        //Add time elapsed text
-        timeElapsed = new TextView(getActivity());
-        timeElapsed.setGravity(Gravity.CENTER_HORIZONTAL);
-        timeElapsed.setTypeface(Typeface.DEFAULT_BOLD);
-        timeElapsed.setBackgroundColor(getResources().getColor(R.color.transparentBar));
-        timeElapsed.setTextColor(getResources().getColor(R.color.timeElapsed));
-        timeElapsed.setText(getResources().getString(R.string.START_TIME));
-        LinearLayout.LayoutParams timeElapParam = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        timeElapParam.setMargins(0,(int)getResources().getDimension(R.dimen.timeAndMemTopMargin),0,0);
-        timeElapParam.weight=0.3f;
-        timeElapsed.setLayoutParams(timeElapParam);
-        settingsBar.addView(timeElapsed);
-        cameraView.setTimeElapsedText(timeElapsed);
-
-        //Add memory consumed text
-        memoryConsumed = new TextView(getActivity());
-        memoryConsumed.setGravity(Gravity.CENTER_HORIZONTAL);
-        memoryConsumed.setTextColor(getResources().getColor(R.color.memoryConsumed));
-        memoryConsumed.setTypeface(Typeface.DEFAULT_BOLD);
-        memoryConsumed.setBackgroundColor(getResources().getColor(R.color.transparentBar));
-        memoryConsumed.setText(getResources().getString(R.string.START_MEMORY));
-        LinearLayout.LayoutParams memConsumed = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        memConsumed.setMargins(0,(int)getResources().getDimension(R.dimen.timeAndMemTopMargin),0,0);
-        memConsumed.weight=0.3f;
-        memoryConsumed.setLayoutParams(memConsumed);
-        settingsBar.addView(memoryConsumed);
-        cameraView.setMemoryConsumedText(memoryConsumed);
+        imagePreview.setVisibility(View.INVISIBLE);
     }
 
     boolean flashOn=false;
@@ -383,8 +235,8 @@ public class VideoFragment extends android.app.Fragment{
 
     public void askForPermissionAgain()
     {
-        Log.d(TAG,"permissionInterface = "+permissionInterface);
-        permissionInterface.askPermission();
+        Log.d(TAG,"permissionInterface = "+photoPermission);
+        photoPermission.askPhotoPermission();
     }
 
     public void createAndShowPhotoThumbnail(Bitmap photo)
@@ -400,35 +252,6 @@ public class VideoFragment extends android.app.Fragment{
             {
                 Toast.makeText(getActivity().getApplicationContext(),"Open file",Toast.LENGTH_SHORT).show();
                 openMedia(cameraView.getPhotoMediaPath(),false);
-            }
-        });
-    }
-
-    public void createAndShowThumbnail(String mediaPath)
-    {
-        //Storing in public folder. This will ensure that the files are visible in other apps as well.
-        //Use this for sharing files between apps
-        final File video = new File(mediaPath);
-        MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
-        mediaMetadataRetriever.setDataSource(mediaPath);
-        Bitmap firstFrame = mediaMetadataRetriever.getFrameAtTime(Constants.FIRST_SEC_MICRO);
-        if(firstFrame == null){
-            Log.d(TAG,"NOT A VALID video file");
-            if(video != null && video.delete()){
-                Log.d(TAG,"Removed file = "+mediaPath);
-            }
-            return;
-        }
-        Log.d(TAG,"width = "+firstFrame.getWidth()+" , height = "+firstFrame.getHeight());
-        firstFrame = Bitmap.createScaledBitmap(firstFrame,(int)getResources().getDimension(R.dimen.thumbnailWidth),
-                (int)getResources().getDimension(R.dimen.thumbnailHeight),false);
-        thumbnail.setImageBitmap(firstFrame);
-        thumbnail.setClickable(true);
-        thumbnail.setOnClickListener(new View.OnClickListener(){
-            @Override
-            public void onClick(View view)
-            {
-                openMedia(cameraView.getMediaPath(),true);
             }
         });
     }
@@ -515,29 +338,6 @@ public class VideoFragment extends android.app.Fragment{
     {
         thumbnail.setImageDrawable(getResources().getDrawable(R.drawable.placeholder));
         thumbnail.setClickable(false);
-    }
-
-    private void fetchMedia(ImageView thumbnail)
-    {
-        String removableStoragePath;
-        Log.d(TAG,"storage state = "+Environment.getExternalStorageState());
-        File fileList[] = new File("/storage/").listFiles();
-        //To find location of SD Card, if it exists
-        for (File file : fileList)
-        {
-            if(!file.getAbsolutePath().equalsIgnoreCase(Environment.getExternalStorageDirectory().getAbsolutePath()) && file.isDirectory() && file.canRead()) {
-                removableStoragePath = file.getAbsolutePath();
-                Log.d(TAG,removableStoragePath);
-                File newDir = new File(removableStoragePath+"/FC_Media");
-                if(!newDir.exists()){
-                    newDir.mkdir();
-                }
-                /*for(File file1 : new File(removableStoragePath).listFiles())
-                {
-                    Log.d(TAG,"SD Card path = "+file1.getPath());
-                }*/
-            }
-        }
     }
 
     private void openMedia(String path,boolean videoType)

@@ -40,6 +40,7 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.flipcam.PhotoFragment;
 import com.flipcam.R;
 import com.flipcam.VideoFragment;
 import com.flipcam.cameramanager.Camera1Manager;
@@ -130,6 +131,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     String flashMode = Camera.Parameters.FLASH_MODE_OFF;
     ImageButton flashBtn;
     VideoFragment videoFragment;
+    PhotoFragment photoFragment;
     volatile boolean isPause = false;
     double kBDelimiter = Constants.KILO_BYTE;
     double mBDelimiter = Constants.MEGA_BYTE;
@@ -517,6 +519,11 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         this.videoFragment = videoFragment;
     }
 
+    public void setPhotoFragmentInstance(PhotoFragment photoFragment)
+    {
+        this.photoFragment = photoFragment;
+    }
+
     public void openCameraAndStartPreview()
     {
         int camerapermission = ContextCompat.checkSelfPermission(getContext(), Manifest.permission.CAMERA);
@@ -525,7 +532,12 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         if (camerapermission != PackageManager.PERMISSION_GRANTED || audiopermission != PackageManager.PERMISSION_GRANTED ||
                 storagepermission != PackageManager.PERMISSION_GRANTED) {
             Log.d(TAG,"Permission turned off mostly at settings");
-            this.videoFragment.askForPermissionAgain();
+            if(this.videoFragment!=null) {
+                this.videoFragment.askForPermissionAgain();
+            }
+            else{
+                this.photoFragment.askForPermissionAgain();
+            }
             return;
         }
         camera1.openCamera(backCamera);
@@ -776,8 +788,14 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     public void surfaceChanged(SurfaceHolder surfaceHolder, int i, int width, int height) {
         Log.d(TAG,"surfaceChanged = "+surfaceHolder);
         Log.d(TAG,"Width = "+width+", height = "+height);
-        this.videoFragment.getLatestFileIfExists();
-        camera1.setFragmentInstance(this.videoFragment);
+        if(this.videoFragment!=null) {
+            this.videoFragment.getLatestFileIfExists();
+            camera1.setFragmentInstance(this.videoFragment);
+        }
+        else{
+            this.photoFragment.getLatestFileIfExists();
+            camera1.setPhotoFragmentInstance(this.photoFragment);
+        }
         if(!camera1.isCameraReady()) {
             measuredWidth = width;
             measuredHeight = height;
