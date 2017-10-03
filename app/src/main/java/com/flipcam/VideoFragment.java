@@ -55,8 +55,6 @@ public class VideoFragment extends android.app.Fragment{
     PermissionInterface permissionInterface;
     SwitchInterface switchInterface;
     ImageButton stopRecord;
-    ImageButton videoMode;
-    ImageButton capturePic;
     ImageView imagePreview;
 
     public VideoFragment() {
@@ -86,10 +84,6 @@ public class VideoFragment extends android.app.Fragment{
         settingsBar = (LinearLayout)getActivity().findViewById(R.id.settingsBar);
         settings = (ImageButton)getActivity().findViewById(R.id.settings);
         flash = (ImageButton)getActivity().findViewById(R.id.flashOn);
-        if(flash == null){
-            flash = new ImageButton(getActivity());
-            flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_on));
-        }
         flash.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view)
@@ -173,11 +167,7 @@ public class VideoFragment extends android.app.Fragment{
         startRecord.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                videoBar.removeView(startRecord);
-                videoBar.removeView(substitute);
-                videoBar.removeView(photoMode);
-                videoBar.removeView(thumbnail);
-                videoBar.removeView(switchCamera);
+                videoBar.removeAllViews();
                 addStopAndPauseIcons();
                 hideSettingsBarAndIcon();
                 SharedPreferences.Editor editor = getActivity().getSharedPreferences(FC_SHARED_PREFERENCE, Context.MODE_PRIVATE).edit();
@@ -188,6 +178,7 @@ public class VideoFragment extends android.app.Fragment{
         });
         Log.d(TAG,"passing videofragment to cameraview");
         cameraView.setFragmentInstance(this);
+        cameraView.setPhotoFragmentInstance(null);
         imagePreview = (ImageView)view.findViewById(R.id.imagePreview);
         return view;
     }
@@ -256,19 +247,14 @@ public class VideoFragment extends android.app.Fragment{
     public void showRecordAndThumbnail()
     {
         videoBar.setBackgroundColor(getResources().getColor(R.color.settingsBarColor));
-        videoBar.removeView(stopRecord);
-        videoBar.removeView(pauseRecord);
-        videoBar.removeView(switchCamera);
+        videoBar.removeAllViews();
         videoBar.addView(substitute);
         videoBar.addView(switchCamera);
         videoBar.addView(startRecord);
         videoBar.addView(photoMode);
         videoBar.addView(thumbnail);
-        //thumbnail.setClickable(false);
         settingsBar.removeView(timeElapsed);
         settingsBar.removeView(memoryConsumed);
-        settingsBar.removeView(flash);
-        flash = new ImageButton(getActivity());
         if(cameraView.isCameraReady()) {
             if (cameraView.isFlashOn()) {
                 flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_off));
@@ -291,7 +277,6 @@ public class VideoFragment extends android.app.Fragment{
             }
         });
         cameraView.setFlashButton(flash);
-        settingsBar.addView(flash);
         settingsBar.addView(settings);
         settingsBar.setBackgroundColor(getResources().getColor(R.color.settingsBarColor));
         flash.setBackgroundColor(getResources().getColor(R.color.settingsBarColor));
@@ -301,8 +286,6 @@ public class VideoFragment extends android.app.Fragment{
     {
         settingsBar.setBackgroundColor(getResources().getColor(R.color.transparentBar));
         settingsBar.removeView(settings);
-        settingsBar.removeView(flash);
-        flash = new ImageButton(getActivity());
         if(cameraView.isFlashOn()) {
             flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_off));
         }
@@ -320,7 +303,6 @@ public class VideoFragment extends android.app.Fragment{
         flashParam.weight=0.3f;
         flash.setLayoutParams(flashParam);
         flash.setBackgroundColor(getResources().getColor(R.color.transparentBar));
-        settingsBar.addView(flash);
         cameraView.setFlashButton(flash);
 
         //Add time elapsed text
@@ -379,23 +361,6 @@ public class VideoFragment extends android.app.Fragment{
     {
         Log.d(TAG,"permissionInterface = "+permissionInterface);
         permissionInterface.askPermission();
-    }
-
-    public void createAndShowPhotoThumbnail(Bitmap photo)
-    {
-        Log.d(TAG,"create photo thumbnail");
-        Bitmap firstFrame = Bitmap.createScaledBitmap(photo,(int)getResources().getDimension(R.dimen.thumbnailWidth),
-                (int)getResources().getDimension(R.dimen.thumbnailHeight),false);
-        thumbnail.setImageBitmap(firstFrame);
-        thumbnail.setClickable(true);
-        thumbnail.setOnClickListener(new View.OnClickListener(){
-            @Override
-            public void onClick(View view)
-            {
-                Toast.makeText(getActivity().getApplicationContext(),"Open file",Toast.LENGTH_SHORT).show();
-                openMedia(cameraView.getPhotoMediaPath(),false);
-            }
-        });
     }
 
     public void createAndShowThumbnail(String mediaPath)
@@ -537,7 +502,8 @@ public class VideoFragment extends android.app.Fragment{
     private void openMedia(String path,boolean videoType)
     {
         setCameraClose();
-        Intent intent = new Intent();
+        Intent intent = new Intent(getActivity().getApplicationContext(), MediaActivity.class);
+        intent.putExtra("mediaPath",path);
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N){
             File media = Environment.getExternalStorageDirectory();
             if(!videoType) {
@@ -555,14 +521,6 @@ public class VideoFragment extends android.app.Fragment{
             getContext().grantUriPermission("com.flipcam.fileprovider",contentUri,Intent.FLAG_GRANT_READ_URI_PERMISSION);
             intent.setData(contentUri);
             intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        }
-        else{
-            intent.setAction(Intent.ACTION_VIEW);
-            if (videoType) {
-                intent.setDataAndType(Uri.parse("file://" + path), "video/*");
-            } else {
-                intent.setDataAndType(Uri.parse("file://" + path), "image/*");
-            }
         }
         startActivity(intent);
     }

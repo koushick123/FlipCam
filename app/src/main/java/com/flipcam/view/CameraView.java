@@ -790,7 +790,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         Log.d(TAG,"Width = "+width+", height = "+height);
         if(this.videoFragment!=null) {
             this.videoFragment.getLatestFileIfExists();
-            camera1.setFragmentInstance(this.videoFragment);
+            camera1.setPhotoFragmentInstance(null);
         }
         else{
             this.photoFragment.getLatestFileIfExists();

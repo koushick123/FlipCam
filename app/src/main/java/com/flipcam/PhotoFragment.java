@@ -80,10 +80,6 @@ public class PhotoFragment extends Fragment {
         settingsBar = (LinearLayout)getActivity().findViewById(R.id.settingsBar);
         settings = (ImageButton)getActivity().findViewById(R.id.settings);
         flash = (ImageButton)getActivity().findViewById(R.id.flashOn);
-        if(flash == null) {
-            flash = new ImageButton(getActivity());
-            flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_on));
-        }
         flash.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view)
@@ -179,6 +175,7 @@ public class PhotoFragment extends Fragment {
         photoBar = (LinearLayout)view.findViewById(R.id.photoFunctions);
         Log.d(TAG,"passing photofragment to cameraview");
         cameraView.setPhotoFragmentInstance(this);
+        cameraView.setFragmentInstance(null);
         imagePreview = (ImageView)view.findViewById(R.id.imagePreview);
         return view;
     }
@@ -343,7 +340,8 @@ public class PhotoFragment extends Fragment {
     private void openMedia(String path,boolean videoType)
     {
         setCameraClose();
-        Intent intent = new Intent();
+        Intent intent = new Intent(getActivity().getApplicationContext(), MediaActivity.class);
+        intent.putExtra("mediaPath",path);
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N){
             File media = Environment.getExternalStorageDirectory();
             if(!videoType) {
@@ -361,14 +359,6 @@ public class PhotoFragment extends Fragment {
             getContext().grantUriPermission("com.flipcam.fileprovider",contentUri,Intent.FLAG_GRANT_READ_URI_PERMISSION);
             intent.setData(contentUri);
             intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        }
-        else{
-            intent.setAction(Intent.ACTION_VIEW);
-            if (videoType) {
-                intent.setDataAndType(Uri.parse("file://" + path), "video/*");
-            } else {
-                intent.setDataAndType(Uri.parse("file://" + path), "image/*");
-            }
         }
         startActivity(intent);
     }

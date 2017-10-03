@@ -1,5 +1,7 @@
 package com.flipcam.cameramanager;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
@@ -10,8 +12,8 @@ import android.graphics.YuvImage;
 import android.hardware.Camera;
 import android.util.Log;
 
+import com.flipcam.PermissionActivity;
 import com.flipcam.PhotoFragment;
-import com.flipcam.VideoFragment;
 import com.flipcam.camerainterface.CameraOperations;
 
 import java.io.ByteArrayOutputStream;
@@ -37,7 +39,6 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     int cameraId;
     Camera.Parameters parameters;
     Camera.CameraInfo info = new Camera.CameraInfo();
-    private VideoFragment vFrag;
     private PhotoFragment photoFrag;
     String photoPath;
     float rotation;
@@ -150,6 +151,13 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         Log.d(TAG,"SCREEN Aspect Ratio = "+screenAspectRatio);
         List<Camera.Size> previewSizes = parameters.getSupportedPreviewSizes();
 
+        if(photoFrag!=null) {
+            List<Camera.Size> picSizes = parameters.getSupportedPictureSizes();
+            //The first value has the highest resolution.
+            screenAspectRatio = (double)picSizes.get(0).width / (double)picSizes.get(0).height;
+            Log.d(TAG,"SCREEN Aspect Ratio for pic = "+screenAspectRatio);
+        }
+
         //If none of the camera preview size will (closely) match with screen resolution, default it to take the first preview size value.
         VIDEO_HEIGHT = previewSizes.get(0).height;
         VIDEO_WIDTH = previewSizes.get(0).width;
@@ -243,7 +251,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     @Override
     public void capturePicture() {
         photo=null;
-        int zoomedVal = vFrag.getZoomBar().getProgress();
+        int zoomedVal = photoFrag.getZoomBar().getProgress();
         //Focus only if no focus and zoomed out. AF zooms out completely.
         if(isFocusModeSupported(Camera.Parameters.FOCUS_MODE_AUTO) && !isAutoFocus() && zoomedVal == 0){
             Log.d(TAG,"AF and take pic");
@@ -258,10 +266,6 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
             mCamera.takePicture(this, null, null, this);
             mCamera.setParameters(parameters);
         }
-    }
-
-    public void setFragmentInstance(VideoFragment fragmentInstance){
-        vFrag = fragmentInstance;
     }
 
     public void setPhotoFragmentInstance(PhotoFragment photoFragment){
@@ -284,6 +288,9 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
             picture = new FileOutputStream(photoPath);
             picture.write(data);
             picture.close();
+            SharedPreferences.Editor editor = photoFrag.getActivity().getSharedPreferences(PermissionActivity.FC_SHARED_PREFERENCE, Context.MODE_PRIVATE).edit();
+            editor.putBoolean("videoCapture",false);
+            editor.commit();
         } catch (FileNotFoundException e1) {
             e1.printStackTrace();
         } catch (IOException e) {

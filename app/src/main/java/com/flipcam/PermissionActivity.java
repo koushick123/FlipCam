@@ -22,7 +22,7 @@ public class PermissionActivity extends AppCompatActivity {
     static final String AUDIO_PERMISSION = "android.permission.RECORD_AUDIO";
     static final String CAMERA_PERMISSION = "android.permission.CAMERA";
     static final String STORAGE_PERMISSIONS = "android.permission.WRITE_EXTERNAL_STORAGE";
-    static final String FC_SHARED_PREFERENCE = "FC_Settings";
+    public static final String FC_SHARED_PREFERENCE = "FC_Settings";
     boolean cameraPermission = false;
     boolean audioPermission = false;
     boolean storagePermission = false;
