@@ -802,6 +802,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             frameCount=0;
             camera1.setTakePic(false);
             openCameraAndStartPreview();
+            if(this.photoFragment!=null) {
+                registerAccelSensor();
+            }
         }
         if(surfaceTexture!=null) {
             surfaceTexture.setOnFrameAvailableListener(this);
@@ -813,6 +816,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         Log.d(TAG,"surfaceDestroyed = "+surfaceHolder);
         Log.d(TAG,"cameraHandler = "+cameraHandler);
         orientationEventListener.disable();
+        if(this.photoFragment!=null){
+            unregisterAccelSensor();
+        }
         mSensorManager.unregisterListener(this);
         if(cameraHandler!=null) {
             CameraRenderer cameraRenderer = cameraHandler.getCameraRendererInstance();

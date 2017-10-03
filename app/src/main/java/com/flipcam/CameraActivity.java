@@ -41,15 +41,17 @@ PhotoFragment.SwitchPhoto{
     public void showVideoFragment()
     {
         if(videoFragment == null) {
+            Log.d(TAG,"creating videofragment");
             videoFragment = VideoFragment.newInstance();
         }
-        Log.d(TAG,"videoFragment = "+videoFragment);
 
         FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
         if(photoFragment!=null) {
             fragmentTransaction.remove(photoFragment);
+            Log.d(TAG,"photofragment removed");
         }
         fragmentTransaction.add(R.id.cameraPreview, videoFragment, VIDEO).commit();
+        Log.d(TAG,"videofragment added");
     }
 
     public void showPhotoFragment()
@@ -57,11 +59,14 @@ PhotoFragment.SwitchPhoto{
         FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
         if(videoFragment!=null) {
             fragmentTransaction.remove(videoFragment);
+            Log.d(TAG,"videofragment removed");
         }
         if(photoFragment == null) {
+            Log.d(TAG,"creating photofragment");
             photoFragment = PhotoFragment.newInstance();
         }
         fragmentTransaction.add(R.id.cameraPreview, photoFragment, PHOTO).commit();
+        Log.d(TAG,"photofragment added");
     }
 
     @Override

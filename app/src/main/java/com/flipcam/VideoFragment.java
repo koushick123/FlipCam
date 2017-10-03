@@ -120,12 +120,6 @@ public class VideoFragment extends android.app.Fragment{
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 //Log.d(TAG, "progress = " + progress);
-                if(progress > 0){
-                    cameraView.unregisterAccelSensor();
-                }
-                else if(progress == 0){
-                    cameraView.registerAccelSensor();
-                }
                 if(cameraView.isCameraReady()) {
                     if (cameraView.isSmoothZoomSupported()) {
                         //Log.d(TAG, "Smooth zoom supported");
