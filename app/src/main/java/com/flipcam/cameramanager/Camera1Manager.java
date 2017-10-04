@@ -358,11 +358,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
                 {
                     capture=true;
                     takePic=false;
-                    Camera.Parameters parameters = camera.getParameters();
-                    int zoomedVal = photoFrag.getZoomBar().getProgress();
-                    parameters.setZoom(zoomedVal);
                     camera.takePicture(camera1Manager, null, null, camera1Manager);
-                    camera.setParameters(parameters);
                 }
             }
         }

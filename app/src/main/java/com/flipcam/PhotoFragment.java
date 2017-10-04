@@ -247,7 +247,6 @@ public class PhotoFragment extends Fragment {
             @Override
             public void onClick(View view)
             {
-                Toast.makeText(getActivity().getApplicationContext(),"Open file",Toast.LENGTH_SHORT).show();
                 openMedia(cameraView.getPhotoMediaPath(),false);
             }
         });

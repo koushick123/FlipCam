@@ -33,6 +33,7 @@ public class MediaActivity extends AppCompatActivity {
         Intent intent = getIntent();
         String path = intent.getStringExtra("mediaPath");
         if(path.endsWith(getResources().getString(R.string.IMG_EXT))) {
+            Log.d(TAG,"show image");
             VideoView videoView = (VideoView)findViewById(R.id.recordedVideo);
             mediaPlaceholder.removeView(videoView);
             ImageView picture = new ImageView(this);
@@ -45,6 +46,7 @@ public class MediaActivity extends AppCompatActivity {
             mediaPlaceholder.addView(picture);
         }
         else{
+            Log.d(TAG,"show video");
             videoView = (VideoView)findViewById(R.id.recordedVideo);
             videoView.setVisibility(View.VISIBLE);
             videoView.setKeepScreenOn(true);
@@ -52,7 +54,6 @@ public class MediaActivity extends AppCompatActivity {
             MediaController mediaController = new MediaController(this);
             videoView.setMediaController(mediaController);
             mediaController.show();
-            mediaController.setPrevNextListeners(null,null);
             if(savedInstanceState == null) {
                 videoView.start();
             }
@@ -61,9 +62,10 @@ public class MediaActivity extends AppCompatActivity {
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
-        if(videoView!=null && videoView.getCurrentPosition() > 0) {
+        if(videoView!=null) {
             Log.d(TAG,"save duration");
-            outState.putInt("duration", videoView.getCurrentPosition());
+            outState.putBoolean("playing",videoView.isPlaying());
+            outState.putInt("position", videoView.getCurrentPosition());
         }
         super.onSaveInstanceState(outState);
     }
@@ -73,8 +75,10 @@ public class MediaActivity extends AppCompatActivity {
         super.onRestoreInstanceState(savedInstanceState);
         Log.d(TAG,"onRestoreInstanceState = "+savedInstanceState);
         if(savedInstanceState!=null && videoView!=null){
-            videoView.seekTo(savedInstanceState.getInt("duration"));
-            videoView.start();
+            videoView.seekTo(savedInstanceState.getInt("position"));
+            if(savedInstanceState.getBoolean("playing")) {
+                videoView.start();
+            }
         }
     }
 }
