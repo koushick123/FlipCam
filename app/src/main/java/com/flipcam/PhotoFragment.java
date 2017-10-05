@@ -9,8 +9,6 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.hardware.Camera;
 import android.media.MediaMetadataRetriever;
-import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.annotation.Nullable;
@@ -30,7 +28,6 @@ import com.flipcam.view.CameraView;
 import java.io.File;
 import java.util.Arrays;
 
-import static android.support.v4.content.FileProvider.getUriForFile;
 import static com.flipcam.PermissionActivity.FC_SHARED_PREFERENCE;
 
 /**
@@ -247,7 +244,7 @@ public class PhotoFragment extends Fragment {
             @Override
             public void onClick(View view)
             {
-                openMedia(cameraView.getPhotoMediaPath(),false);
+                openMedia(cameraView.getPhotoMediaPath());
             }
         });
     }
@@ -275,7 +272,7 @@ public class PhotoFragment extends Fragment {
                     thumbnail.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View view) {
-                            openMedia(filePath, true);
+                            openMedia(filePath);
                         }
                     });
                 } else {
@@ -291,7 +288,7 @@ public class PhotoFragment extends Fragment {
                                 thumbnail.setOnClickListener(new View.OnClickListener() {
                                     @Override
                                     public void onClick(View view) {
-                                        openMedia(filePath, true);
+                                        openMedia(filePath);
                                     }
                                 });
                                 break;
@@ -320,7 +317,7 @@ public class PhotoFragment extends Fragment {
                 thumbnail.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
-                        openMedia(filePath, false);
+                        openMedia(filePath);
                     }
                 });
             }
@@ -336,29 +333,11 @@ public class PhotoFragment extends Fragment {
         thumbnail.setClickable(false);
     }
 
-    private void openMedia(String path,boolean videoType)
+    private void openMedia(String path)
     {
         setCameraClose();
         Intent intent = new Intent(getActivity().getApplicationContext(), MediaActivity.class);
         intent.putExtra("mediaPath",path);
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N){
-            File media = Environment.getExternalStorageDirectory();
-            if(!videoType) {
-                media = new File(media.getPath()+getResources().getString(R.string.FC_PICTURE));
-            }
-            else{
-                media = new File(media.getPath()+getResources().getString(R.string.FC_VIDEO));
-            }
-            Log.d(TAG,"media path = "+media.getPath());
-            String fileName = path.substring(path.lastIndexOf("/")+1,path.length());
-            Log.d(TAG,"File name = "+fileName);
-            File newFile = new File(media, fileName);
-            Uri contentUri = getUriForFile(getContext(), "com.flipcam.fileprovider", newFile);
-            Log.d(TAG,"content uri = "+contentUri.getPath());
-            getContext().grantUriPermission("com.flipcam.fileprovider",contentUri,Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            intent.setData(contentUri);
-            intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        }
         startActivity(intent);
     }
 
