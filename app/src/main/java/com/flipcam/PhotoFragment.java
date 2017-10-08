@@ -191,11 +191,6 @@ public class PhotoFragment extends Fragment {
     {
         imagePreview.setImageBitmap(cameraView.getDrawingCache());
         imagePreview.setVisibility(View.VISIBLE);
-        try {
-            Thread.sleep(200);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
         cameraView.capturePhoto();
     }
 

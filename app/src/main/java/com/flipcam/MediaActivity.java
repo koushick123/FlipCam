@@ -15,7 +15,9 @@ import android.view.Surface;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.MediaController;
 import android.widget.RelativeLayout;
 import android.widget.VideoView;
@@ -25,6 +27,9 @@ public class MediaActivity extends AppCompatActivity {
     private static final String TAG = "MediaActivity";
     RelativeLayout mediaPlaceholder;
     VideoView videoView=null;
+    boolean show=true;
+    LinearLayout bottomBar;
+    String path;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -35,20 +40,64 @@ public class MediaActivity extends AppCompatActivity {
         getSupportActionBar().hide();
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         Intent intent = getIntent();
-        String path = intent.getStringExtra("mediaPath");
-        if(path.endsWith(getResources().getString(R.string.IMG_EXT))) {
+        path = intent.getStringExtra("mediaPath");
+        if(isImage()) {
             Log.d(TAG,"show image");
             VideoView videoView = (VideoView)findViewById(R.id.recordedVideo);
             mediaPlaceholder.removeView(videoView);
             ImageView picture = new ImageView(this);
+            picture.setId(picture.generateViewId());
             Log.d(TAG, "image path = " + intent.getStringExtra("mediaPath"));
             Bitmap image = BitmapFactory.decodeFile(intent.getStringExtra("mediaPath"));
             picture.setImageBitmap(image);
             mediaPlaceholder.addView(picture);
+            bottomBar = new LinearLayout(getApplicationContext());
+            LinearLayout.LayoutParams bottomParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            bottomBar.setBackgroundColor(getResources().getColor(R.color.mediaControlColor));
+            WindowManager windowManager = (WindowManager)getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
+            Display display = windowManager.getDefaultDisplay();
+            Log.d(TAG,"Rotation = "+display.getRotation());
+            Point screenSize=new Point();
+            display.getRealSize(screenSize);
+            bottomParams.height=(int)(0.09 * screenSize.y);
+            Log.d(TAG,"height = "+bottomParams.height);
+            bottomBar.setLayoutParams(bottomParams);
+            //DELETE Button
+            ImageButton delete = new ImageButton(getApplicationContext());
+            LinearLayout.LayoutParams delParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            delParams.weight=0.5f;
+            if(display.getRotation() == Surface.ROTATION_0) {
+                delParams.setMargins(0, 15, 0, 0);
+            }
+            else if(display.getRotation() == Surface.ROTATION_90 || display.getRotation() == Surface.ROTATION_270){
+                delParams.setMargins(0,10,0,10);
+            }
+            delete.setLayoutParams(delParams);
+            delete.setImageDrawable(getResources().getDrawable(R.drawable.ic_delete_black_24dp));
+            delete.setBackgroundColor(getResources().getColor(R.color.mediaControlColor));
+            bottomBar.addView(delete);
+            //SHARE Button
+            ImageButton share = new ImageButton(getApplicationContext());
+            LinearLayout.LayoutParams shareParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            shareParams.weight=0.5f;
+            if(display.getRotation() == Surface.ROTATION_0) {
+                shareParams.setMargins(0, 15, 0, 0);
+            }
+            else if(display.getRotation() == Surface.ROTATION_90 || display.getRotation() == Surface.ROTATION_270){
+                shareParams.setMargins(0,10,0,10);
+            }
+            share.setLayoutParams(shareParams);
+            share.setImageDrawable(getResources().getDrawable(R.drawable.ic_share_black_24dp));
+            share.setBackgroundColor(getResources().getColor(R.color.mediaControlColor));
+            bottomBar.addView(share);
+            RelativeLayout.LayoutParams mediaParams = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+            mediaParams.addRule(RelativeLayout.BELOW,picture.getId());
+
+            mediaPlaceholder.addView(bottomBar);
         }
         else{
             Log.d(TAG,"show video");
-            videoView = (VideoView)findViewById(R.id.recordedVideo);
+
             videoView.setVisibility(View.VISIBLE);
             videoView.setKeepScreenOn(true);
             videoView.setVideoPath("file://"+path);
@@ -82,6 +131,24 @@ public class MediaActivity extends AppCompatActivity {
             mediaController.show();
             if(savedInstanceState == null) {
                 videoView.start();
+            }
+        }
+    }
+
+    public boolean isImage()
+    {
+        return path.endsWith(getResources().getString(R.string.IMG_EXT));
+    }
+
+    public void showMediaControls(View view)
+    {
+        if(isImage()) {
+            if (show) {
+                show = false;
+                bottomBar.setVisibility(View.INVISIBLE);
+            } else {
+                show = true;
+                bottomBar.setVisibility(View.VISIBLE);
             }
         }
     }

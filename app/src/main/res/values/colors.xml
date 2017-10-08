@@ -17,4 +17,6 @@
     <color name="timeElapsed">#ff0000</color>
     //Memory consumed text color
     <color name="memoryConsumed">#ff0000</color>
+    //Top and Bottom media control color
+    <color name="mediaControlColor">#FFFFFF</color>
 </resources>
