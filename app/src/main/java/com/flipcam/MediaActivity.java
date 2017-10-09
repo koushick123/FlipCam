@@ -11,6 +11,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Display;
+import android.view.Gravity;
 import android.view.Surface;
 import android.view.View;
 import android.view.ViewGroup;
@@ -51,9 +52,15 @@ public class MediaActivity extends AppCompatActivity {
             Bitmap image = BitmapFactory.decodeFile(intent.getStringExtra("mediaPath"));
             picture.setImageBitmap(image);
             mediaPlaceholder.addView(picture);
+            LinearLayout parentPlaceholder = new LinearLayout(getApplicationContext());
+            LinearLayout.LayoutParams parentParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+            parentPlaceholder.setOrientation(LinearLayout.VERTICAL);
+            parentPlaceholder.setGravity(Gravity.BOTTOM);
+            parentPlaceholder.setLayoutParams(parentParams);
             bottomBar = new LinearLayout(getApplicationContext());
             LinearLayout.LayoutParams bottomParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
             bottomBar.setBackgroundColor(getResources().getColor(R.color.mediaControlColor));
+            bottomBar.setOrientation(LinearLayout.HORIZONTAL);
             WindowManager windowManager = (WindowManager)getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
             Display display = windowManager.getDefaultDisplay();
             Log.d(TAG,"Rotation = "+display.getRotation());
@@ -92,15 +99,45 @@ public class MediaActivity extends AppCompatActivity {
             bottomBar.addView(share);
             RelativeLayout.LayoutParams mediaParams = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
             mediaParams.addRule(RelativeLayout.BELOW,picture.getId());
-
-            mediaPlaceholder.addView(bottomBar);
+            parentPlaceholder.addView(bottomBar);
+            mediaPlaceholder.addView(parentPlaceholder);
         }
         else{
             Log.d(TAG,"show video");
-
+            videoView = (VideoView)findViewById(R.id.recordedVideo);
             videoView.setVisibility(View.VISIBLE);
             videoView.setKeepScreenOn(true);
             videoView.setVideoPath("file://"+path);
+            LinearLayout parentPlaceholder = new LinearLayout(getApplicationContext());
+            LinearLayout.LayoutParams parentParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+            parentParams.height=100;
+            parentPlaceholder.setLayoutParams(parentParams);
+            parentPlaceholder.setOrientation(LinearLayout.VERTICAL);
+            parentPlaceholder.setGravity(Gravity.BOTTOM);
+            LinearLayout bottomBar = new LinearLayout(getApplicationContext());
+            parentParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            bottomBar.setLayoutParams(parentParams);
+            bottomBar.setOrientation(LinearLayout.HORIZONTAL);
+            bottomBar.setBackgroundColor(getResources().getColor(R.color.mediaControlColor));
+            WindowManager windowManager = (WindowManager)getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
+            Display display = windowManager.getDefaultDisplay();
+            Point screenSize=new Point();
+            display.getRealSize(screenSize);
+            ImageButton delete = new ImageButton(getApplicationContext());
+            LinearLayout.LayoutParams delParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            delParams.weight=0.5f;
+            if(display.getRotation() == Surface.ROTATION_0) {
+                delParams.setMargins(0, 15, 0, 0);
+            }
+            else if(display.getRotation() == Surface.ROTATION_90 || display.getRotation() == Surface.ROTATION_270){
+                delParams.setMargins(0,10,0,10);
+            }
+            delete.setLayoutParams(delParams);
+            delete.setImageDrawable(getResources().getDrawable(R.drawable.ic_delete_black_24dp));
+            delete.setBackgroundColor(getResources().getColor(R.color.mediaControlColor));
+            bottomBar.addView(delete);
+            parentPlaceholder.addView(bottomBar);
+            mediaPlaceholder.addView(parentPlaceholder);
             MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
             mediaMetadataRetriever.setDataSource(path);
             String width = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH);
@@ -108,11 +145,6 @@ public class MediaActivity extends AppCompatActivity {
             Log.d(TAG,"Video Width / Height = "+width+" / "+height);
             Log.d(TAG,"Aspect Ratio ==== "+Double.parseDouble(width)/Double.parseDouble(height));
             double videoAR = Double.parseDouble(width)/Double.parseDouble(height);
-            WindowManager windowManager = (WindowManager)getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
-            Display display = windowManager.getDefaultDisplay();
-            Log.d(TAG,"Rotation = "+display.getRotation());
-            Point screenSize=new Point();
-            display.getRealSize(screenSize);
             double screenAR = (double)screenSize.x/(double)screenSize.y;
             Log.d(TAG,"screen width / height= "+screenSize.x+" / "+screenSize.y);
             Log.d(TAG,"Screen AR = "+screenAR);
