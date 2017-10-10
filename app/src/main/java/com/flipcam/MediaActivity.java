@@ -30,6 +30,7 @@ public class MediaActivity extends AppCompatActivity {
     VideoView videoView=null;
     boolean show=true;
     LinearLayout bottomBar;
+    MediaController mediaController;
     String path;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -108,14 +109,15 @@ public class MediaActivity extends AppCompatActivity {
             videoView.setVisibility(View.VISIBLE);
             videoView.setKeepScreenOn(true);
             videoView.setVideoPath("file://"+path);
-            LinearLayout parentPlaceholder = new LinearLayout(getApplicationContext());
-            LinearLayout.LayoutParams parentParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+            videoView.setOnClickListener(new View.OnClickListener(){
+                @Override
+                public void onClick(View view) {
+                    showMediaControls(view);
+                }
+            });
+            bottomBar = new LinearLayout(getApplicationContext());
+            LinearLayout.LayoutParams parentParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
             parentParams.height=100;
-            parentPlaceholder.setLayoutParams(parentParams);
-            parentPlaceholder.setOrientation(LinearLayout.VERTICAL);
-            parentPlaceholder.setGravity(Gravity.BOTTOM);
-            LinearLayout bottomBar = new LinearLayout(getApplicationContext());
-            parentParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
             bottomBar.setLayoutParams(parentParams);
             bottomBar.setOrientation(LinearLayout.HORIZONTAL);
             bottomBar.setBackgroundColor(getResources().getColor(R.color.mediaControlColor));
@@ -123,6 +125,7 @@ public class MediaActivity extends AppCompatActivity {
             Display display = windowManager.getDefaultDisplay();
             Point screenSize=new Point();
             display.getRealSize(screenSize);
+            //DELETE Button
             ImageButton delete = new ImageButton(getApplicationContext());
             LinearLayout.LayoutParams delParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
             delParams.weight=0.5f;
@@ -136,8 +139,21 @@ public class MediaActivity extends AppCompatActivity {
             delete.setImageDrawable(getResources().getDrawable(R.drawable.ic_delete_black_24dp));
             delete.setBackgroundColor(getResources().getColor(R.color.mediaControlColor));
             bottomBar.addView(delete);
-            parentPlaceholder.addView(bottomBar);
-            mediaPlaceholder.addView(parentPlaceholder);
+            //SHARE Button
+            ImageButton share = new ImageButton(getApplicationContext());
+            LinearLayout.LayoutParams shareParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            shareParams.weight=0.5f;
+            if(display.getRotation() == Surface.ROTATION_0) {
+                shareParams.setMargins(0, 15, 0, 0);
+            }
+            else if(display.getRotation() == Surface.ROTATION_90 || display.getRotation() == Surface.ROTATION_270){
+                shareParams.setMargins(0,10,0,10);
+            }
+            share.setLayoutParams(shareParams);
+            share.setImageDrawable(getResources().getDrawable(R.drawable.ic_share_black_24dp));
+            share.setBackgroundColor(getResources().getColor(R.color.mediaControlColor));
+            bottomBar.addView(share);
+            mediaPlaceholder.addView(bottomBar);
             MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
             mediaMetadataRetriever.setDataSource(path);
             String width = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH);
@@ -158,9 +174,7 @@ public class MediaActivity extends AppCompatActivity {
                     adjustVideoToFitScreen();
                 }
             }
-            MediaController mediaController = new MediaController(this);
-            videoView.setMediaController(mediaController);
-            mediaController.show();
+            mediaController = new MediaController(this);
             if(savedInstanceState == null) {
                 videoView.start();
             }
@@ -180,6 +194,16 @@ public class MediaActivity extends AppCompatActivity {
                 bottomBar.setVisibility(View.INVISIBLE);
             } else {
                 show = true;
+                bottomBar.setVisibility(View.VISIBLE);
+            }
+        }
+        else{
+            if(show){
+                show=false;
+                bottomBar.setVisibility(View.INVISIBLE);
+            }
+            else{
+                show=true;
                 bottomBar.setVisibility(View.VISIBLE);
             }
         }
