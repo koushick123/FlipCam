@@ -29,9 +29,37 @@ public class MediaActivity extends AppCompatActivity {
     RelativeLayout mediaPlaceholder;
     VideoView videoView=null;
     boolean show=true;
+    boolean play=true;
     LinearLayout bottomBar;
     MediaController mediaController;
+    LinearLayout mediaBar;
+    LinearLayout topBar;
     String path;
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        Log.d(TAG,"onStop");
+    }
+
+    @Override
+    protected void onDestroy() {
+        Log.d(TAG,"onDestroy");
+        super.onDestroy();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.d(TAG,"onResume");
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        Log.d(TAG,"onPause");
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -43,6 +71,11 @@ public class MediaActivity extends AppCompatActivity {
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         Intent intent = getIntent();
         path = intent.getStringExtra("mediaPath");
+        WindowManager windowManager = (WindowManager)getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
+        Display display = windowManager.getDefaultDisplay();
+        Log.d(TAG,"Rotation = "+display.getRotation());
+        Point screenSize=new Point();
+        display.getRealSize(screenSize);
         if(isImage()) {
             Log.d(TAG,"show image");
             VideoView videoView = (VideoView)findViewById(R.id.recordedVideo);
@@ -62,11 +95,6 @@ public class MediaActivity extends AppCompatActivity {
             LinearLayout.LayoutParams bottomParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
             bottomBar.setBackgroundColor(getResources().getColor(R.color.mediaControlColor));
             bottomBar.setOrientation(LinearLayout.HORIZONTAL);
-            WindowManager windowManager = (WindowManager)getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
-            Display display = windowManager.getDefaultDisplay();
-            Log.d(TAG,"Rotation = "+display.getRotation());
-            Point screenSize=new Point();
-            display.getRealSize(screenSize);
             bottomParams.height=(int)(0.09 * screenSize.y);
             Log.d(TAG,"height = "+bottomParams.height);
             bottomBar.setLayoutParams(bottomParams);
@@ -115,15 +143,20 @@ public class MediaActivity extends AppCompatActivity {
                     showMediaControls(view);
                 }
             });
-            bottomBar = new LinearLayout(getApplicationContext());
-            LinearLayout.LayoutParams parentParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            parentParams.height=100;
-            bottomBar.setLayoutParams(parentParams);
-            bottomBar.setOrientation(LinearLayout.HORIZONTAL);
-            bottomBar.setBackgroundColor(getResources().getColor(R.color.mediaControlColor));
-            WindowManager windowManager = (WindowManager)getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
-            Display display = windowManager.getDefaultDisplay();
-            Point screenSize=new Point();
+            mediaBar = new LinearLayout(getApplicationContext());
+            topBar = new LinearLayout(getApplicationContext());
+            //Add Top Bar
+            LinearLayout parentPlaceholder = new LinearLayout(getApplicationContext());
+            LinearLayout.LayoutParams parentParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+            parentPlaceholder.setOrientation(LinearLayout.VERTICAL);
+            parentPlaceholder.setGravity(Gravity.TOP);
+            parentPlaceholder.setLayoutParams(parentParams);
+
+            parentParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            parentParams.height=(int)(0.09 * screenSize.y);
+            topBar.setLayoutParams(parentParams);
+            topBar.setOrientation(LinearLayout.HORIZONTAL);
+            topBar.setBackgroundColor(getResources().getColor(R.color.mediaControlColor));
             display.getRealSize(screenSize);
             //DELETE Button
             ImageButton delete = new ImageButton(getApplicationContext());
@@ -138,7 +171,7 @@ public class MediaActivity extends AppCompatActivity {
             delete.setLayoutParams(delParams);
             delete.setImageDrawable(getResources().getDrawable(R.drawable.ic_delete_black_24dp));
             delete.setBackgroundColor(getResources().getColor(R.color.mediaControlColor));
-            bottomBar.addView(delete);
+            topBar.addView(delete);
             //SHARE Button
             ImageButton share = new ImageButton(getApplicationContext());
             LinearLayout.LayoutParams shareParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
@@ -152,8 +185,60 @@ public class MediaActivity extends AppCompatActivity {
             share.setLayoutParams(shareParams);
             share.setImageDrawable(getResources().getDrawable(R.drawable.ic_share_black_24dp));
             share.setBackgroundColor(getResources().getColor(R.color.mediaControlColor));
-            bottomBar.addView(share);
-            mediaPlaceholder.addView(bottomBar);
+            topBar.addView(share);
+            parentPlaceholder.addView(topBar);
+            mediaPlaceholder.addView(parentPlaceholder);
+
+            //Add Media controls bar
+            parentPlaceholder = new LinearLayout(getApplicationContext());
+            parentParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+            parentPlaceholder.setOrientation(LinearLayout.VERTICAL);
+            parentPlaceholder.setGravity(Gravity.BOTTOM);
+            parentPlaceholder.setLayoutParams(parentParams);
+
+            LinearLayout.LayoutParams mediaParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            if(display.getRotation() == Surface.ROTATION_0) {
+                mediaParams.height = (int) (0.09 * screenSize.y);
+            }
+            else if(display.getRotation() == Surface.ROTATION_90 || display.getRotation() == Surface.ROTATION_270){
+                mediaParams.height = (int) (0.15 * screenSize.y);
+            }
+            mediaBar.setOrientation(LinearLayout.HORIZONTAL);
+            mediaBar.setGravity(Gravity.CENTER);
+            mediaBar.setBackgroundColor(getResources().getColor(R.color.mediaControlColor));
+            mediaBar.setLayoutParams(mediaParams);
+            //PAUSE button
+            final ImageView pause = new ImageView(this);
+            pause.setBackgroundColor(getResources().getColor(R.color.mediaControlColor));
+            pause.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            ViewGroup.LayoutParams pauseParams = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            pauseParams.height=90;
+            if(display.getRotation() == Surface.ROTATION_0) {
+                pause.setPadding(0,0,0,0);
+            }
+            else if(display.getRotation() == Surface.ROTATION_90 || display.getRotation() == Surface.ROTATION_270){
+                //pause.setPadding(0,10,0,10);
+            }
+            pause.setLayoutParams(pauseParams);
+            pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause_black_24dp));
+            pause.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    if(!play) {
+                        videoView.start();
+                        pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause_black_24dp));
+                        play=true;
+                    }
+                    else{
+                        videoView.pause();
+                        pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow_black_24dp));
+                        play=false;
+                    }
+                }
+            });
+            mediaBar.addView(pause);
+            parentPlaceholder.addView(mediaBar);
+            mediaPlaceholder.addView(parentPlaceholder);
             MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
             mediaMetadataRetriever.setDataSource(path);
             String width = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH);
@@ -198,13 +283,14 @@ public class MediaActivity extends AppCompatActivity {
             }
         }
         else{
-            if(show){
-                show=false;
-                bottomBar.setVisibility(View.INVISIBLE);
-            }
-            else{
-                show=true;
-                bottomBar.setVisibility(View.VISIBLE);
+            if (show) {
+                show = false;
+                topBar.setVisibility(View.INVISIBLE);
+                mediaBar.setVisibility(View.INVISIBLE);
+            } else {
+                show = true;
+                topBar.setVisibility(View.VISIBLE);
+                mediaBar.setVisibility(View.VISIBLE);
             }
         }
     }
@@ -224,6 +310,7 @@ public class MediaActivity extends AppCompatActivity {
             Log.d(TAG,"save duration");
             outState.putBoolean("playing",videoView.isPlaying());
             outState.putInt("position", videoView.getCurrentPosition());
+            outState.putBoolean("mediaPlay",true);
         }
         super.onSaveInstanceState(outState);
     }
