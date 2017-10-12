@@ -2,6 +2,7 @@ package com.flipcam;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Point;
@@ -23,18 +24,24 @@ import android.widget.MediaController;
 import android.widget.RelativeLayout;
 import android.widget.VideoView;
 
+import static com.flipcam.PermissionActivity.FC_MEDIA_PREFERENCE;
+
 public class MediaActivity extends AppCompatActivity {
 
     private static final String TAG = "MediaActivity";
+    public static final String MEDIA_POSITION = "position";
+    public static final String MEDIA_PLAYING = "playing";
+    public static final String MEDIA_CONTROLS_HIDE = "mediaControlHide";
     RelativeLayout mediaPlaceholder;
     VideoView videoView=null;
-    boolean show=true;
+    boolean hide=true;
     boolean play=true;
     LinearLayout bottomBar;
     MediaController mediaController;
     LinearLayout mediaBar;
     LinearLayout topBar;
     String path;
+    ImageView pause;
 
     @Override
     protected void onStop() {
@@ -46,18 +53,6 @@ public class MediaActivity extends AppCompatActivity {
     protected void onDestroy() {
         Log.d(TAG,"onDestroy");
         super.onDestroy();
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        Log.d(TAG,"onResume");
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        Log.d(TAG,"onPause");
     }
 
     @Override
@@ -208,16 +203,17 @@ public class MediaActivity extends AppCompatActivity {
             mediaBar.setBackgroundColor(getResources().getColor(R.color.mediaControlColor));
             mediaBar.setLayoutParams(mediaParams);
             //PAUSE button
-            final ImageView pause = new ImageView(this);
+            pause = new ImageView(this);
             pause.setBackgroundColor(getResources().getColor(R.color.mediaControlColor));
             pause.setScaleType(ImageView.ScaleType.CENTER_CROP);
             ViewGroup.LayoutParams pauseParams = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            pauseParams.height=90;
             if(display.getRotation() == Surface.ROTATION_0) {
+                pauseParams.height=90;
                 pause.setPadding(0,0,0,0);
             }
             else if(display.getRotation() == Surface.ROTATION_90 || display.getRotation() == Surface.ROTATION_270){
-                //pause.setPadding(0,10,0,10);
+                pauseParams.height=100;
+                pause.setPadding(0,10,0,10);
             }
             pause.setLayoutParams(pauseParams);
             pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause_black_24dp));
@@ -261,6 +257,16 @@ public class MediaActivity extends AppCompatActivity {
             }
             mediaController = new MediaController(this);
             if(savedInstanceState == null) {
+                SharedPreferences mediaValues = getSharedPreferences(FC_MEDIA_PREFERENCE,Context.MODE_PRIVATE);
+                SharedPreferences.Editor mediaState = null;
+                if(mediaValues!=null){
+                    mediaState = mediaValues.edit();
+                    if(mediaState!=null){
+                        mediaState.clear();
+                        mediaState.commit();
+                        Log.d(TAG,"CLEAR ALL");
+                    }
+                }
                 videoView.start();
             }
         }
@@ -274,21 +280,21 @@ public class MediaActivity extends AppCompatActivity {
     public void showMediaControls(View view)
     {
         if(isImage()) {
-            if (show) {
-                show = false;
+            if (hide) {
+                hide = false;
                 bottomBar.setVisibility(View.INVISIBLE);
             } else {
-                show = true;
+                hide = true;
                 bottomBar.setVisibility(View.VISIBLE);
             }
         }
         else{
-            if (show) {
-                show = false;
+            if (hide) {
+                hide = false;
                 topBar.setVisibility(View.INVISIBLE);
                 mediaBar.setVisibility(View.INVISIBLE);
             } else {
-                show = true;
+                hide = true;
                 topBar.setVisibility(View.VISIBLE);
                 mediaBar.setVisibility(View.VISIBLE);
             }
@@ -305,24 +311,58 @@ public class MediaActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        if(videoView!=null) {
-            Log.d(TAG,"save duration");
-            outState.putBoolean("playing",videoView.isPlaying());
-            outState.putInt("position", videoView.getCurrentPosition());
-            outState.putBoolean("mediaPlay",true);
+    protected void onResume() {
+        super.onResume();
+        Log.d(TAG,"onResume");
+        SharedPreferences mediaState = getSharedPreferences(FC_MEDIA_PREFERENCE, Context.MODE_PRIVATE);
+        if(mediaState!=null && mediaState.contains(MEDIA_POSITION)) {
+            Log.d(TAG,"Retrieve MEDIA_POSITION....."+mediaState.getInt(MEDIA_POSITION, 0));
+            if(mediaState.getInt(MEDIA_POSITION,0) < videoView.getDuration()){
+                videoView.seekTo(mediaState.getInt(MEDIA_POSITION, 0)+2);
+            }
+            else {
+                videoView.seekTo(mediaState.getInt(MEDIA_POSITION, 0));
+            }
         }
-        super.onSaveInstanceState(outState);
+        if(mediaState!=null && mediaState.contains(MEDIA_PLAYING)){
+            Log.d(TAG,"Retrieve playing....."+mediaState.getBoolean(MEDIA_PLAYING,false));
+            if(mediaState.getBoolean(MEDIA_PLAYING,false)){
+                videoView.start();
+                pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause_black_24dp));
+                play=true;
+            }
+            else {
+                videoView.pause();
+                pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow_black_24dp));
+                play = false;
+            }
+        }
+        if(mediaState!=null && mediaState.contains(MEDIA_CONTROLS_HIDE)){
+            Log.d(TAG,"Retrieve media controls hide = "+mediaState.getBoolean(MEDIA_CONTROLS_HIDE,true));
+            if(mediaState.getBoolean(MEDIA_CONTROLS_HIDE,true)){
+                topBar.setVisibility(View.INVISIBLE);
+                mediaBar.setVisibility(View.INVISIBLE);
+            }
+            else{
+                topBar.setVisibility(View.VISIBLE);
+                mediaBar.setVisibility(View.VISIBLE);
+            }
+        }
     }
 
     @Override
-    protected void onRestoreInstanceState(Bundle savedInstanceState) {
-        super.onRestoreInstanceState(savedInstanceState);
-        Log.d(TAG,"onRestoreInstanceState = "+savedInstanceState);
-        if(savedInstanceState!=null && videoView!=null){
-            videoView.seekTo(savedInstanceState.getInt("position"));
-            if(savedInstanceState.getBoolean("playing")) {
-                videoView.start();
+    protected void onPause() {
+        super.onPause();
+        Log.d(TAG,"onPause");
+        if(videoView!=null) {
+            Log.d(TAG,"Save media state");
+            SharedPreferences.Editor mediaState = getSharedPreferences(FC_MEDIA_PREFERENCE, Context.MODE_PRIVATE).edit();
+            mediaState.putBoolean(MEDIA_PLAYING,videoView.isPlaying());
+            mediaState.putInt(MEDIA_POSITION, videoView.getCurrentPosition());
+            mediaState.putBoolean(MEDIA_CONTROLS_HIDE, hide);
+            mediaState.commit();
+            if(videoView.isPlaying()){
+                videoView.pause();
             }
         }
     }
