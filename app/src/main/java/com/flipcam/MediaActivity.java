@@ -22,6 +22,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.MediaController;
 import android.widget.RelativeLayout;
+import android.widget.SeekBar;
 import android.widget.VideoView;
 
 import static com.flipcam.PermissionActivity.FC_MEDIA_PREFERENCE;
@@ -32,6 +33,7 @@ public class MediaActivity extends AppCompatActivity {
     public static final String MEDIA_POSITION = "position";
     public static final String MEDIA_PLAYING = "playing";
     public static final String MEDIA_CONTROLS_HIDE = "mediaControlHide";
+    public static final String IMAGE_CONTROLS_HIDE = "imageControlHide";
     RelativeLayout mediaPlaceholder;
     VideoView videoView=null;
     boolean hide=true;
@@ -66,6 +68,7 @@ public class MediaActivity extends AppCompatActivity {
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         Intent intent = getIntent();
         path = intent.getStringExtra("mediaPath");
+        Log.d(TAG,"path = "+path);
         WindowManager windowManager = (WindowManager)getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
         Display display = windowManager.getDefaultDisplay();
         Log.d(TAG,"Rotation = "+display.getRotation());
@@ -138,10 +141,10 @@ public class MediaActivity extends AppCompatActivity {
                     showMediaControls(view);
                 }
             });
-            mediaBar = new LinearLayout(getApplicationContext());
-            topBar = new LinearLayout(getApplicationContext());
+            mediaBar = new LinearLayout(this);
+            topBar = new LinearLayout(this);
             //Add Top Bar
-            LinearLayout parentPlaceholder = new LinearLayout(getApplicationContext());
+            LinearLayout parentPlaceholder = new LinearLayout(this);
             LinearLayout.LayoutParams parentParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
             parentPlaceholder.setOrientation(LinearLayout.VERTICAL);
             parentPlaceholder.setGravity(Gravity.TOP);
@@ -154,7 +157,7 @@ public class MediaActivity extends AppCompatActivity {
             topBar.setBackgroundColor(getResources().getColor(R.color.mediaControlColor));
             display.getRealSize(screenSize);
             //DELETE Button
-            ImageButton delete = new ImageButton(getApplicationContext());
+            ImageButton delete = new ImageButton(this);
             LinearLayout.LayoutParams delParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
             delParams.weight=0.5f;
             if(display.getRotation() == Surface.ROTATION_0) {
@@ -168,7 +171,7 @@ public class MediaActivity extends AppCompatActivity {
             delete.setBackgroundColor(getResources().getColor(R.color.mediaControlColor));
             topBar.addView(delete);
             //SHARE Button
-            ImageButton share = new ImageButton(getApplicationContext());
+            ImageButton share = new ImageButton(this);
             LinearLayout.LayoutParams shareParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
             shareParams.weight=0.5f;
             if(display.getRotation() == Surface.ROTATION_0) {
@@ -185,7 +188,7 @@ public class MediaActivity extends AppCompatActivity {
             mediaPlaceholder.addView(parentPlaceholder);
 
             //Add Media controls bar
-            parentPlaceholder = new LinearLayout(getApplicationContext());
+            parentPlaceholder = new LinearLayout(this);
             parentParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
             parentPlaceholder.setOrientation(LinearLayout.VERTICAL);
             parentPlaceholder.setGravity(Gravity.BOTTOM);
@@ -233,6 +236,26 @@ public class MediaActivity extends AppCompatActivity {
                 }
             });
             mediaBar.addView(pause);
+            SeekBar videoSeek = new SeekBar(this);
+            videoSeek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                @Override
+                public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                    //if(!fromUser){
+                        Log.d(TAG,"progress = "+progress);
+                    //}
+                }
+
+                @Override
+                public void onStartTrackingTouch(SeekBar seekBar) {
+
+                }
+
+                @Override
+                public void onStopTrackingTouch(SeekBar seekBar) {
+
+                }
+            });
+            parentPlaceholder.addView(videoSeek);
             parentPlaceholder.addView(mediaBar);
             mediaPlaceholder.addView(parentPlaceholder);
             MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
@@ -280,19 +303,21 @@ public class MediaActivity extends AppCompatActivity {
     public void showMediaControls(View view)
     {
         if(isImage()) {
+            Log.d(TAG,"hide = "+hide);
             if (hide) {
                 hide = false;
-                bottomBar.setVisibility(View.INVISIBLE);
+                bottomBar.setVisibility(View.GONE);
             } else {
                 hide = true;
                 bottomBar.setVisibility(View.VISIBLE);
             }
         }
         else{
+            Log.d(TAG,"hide = "+hide);
             if (hide) {
                 hide = false;
-                topBar.setVisibility(View.INVISIBLE);
-                mediaBar.setVisibility(View.INVISIBLE);
+                topBar.setVisibility(View.GONE);
+                mediaBar.setVisibility(View.GONE);
             } else {
                 hide = true;
                 topBar.setVisibility(View.VISIBLE);
@@ -314,38 +339,50 @@ public class MediaActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         Log.d(TAG,"onResume");
-        SharedPreferences mediaState = getSharedPreferences(FC_MEDIA_PREFERENCE, Context.MODE_PRIVATE);
-        if(mediaState!=null && mediaState.contains(MEDIA_POSITION)) {
-            Log.d(TAG,"Retrieve MEDIA_POSITION....."+mediaState.getInt(MEDIA_POSITION, 0));
-            if(mediaState.getInt(MEDIA_POSITION,0) < videoView.getDuration()){
-                videoView.seekTo(mediaState.getInt(MEDIA_POSITION, 0)+2);
-            }
-            else {
-                videoView.seekTo(mediaState.getInt(MEDIA_POSITION, 0));
-            }
-        }
-        if(mediaState!=null && mediaState.contains(MEDIA_PLAYING)){
-            Log.d(TAG,"Retrieve playing....."+mediaState.getBoolean(MEDIA_PLAYING,false));
-            if(mediaState.getBoolean(MEDIA_PLAYING,false)){
-                videoView.start();
-                pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause_black_24dp));
-                play=true;
-            }
-            else {
-                videoView.pause();
-                pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow_black_24dp));
-                play = false;
+        if(isImage()){
+            SharedPreferences mediaState = getSharedPreferences(FC_MEDIA_PREFERENCE, Context.MODE_PRIVATE);
+            if(mediaState!=null && mediaState.contains(IMAGE_CONTROLS_HIDE)){
+                if(mediaState.getBoolean(IMAGE_CONTROLS_HIDE,true)){
+                    Log.d(TAG,"Visible");
+                    bottomBar.setVisibility(View.VISIBLE);
+                }
+                else{
+                    Log.d(TAG,"GONE");
+                    bottomBar.setVisibility(View.GONE);
+                }
+                hide = mediaState.getBoolean(IMAGE_CONTROLS_HIDE,true);
             }
         }
-        if(mediaState!=null && mediaState.contains(MEDIA_CONTROLS_HIDE)){
-            Log.d(TAG,"Retrieve media controls hide = "+mediaState.getBoolean(MEDIA_CONTROLS_HIDE,true));
-            if(mediaState.getBoolean(MEDIA_CONTROLS_HIDE,true)){
-                topBar.setVisibility(View.INVISIBLE);
-                mediaBar.setVisibility(View.INVISIBLE);
+        else {
+            SharedPreferences mediaState = getSharedPreferences(FC_MEDIA_PREFERENCE, Context.MODE_PRIVATE);
+            if (mediaState != null && mediaState.contains(MEDIA_POSITION)) {
+                if (mediaState.getInt(MEDIA_POSITION, 0) < videoView.getDuration()) {
+                    videoView.seekTo(mediaState.getInt(MEDIA_POSITION, 0) + 2);
+                } else {
+                    videoView.seekTo(mediaState.getInt(MEDIA_POSITION, 0));
+                }
             }
-            else{
-                topBar.setVisibility(View.VISIBLE);
-                mediaBar.setVisibility(View.VISIBLE);
+            if (mediaState != null && mediaState.contains(MEDIA_PLAYING)) {
+                if (mediaState.getBoolean(MEDIA_PLAYING, false)) {
+                    videoView.start();
+                    pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause_black_24dp));
+                    play = true;
+                } else {
+                    videoView.pause();
+                    pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow_black_24dp));
+                    play = false;
+                }
+            }
+            if (mediaState != null && mediaState.contains(MEDIA_CONTROLS_HIDE)) {
+                Log.d(TAG, "Retrieve media controls hide = " + mediaState.getBoolean(MEDIA_CONTROLS_HIDE, true));
+                if (mediaState.getBoolean(MEDIA_CONTROLS_HIDE, true)) {
+                    topBar.setVisibility(View.VISIBLE);
+                    mediaBar.setVisibility(View.VISIBLE);
+                } else {
+                    topBar.setVisibility(View.GONE);
+                    mediaBar.setVisibility(View.GONE);
+                }
+                hide = mediaState.getBoolean(MEDIA_CONTROLS_HIDE, true);
             }
         }
     }
@@ -354,15 +391,23 @@ public class MediaActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         Log.d(TAG,"onPause");
-        if(videoView!=null) {
-            Log.d(TAG,"Save media state");
+        if(isImage()){
             SharedPreferences.Editor mediaState = getSharedPreferences(FC_MEDIA_PREFERENCE, Context.MODE_PRIVATE).edit();
-            mediaState.putBoolean(MEDIA_PLAYING,videoView.isPlaying());
-            mediaState.putInt(MEDIA_POSITION, videoView.getCurrentPosition());
-            mediaState.putBoolean(MEDIA_CONTROLS_HIDE, hide);
+            Log.d(TAG,"saving hide = "+hide);
+            mediaState.putBoolean(IMAGE_CONTROLS_HIDE,hide);
             mediaState.commit();
-            if(videoView.isPlaying()){
-                videoView.pause();
+        }
+        else {
+            if (videoView != null) {
+                Log.d(TAG, "Save media state");
+                SharedPreferences.Editor mediaState = getSharedPreferences(FC_MEDIA_PREFERENCE, Context.MODE_PRIVATE).edit();
+                mediaState.putBoolean(MEDIA_PLAYING, videoView.isPlaying());
+                mediaState.putInt(MEDIA_POSITION, videoView.getCurrentPosition());
+                mediaState.putBoolean(MEDIA_CONTROLS_HIDE, hide);
+                mediaState.commit();
+                if (videoView.isPlaying()) {
+                    videoView.pause();
+                }
             }
         }
     }
