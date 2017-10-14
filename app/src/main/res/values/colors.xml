@@ -19,4 +19,6 @@
     <color name="memoryConsumed">#ff0000</color>
     //Top and Bottom media control color
     <color name="mediaControlColor">#FFFFFF</color>
+    //Progress fill color for video seekbar
+    <color name="seekFill">#FFFFFF</color>
 </resources>
