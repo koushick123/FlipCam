@@ -28,4 +28,12 @@ public class Constants
     public static final long FIRST_SEC_MICRO = 1000000;
     //To update seek bar
     public static final int VIDEO_SEEK_UPDATE = 100;
+
+    public static final String MEDIA_POSITION = "position";
+    public static final String MEDIA_PLAYING = "playing";
+    public static final String MEDIA_CONTROLS_HIDE = "mediaControlHide";
+    public static final String IMAGE_CONTROLS_HIDE = "imageControlHide";
+    public static final String SEEK_DURATION = "seekDuration";
+    public static final String MEDIA_ACTUAL_DURATION = "mediaActualDuration";
+    public static final String MEDIA_COMPLETED = "mediaCompleted";
 }

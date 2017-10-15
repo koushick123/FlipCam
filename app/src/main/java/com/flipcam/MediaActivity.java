@@ -34,17 +34,17 @@ import com.flipcam.constants.Constants;
 import java.lang.ref.WeakReference;
 
 import static com.flipcam.PermissionActivity.FC_MEDIA_PREFERENCE;
+import static com.flipcam.constants.Constants.IMAGE_CONTROLS_HIDE;
+import static com.flipcam.constants.Constants.MEDIA_ACTUAL_DURATION;
+import static com.flipcam.constants.Constants.MEDIA_COMPLETED;
+import static com.flipcam.constants.Constants.MEDIA_CONTROLS_HIDE;
+import static com.flipcam.constants.Constants.MEDIA_PLAYING;
+import static com.flipcam.constants.Constants.MEDIA_POSITION;
+import static com.flipcam.constants.Constants.SEEK_DURATION;
 
 public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCompletionListener{
 
     private static final String TAG = "MediaActivity";
-    public static final String MEDIA_POSITION = "position";
-    public static final String MEDIA_PLAYING = "playing";
-    public static final String MEDIA_CONTROLS_HIDE = "mediaControlHide";
-    public static final String IMAGE_CONTROLS_HIDE = "imageControlHide";
-    public static final String SEEK_DURATION = "seekDuration";
-    public static final String MEDIA_ACTUAL_DURATION = "mediaActualDuration";
-    public static final String MEDIA_COMPLETED = "mediaCompleted";
     RelativeLayout mediaPlaceholder;
     VideoView videoView=null;
     boolean hide=true;
@@ -60,6 +60,7 @@ public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCo
     SeekBar videoSeek;
     boolean isCompleted=false;
     String duration;
+    boolean portraitVideo=false;
 
     @Override
     protected void onStop() {
@@ -311,7 +312,7 @@ public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCo
                 }
                 videoView.start();
                 Log.d(TAG,"Video STARTED");
-                startTrackerThread();
+                //startTrackerThread();
             }
         }
     }
@@ -401,9 +402,8 @@ public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCo
                 if(mediaState.contains(MEDIA_COMPLETED)){
                     Log.d(TAG,"Retrieve media completed == "+mediaState.getBoolean(MEDIA_COMPLETED,false));
                     if(mediaState.getBoolean(MEDIA_COMPLETED,false)){
-                        //Reset video to start.
-                        videoView.seekTo(mediaState.getInt(SEEK_DURATION, 0));
-                        videoSeek.setProgress(mediaState.getInt(SEEK_DURATION, 0));
+                        videoView.seekTo(1000);
+                        videoSeek.setProgress(0);
                     }
                     else {
                         //Get SAVED MEDIA POSITION
@@ -486,6 +486,7 @@ public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCo
         play = false;
         isCompleted = true;
         videoView.seekTo(0);
+        videoSeek.setProgress(0);
     }
 
     class MainHandler extends Handler {
