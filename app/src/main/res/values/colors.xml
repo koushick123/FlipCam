@@ -21,4 +21,6 @@
     <color name="mediaControlColor">#FFFFFF</color>
     //Progress fill color for video seekbar
     <color name="seekFill">#FFFFFF</color>
+    //Start and end time color
+    <color name="time">#FFFFFF</color>
 </resources>

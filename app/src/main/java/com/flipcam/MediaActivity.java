@@ -27,9 +27,8 @@ import android.widget.LinearLayout;
 import android.widget.MediaController;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
+import android.widget.TextView;
 import android.widget.VideoView;
-
-import com.flipcam.constants.Constants;
 
 import java.lang.ref.WeakReference;
 
@@ -41,6 +40,7 @@ import static com.flipcam.constants.Constants.MEDIA_CONTROLS_HIDE;
 import static com.flipcam.constants.Constants.MEDIA_PLAYING;
 import static com.flipcam.constants.Constants.MEDIA_POSITION;
 import static com.flipcam.constants.Constants.SEEK_DURATION;
+import static com.flipcam.constants.Constants.VIDEO_SEEK_UPDATE;
 
 public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCompletionListener{
 
@@ -60,7 +60,12 @@ public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCo
     SeekBar videoSeek;
     boolean isCompleted=false;
     String duration;
-    boolean portraitVideo=false;
+    TextView startTime;
+    volatile boolean startTimer=false;
+    volatile boolean updateTimer=false;
+    volatile int seconds = 0;
+    volatile int minutes = 0;
+    volatile int hours = 0;
 
     @Override
     protected void onStop() {
@@ -247,11 +252,13 @@ public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCo
                         videoView.start();
                         pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause_black_24dp));
                         play=true;
+                        updateTimer=true;
                     }
                     else{
                         videoView.pause();
                         pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow_black_24dp));
                         play=false;
+                        updateTimer=false;
                     }
                 }
             });
@@ -272,6 +279,10 @@ public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCo
                 public void onStopTrackingTouch(SeekBar seekBar) {
                 }
             });
+            startTime = new TextView(this);
+            startTime.setGravity(Gravity.LEFT);
+            startTime.setTextColor(getResources().getColor(R.color.time));
+            parentPlaceholder.addView(startTime);
             parentPlaceholder.addView(videoSeek);
             parentPlaceholder.addView(mediaBar);
             mediaPlaceholder.addView(parentPlaceholder);
@@ -281,7 +292,8 @@ public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCo
             String height = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT);
             duration = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
             Log.d(TAG,"Video duration in secs = "+Integer.parseInt(duration)/1000);
-            videoSeek.setMax(Integer.parseInt(duration)/1000);
+            //videoSeek.setMax(Integer.parseInt(duration)/1000);
+            videoSeek.setMax(Integer.parseInt(duration));
             Log.d(TAG,"Video Width / Height = "+width+" / "+height);
             Log.d(TAG,"Aspect Ratio ==== "+Double.parseDouble(width)/Double.parseDouble(height));
             double videoAR = Double.parseDouble(width)/Double.parseDouble(height);
@@ -312,7 +324,6 @@ public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCo
                 }
                 videoView.start();
                 Log.d(TAG,"Video STARTED");
-                //startTrackerThread();
             }
         }
     }
@@ -323,6 +334,19 @@ public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCo
         startTracker = true;
         VideoTracker videoTracker = new VideoTracker();
         videoTracker.start();
+    }
+
+    public void startTimerThread()
+    {
+        startTimer = true;
+        updateTimer = true;
+        VideoTimer videoTimer = new VideoTimer();
+        videoTimer.start();
+    }
+
+    public void stopTimerThread()
+    {
+        startTimer = false;
     }
 
     public void stopTrackerThread()
@@ -351,10 +375,12 @@ public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCo
             Log.d(TAG,"hide = "+hide);
             if (hide) {
                 hide = false;
+                videoSeek.setVisibility(View.GONE);
                 topBar.setVisibility(View.GONE);
                 mediaBar.setVisibility(View.GONE);
             } else {
                 hide = true;
+                videoSeek.setVisibility(View.VISIBLE);
                 topBar.setVisibility(View.VISIBLE);
                 mediaBar.setVisibility(View.VISIBLE);
             }
@@ -390,6 +416,8 @@ public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCo
         }
         else {
             videoView.setOnCompletionListener(this);
+            startTrackerThread();
+            startTimerThread();
             SharedPreferences mediaState = getSharedPreferences(FC_MEDIA_PREFERENCE, Context.MODE_PRIVATE);
             Log.d(TAG,"media state = "+mediaState);
             if (mediaState != null) {
@@ -446,7 +474,6 @@ public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCo
                     hide = mediaState.getBoolean(MEDIA_CONTROLS_HIDE, true);
                 }
             }
-            startTrackerThread();
         }
     }
 
@@ -464,6 +491,7 @@ public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCo
             if (videoView != null) {
                 Log.d(TAG, "Save media state");
                 stopTrackerThread();
+                stopTimerThread();
                 SharedPreferences.Editor mediaState = getSharedPreferences(FC_MEDIA_PREFERENCE, Context.MODE_PRIVATE).edit();
                 mediaState.putBoolean(MEDIA_PLAYING, videoView.isPlaying());
                 mediaState.putInt(MEDIA_POSITION, videoView.getCurrentPosition());
@@ -487,6 +515,9 @@ public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCo
         isCompleted = true;
         videoView.seekTo(0);
         videoSeek.setProgress(0);
+        updateTimer=false;
+        seconds=0; minutes=0; hours=0;
+        showTimeElapsed();
     }
 
     class MainHandler extends Handler {
@@ -502,15 +533,39 @@ public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCo
             mediaAct = mediaActivity.get();
             switch(msg.what)
             {
-                case Constants.VIDEO_SEEK_UPDATE:
-                    int latestPos = msg.getData().getInt("currentPosition");
-                    if(latestPos >= 1000 && latestPos % 1000 == 0) {
-                        Log.d(TAG,"position === "+latestPos);
-                        videoSeek.setProgress(latestPos / 1000);
-                    }
+                case VIDEO_SEEK_UPDATE:
+                    showTimeElapsed();
                     break;
             }
         }
+    }
+
+    public void showTimeElapsed()
+    {
+        String showSec = "0";
+        String showMin = "0";
+        String showHr = "0";
+        if(seconds < 10){
+            showSec += seconds;
+        }
+        else{
+            showSec = seconds+"";
+        }
+
+        if(minutes < 10){
+            showMin += minutes;
+        }
+        else{
+            showMin = minutes+"";
+        }
+
+        if(hours < 10){
+            showHr += hours;
+        }
+        else{
+            showHr = hours+"";
+        }
+        startTime.setText(showHr + " : " + showMin + " : " + showSec);
     }
 
     class VideoTracker extends Thread
@@ -521,19 +576,50 @@ public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCo
             while(startTracker){
                 //Log.d(TAG,"Tracking thread looping...");
                 while(videoView.isPlaying()){
-                    //Log.d(TAG,"send SEEK data");
-                    Message trackMsg = new Message();
-                    Bundle trackBundle = new Bundle();
-                    trackBundle.putInt("currentPosition",videoView.getCurrentPosition());
-                    trackMsg.setData(trackBundle);
-                    trackMsg.what=Constants.VIDEO_SEEK_UPDATE;
-                    mediaHandler.sendMessage(trackMsg);
+                    int latestPos = videoView.getCurrentPosition();
+                    videoSeek.setProgress(latestPos);
                     if(!startTracker){
                         break;
                     }
                 }
             }
             Log.d(TAG,"Video Tracker thread EXITING...");
+        }
+    }
+
+    class VideoTimer extends Thread
+    {
+        @Override
+        public void run() {
+            Log.d(TAG,"VideoTimer STARTED");
+            while(startTimer){
+                while(updateTimer){
+                    try {
+                        Thread.sleep(1000);
+                        if(seconds < 59){
+                            seconds++;
+                        }
+                        else if(minutes < 59){
+                            minutes++;
+                            seconds = 0;
+                        }
+                        else{
+                            minutes = 0;
+                            seconds = 0;
+                            hours++;
+                        }
+                        //if(videoView.getCurrentPosition() >= 1000){
+                            mediaHandler.sendEmptyMessage(VIDEO_SEEK_UPDATE);
+                        //}
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    if(!startTimer){
+                        break;
+                    }
+                }
+            }
+            Log.d(TAG,"VideoTimer STOPPED");
         }
     }
 }
