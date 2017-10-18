@@ -28,9 +28,8 @@
     //Photo mode button margin
     <dimen name="photoModeBtnLeftMargin">0dp</dimen>
     <dimen name="photoModeBtnRightMargin">10dp</dimen>
-    //Pause button margin
-    <dimen name="pauseBtnLeftMargin">25dp</dimen>
-    <dimen name="pauseBtnRightMargin">25dp</dimen>
+    //Record substitute button margin
+    <dimen name="recordSubsBtnRightMargin">15dp</dimen>
     //Pause button padding
     <dimen name="pauseBtnRightPadding">15dp</dimen>
     //Switch camera button margin

@@ -59,6 +59,7 @@ import java.util.Date;
 import static android.content.Context.SENSOR_SERVICE;
 import static android.os.Environment.getExternalStorageDirectory;
 import static android.os.Environment.getExternalStoragePublicDirectory;
+import static com.flipcam.constants.Constants.SHOW_ELAPSED_TIME;
 
 /**
  * Created by Koushick on 15-08-2017.
@@ -132,7 +133,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     ImageButton flashBtn;
     VideoFragment videoFragment;
     PhotoFragment photoFragment;
-    volatile boolean isPause = false;
     double kBDelimiter = Constants.KILO_BYTE;
     double mBDelimiter = Constants.MEGA_BYTE;
     double gBDelimiter = Constants.GIGA_BYTE;
@@ -576,23 +576,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         }
     }
 
-    public void pause()
-    {
-        Log.d(TAG,"sending pause msg");
-        cameraHandler.sendEmptyMessage(Constants.RECORD_PAUSE);
-    }
-
-    public void resume()
-    {
-        Log.d(TAG,"sending resume msg");
-        cameraHandler.sendEmptyMessage(Constants.RECORD_RESUME);
-    }
-
-    public boolean isPaused()
-    {
-        return isPause;
-    }
-
     public void record()
     {
         if(!isRecord) {
@@ -601,12 +584,16 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             Matrix.rotateM(RECORD_IDENTITY_MATRIX, 0, rotationAngle , 0, 0, 1);
             setLayoutAspectRatio();
             isRecord=true;
+            setKeepScreenOn(true);
+            startTimerThread();
             cameraHandler.sendEmptyMessage(Constants.RECORD_START);
             orientationEventListener.disable();
             camera1.setRecordingHint();
         }
         else{
             isRecord=false;
+            setKeepScreenOn(false);
+            stopTimerThread();
             cameraHandler.sendEmptyMessage(Constants.RECORD_STOP);
             orientationEventListener.enable();
             camera1.disableRecordingHint();
@@ -848,10 +835,11 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 Message recordStop = new Message();
                 recordStop.what = Constants.RECORD_STOP;
                 cameraHandler.sendMessageAtFrontOfQueue(recordStop);
-                this.videoFragment.showRecordAndThumbnail();
+                //this.videoFragment.showRecordAndThumbnail();
                 Log.d(TAG,"Recording STOPPED");
             }
             cameraHandler.sendEmptyMessage(Constants.SHUTDOWN);
+            stopTimerThread();
             try {
                 if(cameraRenderer!=null){
                     cameraRenderer.join();
@@ -1116,7 +1104,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                     if (VERBOSE) Log.d(TAG, "Populated to encoder");
 
                     if(Math.abs(System.currentTimeMillis() - previousTime) >= 1000){
-                        if(second < 59) {
+                        /*if(second < 59) {
                             second++;
                             if(VERBOSE)Log.d(TAG,"second = "+second);
                         }
@@ -1130,13 +1118,16 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                             minute = 0;
                             hour++;
                             if(VERBOSE)Log.d(TAG,"hour = "+hour);
-                        }
+                        }*/
                         Log.d(TAG,"difference of 1 sec");
                         previousTime = System.currentTimeMillis();
                         if(recordStop == 1) {
-                            mainHandler.sendEmptyMessage(Constants.SHOW_ELAPSED_TIME);
+                            //mainHandler.sendEmptyMessage(Constants.SHOW_ELAPSED_TIME);
+
                             //Log.d(TAG,"enable stop button");
-                            mainHandler.sendEmptyMessage(Constants.RECORD_STOP_ENABLE);
+                            if(!stopButton.isEnabled()) {
+                                mainHandler.sendEmptyMessage(Constants.RECORD_STOP_ENABLE);
+                            }
                         }
                     }
                     else if(previousTime == 0){
@@ -1147,6 +1138,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         mediaRecorder.start();
                         recordStop = 1;
                     }
+                    updateTimer = true;
                     EGLExt.eglPresentationTimeANDROID(mEGLDisplay, encoderSurface, surfaceTexture.getTimestamp());
                     EGL14.eglSwapBuffers(mEGLDisplay, encoderSurface);
                 }
@@ -1193,9 +1185,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         break;
                     case Constants.RECORD_START:
                         cameraRenderer.setupMediaRecorder();
-                        hour = 0; minute = 0; second = -1;
+                        hour = 0; minute = 0; second = 0;
                         isRecording = true;
-                        isPause = false;
                         break;
                     case Constants.RECORD_STOP:
                         isRecording = false;
@@ -1223,24 +1214,53 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                     case Constants.GET_CAMERA_RENDERER_INSTANCE:
                         getCameraRendererInstance();
                         break;
-                    case Constants.RECORD_PAUSE:
-                        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                            Log.d(TAG,"Version Nougat and above");
-                            isRecording = false;
-                            mediaRecorder.pause();
-                        }
-                        isPause = true;
-                        break;
-                    case Constants.RECORD_RESUME:
-                        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N){
-                            Log.d(TAG,"Version Nougat and above...resume");
-                            mediaRecorder.resume();
-                            isRecording = true;
-                        }
-                        isPause = false;
-                        break;
                 }
             }
+        }
+    }
+    public void startTimerThread()
+    {
+        startTimer = true;
+        CameraView.VideoTimer videoTimer = new CameraView.VideoTimer();
+        videoTimer.start();
+    }
+    public void stopTimerThread()
+    {
+        startTimer = false;
+    }
+    volatile boolean startTimer = false;
+    volatile boolean updateTimer = false;
+    class VideoTimer extends Thread
+    {
+        @Override
+        public void run() {
+            Log.d(TAG,"VideoTimer STARTED");
+            while(startTimer){
+                while(updateTimer){
+                    try {
+                        Thread.sleep(1000);
+                        if(second < 59){
+                            second++;
+                        }
+                        else if(minute < 59){
+                            minute++;
+                            second = 0;
+                        }
+                        else{
+                            minute = 0;
+                            second = 0;
+                            hour++;
+                        }
+                        mainHandler.sendEmptyMessage(SHOW_ELAPSED_TIME);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    if(!startTimer){
+                        break;
+                    }
+                }
+            }
+            Log.d(TAG,"VideoTimer STOPPED");
         }
     }
 }

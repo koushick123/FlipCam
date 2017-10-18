@@ -9,7 +9,6 @@ import android.graphics.BitmapFactory;
 import android.graphics.Typeface;
 import android.hardware.Camera;
 import android.media.MediaMetadataRetriever;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.annotation.Nullable;
@@ -181,40 +180,10 @@ public class VideoFragment extends android.app.Fragment{
         return view;
     }
 
-    ImageButton pauseRecord;
-    View.OnClickListener pauseListener = new View.OnClickListener() {
-        @Override
-        public void onClick(View view) {
-            if (!cameraView.isPaused()) {
-                pauseRecord.setImageDrawable(getResources().getDrawable(R.drawable.record_start));
-                cameraView.pause();
-            } else {
-                pauseRecord.setImageDrawable(getResources().getDrawable(R.drawable.record_pause));
-                cameraView.resume();
-            }
-        }
-    };
-
-    public boolean isNougatAndAbove()
-    {
-        return (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N);
-    }
-
-    public SeekBar getZoomBar()
-    {
-        return zoombar;
-    }
-
     public void addStopAndPauseIcons()
     {
         videoBar.setBackgroundColor(getResources().getColor(R.color.transparentBar));
         LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,LinearLayout.LayoutParams.WRAP_CONTENT);
-
-        pauseRecord=new ImageButton(getActivity().getApplicationContext());
-        pauseRecord.setBackgroundColor(getResources().getColor(R.color.transparentBar));
-        pauseRecord.setImageDrawable(getResources().getDrawable(R.drawable.record_pause));
-        pauseRecord.setPadding(0, 0, (int) getResources().getDimension(R.dimen.pauseBtnRightPadding), 0);
-        pauseRecord.setOnClickListener(pauseListener);
 
         stopRecord = new ImageButton(getActivity().getApplicationContext());
         stopRecord.setScaleType(ImageView.ScaleType.CENTER_CROP);
@@ -234,12 +203,15 @@ public class VideoFragment extends android.app.Fragment{
             }
         });
         switchCamera.setBackgroundColor(getResources().getColor(R.color.transparentBar));
+        ImageView recordSubstitute = new ImageView(getActivity());
+        recordSubstitute.setImageDrawable(getResources().getDrawable(R.drawable.placeholder));
+        layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,LinearLayout.LayoutParams.WRAP_CONTENT);
+        layoutParams.setMargins(0,0,(int)getResources().getDimension(R.dimen.recordSubsBtnRightMargin),0);
+        recordSubstitute.setLayoutParams(layoutParams);
+        recordSubstitute.setVisibility(View.INVISIBLE);
         videoBar.addView(switchCamera);
         videoBar.addView(stopRecord);
-        videoBar.addView(pauseRecord);
-        if(!isNougatAndAbove()) {
-            pauseRecord.setVisibility(View.INVISIBLE);
-        }
+        videoBar.addView(recordSubstitute);
     }
 
     public void showRecordAndThumbnail()

@@ -301,6 +301,7 @@ public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCo
             String width = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH);
             String height = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT);
             duration = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+            calculateAndDisplayEndTime();
             videoSeek.setMax(Integer.parseInt(duration));
             Log.d(TAG,"Video Width / Height = "+width+" / "+height);
             Log.d(TAG,"Aspect Ratio ==== "+Double.parseDouble(width)/Double.parseDouble(height));
@@ -356,6 +357,7 @@ public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCo
     {
         int videoLength = Integer.parseInt(duration);
         int secs = (videoLength / 1000);
+        Log.d(TAG,"total no of secs = "+secs);
         int hour = 0;
         int mins = 0;
         if(secs > 60){
@@ -366,7 +368,30 @@ public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCo
             }
             secs = secs % 60;
         }
-        endTime.setText(hour+" : "+mins+" : "+secs);
+        String showSec = "0";
+        String showMin = "0";
+        String showHr = "0";
+        if(secs < 10){
+            showSec += secs;
+        }
+        else{
+            showSec = secs+"";
+        }
+
+        if(mins < 10){
+            showMin += mins;
+        }
+        else{
+            showMin = mins+"";
+        }
+
+        if(hour < 10){
+            showHr += hour;
+        }
+        else{
+            showHr = hour+"";
+        }
+        endTime.setText(showHr+" : "+showMin+" : "+showSec);
     }
 
     public void stopTimerThread()
@@ -406,11 +431,15 @@ public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCo
                 videoSeek.setVisibility(View.GONE);
                 topBar.setVisibility(View.GONE);
                 mediaBar.setVisibility(View.GONE);
+                startTime.setVisibility(View.GONE);
+                endTime.setVisibility(View.GONE);
             } else {
                 hide = true;
                 videoSeek.setVisibility(View.VISIBLE);
                 topBar.setVisibility(View.VISIBLE);
                 mediaBar.setVisibility(View.VISIBLE);
+                startTime.setVisibility(View.VISIBLE);
+                endTime.setVisibility(View.VISIBLE);
             }
         }
     }
