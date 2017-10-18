@@ -151,13 +151,6 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         Log.d(TAG,"SCREEN Aspect Ratio = "+screenAspectRatio);
         List<Camera.Size> previewSizes = parameters.getSupportedPreviewSizes();
 
-        if(photoFrag!=null) {
-            List<Camera.Size> picSizes = parameters.getSupportedPictureSizes();
-            //The first value has the highest resolution.
-            screenAspectRatio = (double)picSizes.get(0).width / (double)picSizes.get(0).height;
-            Log.d(TAG,"SCREEN Aspect Ratio for pic = "+screenAspectRatio);
-        }
-
         //If none of the camera preview size will (closely) match with screen resolution, default it to take the first preview size value.
         VIDEO_HEIGHT = previewSizes.get(0).height;
         VIDEO_WIDTH = previewSizes.get(0).width;

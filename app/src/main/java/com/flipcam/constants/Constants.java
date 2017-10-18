@@ -36,4 +36,6 @@ public class Constants
     public static final String SEEK_DURATION = "seekDuration";
     public static final String MEDIA_ACTUAL_DURATION = "mediaActualDuration";
     public static final String MEDIA_COMPLETED = "mediaCompleted";
+    public static final String MEDIA_PREVIOUS_POSITION = "previousPos";
+    public static final String MEDIA_CURRENT_TIME = "currentTime";
 }

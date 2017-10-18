@@ -31,14 +31,17 @@ import android.widget.TextView;
 import android.widget.VideoView;
 
 import java.lang.ref.WeakReference;
+import java.util.StringTokenizer;
 
 import static com.flipcam.PermissionActivity.FC_MEDIA_PREFERENCE;
 import static com.flipcam.constants.Constants.IMAGE_CONTROLS_HIDE;
 import static com.flipcam.constants.Constants.MEDIA_ACTUAL_DURATION;
 import static com.flipcam.constants.Constants.MEDIA_COMPLETED;
 import static com.flipcam.constants.Constants.MEDIA_CONTROLS_HIDE;
+import static com.flipcam.constants.Constants.MEDIA_CURRENT_TIME;
 import static com.flipcam.constants.Constants.MEDIA_PLAYING;
 import static com.flipcam.constants.Constants.MEDIA_POSITION;
+import static com.flipcam.constants.Constants.MEDIA_PREVIOUS_POSITION;
 import static com.flipcam.constants.Constants.SEEK_DURATION;
 import static com.flipcam.constants.Constants.VIDEO_SEEK_UPDATE;
 
@@ -61,11 +64,13 @@ public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCo
     boolean isCompleted=false;
     String duration;
     TextView startTime;
+    TextView endTime;
     volatile boolean startTimer=false;
     volatile boolean updateTimer=false;
     volatile int seconds = 0;
     volatile int minutes = 0;
     volatile int hours = 0;
+    int previousPos = 0;
 
     @Override
     protected void onStop() {
@@ -282,7 +287,12 @@ public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCo
             startTime = new TextView(this);
             startTime.setGravity(Gravity.LEFT);
             startTime.setTextColor(getResources().getColor(R.color.time));
+            startTime.setText(getResources().getString(R.string.START_TIME));
             parentPlaceholder.addView(startTime);
+            endTime = new TextView(this);
+            endTime.setGravity(Gravity.RIGHT);
+            endTime.setTextColor(getResources().getColor(R.color.time));
+            parentPlaceholder.addView(endTime);
             parentPlaceholder.addView(videoSeek);
             parentPlaceholder.addView(mediaBar);
             mediaPlaceholder.addView(parentPlaceholder);
@@ -291,8 +301,6 @@ public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCo
             String width = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH);
             String height = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT);
             duration = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
-            Log.d(TAG,"Video duration in secs = "+Integer.parseInt(duration)/1000);
-            //videoSeek.setMax(Integer.parseInt(duration)/1000);
             videoSeek.setMax(Integer.parseInt(duration));
             Log.d(TAG,"Video Width / Height = "+width+" / "+height);
             Log.d(TAG,"Aspect Ratio ==== "+Double.parseDouble(width)/Double.parseDouble(height));
@@ -344,6 +352,23 @@ public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCo
         videoTimer.start();
     }
 
+    public void calculateAndDisplayEndTime()
+    {
+        int videoLength = Integer.parseInt(duration);
+        int secs = (videoLength / 1000);
+        int hour = 0;
+        int mins = 0;
+        if(secs > 60){
+            mins = secs / 60;
+            if(mins > 60){
+                hour = mins / 60;
+                mins = mins % 60;
+            }
+            secs = secs % 60;
+        }
+        endTime.setText(hour+" : "+mins+" : "+secs);
+    }
+
     public void stopTimerThread()
     {
         startTimer = false;
@@ -356,7 +381,10 @@ public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCo
 
     public boolean isImage()
     {
-        return path.endsWith(getResources().getString(R.string.IMG_EXT));
+        if(path.endsWith(getResources().getString(R.string.IMG_EXT)) || path.endsWith(getResources().getString(R.string.ANOTHER_IMG_EXT))){
+            return true;
+        }
+        return false;
     }
 
     public void showMediaControls(View view)
@@ -416,8 +444,9 @@ public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCo
         }
         else {
             videoView.setOnCompletionListener(this);
+            previousPos = 0;
             startTrackerThread();
-            startTimerThread();
+            //startTimerThread();
             SharedPreferences mediaState = getSharedPreferences(FC_MEDIA_PREFERENCE, Context.MODE_PRIVATE);
             Log.d(TAG,"media state = "+mediaState);
             if (mediaState != null) {
@@ -438,12 +467,11 @@ public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCo
                         if (mediaState.contains(MEDIA_POSITION)) {
                             Log.d(TAG, "Retrieve media position = " + mediaState.getInt(MEDIA_POSITION, 0));
                             if (mediaState.getInt(MEDIA_POSITION, 0) < videoView.getDuration()) {
-                                videoView.seekTo(mediaState.getInt(MEDIA_POSITION, 0) + 2);
-                                videoSeek.setProgress((mediaState.getInt(MEDIA_POSITION, 0) / 1000) + 2);
+                                videoView.seekTo(mediaState.getInt(MEDIA_POSITION, 0));
                             } else {
                                 videoView.seekTo(mediaState.getInt(MEDIA_POSITION, 0));
-                                videoSeek.setProgress(mediaState.getInt(MEDIA_POSITION, 0) / 1000);
                             }
+                            videoSeek.setProgress(mediaState.getInt(MEDIA_POSITION, 0));
                         }
                     }
                     isCompleted = mediaState.getBoolean(MEDIA_COMPLETED,false);
@@ -473,6 +501,21 @@ public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCo
                     }
                     hide = mediaState.getBoolean(MEDIA_CONTROLS_HIDE, true);
                 }
+                //Get SAVED PREVIOUS TIME
+                if(mediaState.contains(MEDIA_PREVIOUS_POSITION)){
+                    Log.d(TAG,"Retrieve media previous time = "+mediaState.getInt(MEDIA_PREVIOUS_POSITION,0));
+                    previousPos = mediaState.getInt(MEDIA_PREVIOUS_POSITION,0);
+                }
+                //Get CURRENT TIME
+                if(mediaState.contains(MEDIA_CURRENT_TIME)){
+                    Log.d(TAG,"Retrieve current time = "+mediaState.getString(MEDIA_CURRENT_TIME,getResources().getString(R.string.START_TIME)));
+                    String currentTime = mediaState.getString(MEDIA_CURRENT_TIME,getResources().getString(R.string.START_TIME));
+                    StringTokenizer timeToken = new StringTokenizer(currentTime,":");
+                    seconds = Integer.parseInt(timeToken.nextToken().trim());
+                    minutes = Integer.parseInt(timeToken.nextToken().trim());
+                    hours = Integer.parseInt(timeToken.nextToken().trim());
+                    showTimeElapsed();
+                }
             }
         }
     }
@@ -491,7 +534,7 @@ public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCo
             if (videoView != null) {
                 Log.d(TAG, "Save media state");
                 stopTrackerThread();
-                stopTimerThread();
+                //stopTimerThread();
                 SharedPreferences.Editor mediaState = getSharedPreferences(FC_MEDIA_PREFERENCE, Context.MODE_PRIVATE).edit();
                 mediaState.putBoolean(MEDIA_PLAYING, videoView.isPlaying());
                 mediaState.putInt(MEDIA_POSITION, videoView.getCurrentPosition());
@@ -499,6 +542,8 @@ public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCo
                 mediaState.putInt(SEEK_DURATION,videoSeek.getMax());
                 mediaState.putLong(MEDIA_ACTUAL_DURATION,Long.parseLong(duration));
                 mediaState.putBoolean(MEDIA_COMPLETED,isCompleted);
+                mediaState.putInt(MEDIA_PREVIOUS_POSITION,previousPos);
+                mediaState.putString(MEDIA_CURRENT_TIME,seconds+":"+minutes+":"+hours);
                 mediaState.commit();
                 if (videoView.isPlaying()) {
                     videoView.pause();
@@ -574,10 +619,48 @@ public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCo
         public void run() {
             Log.d(TAG,"Video Tracker STARTED...");
             while(startTracker){
-                //Log.d(TAG,"Tracking thread looping...");
                 while(videoView.isPlaying()){
                     int latestPos = videoView.getCurrentPosition();
                     videoSeek.setProgress(latestPos);
+                    if(latestPos > 999 && latestPos % 1000 >= 0){
+                        //showTimeElapsed();
+                        if(previousPos == 0) {
+                            previousPos = latestPos;
+                            if(seconds < 59){
+                                seconds++;
+                            }
+                            else if(minutes < 59){
+                                minutes++;
+                                seconds = 0;
+                            }
+                            else{
+                                minutes = 0;
+                                seconds = 0;
+                                hours++;
+                            }
+                            //Log.d(TAG,"seconds 1111 == "+seconds);
+                            mediaHandler.sendEmptyMessage(VIDEO_SEEK_UPDATE);
+                        }
+                        else{
+                            if(Math.abs(previousPos-latestPos) >= 1000){
+                                previousPos = latestPos;
+                                if(seconds < 59){
+                                    seconds++;
+                                }
+                                else if(minutes < 59){
+                                    minutes++;
+                                    seconds = 0;
+                                }
+                                else{
+                                    minutes = 0;
+                                    seconds = 0;
+                                    hours++;
+                                }
+                                //Log.d(TAG,"seconds == "+seconds);
+                                mediaHandler.sendEmptyMessage(VIDEO_SEEK_UPDATE);
+                            }
+                        }
+                    }
                     if(!startTracker){
                         break;
                     }
