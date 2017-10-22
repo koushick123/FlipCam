@@ -219,7 +219,16 @@ public class PhotoFragment extends Fragment {
             flashOn=false;
             flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_on));
         }
-        cameraView.flashOnOff(flashOn);
+    }
+
+    public boolean getFlashOn()
+    {
+        return flashOn;
+    }
+
+    public void setFlashOn(boolean flashOn1)
+    {
+        flashOn = flashOn1;
     }
 
     public void askForPermissionAgain()

@@ -290,6 +290,9 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
             e.printStackTrace();
         }
         finally {
+            if(photoFrag!=null && photoFrag.getFlashOn()){
+                setFlashOnOff(false);
+            }
             //Start the preview no matter if photo is saved or not.
             Log.d(TAG, "photo is ready");
             camera.startPreview();
@@ -454,10 +457,6 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         if(!stopped) {
             camera.getParameters().setZoom(zoomvalue);
         }
-    }
-    public void setCapture(boolean cap)
-    {
-        capture = cap;
     }
     boolean capture=false;
     @Override

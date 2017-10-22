@@ -2,6 +2,7 @@ package com.flipcam.view;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Point;
 import android.graphics.SurfaceTexture;
@@ -59,7 +60,9 @@ import java.util.Date;
 import static android.content.Context.SENSOR_SERVICE;
 import static android.os.Environment.getExternalStorageDirectory;
 import static android.os.Environment.getExternalStoragePublicDirectory;
+import static com.flipcam.constants.Constants.PHOTO_FLASH_ON;
 import static com.flipcam.constants.Constants.SHOW_ELAPSED_TIME;
+import static com.flipcam.constants.Constants.VIDEO_FLASH_ON;
 
 /**
  * Created by Koushick on 15-08-2017.
@@ -499,13 +502,17 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     }
     public void flashOnOff(boolean flashOn)
     {
-        if(flashOn)
-        {
-            camera1.setTorchLight();
+        if(this.videoFragment!=null) {
+            if (flashOn) {
+                camera1.setTorchLight();
+            } else {
+                camera1.setFlashOnOff(false);
+            }
         }
-        else
-        {
-            camera1.setFlashOnOff(false);
+        else{
+            if(!flashOn) {
+                camera1.setFlashOnOff(false);
+            }
         }
     }
 
@@ -557,22 +564,47 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             Log.d(TAG, "Continuous AF");
             camera1.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
         }
-        //Set the flash mode of previous camera
-        if(camera1.isFlashModeSupported(flashMode)){
-            if(flashMode.equalsIgnoreCase(Camera.Parameters.FLASH_MODE_OFF)) {
-                flashOnOff(false);
-                flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.flash_on));
-            }
-            else if(flashMode.equalsIgnoreCase(Camera.Parameters.FLASH_MODE_TORCH)){
-                flashOnOff(true);
-                flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.flash_off));
+        if(this.photoFragment!=null){
+            SharedPreferences flashPref = this.photoFragment.getActivity().getSharedPreferences(PHOTO_FLASH_ON,Context.MODE_PRIVATE);
+            if(flashPref != null){
+                if(flashPref.contains(PHOTO_FLASH_ON)){
+                    this.photoFragment.setFlashOn(flashPref.getBoolean(PHOTO_FLASH_ON,false));
+                    if(flashPref.getBoolean(PHOTO_FLASH_ON,false)){
+                        flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.flash_off));
+                    }
+                    else{
+                        flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.flash_on));
+                    }
+                }
             }
         }
-        else{
-            if(flashMode != null && !flashMode.equalsIgnoreCase(Camera.Parameters.FLASH_MODE_OFF)) {
-                Toast.makeText(getContext(), "Flash Mode " + flashMode + " not supported by this camera.", Toast.LENGTH_SHORT).show();
+        else {
+            SharedPreferences flashPref = this.videoFragment.getActivity().getSharedPreferences(VIDEO_FLASH_ON, Context.MODE_PRIVATE);
+            if (flashPref != null) {
+                if (flashPref.contains(VIDEO_FLASH_ON)) {
+                    this.videoFragment.setFlashOn(flashPref.getBoolean(VIDEO_FLASH_ON, false));
+                    if (flashPref.getBoolean(VIDEO_FLASH_ON, false)) {
+                        flashMode = Camera.Parameters.FLASH_MODE_TORCH;
+                    } else {
+                        flashMode = Camera.Parameters.FLASH_MODE_OFF;
+                    }
+                }
             }
-            flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.flash_on));
+            //Set the flash mode of previous camera
+            if (camera1.isFlashModeSupported(flashMode)) {
+                if (flashMode.equalsIgnoreCase(Camera.Parameters.FLASH_MODE_OFF)) {
+                    flashOnOff(false);
+                    flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.flash_on));
+                } else if (flashMode.equalsIgnoreCase(Camera.Parameters.FLASH_MODE_TORCH)) {
+                    flashOnOff(true);
+                    flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.flash_off));
+                }
+            } else {
+                if (flashMode != null && !flashMode.equalsIgnoreCase(Camera.Parameters.FLASH_MODE_OFF)) {
+                    Toast.makeText(getContext(), "Flash Mode " + flashMode + " not supported by this camera.", Toast.LENGTH_SHORT).show();
+                }
+                flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.flash_on));
+            }
         }
     }
 
@@ -745,6 +777,16 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     public void capturePhoto()
     {
         determineOrientation();
+        if(this.photoFragment!=null){
+            if(this.photoFragment.getFlashOn()){
+                camera1.setTorchLight();
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
         camera1.setRotation(imageRotationAngle);
         mNextPhotoAbsolutePath = getFilePath(false);
         camera1.setPhotoPath(mNextPhotoAbsolutePath);
@@ -810,6 +852,19 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         if(cameraHandler!=null) {
             CameraRenderer cameraRenderer = cameraHandler.getCameraRendererInstance();
             if(camera1.isCameraReady()) {
+                if(this.photoFragment != null){
+                    //If photo mode is being used.
+                    SharedPreferences.Editor flashEdit = this.photoFragment.getActivity().getSharedPreferences(Constants.PHOTO_FLASH_ON,Context.MODE_PRIVATE).edit();
+                    Log.d(TAG,"flash on  == "+this.photoFragment.getFlashOn());
+                    flashEdit.putBoolean(PHOTO_FLASH_ON,this.photoFragment.getFlashOn());
+                    flashEdit.commit();
+                }
+                else{
+                    //If Video mode is being used.
+                    SharedPreferences.Editor flashEdit = this.videoFragment.getActivity().getSharedPreferences(Constants.VIDEO_FLASH_ON,Context.MODE_PRIVATE).edit();
+                    flashEdit.putBoolean(VIDEO_FLASH_ON,this.videoFragment.getFlashOn());
+                    flashEdit.commit();
+                }
                 //Switch off flash light if used during recording.
                 camera1.setFlashOnOff(false);
                 camera1.removePreviewCallback();

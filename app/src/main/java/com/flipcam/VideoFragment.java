@@ -327,6 +327,16 @@ public class VideoFragment extends android.app.Fragment{
         cameraView.flashOnOff(flashOn);
     }
 
+    public boolean getFlashOn()
+    {
+        return flashOn;
+    }
+
+    public void setFlashOn(boolean flashOn1)
+    {
+        flashOn = flashOn1;
+    }
+
     public void askForPermissionAgain()
     {
         Log.d(TAG,"permissionInterface = "+permissionInterface);
