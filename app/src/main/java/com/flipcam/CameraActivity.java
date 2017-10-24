@@ -62,10 +62,8 @@ PhotoFragment.SwitchPhoto{
             Log.d(TAG,"creating videofragment");
             videoFragment = VideoFragment.newInstance();
         }
-
         FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
         if(photoFragment!=null) {
-            //fragmentTransaction.remove(photoFragment);
             fragmentTransaction.replace(R.id.cameraPreview, videoFragment).commit();
             Log.d(TAG,"photofragment removed");
         }
