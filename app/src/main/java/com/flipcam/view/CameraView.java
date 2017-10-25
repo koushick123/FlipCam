@@ -864,6 +864,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         Log.d(TAG,"surfaceChanged = "+surfaceHolder);
         Log.d(TAG,"Width = "+width+", height = "+height);
         if(this.videoFragment!=null) {
+            this.videoFragment.showRecordAndThumbnail();
             this.videoFragment.getLatestFileIfExists();
             camera1.setPhotoFragmentInstance(null);
         }
@@ -936,7 +937,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 Message recordStop = new Message();
                 recordStop.what = Constants.RECORD_STOP;
                 cameraHandler.sendMessageAtFrontOfQueue(recordStop);
-                //this.videoFragment.showRecordAndThumbnail();
                 Log.d(TAG,"Recording STOPPED");
             }
             cameraHandler.sendEmptyMessage(Constants.SHUTDOWN);
@@ -1220,7 +1220,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                             hour++;
                             if(VERBOSE)Log.d(TAG,"hour = "+hour);
                         }*/
-                        Log.d(TAG,"difference of 1 sec");
+                        if(VERBOSE)Log.d(TAG,"difference of 1 sec");
                         previousTime = System.currentTimeMillis();
                         if(recordStop == 1) {
                             //mainHandler.sendEmptyMessage(Constants.SHOW_ELAPSED_TIME);

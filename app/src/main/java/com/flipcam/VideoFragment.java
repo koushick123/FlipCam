@@ -223,8 +223,7 @@ public class VideoFragment extends android.app.Fragment{
         videoBar.addView(startRecord);
         videoBar.addView(photoMode);
         videoBar.addView(thumbnail);
-        settingsBar.removeView(timeElapsed);
-        settingsBar.removeView(memoryConsumed);
+        settingsBar.removeAllViews();
         if(cameraView.isCameraReady()) {
             if (cameraView.isFlashOn()) {
                 flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_off));
@@ -247,6 +246,7 @@ public class VideoFragment extends android.app.Fragment{
             }
         });
         cameraView.setFlashButton(flash);
+        settingsBar.addView(flash);
         settingsBar.addView(settings);
         settingsBar.setBackgroundColor(getResources().getColor(R.color.settingsBarColor));
         flash.setBackgroundColor(getResources().getColor(R.color.settingsBarColor));
@@ -359,17 +359,25 @@ public class VideoFragment extends android.app.Fragment{
             return;
         }
         Log.d(TAG,"width = "+firstFrame.getWidth()+" , height = "+firstFrame.getHeight());
-        firstFrame = Bitmap.createScaledBitmap(firstFrame,(int)getResources().getDimension(R.dimen.thumbnailWidth),
-                (int)getResources().getDimension(R.dimen.thumbnailHeight),false);
-        thumbnail.setImageBitmap(firstFrame);
-        thumbnail.setClickable(true);
-        thumbnail.setOnClickListener(new View.OnClickListener(){
-            @Override
-            public void onClick(View view)
-            {
-                openMedia(cameraView.getMediaPath());
-            }
-        });
+        boolean isDetached=false;
+        try {
+            firstFrame = Bitmap.createScaledBitmap(firstFrame, (int) getResources().getDimension(R.dimen.thumbnailWidth),
+                    (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
+        }
+        catch (IllegalStateException illegal){
+            Log.d(TAG,"video fragment is already detached. ");
+            isDetached=true;
+        }
+        if(!isDetached) {
+            thumbnail.setImageBitmap(firstFrame);
+            thumbnail.setClickable(true);
+            thumbnail.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    openMedia(cameraView.getMediaPath());
+                }
+            });
+        }
     }
 
     public void getLatestFileIfExists()
@@ -513,6 +521,8 @@ public class VideoFragment extends android.app.Fragment{
     public void onResume() {
         super.onResume();
         Log.d(TAG,"onResume");
+        //cameraView.setVisibility(View.VISIBLE);
+        Log.d(TAG,"cameraview = "+cameraView);
     }
 
     @Override
@@ -532,6 +542,8 @@ public class VideoFragment extends android.app.Fragment{
     public void onPause() {
         Log.d(TAG,"Fragment pause....app is being quit");
         setCameraQuit();
+        Log.d(TAG,"cameraview = "+cameraView);
+        //cameraView.setVisibility(View.GONE);
         super.onPause();
     }
 }
