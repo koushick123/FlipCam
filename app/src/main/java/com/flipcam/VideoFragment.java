@@ -521,8 +521,10 @@ public class VideoFragment extends android.app.Fragment{
     public void onResume() {
         super.onResume();
         Log.d(TAG,"onResume");
-        //cameraView.setVisibility(View.VISIBLE);
-        Log.d(TAG,"cameraview = "+cameraView);
+        if(cameraView!=null){
+            Log.d(TAG,"cameraview onresume visibility= "+cameraView.getWindowVisibility());
+            cameraView.setVisibility(View.VISIBLE);
+        }
     }
 
     @Override
@@ -542,8 +544,12 @@ public class VideoFragment extends android.app.Fragment{
     public void onPause() {
         Log.d(TAG,"Fragment pause....app is being quit");
         setCameraQuit();
-        Log.d(TAG,"cameraview = "+cameraView);
-        //cameraView.setVisibility(View.GONE);
+        if(cameraView!=null){
+            Log.d(TAG,"cameraview onpause visibility= "+cameraView.getWindowVisibility());
+            if(cameraView.getWindowVisibility() == View.VISIBLE){
+                cameraView.setVisibility(View.GONE);
+            }
+        }
         super.onPause();
     }
 }
