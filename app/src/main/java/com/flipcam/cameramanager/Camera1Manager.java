@@ -290,7 +290,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
             e.printStackTrace();
         }
         finally {
-            if(photoFrag!=null && photoFrag.getFlashOn()){
+            if(photoFrag!=null && photoFrag.isFlashOn()){
                 setFlashOnOff(false);
             }
             //Start the preview no matter if photo is saved or not.

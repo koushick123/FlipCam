@@ -18,5 +18,6 @@
     <string name="MEM_PF_GB"> GB</string>
     <string name="START_TIME">00 : 00 : 00</string>
     <string name="START_MEMORY">0 MB</string>
-
+    <string name="VIDEO_MODE">VIDEO</string>
+    <string name="PHOTO_MODE">PHOTO</string>
 </resources>

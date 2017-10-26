@@ -23,4 +23,8 @@
     <color name="seekFill">#FFFFFF</color>
     //Start and end time color
     <color name="time">#FFFFFF</color>
+    //Background color for mode
+    <color name="modeText">#4dc2a5</color>
+    //Text color for mode
+    <color name="modeColor">#FFFFFF</color>
 </resources>

@@ -1,10 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:id="@+id/parentCamera"
-    >
+    android:id="@+id/parentCamera">
 
     <FrameLayout
         android:layout_width="match_parent"
@@ -28,9 +26,19 @@
             android:layout_height="@dimen/flashOnHeight"
             android:layout_gravity="center"
             android:layout_marginLeft="@dimen/flashOnLeftMargin"
-            android:layout_weight="0.5"
+            android:layout_weight="0.4"
             android:background="@color/settingsBarColor"
-            android:src="@drawable/flash_on" />
+            android:src="@drawable/flash_on"
+             />
+
+        <TextView
+            android:id="@+id/modeInfo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:background="@color/modeText"
+            android:text="@string/VIDEO_MODE"
+            android:textColor="@color/modeColor" />
 
         <ImageButton
             android:id="@+id/settings"
@@ -40,7 +48,7 @@
             android:layout_marginBottom="1dp"
             android:layout_marginRight="@dimen/settingRightMargin"
             android:layout_marginTop="1dp"
-            android:layout_weight="0.5"
+            android:layout_weight="0.4"
             android:background="@color/settingsBarColor"
             android:src="@drawable/settings" />
     </LinearLayout>

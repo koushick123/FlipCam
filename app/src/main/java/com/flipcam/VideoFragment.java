@@ -31,6 +31,7 @@ import java.io.File;
 import java.util.Arrays;
 
 import static com.flipcam.PermissionActivity.FC_SHARED_PREFERENCE;
+import static com.flipcam.R.id.modeInfo;
 
 
 public class VideoFragment extends android.app.Fragment{
@@ -53,6 +54,7 @@ public class VideoFragment extends android.app.Fragment{
     SwitchInterface switchInterface;
     ImageButton stopRecord;
     ImageView imagePreview;
+    TextView modeText;
 
     public VideoFragment() {
         // Required empty public constructor
@@ -89,6 +91,7 @@ public class VideoFragment extends android.app.Fragment{
             }
         });
         cameraView.setFlashButton(flash);
+        modeText = (TextView)getActivity().findViewById(modeInfo);
         permissionInterface = (PermissionInterface)getActivity();
         switchInterface = (SwitchInterface)getActivity();
     }
@@ -232,7 +235,7 @@ public class VideoFragment extends android.app.Fragment{
             }
         }
         LinearLayout.LayoutParams flashParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        flashParams.weight=0.5f;
+        flashParams.weight=0.4f;
         flashParams.height = (int)getResources().getDimension(R.dimen.flashOnHeight);
         flashParams.width = (int)getResources().getDimension(R.dimen.flashOnWidth);
         flashParams.setMargins((int)getResources().getDimension(R.dimen.flashOnLeftMargin),0,0,0);
@@ -247,6 +250,8 @@ public class VideoFragment extends android.app.Fragment{
         });
         cameraView.setFlashButton(flash);
         settingsBar.addView(flash);
+        modeText.setText(getResources().getString(R.string.VIDEO_MODE));
+        settingsBar.addView(modeText);
         settingsBar.addView(settings);
         settingsBar.setBackgroundColor(getResources().getColor(R.color.settingsBarColor));
         flash.setBackgroundColor(getResources().getColor(R.color.settingsBarColor));
@@ -256,6 +261,7 @@ public class VideoFragment extends android.app.Fragment{
     {
         settingsBar.setBackgroundColor(getResources().getColor(R.color.transparentBar));
         settingsBar.removeView(settings);
+        settingsBar.removeView(modeText);
         if(cameraView.isFlashOn()) {
             flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_off));
         }
@@ -321,13 +327,13 @@ public class VideoFragment extends android.app.Fragment{
         else
         {
             Log.d(TAG,"Flash off");
-            flashOn=false;
+            flashOn = false;
             flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_on));
         }
         cameraView.flashOnOff(flashOn);
     }
 
-    public boolean getFlashOn()
+    public boolean isFlashOn()
     {
         return flashOn;
     }

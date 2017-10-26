@@ -36,7 +36,4 @@ public class Constants
     public static final String MEDIA_COMPLETED = "mediaCompleted";
     public static final String MEDIA_PREVIOUS_POSITION = "previousPos";
     public static final String MEDIA_CURRENT_TIME = "currentTime";
-    //Constants for saving Camera flash settings
-    public static final String PHOTO_FLASH_ON = "photoFlashOn";
-    public static final String VIDEO_FLASH_ON = "videoFlashOn";
 }

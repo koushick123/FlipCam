@@ -20,6 +20,7 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.flipcam.constants.Constants;
@@ -51,6 +52,7 @@ public class PhotoFragment extends Fragment {
     SwitchPhoto switchPhoto;
     ImageButton capturePic;
     ImageView imagePreview;
+    TextView modeText;
 
     public interface PhotoPermission{
         void askPhotoPermission();
@@ -85,6 +87,8 @@ public class PhotoFragment extends Fragment {
             }
         });
         cameraView.setFlashButton(flash);
+        modeText = (TextView)getActivity().findViewById(R.id.modeInfo);
+        modeText.setText(getResources().getString(R.string.PHOTO_MODE));
         photoPermission = (PhotoFragment.PhotoPermission)getActivity();
         switchPhoto = (PhotoFragment.SwitchPhoto)getActivity();
     }
@@ -221,7 +225,7 @@ public class PhotoFragment extends Fragment {
         }
     }
 
-    public boolean getFlashOn()
+    public boolean isFlashOn()
     {
         return flashOn;
     }

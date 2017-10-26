@@ -1,15 +1,11 @@
 package com.flipcam;
 
 import android.app.FragmentTransaction;
-import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.WindowManager;
-
-import com.flipcam.constants.Constants;
 
 public class CameraActivity extends AppCompatActivity implements VideoFragment.PermissionInterface, PhotoFragment.PhotoPermission,VideoFragment.SwitchInterface,
 PhotoFragment.SwitchPhoto{
@@ -29,20 +25,6 @@ PhotoFragment.SwitchPhoto{
         if(savedInstanceState == null) {
             //Start with video fragment
             showVideoFragment();
-            SharedPreferences photoPrefs = getSharedPreferences(Constants.PHOTO_FLASH_ON, Context.MODE_PRIVATE);
-            if(photoPrefs!=null){
-                SharedPreferences.Editor photoEdit = photoPrefs.edit();
-                photoEdit.clear();
-                photoEdit.commit();
-                Log.d(TAG,"Clear Photo Prefs");
-            }
-            SharedPreferences videoPrefs = getSharedPreferences(Constants.VIDEO_FLASH_ON, Context.MODE_PRIVATE);
-            if(videoPrefs!=null){
-                SharedPreferences.Editor videoEdit = videoPrefs.edit();
-                videoEdit.clear();
-                videoEdit.commit();
-                Log.d(TAG,"Clear Video Prefs");
-            }
         }
     }
 
