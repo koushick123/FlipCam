@@ -26,19 +26,40 @@
             android:layout_height="@dimen/flashOnHeight"
             android:layout_gravity="center"
             android:layout_marginLeft="@dimen/flashOnLeftMargin"
-            android:layout_weight="0.4"
+            android:layout_weight="0.5"
             android:background="@color/settingsBarColor"
             android:src="@drawable/flash_on"
              />
 
-        <TextView
-            android:id="@+id/modeInfo"
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:id="@+id/modeLayout"
             android:layout_gravity="center"
-            android:background="@color/modeText"
-            android:text="@string/VIDEO_MODE"
-            android:textColor="@color/modeColor" />
+            >
+
+            <TextView
+                android:id="@+id/mode"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:background="@color/settingsBarColor"
+                android:layout_marginBottom="3dp"
+                android:layout_marginTop="2dp"
+                android:text="@string/MODE"
+                android:textSize="12sp"
+                android:textColor="@color/modeText" />
+
+            <TextView
+                android:id="@+id/modeInfo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginBottom="2dp"
+                android:text="@string/VIDEO_MODE"
+                android:textColor="@color/modeColor" />
+        </LinearLayout>
 
         <ImageButton
             android:id="@+id/settings"
@@ -48,7 +69,7 @@
             android:layout_marginBottom="1dp"
             android:layout_marginRight="@dimen/settingRightMargin"
             android:layout_marginTop="1dp"
-            android:layout_weight="0.4"
+            android:layout_weight="0.5"
             android:background="@color/settingsBarColor"
             android:src="@drawable/settings" />
     </LinearLayout>

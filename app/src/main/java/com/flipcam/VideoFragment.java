@@ -30,6 +30,7 @@ import com.flipcam.view.CameraView;
 import java.io.File;
 import java.util.Arrays;
 
+import static android.widget.Toast.makeText;
 import static com.flipcam.PermissionActivity.FC_SHARED_PREFERENCE;
 import static com.flipcam.R.id.modeInfo;
 
@@ -55,6 +56,8 @@ public class VideoFragment extends android.app.Fragment{
     ImageButton stopRecord;
     ImageView imagePreview;
     TextView modeText;
+    LinearLayout modeLayout;
+    TextView mode;
 
     public VideoFragment() {
         // Required empty public constructor
@@ -92,6 +95,8 @@ public class VideoFragment extends android.app.Fragment{
         });
         cameraView.setFlashButton(flash);
         modeText = (TextView)getActivity().findViewById(modeInfo);
+        modeLayout = (LinearLayout)getActivity().findViewById(R.id.modeLayout);
+        mode = (TextView)getActivity().findViewById(R.id.mode);
         permissionInterface = (PermissionInterface)getActivity();
         switchInterface = (SwitchInterface)getActivity();
     }
@@ -127,7 +132,7 @@ public class VideoFragment extends android.app.Fragment{
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
                 if(!cameraView.isSmoothZoomSupported() && !cameraView.isZoomSupported()) {
-                    Toast.makeText(getActivity().getApplicationContext(), "Zoom not supported for this camera.", Toast.LENGTH_SHORT).show();
+                    makeText(getActivity().getApplicationContext(), "Zoom not supported for this camera.", Toast.LENGTH_SHORT).show();
                 }
             }
 
@@ -203,6 +208,21 @@ public class VideoFragment extends android.app.Fragment{
             public void onClick(View view) {
                 cameraView.record();
                 showRecordAndThumbnail();
+                LinearLayout recordSavedLayout = new LinearLayout(getActivity());
+                recordSavedLayout.setGravity(Gravity.CENTER);
+                recordSavedLayout.setOrientation(LinearLayout.VERTICAL);
+                TextView recordSavedText = new TextView(getActivity());
+                recordSavedText.setText(getResources().getString(R.string.RECORD_SAVED));
+                ImageView recordSavedImg = new ImageView(getActivity());
+                recordSavedImg.setImageDrawable(getResources().getDrawable(R.drawable.ic_done_black_24dp));
+                recordSavedText.setPadding(20,20,20,20);
+                recordSavedText.setTextColor(getResources().getColor(R.color.modeText));
+                recordSavedLayout.addView(recordSavedText);
+                recordSavedLayout.addView(recordSavedImg);
+                Toast showCompleted = Toast.makeText(getActivity().getApplicationContext(),"",Toast.LENGTH_SHORT);
+                showCompleted.setGravity(Gravity.CENTER,0,0);
+                showCompleted.setView(recordSavedLayout);
+                showCompleted.show();
             }
         });
         switchCamera.setBackgroundColor(getResources().getColor(R.color.transparentBar));
@@ -235,7 +255,7 @@ public class VideoFragment extends android.app.Fragment{
             }
         }
         LinearLayout.LayoutParams flashParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        flashParams.weight=0.4f;
+        flashParams.weight=0.5f;
         flashParams.height = (int)getResources().getDimension(R.dimen.flashOnHeight);
         flashParams.width = (int)getResources().getDimension(R.dimen.flashOnWidth);
         flashParams.setMargins((int)getResources().getDimension(R.dimen.flashOnLeftMargin),0,0,0);
@@ -250,9 +270,9 @@ public class VideoFragment extends android.app.Fragment{
         });
         cameraView.setFlashButton(flash);
         settingsBar.addView(flash);
-        modeText.setText(getResources().getString(R.string.VIDEO_MODE));
-        settingsBar.addView(modeText);
+        settingsBar.addView(modeLayout);
         settingsBar.addView(settings);
+        modeText.setText(getResources().getString(R.string.VIDEO_MODE));
         settingsBar.setBackgroundColor(getResources().getColor(R.color.settingsBarColor));
         flash.setBackgroundColor(getResources().getColor(R.color.settingsBarColor));
     }
@@ -261,7 +281,7 @@ public class VideoFragment extends android.app.Fragment{
     {
         settingsBar.setBackgroundColor(getResources().getColor(R.color.transparentBar));
         settingsBar.removeView(settings);
-        settingsBar.removeView(modeText);
+        settingsBar.removeView(modeLayout);
         if(cameraView.isFlashOn()) {
             flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_off));
         }
@@ -321,7 +341,7 @@ public class VideoFragment extends android.app.Fragment{
                 flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_off));
             }
             else{
-                Toast.makeText(getActivity().getApplicationContext(),"Flash Mode " + Camera.Parameters.FLASH_MODE_TORCH + " not supported by this camera.",Toast.LENGTH_SHORT).show();
+                makeText(getActivity().getApplicationContext(),"Flash Mode " + Camera.Parameters.FLASH_MODE_TORCH + " not supported by this camera.",Toast.LENGTH_SHORT).show();
             }
         }
         else

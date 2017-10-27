@@ -20,4 +20,7 @@
     <string name="START_MEMORY">0 MB</string>
     <string name="VIDEO_MODE">VIDEO</string>
     <string name="PHOTO_MODE">PHOTO</string>
+    <string name="MODE">MODE</string>
+    <string name="RECORD_SAVED">VIDEO SAVED</string>
+    <string name="IMAGE_SAVED">IMAGE SAVED</string>
 </resources>

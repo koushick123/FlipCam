@@ -27,4 +27,6 @@
     <color name="modeText">#4dc2a5</color>
     //Text color for mode
     <color name="modeColor">#FFFFFF</color>
+    //Transparent color for saved message
+    <color name="savedMsg">#1F000000</color>
 </resources>
