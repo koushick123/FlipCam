@@ -8,6 +8,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Typeface;
 import android.hardware.Camera;
+import android.hardware.SensorManager;
 import android.media.MediaMetadataRetriever;
 import android.os.Bundle;
 import android.os.Environment;
@@ -15,6 +16,7 @@ import android.support.annotation.Nullable;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.OrientationEventListener;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
@@ -58,6 +60,8 @@ public class VideoFragment extends android.app.Fragment{
     TextView modeText;
     LinearLayout modeLayout;
     TextView mode;
+    OrientationEventListener orientationEventListener;
+    int orientation = -1;
 
     public VideoFragment() {
         // Required empty public constructor
@@ -185,7 +189,25 @@ public class VideoFragment extends android.app.Fragment{
         cameraView.setFragmentInstance(this);
         cameraView.setPhotoFragmentInstance(null);
         imagePreview = (ImageView)view.findViewById(R.id.imagePreview);
+        orientationEventListener = new OrientationEventListener(getActivity().getApplicationContext(), SensorManager.SENSOR_DELAY_UI){
+            @Override
+            public void onOrientationChanged(int i) {
+                if(orientationEventListener.canDetectOrientation()) {
+                    orientation = i;
+                    determineOrientation();
+                    rotateIcons();
+                }
+            }
+        };
         return view;
+    }
+
+    public void rotateIcons()
+    {
+        switchCamera.setRotation(rotationAngle);
+        photoMode.setRotation(rotationAngle);
+        flash.setRotation(rotationAngle);
+        thumbnail.setRotation(rotationAngle);
     }
 
     public void addStopAndPauseIcons()
@@ -208,24 +230,11 @@ public class VideoFragment extends android.app.Fragment{
             public void onClick(View view) {
                 cameraView.record();
                 showRecordAndThumbnail();
-                LinearLayout recordSavedLayout = new LinearLayout(getActivity());
-                recordSavedLayout.setGravity(Gravity.CENTER);
-                recordSavedLayout.setOrientation(LinearLayout.VERTICAL);
-                TextView recordSavedText = new TextView(getActivity());
-                recordSavedText.setText(getResources().getString(R.string.RECORD_SAVED));
-                ImageView recordSavedImg = new ImageView(getActivity());
-                recordSavedImg.setImageDrawable(getResources().getDrawable(R.drawable.ic_done_black_24dp));
-                recordSavedText.setPadding(20,20,20,20);
-                recordSavedText.setTextColor(getResources().getColor(R.color.modeText));
-                recordSavedLayout.addView(recordSavedText);
-                recordSavedLayout.addView(recordSavedImg);
-                Toast showCompleted = Toast.makeText(getActivity().getApplicationContext(),"",Toast.LENGTH_SHORT);
-                showCompleted.setGravity(Gravity.CENTER,0,0);
-                showCompleted.setView(recordSavedLayout);
-                showCompleted.show();
+                showRecordSaved();
             }
         });
         switchCamera.setBackgroundColor(getResources().getColor(R.color.transparentBar));
+        switchCamera.setRotation(rotationAngle);
         ImageView recordSubstitute = new ImageView(getActivity());
         recordSubstitute.setImageDrawable(getResources().getDrawable(R.drawable.placeholder));
         layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -235,6 +244,65 @@ public class VideoFragment extends android.app.Fragment{
         videoBar.addView(switchCamera);
         videoBar.addView(stopRecord);
         videoBar.addView(recordSubstitute);
+    }
+
+    float rotationAngle = 0f;
+    public void determineOrientation()
+    {
+        if(orientation != -1) {
+            if (((orientation >= 315 && orientation <= 360) || (orientation >= 0 && orientation <= 45)) || (orientation >= 135 && orientation <= 195)) {
+                if (orientation >= 135 && orientation <= 195) {
+                    //Reverse portrait
+                    rotationAngle = 180f;
+                } else {
+                    //Portrait
+                    rotationAngle = 0f;
+                }
+            } else {
+                if (orientation >= 46 && orientation <= 134) {
+                    //Reverse Landscape
+                    rotationAngle = 270f;
+                } else {
+                    //Landscape
+                    rotationAngle = 90f;
+                }
+            }
+        }
+    }
+
+    public void showRecordSaved()
+    {
+        LinearLayout recordSavedLayout = new LinearLayout(getActivity());
+        recordSavedLayout.setGravity(Gravity.CENTER);
+        recordSavedLayout.setOrientation(LinearLayout.VERTICAL);
+        recordSavedLayout.setBackgroundColor(getResources().getColor(R.color.savedMsg));
+        determineOrientation();
+        recordSavedLayout.setRotation(rotationAngle);
+        TextView recordSavedText = new TextView(getActivity());
+        recordSavedText.setText(getResources().getString(R.string.RECORD_SAVED));
+        ImageView recordSavedImg = new ImageView(getActivity());
+        recordSavedImg.setImageDrawable(getResources().getDrawable(R.drawable.ic_done_white_24dp));
+        recordSavedText.setPadding((int)getResources().getDimension(R.dimen.recordSavePadding),(int)getResources().getDimension(R.dimen.recordSavePadding),
+                (int)getResources().getDimension(R.dimen.recordSavePadding),(int)getResources().getDimension(R.dimen.recordSavePadding));
+        recordSavedText.setTextColor(getResources().getColor(R.color.saveText));
+        recordSavedImg.setPadding(0,0,0,(int)getResources().getDimension(R.dimen.recordSaveImagePaddingBottom));
+        recordSavedLayout.addView(recordSavedText);
+        recordSavedLayout.addView(recordSavedImg);
+        final Toast showCompleted = Toast.makeText(getActivity().getApplicationContext(),"",Toast.LENGTH_SHORT);
+        showCompleted.setGravity(Gravity.CENTER,0,0);
+        showCompleted.setView(recordSavedLayout);
+        showCompleted.show();
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Thread.sleep(1000);
+                    showCompleted.cancel();
+                }catch (InterruptedException ie){
+                    ie.printStackTrace();
+                }
+            }
+        }).start();
     }
 
     public void showRecordAndThumbnail()
@@ -551,6 +619,7 @@ public class VideoFragment extends android.app.Fragment{
             Log.d(TAG,"cameraview onresume visibility= "+cameraView.getWindowVisibility());
             cameraView.setVisibility(View.VISIBLE);
         }
+        orientationEventListener.enable();
     }
 
     @Override
@@ -576,6 +645,7 @@ public class VideoFragment extends android.app.Fragment{
                 cameraView.setVisibility(View.GONE);
             }
         }
+        orientationEventListener.disable();
         super.onPause();
     }
 }

@@ -8,12 +8,15 @@ import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.hardware.Camera;
+import android.hardware.SensorManager;
 import android.media.MediaMetadataRetriever;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.annotation.Nullable;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.OrientationEventListener;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
@@ -53,6 +56,8 @@ public class PhotoFragment extends Fragment {
     ImageButton capturePic;
     ImageView imagePreview;
     TextView modeText;
+    OrientationEventListener orientationEventListener;
+    int orientation = -1;
 
     public interface PhotoPermission{
         void askPhotoPermission();
@@ -178,7 +183,84 @@ public class PhotoFragment extends Fragment {
         cameraView.setPhotoFragmentInstance(this);
         cameraView.setFragmentInstance(null);
         imagePreview = (ImageView)view.findViewById(R.id.imagePreview);
+        orientationEventListener = new OrientationEventListener(getActivity().getApplicationContext(), SensorManager.SENSOR_DELAY_UI){
+            @Override
+            public void onOrientationChanged(int i) {
+                if(orientationEventListener.canDetectOrientation()) {
+                    orientation = i;
+                    determineOrientation();
+                    rotateIcons();
+                }
+            }
+        };
         return view;
+    }
+
+    float rotationAngle = 0f;
+    public void determineOrientation()
+    {
+        if(orientation != -1) {
+            if (((orientation >= 315 && orientation <= 360) || (orientation >= 0 && orientation <= 45)) || (orientation >= 135 && orientation <= 195)) {
+                if (orientation >= 135 && orientation <= 195) {
+                    //Reverse portrait
+                    rotationAngle = 180f;
+                } else {
+                    //Portrait
+                    rotationAngle = 0f;
+                }
+            } else {
+                if (orientation >= 46 && orientation <= 134) {
+                    //Reverse Landscape
+                    rotationAngle = 270f;
+                } else {
+                    //Landscape
+                    rotationAngle = 90f;
+                }
+            }
+        }
+    }
+
+    public void rotateIcons()
+    {
+        switchCamera.setRotation(rotationAngle);
+        videoMode.setRotation(rotationAngle);
+        flash.setRotation(rotationAngle);
+        thumbnail.setRotation(rotationAngle);
+    }
+
+    public void showRecordSaved()
+    {
+        LinearLayout recordSavedLayout = new LinearLayout(getActivity());
+        recordSavedLayout.setGravity(Gravity.CENTER);
+        determineOrientation();
+        recordSavedLayout.setRotation(rotationAngle);
+        recordSavedLayout.setOrientation(LinearLayout.VERTICAL);
+        recordSavedLayout.setBackgroundColor(getResources().getColor(R.color.savedMsg));
+        TextView recordSavedText = new TextView(getActivity());
+        recordSavedText.setText(getResources().getString(R.string.IMAGE_SAVED));
+        ImageView recordSavedImg = new ImageView(getActivity());
+        recordSavedImg.setImageDrawable(getResources().getDrawable(R.drawable.ic_done_white_24dp));
+        recordSavedText.setPadding((int)getResources().getDimension(R.dimen.recordSavePadding),(int)getResources().getDimension(R.dimen.recordSavePadding),
+                (int)getResources().getDimension(R.dimen.recordSavePadding),(int)getResources().getDimension(R.dimen.recordSavePadding));
+        recordSavedText.setTextColor(getResources().getColor(R.color.saveText));
+        recordSavedImg.setPadding(0,0,0,(int)getResources().getDimension(R.dimen.recordSaveImagePaddingBottom));
+        recordSavedLayout.addView(recordSavedText);
+        recordSavedLayout.addView(recordSavedImg);
+        final Toast showCompleted = Toast.makeText(getActivity().getApplicationContext(),"",Toast.LENGTH_SHORT);
+        showCompleted.setGravity(Gravity.CENTER,0,0);
+        showCompleted.setView(recordSavedLayout);
+        showCompleted.show();
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Thread.sleep(1000);
+                    showCompleted.cancel();
+                }catch (InterruptedException ie){
+                    ie.printStackTrace();
+                }
+            }
+        }).start();
     }
 
     public SeekBar getZoomBar()
@@ -374,6 +456,7 @@ public class PhotoFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
+        orientationEventListener.enable();
         Log.d(TAG,"onResume");
     }
 
@@ -394,6 +477,7 @@ public class PhotoFragment extends Fragment {
     public void onPause() {
         Log.d(TAG,"Fragment pause....app is being quit");
         setCameraQuit();
+        orientationEventListener.disable();
         super.onPause();
     }
 }

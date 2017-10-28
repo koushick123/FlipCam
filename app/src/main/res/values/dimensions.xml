@@ -39,4 +39,17 @@
     //Thumbnail dimensions
     <dimen name="thumbnailWidth">45dp</dimen>
     <dimen name="thumbnailHeight">45dp</dimen>
+    //Mode top and bottom margin
+    <dimen name="modeTopMargin">2dp</dimen>
+    <dimen name="modeBottomMargin">3dp</dimen>
+    //Mode info margin
+    <dimen name="modeInfoBottomMargin">2dp</dimen>
+    //Mode text size
+    <dimen name="modeTextSize">12sp</dimen>
+    //Settings margin top and bottom
+    <dimen name="settingsTopAndBottomMargin">1dp</dimen>
+    //Padding around saved message
+    <dimen name="recordSavePadding">30dp</dimen>
+    //Padding below tick mark image
+    <dimen name="recordSaveImagePaddingBottom">17dp</dimen>
 </resources>
