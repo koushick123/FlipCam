@@ -115,6 +115,7 @@ public class VideoFragment extends android.app.Fragment{
         substitute = (ImageView)view.findViewById(R.id.substitute);
         substitute.setVisibility(View.INVISIBLE);
         cameraView = (CameraView)view.findViewById(R.id.cameraSurfaceView);
+        Log.d(TAG,"cameraview onresume visibility= "+cameraView.getWindowVisibility());
         zoombar = (SeekBar)view.findViewById(R.id.zoomBar);
         zoombar.setProgressTintList(ColorStateList.valueOf(getResources().getColor(R.color.progressFill)));
         cameraView.setSeekBar(zoombar);
@@ -616,7 +617,6 @@ public class VideoFragment extends android.app.Fragment{
         super.onResume();
         Log.d(TAG,"onResume");
         if(cameraView!=null){
-            Log.d(TAG,"cameraview onresume visibility= "+cameraView.getWindowVisibility());
             cameraView.setVisibility(View.VISIBLE);
         }
         orientationEventListener.enable();

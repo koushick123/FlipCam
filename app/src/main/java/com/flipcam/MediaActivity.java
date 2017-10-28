@@ -134,7 +134,7 @@ public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCo
                 delParams.setMargins(0,10,0,10);
             }
             delete.setLayoutParams(delParams);
-            delete.setImageDrawable(getResources().getDrawable(R.drawable.ic_delete_black_24dp));
+            delete.setImageDrawable(getResources().getDrawable(R.drawable.ic_delete_white_24dp));
             delete.setBackgroundColor(getResources().getColor(R.color.mediaControlColor));
             bottomBar.addView(delete);
             //SHARE Button
@@ -148,7 +148,7 @@ public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCo
                 shareParams.setMargins(0,10,0,10);
             }
             share.setLayoutParams(shareParams);
-            share.setImageDrawable(getResources().getDrawable(R.drawable.ic_share_black_24dp));
+            share.setImageDrawable(getResources().getDrawable(R.drawable.ic_share_white_24dp));
             share.setBackgroundColor(getResources().getColor(R.color.mediaControlColor));
             bottomBar.addView(share);
             RelativeLayout.LayoutParams mediaParams = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
@@ -181,7 +181,7 @@ public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCo
             parentParams.height=(int)(0.09 * screenSize.y);
             topBar.setLayoutParams(parentParams);
             topBar.setOrientation(LinearLayout.HORIZONTAL);
-            topBar.setBackgroundColor(getResources().getColor(R.color.mediaControlColor));
+            topBar.setBackgroundColor(getResources().getColor(R.color.mediaControlColorVideo));
             display.getRealSize(screenSize);
             //DELETE Button
             ImageButton delete = new ImageButton(this);
@@ -194,8 +194,8 @@ public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCo
                 delParams.setMargins(0,10,0,10);
             }
             delete.setLayoutParams(delParams);
-            delete.setImageDrawable(getResources().getDrawable(R.drawable.ic_delete_black_24dp));
-            delete.setBackgroundColor(getResources().getColor(R.color.mediaControlColor));
+            delete.setImageDrawable(getResources().getDrawable(R.drawable.ic_delete_white_24dp));
+            delete.setBackgroundColor(getResources().getColor(R.color.transparentBar));
             topBar.addView(delete);
             //SHARE Button
             ImageButton share = new ImageButton(this);
@@ -208,8 +208,8 @@ public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCo
                 shareParams.setMargins(0,10,0,10);
             }
             share.setLayoutParams(shareParams);
-            share.setImageDrawable(getResources().getDrawable(R.drawable.ic_share_black_24dp));
-            share.setBackgroundColor(getResources().getColor(R.color.mediaControlColor));
+            share.setImageDrawable(getResources().getDrawable(R.drawable.ic_share_white_24dp));
+            share.setBackgroundColor(getResources().getColor(R.color.transparentBar));
             topBar.addView(share);
             parentPlaceholder.addView(topBar);
             mediaPlaceholder.addView(parentPlaceholder);
@@ -230,11 +230,11 @@ public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCo
             }
             mediaBar.setOrientation(LinearLayout.HORIZONTAL);
             mediaBar.setGravity(Gravity.CENTER);
-            mediaBar.setBackgroundColor(getResources().getColor(R.color.mediaControlColor));
+            mediaBar.setBackgroundColor(getResources().getColor(R.color.mediaControlColorVideo));
             mediaBar.setLayoutParams(mediaParams);
             //PAUSE button
             pause = new ImageView(this);
-            pause.setBackgroundColor(getResources().getColor(R.color.mediaControlColor));
+            pause.setBackgroundColor(getResources().getColor(R.color.transparentBar));
             pause.setScaleType(ImageView.ScaleType.CENTER_CROP);
             ViewGroup.LayoutParams pauseParams = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
             if(display.getRotation() == Surface.ROTATION_0) {
@@ -246,7 +246,7 @@ public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCo
                 pause.setPadding(0,10,0,10);
             }
             pause.setLayoutParams(pauseParams);
-            pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause_black_24dp));
+            pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause_white_24dp));
             pause.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
@@ -255,13 +255,13 @@ public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCo
                             isCompleted = false;
                         }
                         videoView.start();
-                        pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause_black_24dp));
+                        pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause_white_24dp));
                         play=true;
                         updateTimer=true;
                     }
                     else{
                         videoView.pause();
-                        pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow_black_24dp));
+                        pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow_white_24dp));
                         play=false;
                         updateTimer=false;
                     }
@@ -386,11 +386,6 @@ public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCo
         endTime.setText(showHr+" : "+showMin+" : "+showSec);
     }
 
-    public void stopTimerThread()
-    {
-        startTimer = false;
-    }
-
     public void stopTrackerThread()
     {
         startTracker = false;
@@ -501,11 +496,11 @@ public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCo
                     if (mediaState.getBoolean(MEDIA_PLAYING, true)) {
                         Log.d(TAG, "Retrieve media controls playing = " + mediaState.getBoolean(MEDIA_PLAYING, true));
                         videoView.start();
-                        pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause_black_24dp));
+                        pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause_white_24dp));
                         play = true;
                     } else {
                         videoView.pause();
-                        pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow_black_24dp));
+                        pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow_white_24dp));
                         play = false;
                     }
                 }
@@ -515,9 +510,15 @@ public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCo
                     if (mediaState.getBoolean(MEDIA_CONTROLS_HIDE, true)) {
                         topBar.setVisibility(View.VISIBLE);
                         mediaBar.setVisibility(View.VISIBLE);
+                        videoSeek.setVisibility(View.VISIBLE);
+                        startTime.setVisibility(View.VISIBLE);
+                        endTime.setVisibility(View.VISIBLE);
                     } else {
                         topBar.setVisibility(View.GONE);
                         mediaBar.setVisibility(View.GONE);
+                        videoSeek.setVisibility(View.GONE);
+                        startTime.setVisibility(View.GONE);
+                        endTime.setVisibility(View.GONE);
                     }
                     hide = mediaState.getBoolean(MEDIA_CONTROLS_HIDE, true);
                 }
@@ -574,7 +575,7 @@ public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCo
     @Override
     public void onCompletion(MediaPlayer mediaPlayer) {
         Log.d(TAG,"Video Completed");
-        pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow_black_24dp));
+        pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow_white_24dp));
         play = false;
         isCompleted = true;
         videoView.seekTo(0);

@@ -17,8 +17,10 @@
     <color name="timeElapsed">#ff0000</color>
     //Memory consumed text color
     <color name="memoryConsumed">#ff0000</color>
-    //Top and Bottom media control color
+    //Top and Bottom media control color for image
     <color name="mediaControlColor">#FFFFFF</color>
+    //Top and Bottom media control color for video
+    <color name="mediaControlColorVideo">#4F000000</color>
     //Progress fill color for video seekbar
     <color name="seekFill">#FFFFFF</color>
     //Start and end time color
