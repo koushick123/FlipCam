@@ -478,7 +478,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
                 Log.d(TAG,"rotation = "+rotation);
                 thumb = Bitmap.createBitmap(thumb, 0, 0, previewWidth, previewHeight, rotate, false);
                 photoFrag.createAndShowPhotoThumbnail(thumb);
-                photoFrag.showRecordSaved();
+                photoFrag.showImageSaved();
                 Log.d(TAG, "photo thumbnail created");
             } catch (IOException e) {
                 e.printStackTrace();

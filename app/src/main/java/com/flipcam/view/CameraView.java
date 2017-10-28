@@ -146,6 +146,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     float imageRotationAngle = 0.0f;
     long previousTime = 0;
     long focusPreviousTime=0;
+    int previousOrientation = -1;
 
     public CameraView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -386,13 +387,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         }
     }
 
-    public void setPhotoMode()
-    {
-        Log.d(TAG,"start sensor");
-        camera1.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
-        registerAccelSensor();
-    }
-
     public void registerAccelSensor()
     {
         mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
@@ -401,13 +395,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     public void unregisterAccelSensor()
     {
         mSensorManager.unregisterListener(this);
-    }
-
-    public void setVideoMode()
-    {
-        Log.d(TAG,"stop sensor");
-        camera1.cancelAutoFocus();
-        unregisterAccelSensor();
     }
 
     public boolean isCameraReady()
@@ -481,7 +468,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     }
 
     boolean isSwitch = false;
-    boolean isTorch = false;
     public void switchCamera()
     {
         if(backCamera)
@@ -691,9 +677,15 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             }
         }
         else{
-            //This device is on a flat surface or parallel to the ground. Default to portrait.
-            portrait = true;
-            rotationAngle = 0f;
+            //This device is on a flat surface or parallel to the ground. Check previous orientation.
+            if(previousOrientation != -1){
+                orientation = previousOrientation;
+                determineOrientation();
+            }
+            else {
+                portrait = true;
+                rotationAngle = 0f;
+            }
         }
         orientation = (orientation + 45) / 90 * 90;
         int rotation = 0;
@@ -832,7 +824,15 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             @Override
             public void onOrientationChanged(int i) {
                 if(orientationEventListener.canDetectOrientation()) {
-                    orientation = i;
+                    if(previousOrientation == -1) {
+                        previousOrientation = orientation = i;
+                    }
+                    else{
+                        if(orientation != -1) {
+                            previousOrientation = orientation;
+                        }
+                        orientation = i;
+                    }
                 }
             }
         };
@@ -1172,27 +1172,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                     if (VERBOSE) Log.d(TAG, "Populated to encoder");
 
                     if(Math.abs(System.currentTimeMillis() - previousTime) >= 1000){
-                        /*if(second < 59) {
-                            second++;
-                            if(VERBOSE)Log.d(TAG,"second = "+second);
-                        }
-                        else if(minute < 59){
-                            second = 0;
-                            minute++;
-                            if(VERBOSE)Log.d(TAG,"minute = "+minute);
-                        }
-                        else{
-                            second = 0;
-                            minute = 0;
-                            hour++;
-                            if(VERBOSE)Log.d(TAG,"hour = "+hour);
-                        }*/
                         if(VERBOSE)Log.d(TAG,"difference of 1 sec");
                         previousTime = System.currentTimeMillis();
                         if(recordStop == 1) {
-                            //mainHandler.sendEmptyMessage(Constants.SHOW_ELAPSED_TIME);
-
-                            //Log.d(TAG,"enable stop button");
                             if(!stopButton.isEnabled()) {
                                 mainHandler.sendEmptyMessage(Constants.RECORD_STOP_ENABLE);
                             }

@@ -345,14 +345,6 @@ public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCo
         videoTracker.start();
     }
 
-    public void startTimerThread()
-    {
-        startTimer = true;
-        updateTimer = true;
-        VideoTimer videoTimer = new VideoTimer();
-        videoTimer.start();
-    }
-
     public void calculateAndDisplayEndTime()
     {
         int videoLength = Integer.parseInt(duration);
@@ -475,7 +467,6 @@ public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCo
             videoView.setOnCompletionListener(this);
             previousPos = 0;
             startTrackerThread();
-            //startTimerThread();
             SharedPreferences mediaState = getSharedPreferences(FC_MEDIA_PREFERENCE, Context.MODE_PRIVATE);
             Log.d(TAG,"media state = "+mediaState);
             if (mediaState != null) {
@@ -563,7 +554,6 @@ public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCo
             if (videoView != null) {
                 Log.d(TAG, "Save media state");
                 stopTrackerThread();
-                //stopTimerThread();
                 SharedPreferences.Editor mediaState = getSharedPreferences(FC_MEDIA_PREFERENCE, Context.MODE_PRIVATE).edit();
                 mediaState.putBoolean(MEDIA_PLAYING, videoView.isPlaying());
                 mediaState.putInt(MEDIA_POSITION, videoView.getCurrentPosition());
@@ -696,42 +686,6 @@ public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCo
                 }
             }
             Log.d(TAG,"Video Tracker thread EXITING...");
-        }
-    }
-
-    class VideoTimer extends Thread
-    {
-        @Override
-        public void run() {
-            Log.d(TAG,"VideoTimer STARTED");
-            while(startTimer){
-                while(updateTimer){
-                    try {
-                        Thread.sleep(1000);
-                        if(seconds < 59){
-                            seconds++;
-                        }
-                        else if(minutes < 59){
-                            minutes++;
-                            seconds = 0;
-                        }
-                        else{
-                            minutes = 0;
-                            seconds = 0;
-                            hours++;
-                        }
-                        //if(videoView.getCurrentPosition() >= 1000){
-                            mediaHandler.sendEmptyMessage(VIDEO_SEEK_UPDATE);
-                        //}
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    if(!startTimer){
-                        break;
-                    }
-                }
-            }
-            Log.d(TAG,"VideoTimer STOPPED");
         }
     }
 }

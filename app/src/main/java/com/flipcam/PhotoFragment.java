@@ -228,7 +228,7 @@ public class PhotoFragment extends Fragment {
         thumbnail.setRotation(rotationAngle);
     }
 
-    public void showRecordSaved()
+    public void showImageSaved()
     {
         LinearLayout recordSavedLayout = new LinearLayout(getActivity());
         recordSavedLayout.setGravity(Gravity.CENTER);
