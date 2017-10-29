@@ -134,7 +134,7 @@ public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCo
                 delParams.setMargins(0,10,0,10);
             }
             delete.setLayoutParams(delParams);
-            delete.setImageDrawable(getResources().getDrawable(R.drawable.ic_delete_white_24dp));
+            delete.setImageDrawable(getResources().getDrawable(R.drawable.ic_delete_black_24dp));
             delete.setBackgroundColor(getResources().getColor(R.color.mediaControlColor));
             bottomBar.addView(delete);
             //SHARE Button
@@ -148,7 +148,7 @@ public class MediaActivity extends AppCompatActivity implements MediaPlayer.OnCo
                 shareParams.setMargins(0,10,0,10);
             }
             share.setLayoutParams(shareParams);
-            share.setImageDrawable(getResources().getDrawable(R.drawable.ic_share_white_24dp));
+            share.setImageDrawable(getResources().getDrawable(R.drawable.ic_share_black_24dp));
             share.setBackgroundColor(getResources().getColor(R.color.mediaControlColor));
             bottomBar.addView(share);
             RelativeLayout.LayoutParams mediaParams = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
