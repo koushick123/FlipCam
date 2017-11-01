@@ -15,7 +15,6 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.Display;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Surface;
 import android.view.View;
@@ -53,6 +52,7 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
 
     private static final String TAG = "MediaFragment";
     RelativeLayout mediaPlaceholder;
+    LinearLayout parentMedia;
     VideoView videoView=null;
     boolean hide=true;
     boolean play=true;
@@ -74,10 +74,81 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
     volatile int minutes = 0;
     volatile int hours = 0;
     int previousPos = 0;
+    LinearLayout videoControls;
 
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
+        Log.d(TAG,"onActivityCreated");
+        WindowManager windowManager = (WindowManager)getActivity().getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
+        Display display = windowManager.getDefaultDisplay();
+        Point screenSize=new Point();
+        display.getRealSize(screenSize);
+        parentMedia = (LinearLayout)getActivity().findViewById(R.id.parentMedia);
+        videoControls = (LinearLayout)getActivity().findViewById(R.id.videoControls);
+        if(!isImage()) {
+            startTime = (TextView)getActivity().findViewById(R.id.startTime);
+            endTime = (TextView)getActivity().findViewById(R.id.endTime);
+            videoSeek = (SeekBar)getActivity().findViewById(R.id.videoSeek);
+            MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
+            mediaMetadataRetriever.setDataSource(path);
+            String width = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH);
+            String height = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT);
+            duration = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+            calculateAndDisplayEndTime();
+            videoSeek.setMax(Integer.parseInt(duration));
+            videoSeek.setThumb(getResources().getDrawable(R.drawable.whitecircle));
+            videoSeek.setProgressTintList(ColorStateList.valueOf(getResources().getColor(R.color.seekFill)));
+            Log.d(TAG,"Video Width / Height = "+width+" / "+height);
+            Log.d(TAG,"Aspect Ratio ==== "+Double.parseDouble(width)/Double.parseDouble(height));
+            double videoAR = Double.parseDouble(width)/Double.parseDouble(height);
+            double screenAR = (double)screenSize.x/(double)screenSize.y;
+            Log.d(TAG,"screen width / height= "+screenSize.x+" / "+screenSize.y);
+            Log.d(TAG,"Screen AR = "+screenAR);
+            if(display.getRotation() == Surface.ROTATION_0){
+                if(Math.abs(screenAR-videoAR) < 0.1) {
+                    adjustVideoToFitScreen();
+                }
+            }
+            else if(display.getRotation() == Surface.ROTATION_90 || display.getRotation() == Surface.ROTATION_270){
+                if(Math.abs(screenAR-videoAR) < 0.1) {
+                    adjustVideoToFitScreen();
+                }
+            }
+            mediaController = new MediaController(getActivity());
+            LinearLayout.LayoutParams pauseParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            pause = (ImageButton) getActivity().findViewById(R.id.playButton);
+            if (display.getRotation() == Surface.ROTATION_0) {
+                pauseParams.height = 90;
+                pause.setPadding(0, 0, 0, 0);
+            } else if (display.getRotation() == Surface.ROTATION_90 || display.getRotation() == Surface.ROTATION_270) {
+                pauseParams.height = 100;
+                pause.setPadding(0, 10, 0, 10);
+            }
+            pause.setLayoutParams(pauseParams);
+            pause.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    if (!play) {
+                        if (isCompleted) {
+                            isCompleted = false;
+                        }
+                        videoView.start();
+                        pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause_white_24dp));
+                        play = true;
+                        updateTimer = true;
+                    } else {
+                        videoView.pause();
+                        pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow_white_24dp));
+                        play = false;
+                        updateTimer = false;
+                    }
+                }
+            });
+        }
+        else{
+            videoControls.setVisibility(View.GONE);
+        }
     }
 
     @Override
@@ -108,9 +179,10 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_media, container, false);
-        mediaPlaceholder = (RelativeLayout)view.findViewById(R.id.mediaPlaceholder);
         path = getArguments().getString("mediaPath");
         Log.d(TAG,"path = "+path);
+        mediaPlaceholder = (RelativeLayout)view.findViewById(R.id.mediaPlaceholder);
+        videoView = (VideoView)view.findViewById(R.id.recordedVideo);
         WindowManager windowManager = (WindowManager)getActivity().getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
         Display display = windowManager.getDefaultDisplay();
         Log.d(TAG,"Rotation = "+display.getRotation());
@@ -118,7 +190,6 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
         display.getRealSize(screenSize);
         if(isImage()) {
             Log.d(TAG,"show image");
-            VideoView videoView = (VideoView)view.findViewById(R.id.recordedVideo);
             mediaPlaceholder.removeView(videoView);
             ImageView picture = new ImageView(getActivity());
             picture.setId(picture.generateViewId());
@@ -135,50 +206,6 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
             Bitmap image = BitmapFactory.decodeFile(path,options);
             picture.setImageBitmap(image);
             mediaPlaceholder.addView(picture);
-            LinearLayout parentPlaceholder = new LinearLayout(getActivity().getApplicationContext());
-            LinearLayout.LayoutParams parentParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
-            parentPlaceholder.setOrientation(LinearLayout.VERTICAL);
-            parentPlaceholder.setGravity(Gravity.BOTTOM);
-            parentPlaceholder.setLayoutParams(parentParams);
-            bottomBar = new LinearLayout(getActivity().getApplicationContext());
-            LinearLayout.LayoutParams bottomParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            bottomBar.setBackgroundColor(getResources().getColor(R.color.mediaControlColor));
-            bottomBar.setOrientation(LinearLayout.HORIZONTAL);
-            bottomParams.height=(int)(0.09 * screenSize.y);
-            Log.d(TAG,"height = "+bottomParams.height);
-            bottomBar.setLayoutParams(bottomParams);
-            //DELETE Button
-            ImageButton delete = new ImageButton(getActivity().getApplicationContext());
-            LinearLayout.LayoutParams delParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            delParams.weight=0.5f;
-            if(display.getRotation() == Surface.ROTATION_0) {
-                delParams.setMargins(0, 15, 0, 0);
-            }
-            else if(display.getRotation() == Surface.ROTATION_90 || display.getRotation() == Surface.ROTATION_270){
-                delParams.setMargins(0,10,0,10);
-            }
-            delete.setLayoutParams(delParams);
-            delete.setImageDrawable(getResources().getDrawable(R.drawable.ic_delete_black_24dp));
-            delete.setBackgroundColor(getResources().getColor(R.color.mediaControlColor));
-            bottomBar.addView(delete);
-            //SHARE Button
-            ImageButton share = new ImageButton(getActivity().getApplicationContext());
-            LinearLayout.LayoutParams shareParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            shareParams.weight=0.5f;
-            if(display.getRotation() == Surface.ROTATION_0) {
-                shareParams.setMargins(0, 15, 0, 0);
-            }
-            else if(display.getRotation() == Surface.ROTATION_90 || display.getRotation() == Surface.ROTATION_270){
-                shareParams.setMargins(0,10,0,10);
-            }
-            share.setLayoutParams(shareParams);
-            share.setImageDrawable(getResources().getDrawable(R.drawable.ic_share_black_24dp));
-            share.setBackgroundColor(getResources().getColor(R.color.mediaControlColor));
-            bottomBar.addView(share);
-            RelativeLayout.LayoutParams mediaParams = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
-            mediaParams.addRule(RelativeLayout.BELOW,picture.getId());
-            parentPlaceholder.addView(bottomBar);
-            mediaPlaceholder.addView(parentPlaceholder);
         }
         else{
             Log.d(TAG,"show video");
@@ -192,55 +219,12 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
                     showMediaControls(view);
                 }
             });
-            mediaBar = new LinearLayout(getActivity());
+            /*mediaBar = new LinearLayout(getActivity());
             topBar = new LinearLayout(getActivity());
-            //Add Top Bar
-            LinearLayout parentPlaceholder = new LinearLayout(getActivity());
-            LinearLayout.LayoutParams parentParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
-            parentPlaceholder.setOrientation(LinearLayout.VERTICAL);
-            parentPlaceholder.setGravity(Gravity.TOP);
-            parentPlaceholder.setLayoutParams(parentParams);
-
-            parentParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            parentParams.height=(int)(0.09 * screenSize.y);
-            topBar.setLayoutParams(parentParams);
-            topBar.setOrientation(LinearLayout.HORIZONTAL);
-            topBar.setBackgroundColor(getResources().getColor(R.color.mediaControlColorVideo));
-            display.getRealSize(screenSize);
-            //DELETE Button
-            ImageButton delete = new ImageButton(getActivity());
-            LinearLayout.LayoutParams delParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            delParams.weight=0.5f;
-            if(display.getRotation() == Surface.ROTATION_0) {
-                delParams.setMargins(0, 15, 0, 0);
-            }
-            else if(display.getRotation() == Surface.ROTATION_90 || display.getRotation() == Surface.ROTATION_270){
-                delParams.setMargins(0,10,0,10);
-            }
-            delete.setLayoutParams(delParams);
-            delete.setImageDrawable(getResources().getDrawable(R.drawable.ic_delete_white_24dp));
-            delete.setBackgroundColor(getResources().getColor(R.color.transparentBar));
-            topBar.addView(delete);
-            //SHARE Button
-            ImageButton share = new ImageButton(getActivity());
-            LinearLayout.LayoutParams shareParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            shareParams.weight=0.5f;
-            if(display.getRotation() == Surface.ROTATION_0) {
-                shareParams.setMargins(0, 15, 0, 0);
-            }
-            else if(display.getRotation() == Surface.ROTATION_90 || display.getRotation() == Surface.ROTATION_270){
-                shareParams.setMargins(0,10,0,10);
-            }
-            share.setLayoutParams(shareParams);
-            share.setImageDrawable(getResources().getDrawable(R.drawable.ic_share_white_24dp));
-            share.setBackgroundColor(getResources().getColor(R.color.transparentBar));
-            topBar.addView(share);
-            parentPlaceholder.addView(topBar);
-            mediaPlaceholder.addView(parentPlaceholder);
 
             //Add Media controls bar
-            parentPlaceholder = new LinearLayout(getActivity());
-            parentParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+            LinearLayout parentPlaceholder = new LinearLayout(getActivity());
+            LinearLayout.LayoutParams parentParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
             parentPlaceholder.setOrientation(LinearLayout.VERTICAL);
             parentPlaceholder.setGravity(Gravity.BOTTOM);
             parentPlaceholder.setLayoutParams(parentParams);
@@ -319,8 +303,10 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
             parentPlaceholder.addView(endTime);
             parentPlaceholder.addView(videoSeek);
             parentPlaceholder.addView(mediaBar);
-            mediaPlaceholder.addView(parentPlaceholder);
-            MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
+            parentPlaceholder.addView(parentMedia);
+            mediaPlaceholder.addView(parentPlaceholder);*/
+
+            /*MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
             mediaMetadataRetriever.setDataSource(path);
             String width = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH);
             String height = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT);
@@ -343,7 +329,7 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
                     adjustVideoToFitScreen();
                 }
             }
-            mediaController = new MediaController(getActivity());
+            mediaController = new MediaController(getActivity());*/
             if(savedInstanceState == null) {
                 SharedPreferences mediaValues = getActivity().getSharedPreferences(FC_MEDIA_PREFERENCE,Context.MODE_PRIVATE);
                 SharedPreferences.Editor mediaState = null;
@@ -355,8 +341,7 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
                         Log.d(TAG,"CLEAR ALL");
                     }
                 }
-                videoView.start();
-                Log.d(TAG,"Video STARTED");
+                //videoView.start();
             }
         }
         return view;

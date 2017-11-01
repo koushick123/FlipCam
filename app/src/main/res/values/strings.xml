@@ -5,8 +5,7 @@
     <string name="message">Unavailability of permissions will render FlipCam not to function correctly.\n\n
         Please reopen the application or go to Settings, if you wish to grant permission.</string>
     <string name="exit">EXIT</string>
-    <string name="FC_VIDEO">/FlipCam/FC_Videos/</string>
-    <string name="FC_PICTURE">/FlipCam/FC_Images/</string>
+    <string name="FC_ROOT">/FlipCam/</string>
     <string name="FC_VID_PREFIX">/FC_VID_</string>
     <string name="FC_IMG_PREFIX">/FC_IMG_</string>
     <string name="VID_EXT">.mp4</string>

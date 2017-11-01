@@ -758,19 +758,19 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         if(video) {
             if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N){
                 dcim = getExternalStorageDirectory();
-                dcim = new File(dcim.getPath()+getResources().getString(R.string.FC_VIDEO));
+                dcim = new File(dcim.getPath()+getResources().getString(R.string.FC_ROOT));
             }
             else {
-                dcim = getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + getResources().getString(R.string.FC_VIDEO));
+                dcim = getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + getResources().getString(R.string.FC_ROOT));
             }
         }
         else{
             if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N){
                 dcim = getExternalStorageDirectory();
-                dcim = new File(dcim.getPath()+getResources().getString(R.string.FC_PICTURE));
+                dcim = new File(dcim.getPath()+getResources().getString(R.string.FC_ROOT));
             }
             else {
-                dcim = getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + getResources().getString(R.string.FC_PICTURE));
+                dcim = getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + getResources().getString(R.string.FC_ROOT));
             }
         }
 
@@ -1115,12 +1115,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
 
         public String getFilePath(boolean video) {
             File dcim;
-            if(video) {
-                dcim = getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + getResources().getString(R.string.FC_VIDEO));
-            }
-            else{
-                dcim = getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + getResources().getString(R.string.FC_PICTURE));
-            }
+            dcim = getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + getResources().getString(R.string.FC_ROOT));
             if(!dcim.exists())
             {
                 dcim.mkdirs();

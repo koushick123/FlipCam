@@ -55,7 +55,9 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
-        <activity android:name=".MediaActivity"></activity>
+        <activity
+            android:name=".MediaActivity"
+            android:screenOrientation="nosensor" />
     </application>
 
 </manifest>
