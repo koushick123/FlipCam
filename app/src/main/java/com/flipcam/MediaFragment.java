@@ -219,16 +219,16 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
                     showMediaControls(view);
                 }
             });
-            if(savedInstanceState == null) {
-                SharedPreferences mediaValues = getActivity().getSharedPreferences(FC_MEDIA_PREFERENCE,Context.MODE_PRIVATE);
-                SharedPreferences.Editor mediaState = null;
-                if(mediaValues!=null){
-                    mediaState = mediaValues.edit();
-                    if(mediaState!=null){
-                        mediaState.clear();
-                        mediaState.commit();
-                        Log.d(TAG,"CLEAR ALL");
-                    }
+        }
+        if(savedInstanceState == null) {
+            SharedPreferences mediaValues = getActivity().getSharedPreferences(FC_MEDIA_PREFERENCE,Context.MODE_PRIVATE);
+            SharedPreferences.Editor mediaState = null;
+            if(mediaValues!=null){
+                mediaState = mediaValues.edit();
+                if(mediaState!=null){
+                    mediaState.clear();
+                    mediaState.commit();
+                    Log.d(TAG,"CLEAR ALL");
                 }
             }
         }
