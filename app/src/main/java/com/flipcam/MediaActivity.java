@@ -14,7 +14,6 @@ import android.view.WindowManager;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public class MediaActivity extends AppCompatActivity{
 
@@ -37,6 +36,7 @@ public class MediaActivity extends AppCompatActivity{
         super.onDestroy();
     }
 
+    int selectedPosition = -1;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -50,6 +50,23 @@ public class MediaActivity extends AppCompatActivity{
         mPager = (ViewPager) findViewById(R.id.mediaPager);
         mPagerAdapter = new MediaSlidePager(getSupportFragmentManager());
         mPager.setAdapter(mPagerAdapter);
+        mPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener(){
+            @Override
+            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+
+            }
+
+            @Override
+            public void onPageSelected(int position) {
+                Log.d(TAG,"onPageSelected = "+position);
+                selectedPosition = position;
+            }
+
+            @Override
+            public void onPageScrollStateChanged(int state) {
+
+            }
+        });
         mPager.setOffscreenPageLimit(1);
     }
 
@@ -66,6 +83,14 @@ public class MediaActivity extends AppCompatActivity{
 
     }
 
+    public boolean isImage(String path)
+    {
+        if(path.endsWith(getResources().getString(R.string.IMG_EXT)) || path.endsWith(getResources().getString(R.string.ANOTHER_IMG_EXT))){
+            return true;
+        }
+        return false;
+    }
+
     private class MediaSlidePager extends FragmentStatePagerAdapter
     {
         @Override
@@ -75,19 +100,48 @@ public class MediaActivity extends AppCompatActivity{
 
         @Override
         public Fragment getItem(int position) {
-            MediaFragment mediaFragment = new MediaFragment();
-            Bundle args = new Bundle();
-            Log.d(TAG,"position = "+position);
-            args.putString("mediaPath",sortedImages[position].getPath());
-            mediaFragment.setArguments(args);
-            return mediaFragment;
+            if(selectedPosition == -1) {
+                if (isImage(sortedImages[position].getPath())) {
+                    MediaFragment mediaFragment = new MediaFragment();
+                    Bundle args = new Bundle();
+                    Log.d(TAG, "image position = " + position);
+                    args.putString("mediaPath", sortedImages[position].getPath());
+                    mediaFragment.setArguments(args);
+                    return mediaFragment;
+                } else {
+                    MediaVideoFragment mediaFragment = new MediaVideoFragment();
+                    Bundle args = new Bundle();
+                    Log.d(TAG, "video position = " + position);
+                    args.putString("mediaPath", sortedImages[position].getPath());
+                    mediaFragment.setArguments(args);
+                    return mediaFragment;
+                }
+            }
+            else{
+                if (isImage(sortedImages[selectedPosition].getPath())) {
+                    MediaFragment mediaFragment = new MediaFragment();
+                    Bundle args = new Bundle();
+                    Log.d(TAG, "image position = " + selectedPosition);
+                    args.putString("mediaPath", sortedImages[selectedPosition].getPath());
+                    mediaFragment.setArguments(args);
+                    return mediaFragment;
+                } else {
+                    MediaVideoFragment mediaFragment = new MediaVideoFragment();
+                    Bundle args = new Bundle();
+                    Log.d(TAG, "video position = " + selectedPosition);
+                    args.putString("mediaPath", sortedImages[selectedPosition].getPath());
+                    mediaFragment.setArguments(args);
+                    return mediaFragment;
+                }
+            }
         }
 
         public MediaSlidePager(FragmentManager fm) {
             super(fm);
-            Arrays.sort(images);
+            //Arrays.sort(images);
             ArrayList<File> tempList = new ArrayList<>();
             for(int i=images.length-1;i>=0;i--){
+                Log.d(TAG,"Adding "+images[i]);
                 tempList.add(images[i]);
             }
             sortedImages = tempList.toArray(new File[tempList.size()]);

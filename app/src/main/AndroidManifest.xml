@@ -56,8 +56,7 @@
         </provider>
 
         <activity
-            android:name=".MediaActivity"
-            android:screenOrientation="nosensor" />
+            android:name=".MediaActivity" />
     </application>
 
 </manifest>

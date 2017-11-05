@@ -2,11 +2,9 @@ package com.flipcam;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Point;
-import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Handler;
@@ -30,18 +28,9 @@ import android.widget.TextView;
 import android.widget.VideoView;
 
 import java.lang.ref.WeakReference;
-import java.util.StringTokenizer;
 
 import static com.flipcam.PermissionActivity.FC_MEDIA_PREFERENCE;
 import static com.flipcam.constants.Constants.IMAGE_CONTROLS_HIDE;
-import static com.flipcam.constants.Constants.MEDIA_ACTUAL_DURATION;
-import static com.flipcam.constants.Constants.MEDIA_COMPLETED;
-import static com.flipcam.constants.Constants.MEDIA_CONTROLS_HIDE;
-import static com.flipcam.constants.Constants.MEDIA_CURRENT_TIME;
-import static com.flipcam.constants.Constants.MEDIA_PLAYING;
-import static com.flipcam.constants.Constants.MEDIA_POSITION;
-import static com.flipcam.constants.Constants.MEDIA_PREVIOUS_POSITION;
-import static com.flipcam.constants.Constants.SEEK_DURATION;
 import static com.flipcam.constants.Constants.VIDEO_SEEK_UPDATE;
 
 /**
@@ -85,11 +74,18 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
         Point screenSize=new Point();
         display.getRealSize(screenSize);
         parentMedia = (LinearLayout)getActivity().findViewById(R.id.parentMedia);
+        topBar = (LinearLayout)getActivity().findViewById(R.id.topMediaControls);
         videoControls = (LinearLayout)getActivity().findViewById(R.id.videoControls);
+        pause = (ImageButton) getActivity().findViewById(R.id.playButton);
+        startTime = (TextView)getActivity().findViewById(R.id.startTime);
+        endTime = (TextView)getActivity().findViewById(R.id.endTime);
+        videoSeek = (SeekBar)getActivity().findViewById(R.id.videoSeek);
         if(!isImage()) {
-            startTime = (TextView)getActivity().findViewById(R.id.startTime);
-            endTime = (TextView)getActivity().findViewById(R.id.endTime);
-            videoSeek = (SeekBar)getActivity().findViewById(R.id.videoSeek);
+            /*videoControls.setVisibility(View.VISIBLE);
+            pause.setVisibility(View.VISIBLE);
+            startTime.setVisibility(View.VISIBLE);
+            endTime.setVisibility(View.VISIBLE);
+            videoSeek.setVisibility(View.VISIBLE);
             MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
             mediaMetadataRetriever.setDataSource(path);
             String width = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH);
@@ -117,7 +113,7 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
             }
             mediaController = new MediaController(getActivity());
             LinearLayout.LayoutParams pauseParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-            pause = (ImageButton) getActivity().findViewById(R.id.playButton);
+
             if (display.getRotation() == Surface.ROTATION_0) {
                 pauseParams.height = 90;
                 pause.setPadding(0, 0, 0, 0);
@@ -144,10 +140,14 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
                         updateTimer = false;
                     }
                 }
-            });
+            });*/
         }
         else{
             videoControls.setVisibility(View.GONE);
+            /*pause.setVisibility(View.GONE);
+            startTime.setVisibility(View.GONE);
+            endTime.setVisibility(View.GONE);
+            videoSeek.setVisibility(View.GONE);*/
         }
     }
 
@@ -167,7 +167,11 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
         if(reqwidth < width || reqheight < height){
             int halfHeight = height / 2;
             int halfWidth = width / 2;
+            Log.d(TAG,"(halfHeight / sampleSize) = "+(halfHeight / sampleSize));
+            Log.d(TAG,"(halfWidth / sampleSize) = "+(halfWidth / sampleSize));
             while((halfHeight / sampleSize) > reqheight && (halfWidth / sampleSize) > reqwidth){
+                Log.d(TAG,"(halfHeight / sampleSize) inside = "+(halfHeight / sampleSize));
+                Log.d(TAG,"(halfWidth / sampleSize) inside = "+(halfWidth / sampleSize));
                 sampleSize *= 2;
             }
         }
@@ -175,12 +179,17 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
         return sampleSize;
     }
 
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        path = getArguments().getString("mediaPath");
+        Log.d(TAG,"path = "+path);
+    }
+
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_media, container, false);
-        path = getArguments().getString("mediaPath");
-        Log.d(TAG,"path = "+path);
         mediaPlaceholder = (RelativeLayout)view.findViewById(R.id.mediaPlaceholder);
         videoView = (VideoView)view.findViewById(R.id.recordedVideo);
         WindowManager windowManager = (WindowManager)getActivity().getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
@@ -190,25 +199,27 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
         display.getRealSize(screenSize);
         if(isImage()) {
             Log.d(TAG,"show image");
-            mediaPlaceholder.removeView(videoView);
-            ImageView picture = new ImageView(getActivity());
-            picture.setId(picture.generateViewId());
+            //videoView.setVisibility(View.GONE);
+            ImageView picture = (ImageView)view.findViewById(R.id.picture);
+            //picture.setId(picture.generateViewId());
             BitmapFactory.Options options = new BitmapFactory.Options();
             options.inJustDecodeBounds=true;
             BitmapFactory.decodeFile(path,options);
             if(display.getRotation() == Surface.ROTATION_0) {
+                Log.d(TAG,"for portrait");
                 options.inSampleSize = calculateInSampleSize(options, screenSize.x, screenSize.y);
             }
             else if(display.getRotation() == Surface.ROTATION_90 || display.getRotation() == Surface.ROTATION_270){
+                Log.d(TAG,"for landscape");
                 options.inSampleSize = calculateInSampleSize(options, screenSize.y, screenSize.x);
             }
             options.inJustDecodeBounds=false;
             Bitmap image = BitmapFactory.decodeFile(path,options);
             picture.setImageBitmap(image);
-            mediaPlaceholder.addView(picture);
+            //mediaPlaceholder.addView(picture);
         }
         else{
-            Log.d(TAG,"show video");
+            /*Log.d(TAG,"show video");
             videoView = (VideoView)view.findViewById(R.id.recordedVideo);
             videoView.setVisibility(View.VISIBLE);
             videoView.setKeepScreenOn(true);
@@ -218,7 +229,7 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
                 public void onClick(View view) {
                     showMediaControls(view);
                 }
-            });
+            });*/
         }
         if(savedInstanceState == null) {
             SharedPreferences mediaValues = getActivity().getSharedPreferences(FC_MEDIA_PREFERENCE,Context.MODE_PRIVATE);
@@ -231,6 +242,7 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
                     Log.d(TAG,"CLEAR ALL");
                 }
             }
+            //videoView.start();
         }
         return view;
     }
@@ -254,7 +266,7 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
             }
         }
         else {
-            videoView.setOnCompletionListener(this);
+            /*videoView.setOnCompletionListener(this);
             previousPos = 0;
             startTrackerThread();
             SharedPreferences mediaState = getActivity().getSharedPreferences(FC_MEDIA_PREFERENCE, Context.MODE_PRIVATE);
@@ -304,13 +316,13 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
                     Log.d(TAG, "Retrieve media controls hide = " + mediaState.getBoolean(MEDIA_CONTROLS_HIDE, true));
                     if (mediaState.getBoolean(MEDIA_CONTROLS_HIDE, true)) {
                         topBar.setVisibility(View.VISIBLE);
-                        mediaBar.setVisibility(View.VISIBLE);
+                        videoControls.setVisibility(View.VISIBLE);
                         videoSeek.setVisibility(View.VISIBLE);
                         startTime.setVisibility(View.VISIBLE);
                         endTime.setVisibility(View.VISIBLE);
                     } else {
                         topBar.setVisibility(View.GONE);
-                        mediaBar.setVisibility(View.GONE);
+                        videoControls.setVisibility(View.GONE);
                         videoSeek.setVisibility(View.GONE);
                         startTime.setVisibility(View.GONE);
                         endTime.setVisibility(View.GONE);
@@ -332,7 +344,7 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
                     hours = Integer.parseInt(timeToken.nextToken().trim());
                     showTimeElapsed();
                 }
-            }
+            }*/
         }
     }
 
@@ -347,7 +359,7 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
             mediaState.commit();
         }
         else {
-            if (videoView != null) {
+            /*if (videoView != null) {
                 Log.d(TAG, "Save media state");
                 stopTrackerThread();
                 SharedPreferences.Editor mediaState = getActivity().getSharedPreferences(FC_MEDIA_PREFERENCE, Context.MODE_PRIVATE).edit();
@@ -363,7 +375,7 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
                 if (videoView.isPlaying()) {
                     videoView.pause();
                 }
-            }
+            }*/
         }
     }
 
