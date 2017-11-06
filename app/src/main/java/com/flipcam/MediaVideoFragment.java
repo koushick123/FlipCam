@@ -73,6 +73,15 @@ public class MediaVideoFragment extends Fragment implements MediaPlayer.OnComple
     int previousPos = 0;
     LinearLayout videoControls;
 
+    public static MediaVideoFragment newInstance(String path){
+        MediaVideoFragment mediaFragment = new MediaVideoFragment();
+        Bundle args = new Bundle();
+        Log.d(TAG, "video path = " + path);
+        args.putString("mediaPath", path);
+        mediaFragment.setArguments(args);
+        return mediaFragment;
+    }
+
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);

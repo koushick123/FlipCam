@@ -65,6 +65,15 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
     int previousPos = 0;
     LinearLayout videoControls;
 
+    public static MediaFragment newInstance(String path){
+        MediaFragment mediaFragment = new MediaFragment();
+        Bundle args = new Bundle();
+        Log.d(TAG, "image path = " + path);
+        args.putString("mediaPath", path);
+        mediaFragment.setArguments(args);
+        return mediaFragment;
+    }
+
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
@@ -256,11 +265,11 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
             if(mediaState!=null && mediaState.contains(IMAGE_CONTROLS_HIDE)){
                 if(mediaState.getBoolean(IMAGE_CONTROLS_HIDE,true)){
                     Log.d(TAG,"Visible");
-                    bottomBar.setVisibility(View.VISIBLE);
+                    //bottomBar.setVisibility(View.VISIBLE);
                 }
                 else{
                     Log.d(TAG,"GONE");
-                    bottomBar.setVisibility(View.GONE);
+                    //bottomBar.setVisibility(View.GONE);
                 }
                 hide = mediaState.getBoolean(IMAGE_CONTROLS_HIDE,true);
             }

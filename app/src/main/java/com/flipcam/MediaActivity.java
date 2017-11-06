@@ -102,36 +102,16 @@ public class MediaActivity extends AppCompatActivity{
         public Fragment getItem(int position) {
             if(selectedPosition == -1) {
                 if (isImage(sortedImages[position].getPath())) {
-                    MediaFragment mediaFragment = new MediaFragment();
-                    Bundle args = new Bundle();
-                    Log.d(TAG, "image position = " + position);
-                    args.putString("mediaPath", sortedImages[position].getPath());
-                    mediaFragment.setArguments(args);
-                    return mediaFragment;
+                    return MediaFragment.newInstance(sortedImages[position].getPath());
                 } else {
-                    MediaVideoFragment mediaFragment = new MediaVideoFragment();
-                    Bundle args = new Bundle();
-                    Log.d(TAG, "video position = " + position);
-                    args.putString("mediaPath", sortedImages[position].getPath());
-                    mediaFragment.setArguments(args);
-                    return mediaFragment;
+                    return MediaVideoFragment.newInstance(sortedImages[position].getPath());
                 }
             }
             else{
                 if (isImage(sortedImages[selectedPosition].getPath())) {
-                    MediaFragment mediaFragment = new MediaFragment();
-                    Bundle args = new Bundle();
-                    Log.d(TAG, "image position = " + selectedPosition);
-                    args.putString("mediaPath", sortedImages[selectedPosition].getPath());
-                    mediaFragment.setArguments(args);
-                    return mediaFragment;
+                    return MediaFragment.newInstance(sortedImages[selectedPosition].getPath());
                 } else {
-                    MediaVideoFragment mediaFragment = new MediaVideoFragment();
-                    Bundle args = new Bundle();
-                    Log.d(TAG, "video position = " + selectedPosition);
-                    args.putString("mediaPath", sortedImages[selectedPosition].getPath());
-                    mediaFragment.setArguments(args);
-                    return mediaFragment;
+                    return MediaVideoFragment.newInstance(sortedImages[selectedPosition].getPath());
                 }
             }
         }
@@ -141,7 +121,6 @@ public class MediaActivity extends AppCompatActivity{
             //Arrays.sort(images);
             ArrayList<File> tempList = new ArrayList<>();
             for(int i=images.length-1;i>=0;i--){
-                Log.d(TAG,"Adding "+images[i]);
                 tempList.add(images[i]);
             }
             sortedImages = tempList.toArray(new File[tempList.size()]);
