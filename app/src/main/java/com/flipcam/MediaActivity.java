@@ -1,5 +1,10 @@
 package com.flipcam;
 
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.content.res.ColorStateList;
+import android.graphics.Point;
+import android.media.MediaMetadataRetriever;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.v4.app.Fragment;
@@ -10,19 +15,37 @@ import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.Display;
+import android.view.Surface;
+import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.SeekBar;
+import android.widget.TextView;
 
 import java.io.File;
-import java.util.ArrayList;
+import java.util.HashMap;
 
-public class MediaActivity extends AppCompatActivity{
+import static com.flipcam.PermissionActivity.FC_MEDIA_PREFERENCE;
+
+public class MediaActivity extends AppCompatActivity implements ViewPager.OnPageChangeListener{
 
     private static final String TAG = "MediaActivity";
     private ViewPager mPager;
     private PagerAdapter mPagerAdapter;
     File dcimFcImages = null;
     File[] images = null;
-    File[] sortedImages = null;
+    LinearLayout videoControls;
+    LinearLayout topMediaControls;
+    String duration;
+    TextView startTime;
+    TextView endTime;
+    ImageView pause;
+    SeekBar videoSeek;
+    HashMap<Integer,MediaFragment> hashMapFrags = new HashMap<>();
 
     @Override
     protected void onStop() {
@@ -35,14 +58,20 @@ public class MediaActivity extends AppCompatActivity{
         Log.d(TAG,"onDestroy");
         super.onDestroy();
     }
+    Display display;
+    Point screenSize;
 
-    int selectedPosition = -1;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.d(TAG,"onCreate");
         setContentView(R.layout.activity_media);
         DisplayMetrics displayMetrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        WindowManager windowManager = (WindowManager)getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
+        display = windowManager.getDefaultDisplay();
+        screenSize=new Point();
+        display.getRealSize(screenSize);
         getSupportActionBar().hide();
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         dcimFcImages = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + getResources().getString(R.string.FC_ROOT));
@@ -50,35 +79,193 @@ public class MediaActivity extends AppCompatActivity{
         mPager = (ViewPager) findViewById(R.id.mediaPager);
         mPagerAdapter = new MediaSlidePager(getSupportFragmentManager());
         mPager.setAdapter(mPagerAdapter);
-        mPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener(){
-            @Override
-            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
-
-            }
-
-            @Override
-            public void onPageSelected(int position) {
-                Log.d(TAG,"onPageSelected = "+position);
-                selectedPosition = position;
-            }
-
-            @Override
-            public void onPageScrollStateChanged(int state) {
-
-            }
-        });
+        videoControls = (LinearLayout)findViewById(R.id.videoControls);
+        pause = (ImageButton) findViewById(R.id.playButton);
+        startTime = (TextView)findViewById(R.id.startTime);
+        endTime = (TextView)findViewById(R.id.endTime);
+        videoSeek = (SeekBar)findViewById(R.id.videoSeek);
+        topMediaControls = (LinearLayout)findViewById(R.id.topMediaControls);
+        if(isImage(images[0].getPath())) {
+            videoControls.setVisibility(View.GONE);
+            pause.setVisibility(View.GONE);
+            startTime.setVisibility(View.GONE);
+            endTime.setVisibility(View.GONE);
+            videoSeek.setVisibility(View.GONE);
+        }
+        if(savedInstanceState == null){
+            clearPreferences();
+        }
         mPager.setOffscreenPageLimit(1);
+    }
+
+    @Override
+    public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+    }
+
+    int previousSelectedFragment = 0;
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        Log.d(TAG,"onRestoreInstanceState");
+        if(savedInstanceState!=null){
+            previousSelectedFragment = savedInstanceState.getInt("previousSelectedFragment");
+            Log.d(TAG,"previousSelectedFragment was = "+previousSelectedFragment);
+        }
+        super.onRestoreInstanceState(savedInstanceState);
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        outState.putInt("previousSelectedFragment",previousSelectedFragment);
+        super.onSaveInstanceState(outState);
+    }
+
+    public void clearPreferences(){
+        SharedPreferences mediaValues = getSharedPreferences(FC_MEDIA_PREFERENCE,Context.MODE_PRIVATE);
+        SharedPreferences.Editor mediaState = null;
+        if(mediaValues!=null){
+            mediaState = mediaValues.edit();
+            if(mediaState!=null){
+                mediaState.clear();
+                mediaState.commit();
+                Log.d(TAG,"CLEAR ALL");
+            }
+        }
+    }
+    @Override
+    public void onPageSelected(int position) {
+        Log.d(TAG,"onPageSelected = "+position);
+        //Reset preferences for every new fragment to be displayed.
+        clearPreferences();
+        if(isImage(images[position].getPath())){
+            Log.d(TAG,"HIDE VIDEO");
+            videoControls.setVisibility(View.GONE);
+            pause.setVisibility(View.GONE);
+            startTime.setVisibility(View.GONE);
+            endTime.setVisibility(View.GONE);
+            videoSeek.setVisibility(View.GONE);
+        }
+        else{
+            videoControls.setVisibility(View.VISIBLE);
+            pause.setVisibility(View.VISIBLE);
+            startTime.setVisibility(View.VISIBLE);
+            endTime.setVisibility(View.VISIBLE);
+            videoSeek.setVisibility(View.VISIBLE);
+            //If previous fragment had a video, stop that immediately.
+            if(!isImage(images[previousSelectedFragment].getPath())){
+                MediaFragment previousFragment = hashMapFrags.get(previousSelectedFragment);
+                Log.d(TAG,"Stop previous tracker thread");
+                previousFragment.stopTrackerThread();
+                if(previousFragment.videoView.isPlaying()){
+                    Log.d(TAG,"Stop previous playback");
+                    previousFragment.videoView.stopPlayback();
+                    pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow_white_24dp));
+                    videoSeek.setProgress(0);
+                    videoSeek.setThumb(getResources().getDrawable(R.drawable.whitecircle));
+                }
+            }
+            MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
+            mediaMetadataRetriever.setDataSource(images[position].getPath());
+            duration = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+            calculateAndDisplayEndTime();
+            Log.d(TAG,"Set SEEKBAR");
+            videoSeek.setMax(Integer.parseInt(duration));
+            videoSeek.setProgress(0);
+            videoSeek.setThumb(getResources().getDrawable(R.drawable.whitecircle));
+            videoSeek.setProgressTintList(ColorStateList.valueOf(getResources().getColor(R.color.seekFill)));
+            final MediaFragment currentFrag = hashMapFrags.get(position);
+            LinearLayout.LayoutParams pauseParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            if (display.getRotation() == Surface.ROTATION_0) {
+                pauseParams.height = 90;
+                pause.setPadding(0, 0, 0, 0);
+            } else if (display.getRotation() == Surface.ROTATION_90 || display.getRotation() == Surface.ROTATION_270) {
+                pauseParams.height = 100;
+                pause.setPadding(0, 10, 0, 10);
+            }
+            pause.setLayoutParams(pauseParams);
+            pause.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    if (!currentFrag.play) {
+                        if (currentFrag.isCompleted) {
+                            currentFrag.isCompleted = false;
+                        }
+                        currentFrag.mediaPlaceholder.removeView(currentFrag.preview);
+                        currentFrag.videoView.start();
+                        pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause_white_24dp));
+                        currentFrag.play = true;
+                        currentFrag.updateTimer = true;
+                    } else {
+                        Log.d(TAG,"Set PLAY");
+                        currentFrag.videoView.pause();
+                        pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow_white_24dp));
+                        currentFrag.play = false;
+                        currentFrag.updateTimer = false;
+                    }
+                }
+            });
+        }
+        previousSelectedFragment = position;
+    }
+
+    @Override
+    public void onPageScrollStateChanged(int state) {
+    }
+
+
+    public void calculateAndDisplayEndTime()
+    {
+        int videoLength = Integer.parseInt(duration);
+        int secs = (videoLength / 1000);
+        Log.d(TAG,"total no of secs = "+secs);
+        int hour = 0;
+        int mins = 0;
+        if(secs > 60){
+            mins = secs / 60;
+            if(mins > 60){
+                hour = mins / 60;
+                mins = mins % 60;
+            }
+            secs = secs % 60;
+        }
+        String showSec = "0";
+        String showMin = "0";
+        String showHr = "0";
+        if(secs < 10){
+            showSec += secs;
+        }
+        else{
+            showSec = secs+"";
+        }
+
+        if(mins < 10){
+            showMin += mins;
+        }
+        else{
+            showMin = mins+"";
+        }
+
+        if(hour < 10){
+            showHr += hour;
+        }
+        else{
+            showHr = hour+"";
+        }
+        endTime.setText(showHr+" : "+showMin+" : "+showSec);
+        startTime.setText(getString(R.string.START_TIME));
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+        mPager.addOnPageChangeListener(this);
         Log.d(TAG,"onResume");
     }
 
     @Override
     protected void onPause() {
         super.onPause();
+        mPager.removeOnPageChangeListener(this);
         Log.d(TAG,"onPause");
 
     }
@@ -91,40 +278,30 @@ public class MediaActivity extends AppCompatActivity{
         return false;
     }
 
-    private class MediaSlidePager extends FragmentStatePagerAdapter
+    class MediaSlidePager extends FragmentStatePagerAdapter
     {
         @Override
         public int getCount() {
-            return sortedImages.length;
+            return images.length;
         }
 
         @Override
         public Fragment getItem(int position) {
-            if(selectedPosition == -1) {
-                if (isImage(sortedImages[position].getPath())) {
-                    return MediaFragment.newInstance(sortedImages[position].getPath());
-                } else {
-                    return MediaVideoFragment.newInstance(sortedImages[position].getPath());
-                }
-            }
-            else{
-                if (isImage(sortedImages[selectedPosition].getPath())) {
-                    return MediaFragment.newInstance(sortedImages[selectedPosition].getPath());
-                } else {
-                    return MediaVideoFragment.newInstance(sortedImages[selectedPosition].getPath());
-                }
-            }
+            Log.d(TAG,"getItem = "+position);
+            MediaFragment mediaFragment = MediaFragment.newInstance(position);
+            hashMapFrags.put(Integer.valueOf(position),mediaFragment);
+            return mediaFragment;
+        }
+
+        @Override
+        public void destroyItem(ViewGroup container, int position, Object object) {
+            super.destroyItem(container, position, object);
+            Log.d(TAG,"remove from MAP = "+position);
+            hashMapFrags.remove(position);
         }
 
         public MediaSlidePager(FragmentManager fm) {
             super(fm);
-            //Arrays.sort(images);
-            ArrayList<File> tempList = new ArrayList<>();
-            for(int i=images.length-1;i>=0;i--){
-                tempList.add(images[i]);
-            }
-            sortedImages = tempList.toArray(new File[tempList.size()]);
-            Log.d(TAG,"list sorted = "+sortedImages.length);
         }
     }
 }

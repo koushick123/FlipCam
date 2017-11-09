@@ -7,9 +7,10 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:background="@color/settingsBarColor"
     >
-    <ImageView
+    <VideoView
+        android:layout_centerInParent="true"
+        android:id="@+id/recordedVideo"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:id="@+id/picture"
         />
 </RelativeLayout>
