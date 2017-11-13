@@ -46,6 +46,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     ImageView pause;
     SeekBar videoSeek;
     HashMap<Integer,MediaFragment> hashMapFrags = new HashMap<>();
+    ControlVisbilityPreference controlVisbilityPreference;
 
     @Override
     protected void onStop() {
@@ -85,6 +86,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         endTime = (TextView)findViewById(R.id.endTime);
         videoSeek = (SeekBar)findViewById(R.id.videoSeek);
         topMediaControls = (LinearLayout)findViewById(R.id.topMediaControls);
+        controlVisbilityPreference = (ControlVisbilityPreference)getApplicationContext();
         if(isImage(images[0].getPath())) {
             videoControls.setVisibility(View.GONE);
             pause.setVisibility(View.GONE);
@@ -94,6 +96,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         }
         if(savedInstanceState == null){
             clearPreferences();
+            controlVisbilityPreference.setHideControl(true);
         }
         mPager.setOffscreenPageLimit(1);
     }
@@ -110,6 +113,8 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         if(savedInstanceState!=null){
             previousSelectedFragment = savedInstanceState.getInt("previousSelectedFragment");
             Log.d(TAG,"previousSelectedFragment was = "+previousSelectedFragment);
+            hashMapFrags = (HashMap)savedInstanceState.getSerializable("availableFragments");
+            Log.d(TAG,"available fragments = "+hashMapFrags.size());
         }
         super.onRestoreInstanceState(savedInstanceState);
     }
@@ -117,6 +122,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         outState.putInt("previousSelectedFragment",previousSelectedFragment);
+        outState.putSerializable("availableFragments",hashMapFrags);
         super.onSaveInstanceState(outState);
     }
 
@@ -132,11 +138,25 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             }
         }
     }
+
     @Override
     public void onPageSelected(int position) {
-        Log.d(TAG,"onPageSelected = "+position);
+        Log.d(TAG,"onPageSelected = "+position+", previousSelectedFragment = "+previousSelectedFragment);
+        final MediaFragment currentFrag = hashMapFrags.get(position);
+        Log.d(TAG,"hide = "+controlVisbilityPreference.isHideControl());
         //Reset preferences for every new fragment to be displayed.
         clearPreferences();
+        //If previous fragment had a video, stop the video and tracker thread immediately.
+        if(!isImage(images[previousSelectedFragment].getPath())){
+            MediaFragment previousFragment = hashMapFrags.get(previousSelectedFragment);
+            Log.d(TAG,"Stop previous tracker thread = "+previousFragment.path);
+            previousFragment.stopTrackerThread();
+            if(previousFragment.videoView.isPlaying()){
+                Log.d(TAG,"Stop previous playback");
+                previousFragment.videoView.stopPlayback();
+            }
+        }
+        //Display controls based on image/video
         if(isImage(images[position].getPath())){
             Log.d(TAG,"HIDE VIDEO");
             videoControls.setVisibility(View.GONE);
@@ -146,23 +166,21 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             videoSeek.setVisibility(View.GONE);
         }
         else{
-            videoControls.setVisibility(View.VISIBLE);
-            pause.setVisibility(View.VISIBLE);
-            startTime.setVisibility(View.VISIBLE);
-            endTime.setVisibility(View.VISIBLE);
-            videoSeek.setVisibility(View.VISIBLE);
-            //If previous fragment had a video, stop that immediately.
-            if(!isImage(images[previousSelectedFragment].getPath())){
-                MediaFragment previousFragment = hashMapFrags.get(previousSelectedFragment);
-                Log.d(TAG,"Stop previous tracker thread");
-                previousFragment.stopTrackerThread();
-                if(previousFragment.videoView.isPlaying()){
-                    Log.d(TAG,"Stop previous playback");
-                    previousFragment.videoView.stopPlayback();
-                    pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow_white_24dp));
-                    videoSeek.setProgress(0);
-                    videoSeek.setThumb(getResources().getDrawable(R.drawable.whitecircle));
-                }
+            if(currentFrag.hide) {
+                Log.d(TAG,"show controls");
+                videoControls.setVisibility(View.VISIBLE);
+                pause.setVisibility(View.VISIBLE);
+                startTime.setVisibility(View.VISIBLE);
+                endTime.setVisibility(View.VISIBLE);
+                videoSeek.setVisibility(View.VISIBLE);
+            }
+            else{
+                Log.d(TAG,"hide controls");
+                videoControls.setVisibility(View.GONE);
+                pause.setVisibility(View.GONE);
+                startTime.setVisibility(View.GONE);
+                endTime.setVisibility(View.GONE);
+                videoSeek.setVisibility(View.GONE);
             }
             MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
             mediaMetadataRetriever.setDataSource(images[position].getPath());
@@ -173,7 +191,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             videoSeek.setProgress(0);
             videoSeek.setThumb(getResources().getDrawable(R.drawable.whitecircle));
             videoSeek.setProgressTintList(ColorStateList.valueOf(getResources().getColor(R.color.seekFill)));
-            final MediaFragment currentFrag = hashMapFrags.get(position);
             LinearLayout.LayoutParams pauseParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
             if (display.getRotation() == Surface.ROTATION_0) {
                 pauseParams.height = 90;
@@ -204,6 +221,10 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                     }
                 }
             });
+            Log.d(TAG,"Has VIDEO TRACKER STARTED? = "+currentFrag.isStartTracker());
+            if(!currentFrag.isStartTracker()){
+                currentFrag.startTrackerThread();
+            }
         }
         previousSelectedFragment = position;
     }
