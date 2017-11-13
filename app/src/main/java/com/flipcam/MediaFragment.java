@@ -149,7 +149,7 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
         mediaPlaceholder.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view) {
-                showMediaControls(view);
+                showMediaControls();
             }
         });
         Log.d(TAG,"onCreateView");
@@ -188,7 +188,7 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
             videoView.setOnClickListener(new View.OnClickListener(){
                 @Override
                 public void onClick(View view) {
-                    showMediaControls(view);
+                    showMediaControls();
                 }
             });
             MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
@@ -241,13 +241,14 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
                 SharedPreferences mediaState = getActivity().getSharedPreferences(FC_MEDIA_PREFERENCE, Context.MODE_PRIVATE);
                 if (mediaState != null && mediaState.contains(IMAGE_CONTROLS_HIDE)) {
                     if (mediaState.getBoolean(IMAGE_CONTROLS_HIDE, true)) {
-                        Log.d(TAG, "Visible");
+                        Log.d(TAG,"SHOW");
                         topBar.setVisibility(View.VISIBLE);
                     } else {
-                        Log.d(TAG, "GONE");
+                        Log.d(TAG,"GONE");
                         topBar.setVisibility(View.GONE);
                     }
-                    hide = mediaState.getBoolean(IMAGE_CONTROLS_HIDE, true);
+                    //hide = mediaState.getBoolean(IMAGE_CONTROLS_HIDE, true);
+                    controlVisbilityPreference.setHideControl(mediaState.getBoolean(IMAGE_CONTROLS_HIDE, true));
                 }
             } else {
                 videoView.setOnCompletionListener(this);
@@ -304,7 +305,8 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
                         } else {
                             hideAllControls();
                         }
-                        hide = mediaState.getBoolean(MEDIA_CONTROLS_HIDE, true);
+                        //hide = mediaState.getBoolean(MEDIA_CONTROLS_HIDE, true);
+                        controlVisbilityPreference.setHideControl(mediaState.getBoolean(MEDIA_CONTROLS_HIDE, true));
                     }
                     //Get MEDIA DURATION
                     if(mediaState.contains(MEDIA_ACTUAL_DURATION)){
@@ -382,17 +384,17 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
         if(getUserVisibleHint()) {
             if (isImage()) {
                 SharedPreferences.Editor mediaState = getActivity().getSharedPreferences(FC_MEDIA_PREFERENCE, Context.MODE_PRIVATE).edit();
-                //Log.d(TAG,"saving hide = "+hide);
-                mediaState.putBoolean(IMAGE_CONTROLS_HIDE, hide);
+                Log.d(TAG,"saving hide = "+controlVisbilityPreference.isHideControl());
+                mediaState.putBoolean(IMAGE_CONTROLS_HIDE, controlVisbilityPreference.isHideControl());
                 mediaState.commit();
             } else {
                 if (videoView != null) {
-                    //Log.d(TAG, "Save media state");
+                    Log.d(TAG, "Save media state hide = "+controlVisbilityPreference.isHideControl());
                     stopTrackerThread();
                     SharedPreferences.Editor mediaState = getActivity().getSharedPreferences(FC_MEDIA_PREFERENCE, Context.MODE_PRIVATE).edit();
                     mediaState.putBoolean(MEDIA_PLAYING, videoView.isPlaying());
                     mediaState.putInt(MEDIA_POSITION, videoView.getCurrentPosition());
-                    mediaState.putBoolean(MEDIA_CONTROLS_HIDE, hide);
+                    mediaState.putBoolean(MEDIA_CONTROLS_HIDE, controlVisbilityPreference.isHideControl());
                     mediaState.putString(MEDIA_ACTUAL_DURATION,duration);
                     mediaState.putInt(SEEK_DURATION, videoSeek.getMax());
                     mediaState.putBoolean(MEDIA_COMPLETED, isCompleted);
@@ -453,29 +455,28 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
         return false;
     }
 
-    public void showMediaControls(View view)
+    public void showMediaControls()
     {
         if(isImage()) {
-            Log.d(TAG,"hide = "+hide);
-            if (hide) {
-                hide = false;
+            Log.d(TAG,"hide = "+controlVisbilityPreference.isHideControl());
+            if (controlVisbilityPreference.isHideControl()) {
+                controlVisbilityPreference.setHideControl(false);
                 topBar.setVisibility(View.GONE);
             } else {
-                hide = true;
+                controlVisbilityPreference.setHideControl(true);
                 topBar.setVisibility(View.VISIBLE);
             }
         }
         else{
-            Log.d(TAG,"hide = "+hide);
-            if (hide) {
-                hide = false;
+            Log.d(TAG,"hide = "+controlVisbilityPreference.isHideControl());
+            if (controlVisbilityPreference.isHideControl()) {
+                controlVisbilityPreference.setHideControl(false);
                 hideAllControls();
             } else {
-                hide = true;
+                controlVisbilityPreference.setHideControl(true);
                 showAllControls();
             }
         }
-        controlVisbilityPreference.setHideControl(hide);
     }
 
     public void hideAllControls(){
@@ -603,7 +604,8 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
                     }
                 }
                 catch(IllegalStateException illegal){
-                    Log.d(TAG,"Catching ILLEGALSTATEEXCEPTION = "+path);
+                    Log.d(TAG,"Catching ILLEGALSTATEEXCEPTION. EXIT Tracker = "+path);
+                    startTracker = false;
                 }
             }
             Log.d(TAG,"Video Tracker thread EXITING..."+path);

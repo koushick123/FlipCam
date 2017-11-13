@@ -143,16 +143,16 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     public void onPageSelected(int position) {
         Log.d(TAG,"onPageSelected = "+position+", previousSelectedFragment = "+previousSelectedFragment);
         final MediaFragment currentFrag = hashMapFrags.get(position);
-        Log.d(TAG,"hide = "+controlVisbilityPreference.isHideControl());
+        Log.d(TAG,"isHideControl = "+controlVisbilityPreference.isHideControl());
         //Reset preferences for every new fragment to be displayed.
         clearPreferences();
         //If previous fragment had a video, stop the video and tracker thread immediately.
         if(!isImage(images[previousSelectedFragment].getPath())){
             MediaFragment previousFragment = hashMapFrags.get(previousSelectedFragment);
-            Log.d(TAG,"Stop previous tracker thread = "+previousFragment.path);
+            //Log.d(TAG,"Stop previous tracker thread = "+previousFragment.path);
             previousFragment.stopTrackerThread();
             if(previousFragment.videoView.isPlaying()){
-                Log.d(TAG,"Stop previous playback");
+                //Log.d(TAG,"Stop previous playback");
                 previousFragment.videoView.stopPlayback();
             }
         }
@@ -166,7 +166,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             videoSeek.setVisibility(View.GONE);
         }
         else{
-            if(currentFrag.hide) {
+            if(controlVisbilityPreference.isHideControl()) {
                 Log.d(TAG,"show controls");
                 videoControls.setVisibility(View.VISIBLE);
                 pause.setVisibility(View.VISIBLE);
@@ -186,7 +186,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             mediaMetadataRetriever.setDataSource(images[position].getPath());
             duration = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
             calculateAndDisplayEndTime();
-            Log.d(TAG,"Set SEEKBAR");
+            //Log.d(TAG,"Set SEEKBAR");
             videoSeek.setMax(Integer.parseInt(duration));
             videoSeek.setProgress(0);
             videoSeek.setThumb(getResources().getDrawable(R.drawable.whitecircle));
@@ -221,7 +221,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                     }
                 }
             });
-            Log.d(TAG,"Has VIDEO TRACKER STARTED? = "+currentFrag.isStartTracker());
+            //Log.d(TAG,"Has VIDEO TRACKER STARTED? = "+currentFrag.isStartTracker());
             if(!currentFrag.isStartTracker()){
                 currentFrag.startTrackerThread();
             }
@@ -308,7 +308,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
 
         @Override
         public Fragment getItem(int position) {
-            Log.d(TAG,"getItem = "+position);
+            //Log.d(TAG,"getItem = "+position);
             MediaFragment mediaFragment = MediaFragment.newInstance(position);
             hashMapFrags.put(Integer.valueOf(position),mediaFragment);
             return mediaFragment;
@@ -317,7 +317,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         @Override
         public void destroyItem(ViewGroup container, int position, Object object) {
             super.destroyItem(container, position, object);
-            Log.d(TAG,"remove from MAP = "+position);
+            //Log.d(TAG,"remove from MAP = "+position);
             hashMapFrags.remove(position);
         }
 
