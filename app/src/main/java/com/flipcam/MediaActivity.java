@@ -26,6 +26,9 @@ import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.MemoryCategory;
+
 import java.io.File;
 import java.util.HashMap;
 
@@ -98,7 +101,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             clearPreferences();
             controlVisbilityPreference.setHideControl(true);
         }
-        mPager.setOffscreenPageLimit(1);
     }
 
     @Override
@@ -146,9 +148,9 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         Log.d(TAG,"isHideControl = "+controlVisbilityPreference.isHideControl());
         //Reset preferences for every new fragment to be displayed.
         clearPreferences();
+        MediaFragment previousFragment = hashMapFrags.get(previousSelectedFragment);
         //If previous fragment had a video, stop the video and tracker thread immediately.
         if(!isImage(images[previousSelectedFragment].getPath())){
-            MediaFragment previousFragment = hashMapFrags.get(previousSelectedFragment);
             //Log.d(TAG,"Stop previous tracker thread = "+previousFragment.path);
             previousFragment.stopTrackerThread();
             if(previousFragment.videoView.isPlaying()){
@@ -288,7 +290,10 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         super.onPause();
         mPager.removeOnPageChangeListener(this);
         Log.d(TAG,"onPause");
-
+        if(isFinishing()){
+            Log.d(TAG,"GLIDE Finishing");
+            Glide.get(getApplicationContext()).setMemoryCategory(MemoryCategory.NORMAL);
+        }
     }
 
     public boolean isImage(String path)

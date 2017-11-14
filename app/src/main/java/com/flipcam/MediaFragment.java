@@ -4,10 +4,10 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Point;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -28,6 +28,9 @@ import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.VideoView;
+
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.MemoryCategory;
 
 import java.io.File;
 import java.io.Serializable;
@@ -56,7 +59,6 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
     private static final String TAG = "MediaFragment";
     transient RelativeLayout mediaPlaceholder;
     transient VideoView videoView=null;
-    boolean hide=true;
     boolean play=false;
     transient LinearLayout topBar;
     String path;
@@ -108,28 +110,6 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
         Log.d(TAG,"onStop");
     }
 
-    public int calculateInSampleSize(BitmapFactory.Options opt,int reqwidth, int reqheight)
-    {
-        int height = opt.outHeight;
-        int width = opt.outWidth;
-        /*Log.d(TAG,"orig width= "+width);
-        Log.d(TAG,"orig height= "+height);*/
-        int sampleSize = 1;
-        if(reqwidth < width || reqheight < height){
-            int halfHeight = height / 2;
-            int halfWidth = width / 2;
-            /*Log.d(TAG,"(halfHeight / sampleSize) = "+(halfHeight / sampleSize));
-            Log.d(TAG,"(halfWidth / sampleSize) = "+(halfWidth / sampleSize));*/
-            while((halfHeight / sampleSize) > reqheight && (halfWidth / sampleSize) > reqwidth){
-                /*Log.d(TAG,"(halfHeight / sampleSize) inside = "+(halfHeight / sampleSize));
-                Log.d(TAG,"(halfWidth / sampleSize) inside = "+(halfWidth / sampleSize));*/
-                sampleSize *= 2;
-            }
-        }
-        Log.d(TAG,"samplesize = "+sampleSize);
-        return sampleSize;
-    }
-
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -140,6 +120,8 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
         path = images[framePosition].getPath();
         Log.d(TAG,"media is == "+path);
     }
+
+    transient Bitmap frameBm;
 
     @Nullable
     @Override
@@ -164,20 +146,11 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
             videoView.setVisibility(View.GONE);
             picture = new ImageView(getActivity());
             picture.setId(picture.generateViewId());
-            BitmapFactory.Options options = new BitmapFactory.Options();
-            options.inJustDecodeBounds=true;
-            BitmapFactory.decodeFile(path,options);
-            if(display.getRotation() == Surface.ROTATION_0) {
-                //Log.d(TAG,"for portrait");
-                options.inSampleSize = calculateInSampleSize(options, screenSize.x, screenSize.y);
+            if(savedInstanceState == null){
+                Glide.get(getContext()).setMemoryCategory(MemoryCategory.HIGH);
             }
-            else if(display.getRotation() == Surface.ROTATION_90 || display.getRotation() == Surface.ROTATION_270){
-                //Log.d(TAG,"for landscape");
-                options.inSampleSize = calculateInSampleSize(options, screenSize.y, screenSize.x);
-            }
-            options.inJustDecodeBounds=false;
-            Bitmap image = BitmapFactory.decodeFile(path,options);
-            picture.setImageBitmap(image);
+            Uri uri = Uri.fromFile(new File(path));
+            GlideApp.with(getContext()).load(uri).into(picture);
             mediaPlaceholder.addView(picture);
         }
         else{
@@ -194,7 +167,7 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
             MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
             mediaMetadataRetriever.setDataSource(images[framePosition].getPath());
             preview = new ImageView(getActivity());
-            Bitmap frameBm = mediaMetadataRetriever.getFrameAtTime(FIRST_SEC_MICRO);
+            frameBm = mediaMetadataRetriever.getFrameAtTime(FIRST_SEC_MICRO);
             preview.setImageBitmap(frameBm);
             mediaPlaceholder.addView(preview);
             String width = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH);
@@ -247,7 +220,6 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
                         Log.d(TAG,"GONE");
                         topBar.setVisibility(View.GONE);
                     }
-                    //hide = mediaState.getBoolean(IMAGE_CONTROLS_HIDE, true);
                     controlVisbilityPreference.setHideControl(mediaState.getBoolean(IMAGE_CONTROLS_HIDE, true));
                 }
             } else {
@@ -305,7 +277,6 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
                         } else {
                             hideAllControls();
                         }
-                        //hide = mediaState.getBoolean(MEDIA_CONTROLS_HIDE, true);
                         controlVisbilityPreference.setHideControl(mediaState.getBoolean(MEDIA_CONTROLS_HIDE, true));
                     }
                     //Get MEDIA DURATION
