@@ -48,6 +48,8 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     TextView endTime;
     ImageView pause;
     SeekBar videoSeek;
+    LinearLayout timeControls;
+    LinearLayout parentMedia;
     HashMap<Integer,MediaFragment> hashMapFrags = new HashMap<>();
     ControlVisbilityPreference controlVisbilityPreference;
 
@@ -89,6 +91,8 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         endTime = (TextView)findViewById(R.id.endTime);
         videoSeek = (SeekBar)findViewById(R.id.videoSeek);
         topMediaControls = (LinearLayout)findViewById(R.id.topMediaControls);
+        timeControls = (LinearLayout)findViewById(R.id.timeControls);
+        parentMedia = (LinearLayout)findViewById(R.id.parentMedia);
         controlVisbilityPreference = (ControlVisbilityPreference)getApplicationContext();
         if(isImage(images[0].getPath())) {
             videoControls.setVisibility(View.GONE);
@@ -100,6 +104,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         if(savedInstanceState == null){
             clearPreferences();
             controlVisbilityPreference.setHideControl(true);
+            Glide.get(getApplicationContext()).setMemoryCategory(MemoryCategory.HIGH);
         }
     }
 
@@ -111,12 +116,12 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
 
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
-        Log.d(TAG,"onRestoreInstanceState");
+        //Log.d(TAG,"onRestoreInstanceState");
         if(savedInstanceState!=null){
             previousSelectedFragment = savedInstanceState.getInt("previousSelectedFragment");
             Log.d(TAG,"previousSelectedFragment was = "+previousSelectedFragment);
             hashMapFrags = (HashMap)savedInstanceState.getSerializable("availableFragments");
-            Log.d(TAG,"available fragments = "+hashMapFrags.size());
+            //Log.d(TAG,"available fragments = "+hashMapFrags.size());
         }
         super.onRestoreInstanceState(savedInstanceState);
     }
@@ -151,12 +156,13 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         MediaFragment previousFragment = hashMapFrags.get(previousSelectedFragment);
         //If previous fragment had a video, stop the video and tracker thread immediately.
         if(!isImage(images[previousSelectedFragment].getPath())){
-            //Log.d(TAG,"Stop previous tracker thread = "+previousFragment.path);
+            Log.d(TAG,"Stop previous tracker thread = "+previousFragment.path);
             previousFragment.stopTrackerThread();
             if(previousFragment.videoView.isPlaying()){
-                //Log.d(TAG,"Stop previous playback");
-                previousFragment.videoView.stopPlayback();
+                Log.d(TAG,"Pause previous playback");
+                previousFragment.videoView.pause();
             }
+            //previousFragment.videoView.setOnCompletionListener(null);
         }
         //Display controls based on image/video
         if(isImage(images[position].getPath())){
@@ -188,20 +194,36 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             mediaMetadataRetriever.setDataSource(images[position].getPath());
             duration = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
             calculateAndDisplayEndTime();
-            //Log.d(TAG,"Set SEEKBAR");
+            Log.d(TAG,"Set SEEKBAR");
+            //Include tracker and reset position to start playing from start.
+            videoControls.removeAllViews();
+            videoControls.addView(timeControls);
+            videoControls.addView(videoSeek);
+            videoControls.addView(parentMedia);
             videoSeek.setMax(Integer.parseInt(duration));
             videoSeek.setProgress(0);
             videoSeek.setThumb(getResources().getDrawable(R.drawable.whitecircle));
             videoSeek.setProgressTintList(ColorStateList.valueOf(getResources().getColor(R.color.seekFill)));
+            currentFrag.videoView.seekTo(0);
+            currentFrag.play=false;
+            currentFrag.playInProgress=false;
+            currentFrag.mediaPlaceholder.removeAllViews();
+            currentFrag.mediaPlaceholder.addView(currentFrag.videoView);
+            currentFrag.mediaPlaceholder.addView(currentFrag.preview);
+            currentFrag.showFirstFrame();
+            currentFrag.seconds=0;
+            currentFrag.minutes=0;
+            currentFrag.hours=0;
             LinearLayout.LayoutParams pauseParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
             if (display.getRotation() == Surface.ROTATION_0) {
-                pauseParams.height = 90;
+                pauseParams.height = 100;
                 pause.setPadding(0, 0, 0, 0);
             } else if (display.getRotation() == Surface.ROTATION_90 || display.getRotation() == Surface.ROTATION_270) {
-                pauseParams.height = 100;
+                pauseParams.height = 90;
                 pause.setPadding(0, 10, 0, 10);
             }
             pause.setLayoutParams(pauseParams);
+            pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow_white_24dp));
             pause.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
@@ -209,21 +231,26 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                         if (currentFrag.isCompleted) {
                             currentFrag.isCompleted = false;
                         }
-                        currentFrag.mediaPlaceholder.removeView(currentFrag.preview);
+                        Log.d(TAG,"Set PLAY");
+                        currentFrag.playInProgress = true;
+                        currentFrag.removeFirstFrame();
+                        Log.d(TAG,"Duration of video = "+currentFrag.videoView.getDuration()+" , path = "+
+                                currentFrag.path.substring(currentFrag.path.lastIndexOf("/"),currentFrag.path.length()));
                         currentFrag.videoView.start();
+                        currentFrag.videoView.setZOrderOnTop(true);
                         pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause_white_24dp));
                         currentFrag.play = true;
-                        currentFrag.updateTimer = true;
                     } else {
-                        Log.d(TAG,"Set PLAY");
+                        Log.d(TAG,"Set PAUSE");
                         currentFrag.videoView.pause();
                         pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow_white_24dp));
                         currentFrag.play = false;
-                        currentFrag.updateTimer = false;
                     }
                 }
             });
-            //Log.d(TAG,"Has VIDEO TRACKER STARTED? = "+currentFrag.isStartTracker());
+            currentFrag.previousPos = 0;
+            //currentFrag.videoView.setOnCompletionListener(currentFrag);
+            Log.d(TAG,"Has VIDEO TRACKER STARTED? = "+currentFrag.isStartTracker());
             if(!currentFrag.isStartTracker()){
                 currentFrag.startTrackerThread();
             }
@@ -234,7 +261,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     @Override
     public void onPageScrollStateChanged(int state) {
     }
-
 
     public void calculateAndDisplayEndTime()
     {
@@ -313,7 +339,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
 
         @Override
         public Fragment getItem(int position) {
-            //Log.d(TAG,"getItem = "+position);
             MediaFragment mediaFragment = MediaFragment.newInstance(position);
             hashMapFrags.put(Integer.valueOf(position),mediaFragment);
             return mediaFragment;
@@ -322,7 +347,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         @Override
         public void destroyItem(ViewGroup container, int position, Object object) {
             super.destroyItem(container, position, object);
-            //Log.d(TAG,"remove from MAP = "+position);
             hashMapFrags.remove(position);
         }
 

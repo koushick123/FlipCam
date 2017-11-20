@@ -29,13 +29,9 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.VideoView;
 
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.MemoryCategory;
-
 import java.io.File;
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
-import java.util.StringTokenizer;
 
 import static com.flipcam.PermissionActivity.FC_MEDIA_PREFERENCE;
 import static com.flipcam.constants.Constants.FIRST_SEC_MICRO;
@@ -43,7 +39,6 @@ import static com.flipcam.constants.Constants.IMAGE_CONTROLS_HIDE;
 import static com.flipcam.constants.Constants.MEDIA_ACTUAL_DURATION;
 import static com.flipcam.constants.Constants.MEDIA_COMPLETED;
 import static com.flipcam.constants.Constants.MEDIA_CONTROLS_HIDE;
-import static com.flipcam.constants.Constants.MEDIA_CURRENT_TIME;
 import static com.flipcam.constants.Constants.MEDIA_PLAYING;
 import static com.flipcam.constants.Constants.MEDIA_POSITION;
 import static com.flipcam.constants.Constants.MEDIA_PREVIOUS_POSITION;
@@ -54,7 +49,7 @@ import static com.flipcam.constants.Constants.VIDEO_SEEK_UPDATE;
  * Created by koushick on 29-Oct-17.
  */
 
-public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionListener, Serializable{
+public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionListener, MediaPlayer.OnErrorListener, Serializable{
 
     private static final String TAG = "MediaFragment";
     transient RelativeLayout mediaPlaceholder;
@@ -66,11 +61,11 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
     volatile boolean startTracker=false;
     transient MediaFragment.MainHandler mediaHandler;
     transient SeekBar videoSeek;
-    boolean isCompleted=false;
+    volatile boolean isCompleted=false;
     String duration;
     transient TextView startTime;
     transient TextView endTime;
-    volatile boolean updateTimer=false;
+    boolean playInProgress=false;
     volatile int seconds = 0;
     volatile int minutes = 0;
     volatile int hours = 0;
@@ -94,14 +89,161 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        //Log.d(TAG,"onActivityCreated");
+        Log.d(TAG,"onActivityCreated = "+path);
         topBar = (LinearLayout)getActivity().findViewById(R.id.topMediaControls);
         videoControls = (LinearLayout)getActivity().findViewById(R.id.videoControls);
         pause = (ImageButton) getActivity().findViewById(R.id.playButton);
         startTime = (TextView)getActivity().findViewById(R.id.startTime);
         endTime = (TextView)getActivity().findViewById(R.id.endTime);
         videoSeek = (SeekBar)getActivity().findViewById(R.id.videoSeek);
-        controlVisbilityPreference = (ControlVisbilityPreference)getActivity().getApplicationContext();
+        controlVisbilityPreference = (ControlVisbilityPreference) getActivity().getApplicationContext();
+        if(getUserVisibleHint()) {
+            if(!isImage()) {
+                if (savedInstanceState != null) {
+                    Log.d(TAG, "Retrieve media duration = " + savedInstanceState.getInt(SEEK_DURATION));
+                    videoSeek.setMax(savedInstanceState.getInt(SEEK_DURATION));
+                    videoSeek.setThumb(getResources().getDrawable(R.drawable.whitecircle));
+                    videoSeek.setProgressTintList(ColorStateList.valueOf(getResources().getColor(R.color.seekFill)));
+                    Log.d(TAG, "Retrieve media completed == " + savedInstanceState.getBoolean(MEDIA_COMPLETED));
+                    if (savedInstanceState.getBoolean(MEDIA_COMPLETED)) {
+                        videoView.seekTo(1000);
+                        videoSeek.setProgress(0);
+                        isCompleted = true;
+                    } else {
+                        Log.d(TAG,"Set SEEK to = "+savedInstanceState.getInt(MEDIA_POSITION));
+                        videoView.seekTo(savedInstanceState.getInt(MEDIA_POSITION));
+                        videoSeek.setProgress(savedInstanceState.getInt(MEDIA_POSITION));
+                    }
+                    Log.d(TAG, "Retrieve media playing = " + savedInstanceState.getBoolean(MEDIA_PLAYING));
+                    if (savedInstanceState.getBoolean(MEDIA_PLAYING)) {
+                        pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause_white_24dp));
+                        play = true;
+                    } else {
+                        videoView.pause();
+                        pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow_white_24dp));
+                        play = false;
+                    }
+                    LinearLayout.LayoutParams pauseParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                    if (display.getRotation() == Surface.ROTATION_0) {
+                        pauseParams.height = 100;
+                        pause.setPadding(0, 0, 0, 0);
+                    } else if (display.getRotation() == Surface.ROTATION_90 || display.getRotation() == Surface.ROTATION_270) {
+                        pauseParams.height = 90;
+                        pause.setPadding(0, 10, 0, 10);
+                    }
+                    pause.setLayoutParams(pauseParams);
+                    pause.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            if (!play) {
+                                if (isCompleted) {
+                                    isCompleted = false;
+                                }
+                                Log.d(TAG, "Set PLAY post rotate");
+                                removeFirstFrame();
+                                videoView.start();
+                                playInProgress = true;
+                                pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause_white_24dp));
+                                play = true;
+                            } else {
+                                Log.d(TAG, "Set PAUSE post rotate");
+                                videoView.pause();
+                                pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow_white_24dp));
+                                play = false;
+                            }
+                        }
+                    });
+                    //Get SAVED MEDIA CONTROLS VIEW STATE
+                    Log.d(TAG, "Retrieve media controls hide = " + savedInstanceState.getBoolean(MEDIA_CONTROLS_HIDE));
+                    if (savedInstanceState.getBoolean(MEDIA_CONTROLS_HIDE)) {
+                        showAllControls();
+                    } else {
+                        hideAllControls();
+                    }
+                    controlVisbilityPreference.setHideControl(savedInstanceState.getBoolean(MEDIA_CONTROLS_HIDE));
+
+                    //Get MEDIA DURATION
+                    Log.d(TAG, "Retrieve media duration = " + savedInstanceState.getString(MEDIA_ACTUAL_DURATION));
+                    duration = savedInstanceState.getString(MEDIA_ACTUAL_DURATION);
+
+                    //Get SAVED PREVIOUS TIME
+                    Log.d(TAG, "Retrieve media previous time = " + savedInstanceState.getInt(MEDIA_PREVIOUS_POSITION));
+                    previousPos = savedInstanceState.getInt(MEDIA_PREVIOUS_POSITION);
+
+                    //Get CURRENT TIME
+                    //Log.d(TAG, "Retrieve current time = " + savedInstanceState.getString(MEDIA_CURRENT_TIME));
+                    Log.d(TAG, "Retrieve current time = " +savedInstanceState.getInt(MEDIA_POSITION) / 1000);
+                    if(!isCompleted) {
+                        seconds = savedInstanceState.getInt(MEDIA_POSITION) / 1000;
+                        if(seconds < 60){
+                            minutes = 0;
+                            hours = 0;
+                        }
+                        else{
+                            minutes = seconds / 60;
+                            if(minutes < 60) {
+                                hours = 0;
+                            }
+                            else{
+                                hours = minutes / 60;
+                                minutes = minutes % 60;
+                            }
+                            seconds = seconds % 60;
+                        }
+                    }
+                    else{
+                        seconds = 0;
+                        minutes = 0;
+                        hours = 0;
+                    }
+                    showTimeElapsed();
+                    calculateAndDisplayEndTime();
+                }
+            }
+        }
+        if(!isImage()) {
+            if (savedInstanceState != null) {
+                if(getUserVisibleHint()) {
+                    playInProgress = savedInstanceState.getBoolean("videoPlayed");
+                    if (!playInProgress) {
+                        Log.d(TAG, "Video NOT played");
+                        frameBm = savedInstanceState.getParcelable("firstFrame");
+                        preview.setImageBitmap(frameBm);
+                        showFirstFrame();
+                    } else {
+                        Log.d(TAG, "Video played");
+                    }
+                }
+                else{
+                    Log.d(TAG,"CREATE Preview with savedinstance");
+                    MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
+                    mediaMetadataRetriever.setDataSource(path);
+                    frameBm = mediaMetadataRetriever.getFrameAtTime(FIRST_SEC_MICRO);
+                    preview.setImageBitmap(frameBm);
+                    //removeFirstFrame();
+                    showFirstFrame();
+                }
+            }
+            else{
+                Log.d(TAG,"CREATE Preview");
+                MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
+                mediaMetadataRetriever.setDataSource(path);
+                frameBm = mediaMetadataRetriever.getFrameAtTime(FIRST_SEC_MICRO);
+                preview.setImageBitmap(frameBm);
+                showFirstFrame();
+            }
+        }
+    }
+
+    public void showFirstFrame(){
+        Log.d(TAG,"preview path = "+path);
+        preview.setVisibility(View.VISIBLE);
+        adjustPreviewToFitScreen();
+    }
+
+    public void removeFirstFrame(){
+        Log.d(TAG,"preview visible? = "+preview.getVisibility());
+        preview.setVisibility(View.GONE);
     }
 
     @Override
@@ -119,9 +261,35 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
         images = dcimFcImages.listFiles();
         path = images[framePosition].getPath();
         Log.d(TAG,"media is == "+path);
+        setRetainInstance(true);
     }
 
     transient Bitmap frameBm;
+    transient Display display;
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        Log.d(TAG,"onSaveInstanceState = "+path+" , "+playInProgress);
+        Log.d(TAG,"getUserVisibleHint ? ="+getUserVisibleHint());
+        if(!isImage()) {
+            outState.putParcelable("firstFrame",frameBm);
+            outState.putBoolean("videoPlayed", playInProgress);
+            removeFirstFrame();
+            if (getUserVisibleHint()) {
+                outState.putBoolean(MEDIA_PLAYING, videoView.isPlaying());
+                outState.putInt(MEDIA_POSITION, videoView.getCurrentPosition());
+                outState.putBoolean(MEDIA_CONTROLS_HIDE, controlVisbilityPreference.isHideControl());
+                outState.putString(MEDIA_ACTUAL_DURATION, duration);
+                outState.putInt(SEEK_DURATION, videoSeek.getMax());
+                outState.putBoolean(MEDIA_COMPLETED, isCompleted);
+                outState.putInt(MEDIA_PREVIOUS_POSITION, previousPos);
+                if (videoView.isPlaying()) {
+                    videoView.pause();
+                }
+            }
+        }
+    }
 
     @Nullable
     @Override
@@ -134,28 +302,26 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
                 showMediaControls();
             }
         });
-        Log.d(TAG,"onCreateView");
+        Log.d(TAG,"onCreateView = "+path);
         videoView = (VideoView)view.findViewById(R.id.recordedVideo);
+        preview = (ImageView)view.findViewById(R.id.videoPreview);
         WindowManager windowManager = (WindowManager)getActivity().getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
-        Display display = windowManager.getDefaultDisplay();
+        display = windowManager.getDefaultDisplay();
         //Log.d(TAG,"Rotation = "+display.getRotation());
         Point screenSize=new Point();
         display.getRealSize(screenSize);
         if(isImage()) {
-            //Log.d(TAG,"show image");
+            Log.d(TAG,"show image");
             videoView.setVisibility(View.GONE);
+            preview.setVisibility(View.GONE);
             picture = new ImageView(getActivity());
             picture.setId(picture.generateViewId());
-            if(savedInstanceState == null){
-                Glide.get(getContext()).setMemoryCategory(MemoryCategory.HIGH);
-            }
             Uri uri = Uri.fromFile(new File(path));
             GlideApp.with(getContext()).load(uri).into(picture);
             mediaPlaceholder.addView(picture);
         }
         else{
-            //Log.d(TAG,"show video");
-            videoView = (VideoView)view.findViewById(R.id.recordedVideo);
+            Log.d(TAG,"show video");
             videoView.setKeepScreenOn(true);
             videoView.setVideoPath("file://"+path);
             videoView.setOnClickListener(new View.OnClickListener(){
@@ -165,11 +331,7 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
                 }
             });
             MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
-            mediaMetadataRetriever.setDataSource(images[framePosition].getPath());
-            preview = new ImageView(getActivity());
-            frameBm = mediaMetadataRetriever.getFrameAtTime(FIRST_SEC_MICRO);
-            preview.setImageBitmap(frameBm);
-            mediaPlaceholder.addView(preview);
+            mediaMetadataRetriever.setDataSource(path);
             String width = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH);
             String height = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT);
             duration = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
@@ -187,18 +349,8 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
                     adjustVideoToFitScreen();
                 }
             }
-        }
-        if(savedInstanceState == null) {
-            SharedPreferences mediaValues = getActivity().getSharedPreferences(FC_MEDIA_PREFERENCE,Context.MODE_PRIVATE);
-            SharedPreferences.Editor mediaState = null;
-            if(mediaValues!=null){
-                mediaState = mediaValues.edit();
-                if(mediaState!=null){
-                    mediaState.clear();
-                    mediaState.commit();
-                    Log.d(TAG,"CLEAR ALL");
-                }
-            }
+            videoView.setOnCompletionListener(this);
+            videoView.setOnErrorListener(this);
         }
         return view;
     }
@@ -223,84 +375,8 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
                     controlVisbilityPreference.setHideControl(mediaState.getBoolean(IMAGE_CONTROLS_HIDE, true));
                 }
             } else {
-                videoView.setOnCompletionListener(this);
                 previousPos = 0;
                 startTrackerThread();
-                SharedPreferences mediaState = getActivity().getSharedPreferences(FC_MEDIA_PREFERENCE, Context.MODE_PRIVATE);
-                Log.d(TAG, "media state = " + mediaState);
-                if (mediaState != null) {
-                    //Get SAVED MEDIA DURATION(For SeekBar)
-                    if (mediaState.contains(SEEK_DURATION)) {
-                        Log.d(TAG, "Retrieve media duration = " + mediaState.getInt(SEEK_DURATION, 0));
-                        videoSeek.setMax(mediaState.getInt(SEEK_DURATION, 0));
-                        videoSeek.setThumb(getResources().getDrawable(R.drawable.whitecircle));
-                        videoSeek.setProgressTintList(ColorStateList.valueOf(getResources().getColor(R.color.seekFill)));
-                    }
-                    //Get MEDIA COMPLETED STATE
-                    if (mediaState.contains(MEDIA_COMPLETED)) {
-                        Log.d(TAG, "Retrieve media completed == " + mediaState.getBoolean(MEDIA_COMPLETED, false));
-                        if (mediaState.getBoolean(MEDIA_COMPLETED, false)) {
-                            videoView.seekTo(1000);
-                            videoSeek.setProgress(0);
-                        } else {
-                            //Get SAVED MEDIA POSITION
-                            if (mediaState.contains(MEDIA_POSITION)) {
-                                Log.d(TAG, "Retrieve media position = " + mediaState.getInt(MEDIA_POSITION, 0));
-                                if (mediaState.getInt(MEDIA_POSITION, 0) < videoView.getDuration()) {
-                                    videoView.seekTo(mediaState.getInt(MEDIA_POSITION, 0));
-                                } else {
-                                    videoView.seekTo(mediaState.getInt(MEDIA_POSITION, 0));
-                                }
-                                videoSeek.setProgress(mediaState.getInt(MEDIA_POSITION, 0));
-                            }
-                        }
-                        isCompleted = mediaState.getBoolean(MEDIA_COMPLETED, false);
-                    }
-                    //Get SAVED MEDIA STATE
-                    if (mediaState.contains(MEDIA_PLAYING)) {
-                        if (mediaState.getBoolean(MEDIA_PLAYING, true)) {
-                            Log.d(TAG, "Retrieve media controls playing = " + mediaState.getBoolean(MEDIA_PLAYING, true));
-                            videoView.start();
-                            pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause_white_24dp));
-                            play = true;
-                        } else {
-                            videoView.pause();
-                            pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow_white_24dp));
-                            play = false;
-                        }
-                    }
-                    //Get SAVED MEDIA CONTROLS VIEW STATE
-                    if (mediaState.contains(MEDIA_CONTROLS_HIDE)) {
-                        Log.d(TAG, "Retrieve media controls hide = " + mediaState.getBoolean(MEDIA_CONTROLS_HIDE, true));
-                        if (mediaState.getBoolean(MEDIA_CONTROLS_HIDE, true)) {
-                            showAllControls();
-                        } else {
-                            hideAllControls();
-                        }
-                        controlVisbilityPreference.setHideControl(mediaState.getBoolean(MEDIA_CONTROLS_HIDE, true));
-                    }
-                    //Get MEDIA DURATION
-                    if(mediaState.contains(MEDIA_ACTUAL_DURATION)){
-                        Log.d(TAG,"Retrieve media duration = "+mediaState.getString(MEDIA_ACTUAL_DURATION, getResources().getString(R.string.START_TIME)));
-                        duration = mediaState.getString(MEDIA_ACTUAL_DURATION, getResources().getString(R.string.START_TIME));
-                    }
-                    //Get SAVED PREVIOUS TIME
-                    if (mediaState.contains(MEDIA_PREVIOUS_POSITION)) {
-                        Log.d(TAG, "Retrieve media previous time = " + mediaState.getInt(MEDIA_PREVIOUS_POSITION, 0));
-                        previousPos = mediaState.getInt(MEDIA_PREVIOUS_POSITION, 0);
-                    }
-                    //Get CURRENT TIME
-                    if (mediaState.contains(MEDIA_CURRENT_TIME)) {
-                        Log.d(TAG, "Retrieve current time = " + mediaState.getString(MEDIA_CURRENT_TIME, getResources().getString(R.string.START_TIME)));
-                        String currentTime = mediaState.getString(MEDIA_CURRENT_TIME, getResources().getString(R.string.START_TIME));
-                        StringTokenizer timeToken = new StringTokenizer(currentTime, ":");
-                        seconds = Integer.parseInt(timeToken.nextToken().trim());
-                        minutes = Integer.parseInt(timeToken.nextToken().trim());
-                        hours = Integer.parseInt(timeToken.nextToken().trim());
-                        showTimeElapsed();
-                        calculateAndDisplayEndTime();
-                    }
-                }
             }
         }
     }
@@ -362,19 +438,6 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
                 if (videoView != null) {
                     Log.d(TAG, "Save media state hide = "+controlVisbilityPreference.isHideControl());
                     stopTrackerThread();
-                    SharedPreferences.Editor mediaState = getActivity().getSharedPreferences(FC_MEDIA_PREFERENCE, Context.MODE_PRIVATE).edit();
-                    mediaState.putBoolean(MEDIA_PLAYING, videoView.isPlaying());
-                    mediaState.putInt(MEDIA_POSITION, videoView.getCurrentPosition());
-                    mediaState.putBoolean(MEDIA_CONTROLS_HIDE, controlVisbilityPreference.isHideControl());
-                    mediaState.putString(MEDIA_ACTUAL_DURATION,duration);
-                    mediaState.putInt(SEEK_DURATION, videoSeek.getMax());
-                    mediaState.putBoolean(MEDIA_COMPLETED, isCompleted);
-                    mediaState.putInt(MEDIA_PREVIOUS_POSITION, previousPos);
-                    mediaState.putString(MEDIA_CURRENT_TIME, seconds + ":" + minutes + ":" + hours);
-                    mediaState.commit();
-                    if (videoView.isPlaying()) {
-                        videoView.pause();
-                    }
                 }
             }
         }
@@ -387,17 +450,34 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
     }
 
     @Override
+    public boolean onError(MediaPlayer mediaPlayer, int what, int extra) {
+        Log.d(TAG,"Path = "+path);
+        Log.d(TAG,"Videoview duration = "+videoView.getDuration());
+        videoView.setKeepScreenOn(true);
+        videoView.setVideoPath("file://"+path);
+        videoView.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view) {
+                showMediaControls();
+            }
+        });
+        return true;
+    }
+
+    @Override
     public void onCompletion(MediaPlayer mediaPlayer) {
-        Log.d(TAG,"Video Completed");
+        Log.d(TAG,"Video Completed == "+path);
+        videoView.pause();
+        isCompleted = true;
         pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow_white_24dp));
         play = false;
-        isCompleted = true;
-        videoView.seekTo(0);
         videoSeek.setProgress(0);
-        updateTimer=false;
         seconds=0; minutes=0; hours=0;
         showTimeElapsed();
     }
+
+    transient Object trackerSync = new Object();
+    volatile boolean isTrackerReady = false;
 
     public void startTrackerThread()
     {
@@ -405,6 +485,24 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
         startTracker = true;
         videoTracker = new VideoTracker();
         videoTracker.start();
+        if(play){
+            isTrackerReady = false;
+            Log.d(TAG,"MAIN WAIT...");
+            synchronized (trackerSync){
+                while(!isTrackerReady) {
+                    try {
+                        trackerSync.wait();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+            Log.d(TAG,"Continue video..");
+            videoView.start();
+        }
+        else{
+            isTrackerReady = true;
+        }
     }
 
     public void stopTrackerThread()
@@ -477,6 +575,15 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
         videoView.setLayoutParams(layoutParams);
     }
 
+    public void adjustPreviewToFitScreen(){
+        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+        layoutParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+        layoutParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+        layoutParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
+        layoutParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+        preview.setLayoutParams(layoutParams);
+    }
+
     class MainHandler extends Handler{
         WeakReference<MediaFragment> mediaFragment;
         MediaFragment mediaAct;
@@ -502,6 +609,7 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
         String showSec = "0";
         String showMin = "0";
         String showHr = "0";
+        Log.d(TAG,"seconds = "+seconds);
         if(seconds < 10){
             showSec += seconds;
         }
@@ -529,10 +637,16 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
     {
         @Override
         public void run() {
+            if(!isTrackerReady) {
+                synchronized (trackerSync) {
+                    isTrackerReady = true;
+                    trackerSync.notify();
+                }
+            }
             Log.d(TAG,"Video Tracker STARTED..."+path);
             while(startTracker){
                 try {
-                    while (videoView.isPlaying()) {
+                    while (videoView.isPlaying() && !isCompleted) {
                         int latestPos = videoView.getCurrentPosition();
                         videoSeek.setProgress(latestPos);
                         if (latestPos > 999 && latestPos % 1000 >= 0) {
@@ -565,6 +679,9 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
                                         hours++;
                                     }
                                     //Log.d(TAG,"seconds == "+seconds);
+                                    if(seconds > Integer.parseInt(duration) / 1000){
+                                        break;
+                                    }
                                     mediaHandler.sendEmptyMessage(VIDEO_SEEK_UPDATE);
                                 }
                             }
@@ -572,6 +689,9 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
                         if (!startTracker) {
                             break;
                         }
+                    }
+                    if(isCompleted){
+                        videoSeek.setProgress(0);
                     }
                 }
                 catch(IllegalStateException illegal){
