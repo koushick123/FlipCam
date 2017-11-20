@@ -216,9 +216,7 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
                 }
                 else{
                     Log.d(TAG,"CREATE Preview with savedinstance");
-                    MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
-                    mediaMetadataRetriever.setDataSource(path);
-                    frameBm = mediaMetadataRetriever.getFrameAtTime(FIRST_SEC_MICRO);
+                    frameBm = savedInstanceState.getParcelable("firstFrame");
                     preview.setImageBitmap(frameBm);
                     //removeFirstFrame();
                     showFirstFrame();
@@ -238,7 +236,23 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
     public void showFirstFrame(){
         Log.d(TAG,"preview path = "+path);
         preview.setVisibility(View.VISIBLE);
-        adjustPreviewToFitScreen();
+        Point screenSize=new Point();
+        display.getRealSize(screenSize);
+        double screenAR = (double)screenSize.x/(double)screenSize.y;
+        if(display.getRotation() == Surface.ROTATION_0){
+            Log.d(TAG,"Portrait Width = "+frameBm.getWidth()+" Height = "+frameBm.getHeight()+" AR = "+(double)frameBm.getWidth() / (double)frameBm.getHeight());
+            double imageAR = (double)frameBm.getWidth() / (double)frameBm.getHeight();
+            if(Math.abs(imageAR - screenAR) < 0.1) {
+                adjustPreviewToFitScreen();
+            }
+        }
+        else if(display.getRotation() == Surface.ROTATION_270 || display.getRotation() == Surface.ROTATION_90){
+            Log.d(TAG,"Landscape Width = "+frameBm.getWidth()+" Height = "+frameBm.getHeight()+" AR = "+(double)frameBm.getWidth() / (double)frameBm.getHeight());
+            double imageAR = (double)frameBm.getWidth() / (double)frameBm.getHeight();
+            if(Math.abs(imageAR - screenAR) < 0.1) {
+                adjustPreviewToFitScreen();
+            }
+        }
     }
 
     public void removeFirstFrame(){
@@ -581,6 +595,8 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
         layoutParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
         layoutParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
         layoutParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+        preview.setAdjustViewBounds(true);
+        preview.setScaleType(ImageView.ScaleType.CENTER_CROP);
         preview.setLayoutParams(layoutParams);
     }
 

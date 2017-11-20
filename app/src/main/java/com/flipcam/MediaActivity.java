@@ -237,7 +237,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                         Log.d(TAG,"Duration of video = "+currentFrag.videoView.getDuration()+" , path = "+
                                 currentFrag.path.substring(currentFrag.path.lastIndexOf("/"),currentFrag.path.length()));
                         currentFrag.videoView.start();
-                        currentFrag.videoView.setZOrderOnTop(true);
                         pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause_white_24dp));
                         currentFrag.play = true;
                     } else {
