@@ -29,6 +29,8 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.VideoView;
 
+import com.flipcam.media.Media;
+
 import java.io.File;
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
@@ -36,13 +38,6 @@ import java.lang.ref.WeakReference;
 import static com.flipcam.PermissionActivity.FC_MEDIA_PREFERENCE;
 import static com.flipcam.constants.Constants.FIRST_SEC_MICRO;
 import static com.flipcam.constants.Constants.IMAGE_CONTROLS_HIDE;
-import static com.flipcam.constants.Constants.MEDIA_ACTUAL_DURATION;
-import static com.flipcam.constants.Constants.MEDIA_COMPLETED;
-import static com.flipcam.constants.Constants.MEDIA_CONTROLS_HIDE;
-import static com.flipcam.constants.Constants.MEDIA_PLAYING;
-import static com.flipcam.constants.Constants.MEDIA_POSITION;
-import static com.flipcam.constants.Constants.MEDIA_PREVIOUS_POSITION;
-import static com.flipcam.constants.Constants.SEEK_DURATION;
 import static com.flipcam.constants.Constants.VIDEO_SEEK_UPDATE;
 
 /**
@@ -100,102 +95,14 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
         if(getUserVisibleHint()) {
             if(!isImage()) {
                 if (savedInstanceState != null) {
-                    Log.d(TAG, "Retrieve media duration = " + savedInstanceState.getInt(SEEK_DURATION));
-                    videoSeek.setMax(savedInstanceState.getInt(SEEK_DURATION));
-                    videoSeek.setThumb(getResources().getDrawable(R.drawable.whitecircle));
-                    videoSeek.setProgressTintList(ColorStateList.valueOf(getResources().getColor(R.color.seekFill)));
-                    Log.d(TAG, "Retrieve media completed == " + savedInstanceState.getBoolean(MEDIA_COMPLETED));
-                    if (savedInstanceState.getBoolean(MEDIA_COMPLETED)) {
-                        videoView.seekTo(1000);
-                        videoSeek.setProgress(0);
-                        isCompleted = true;
-                    } else {
-                        Log.d(TAG,"Set SEEK to = "+savedInstanceState.getInt(MEDIA_POSITION));
-                        videoView.seekTo(savedInstanceState.getInt(MEDIA_POSITION));
-                        videoSeek.setProgress(savedInstanceState.getInt(MEDIA_POSITION));
+                    Media savedVideo = savedInstanceState.getParcelable("currentVideo");
+                    if(savedVideo != null){
+                        //Since we will re-construct the saved video using 'currentVideo' Parcelable, no need for this.
+                        //This Bundle is created to maintain the saved video state when the user minimizes the app or opens task manager directly.
+                        //We will use this in onResume() if it's not null.
+                        getActivity().getIntent().removeExtra("saveVideoForMinimize");
                     }
-                    Log.d(TAG, "Retrieve media playing = " + savedInstanceState.getBoolean(MEDIA_PLAYING));
-                    if (savedInstanceState.getBoolean(MEDIA_PLAYING)) {
-                        pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause_white_24dp));
-                        play = true;
-                    } else {
-                        videoView.pause();
-                        pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow_white_24dp));
-                        play = false;
-                    }
-                    LinearLayout.LayoutParams pauseParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-                    if (display.getRotation() == Surface.ROTATION_0) {
-                        pauseParams.height = 100;
-                        pause.setPadding(0, 0, 0, 0);
-                    } else if (display.getRotation() == Surface.ROTATION_90 || display.getRotation() == Surface.ROTATION_270) {
-                        pauseParams.height = 90;
-                        pause.setPadding(0, 10, 0, 10);
-                    }
-                    pause.setLayoutParams(pauseParams);
-                    pause.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View view) {
-                            if (!play) {
-                                if (isCompleted) {
-                                    isCompleted = false;
-                                }
-                                Log.d(TAG, "Set PLAY post rotate");
-                                removeFirstFrame();
-                                videoView.start();
-                                playInProgress = true;
-                                pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause_white_24dp));
-                                play = true;
-                            } else {
-                                Log.d(TAG, "Set PAUSE post rotate");
-                                videoView.pause();
-                                pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow_white_24dp));
-                                play = false;
-                            }
-                        }
-                    });
-                    //Get SAVED MEDIA CONTROLS VIEW STATE
-                    Log.d(TAG, "Retrieve media controls hide = " + savedInstanceState.getBoolean(MEDIA_CONTROLS_HIDE));
-                    if (savedInstanceState.getBoolean(MEDIA_CONTROLS_HIDE)) {
-                        showAllControls();
-                    } else {
-                        hideAllControls();
-                    }
-                    controlVisbilityPreference.setHideControl(savedInstanceState.getBoolean(MEDIA_CONTROLS_HIDE));
-
-                    //Get MEDIA DURATION
-                    Log.d(TAG, "Retrieve media duration = " + savedInstanceState.getString(MEDIA_ACTUAL_DURATION));
-                    duration = savedInstanceState.getString(MEDIA_ACTUAL_DURATION);
-
-                    //Get SAVED PREVIOUS TIME
-                    Log.d(TAG, "Retrieve media previous time = " + savedInstanceState.getInt(MEDIA_PREVIOUS_POSITION));
-                    previousPos = savedInstanceState.getInt(MEDIA_PREVIOUS_POSITION);
-
-                    //Get CURRENT TIME
-                    //Log.d(TAG, "Retrieve current time = " + savedInstanceState.getString(MEDIA_CURRENT_TIME));
-                    Log.d(TAG, "Retrieve current time = " +savedInstanceState.getInt(MEDIA_POSITION) / 1000);
-                    if(!isCompleted) {
-                        seconds = savedInstanceState.getInt(MEDIA_POSITION) / 1000;
-                        if(seconds < 60){
-                            minutes = 0;
-                            hours = 0;
-                        }
-                        else{
-                            minutes = seconds / 60;
-                            if(minutes < 60) {
-                                hours = 0;
-                            }
-                            else{
-                                hours = minutes / 60;
-                                minutes = minutes % 60;
-                            }
-                            seconds = seconds % 60;
-                        }
-                    }
-                    else{
-                        seconds = 0;
-                        minutes = 0;
-                        hours = 0;
-                    }
+                    reConstructVideo(savedVideo);
                     showTimeElapsed();
                     calculateAndDisplayEndTime();
                 }
@@ -230,6 +137,104 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
                 preview.setImageBitmap(frameBm);
                 showFirstFrame();
             }
+        }
+    }
+
+    public void reConstructVideo(Media savedVideo){
+        videoSeek.setMax(savedVideo.getSeekDuration());
+        videoSeek.setThumb(getResources().getDrawable(R.drawable.whitecircle));
+        videoSeek.setProgressTintList(ColorStateList.valueOf(getResources().getColor(R.color.seekFill)));
+        Log.d(TAG, "Retrieve media completed == " + savedVideo.isMediaCompleted());
+        if (savedVideo.isMediaCompleted()) {
+            videoView.seekTo(1000);
+            videoSeek.setProgress(0);
+            isCompleted = true;
+        } else {
+            Log.d(TAG,"Set SEEK to = "+savedVideo.getMediaPosition());
+            videoView.seekTo(savedVideo.getMediaPosition());
+            videoSeek.setProgress(savedVideo.getMediaPosition());
+        }
+        Log.d(TAG, "Retrieve media playing = " + savedVideo.isMediaPlaying());
+        if (savedVideo.isMediaPlaying()) {
+            pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause_white_24dp));
+            play = true;
+        } else {
+            videoView.pause();
+            pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow_white_24dp));
+            play = false;
+        }
+        LinearLayout.LayoutParams pauseParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        if (display.getRotation() == Surface.ROTATION_0) {
+            pauseParams.height = 100;
+            pause.setPadding(0, 0, 0, 0);
+        } else if (display.getRotation() == Surface.ROTATION_90 || display.getRotation() == Surface.ROTATION_270) {
+            pauseParams.height = 90;
+            pause.setPadding(0, 10, 0, 10);
+        }
+        pause.setLayoutParams(pauseParams);
+        pause.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (!play) {
+                    if (isCompleted) {
+                        isCompleted = false;
+                    }
+                    Log.d(TAG, "Set PLAY post rotate");
+                    removeFirstFrame();
+                    videoView.start();
+                    playInProgress = true;
+                    pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause_white_24dp));
+                    play = true;
+                } else {
+                    Log.d(TAG, "Set PAUSE post rotate");
+                    videoView.pause();
+                    pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow_white_24dp));
+                    play = false;
+                }
+            }
+        });
+        //Get SAVED MEDIA CONTROLS VIEW STATE
+        Log.d(TAG, "Retrieve media controls hide = " + savedVideo.isMediaControlsHide());
+        if (savedVideo.isMediaControlsHide()) {
+            showAllControls();
+        } else {
+            hideAllControls();
+        }
+        controlVisbilityPreference.setHideControl(savedVideo.isMediaControlsHide());
+
+        //Get MEDIA DURATION
+        Log.d(TAG, "Retrieve media duration = " + savedVideo.getMediaActualDuration());
+        duration = savedVideo.getMediaActualDuration();
+
+        //Get SAVED PREVIOUS TIME
+        Log.d(TAG, "Retrieve media previous time = " + savedVideo.getMediaPreviousPos());
+        previousPos = savedVideo.getMediaPreviousPos();
+
+        //Get CURRENT TIME
+        //Log.d(TAG, "Retrieve current time = " + savedInstanceState.getString(MEDIA_CURRENT_TIME));
+        Log.d(TAG, "Retrieve current time = " +savedVideo.getMediaPosition() / 1000);
+        if(!isCompleted) {
+            seconds = savedVideo.getMediaPosition() / 1000;
+            if(seconds < 60){
+                minutes = 0;
+                hours = 0;
+            }
+            else{
+                minutes = seconds / 60;
+                if(minutes < 60) {
+                    hours = 0;
+                }
+                else{
+                    hours = minutes / 60;
+                    minutes = minutes % 60;
+                }
+                seconds = seconds % 60;
+            }
+        }
+        else{
+            seconds = 0;
+            minutes = 0;
+            hours = 0;
         }
     }
 
@@ -291,16 +296,19 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
             outState.putBoolean("videoPlayed", playInProgress);
             removeFirstFrame();
             if (getUserVisibleHint()) {
-                outState.putBoolean(MEDIA_PLAYING, videoView.isPlaying());
-                outState.putInt(MEDIA_POSITION, videoView.getCurrentPosition());
-                outState.putBoolean(MEDIA_CONTROLS_HIDE, controlVisbilityPreference.isHideControl());
-                outState.putString(MEDIA_ACTUAL_DURATION, duration);
-                outState.putInt(SEEK_DURATION, videoSeek.getMax());
-                outState.putBoolean(MEDIA_COMPLETED, isCompleted);
-                outState.putInt(MEDIA_PREVIOUS_POSITION, previousPos);
+                Media media = new Media();
+                media.setMediaPlaying(videoView.isPlaying());
+                media.setMediaPosition(videoView.getCurrentPosition());
+                media.setMediaControlsHide(controlVisbilityPreference.isHideControl());
+                media.setMediaActualDuration(duration);
+                media.setSeekDuration(videoSeek.getMax());
+                media.setMediaCompleted(isCompleted);
+                media.setMediaPreviousPos(previousPos);
+                outState.putParcelable("currentVideo",media);
                 if (videoView.isPlaying()) {
                     videoView.pause();
                 }
+                getActivity().getIntent().putExtra("saveVideoForMinimize",media);
             }
         }
     }
@@ -390,6 +398,11 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
                 }
             } else {
                 previousPos = 0;
+                Media savedVideo = getActivity().getIntent().getParcelableExtra("saveVideoForMinimize");
+                Log.d(TAG,"SAVED VIDEO = "+savedVideo);
+                if(savedVideo != null) {
+                    reConstructVideo(savedVideo);
+                }
                 startTrackerThread();
             }
         }
@@ -625,7 +638,7 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
         String showSec = "0";
         String showMin = "0";
         String showHr = "0";
-        Log.d(TAG,"seconds = "+seconds);
+        //Log.d(TAG,"seconds = "+seconds);
         if(seconds < 10){
             showSec += seconds;
         }
