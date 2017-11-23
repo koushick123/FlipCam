@@ -36,7 +36,7 @@ import java.io.Serializable;
 import java.lang.ref.WeakReference;
 
 import static com.flipcam.PermissionActivity.FC_MEDIA_PREFERENCE;
-import static com.flipcam.constants.Constants.FIRST_SEC_MICRO;
+import static com.flipcam.constants.Constants.FIRST_SEC_MILLI;
 import static com.flipcam.constants.Constants.IMAGE_CONTROLS_HIDE;
 import static com.flipcam.constants.Constants.VIDEO_SEEK_UPDATE;
 
@@ -133,7 +133,7 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
                 Log.d(TAG,"CREATE Preview");
                 MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
                 mediaMetadataRetriever.setDataSource(path);
-                frameBm = mediaMetadataRetriever.getFrameAtTime(FIRST_SEC_MICRO);
+                frameBm = mediaMetadataRetriever.getFrameAtTime(FIRST_SEC_MILLI);
                 preview.setImageBitmap(frameBm);
                 showFirstFrame();
             }
@@ -297,8 +297,10 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
             removeFirstFrame();
             if (getUserVisibleHint()) {
                 Media media = new Media();
-                media.setMediaPlaying(videoView.isPlaying());
-                media.setMediaPosition(videoView.getCurrentPosition());
+                //media.setMediaPlaying(videoView.isPlaying());
+                media.setMediaPlaying(isMediaPlayingForMinmize);
+                //media.setMediaPosition(videoView.getCurrentPosition());
+                media.setMediaPosition(mediaPositionForMinimize);
                 media.setMediaControlsHide(controlVisbilityPreference.isHideControl());
                 media.setMediaActualDuration(duration);
                 media.setSeekDuration(videoSeek.getMax());
@@ -308,10 +310,15 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
                 if (videoView.isPlaying()) {
                     videoView.pause();
                 }
+                Log.d(TAG,"saving isplaying = "+media.isMediaPlaying());
+                Log.d(TAG,"saving seek to = "+media.getMediaPosition());
                 getActivity().getIntent().putExtra("saveVideoForMinimize",media);
             }
         }
     }
+
+    int mediaPositionForMinimize;
+    boolean isMediaPlayingForMinmize;
 
     @Nullable
     @Override
@@ -462,6 +469,8 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
                 mediaState.putBoolean(IMAGE_CONTROLS_HIDE, controlVisbilityPreference.isHideControl());
                 mediaState.commit();
             } else {
+                mediaPositionForMinimize = videoView.getCurrentPosition();
+                isMediaPlayingForMinmize = videoView.isPlaying();
                 if (videoView != null) {
                     Log.d(TAG, "Save media state hide = "+controlVisbilityPreference.isHideControl());
                     stopTrackerThread();
@@ -498,6 +507,7 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
         isCompleted = true;
         pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow_white_24dp));
         play = false;
+        videoView.seekTo(0);
         videoSeek.setProgress(0);
         seconds=0; minutes=0; hours=0;
         showTimeElapsed();

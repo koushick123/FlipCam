@@ -24,6 +24,7 @@ public class Constants
 
     //To fetch first frame to display thumbnail
     public static final long FIRST_SEC_MICRO = 1000000;
+    public static final long FIRST_SEC_MILLI = 1000;
     //To update seek bar
     public static final int VIDEO_SEEK_UPDATE = 100;
     //Constants for saving media controls settings
