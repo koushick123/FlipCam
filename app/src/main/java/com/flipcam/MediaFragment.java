@@ -29,7 +29,9 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.VideoView;
 
+import com.flipcam.media.FileMedia;
 import com.flipcam.media.Media;
+import com.flipcam.util.Utilities;
 
 import java.io.File;
 import java.io.Serializable;
@@ -68,7 +70,7 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
     transient LinearLayout videoControls;
     int framePosition;
     transient ImageView picture;
-    File[] images=null;
+    transient FileMedia[] images=null;
     transient ImageView preview;
     ControlVisbilityPreference controlVisbilityPreference;
     transient MediaFragment.VideoTracker videoTracker;
@@ -277,7 +279,8 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
         framePosition = getArguments().getInt("position");
         //Log.d(TAG,"framePosition = "+framePosition);
         File dcimFcImages = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + getResources().getString(R.string.FC_ROOT));
-        images = dcimFcImages.listFiles();
+        //images = dcimFcImages.listFiles();
+        images = Utilities.getMediaList(getContext());
         path = images[framePosition].getPath();
         Log.d(TAG,"media is == "+path);
         setRetainInstance(true);

@@ -6,7 +6,6 @@ import android.content.res.ColorStateList;
 import android.graphics.Point;
 import android.media.MediaMetadataRetriever;
 import android.os.Bundle;
-import android.os.Environment;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
@@ -28,6 +27,8 @@ import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.MemoryCategory;
+import com.flipcam.media.FileMedia;
+import com.flipcam.util.Utilities;
 
 import java.io.File;
 import java.util.HashMap;
@@ -40,7 +41,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     private ViewPager mPager;
     private PagerAdapter mPagerAdapter;
     File dcimFcImages = null;
-    File[] images = null;
+    FileMedia[] medias = null;
     LinearLayout videoControls;
     LinearLayout topMediaControls;
     String duration;
@@ -80,8 +81,11 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         display.getRealSize(screenSize);
         getSupportActionBar().hide();
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        dcimFcImages = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + getResources().getString(R.string.FC_ROOT));
-        images = dcimFcImages.listFiles();
+        //dcimFcImages = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + getResources().getString(R.string.FC_ROOT));
+        medias = Utilities.getMediaList(getApplicationContext());
+        for(int i=0;i<medias.length;i++){
+            Log.d(TAG,"media = "+medias[i].getPath());
+        }
         mPager = (ViewPager) findViewById(R.id.mediaPager);
         mPagerAdapter = new MediaSlidePager(getSupportFragmentManager());
         mPager.setAdapter(mPagerAdapter);
@@ -94,7 +98,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         timeControls = (LinearLayout)findViewById(R.id.timeControls);
         parentMedia = (LinearLayout)findViewById(R.id.parentMedia);
         controlVisbilityPreference = (ControlVisbilityPreference)getApplicationContext();
-        if(isImage(images[0].getPath())) {
+        if(isImage(medias[0].getPath())) {
             videoControls.setVisibility(View.GONE);
             pause.setVisibility(View.GONE);
             startTime.setVisibility(View.GONE);
@@ -155,7 +159,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         clearPreferences();
         MediaFragment previousFragment = hashMapFrags.get(previousSelectedFragment);
         //If previous fragment had a video, stop the video and tracker thread immediately.
-        if(!isImage(images[previousSelectedFragment].getPath())){
+        if(!isImage(medias[previousSelectedFragment].getPath())){
             Log.d(TAG,"Stop previous tracker thread = "+previousFragment.path);
             previousFragment.stopTrackerThread();
             if(previousFragment.videoView.isPlaying()){
@@ -165,7 +169,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             //previousFragment.videoView.setOnCompletionListener(null);
         }
         //Display controls based on image/video
-        if(isImage(images[position].getPath())){
+        if(isImage(medias[position].getPath())){
             Log.d(TAG,"HIDE VIDEO");
             videoControls.setVisibility(View.GONE);
             pause.setVisibility(View.GONE);
@@ -191,7 +195,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 videoSeek.setVisibility(View.GONE);
             }
             MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
-            mediaMetadataRetriever.setDataSource(images[position].getPath());
+            mediaMetadataRetriever.setDataSource(medias[position].getPath());
             duration = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
             calculateAndDisplayEndTime();
             Log.d(TAG,"Set SEEKBAR");
@@ -333,7 +337,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     {
         @Override
         public int getCount() {
-            return images.length;
+            return medias.length;
         }
 
         @Override
