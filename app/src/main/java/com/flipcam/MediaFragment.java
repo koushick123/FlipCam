@@ -9,7 +9,6 @@ import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.Nullable;
@@ -290,8 +289,6 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
         super.onCreate(savedInstanceState);
         framePosition = getArguments().getInt("position");
         //Log.d(TAG,"framePosition = "+framePosition);
-        File dcimFcImages = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + getResources().getString(R.string.FC_ROOT));
-        //images = dcimFcImages.listFiles();
         images = Utilities.getMediaList(getContext());
         path = images[framePosition].getPath();
         Log.d(TAG,"media is == "+path);

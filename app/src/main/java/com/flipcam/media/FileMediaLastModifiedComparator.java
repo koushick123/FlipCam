@@ -10,10 +10,10 @@ public class FileMediaLastModifiedComparator implements Comparator<FileMedia> {
     @Override
     public int compare(FileMedia first, FileMedia next) {
         if(first.getLastModified() < next.getLastModified()){
-            return -1;
+            return 1;
         }
         else if(first.getLastModified() > next.getLastModified()){
-            return 1;
+            return -1;
         }
         else{
             return 0;

@@ -8,6 +8,7 @@ import com.flipcam.media.FileMedia;
 import com.flipcam.media.FileMediaLastModifiedComparator;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -26,8 +27,16 @@ public class Utilities {
     }
 
     private static void sortAsPerLatest(){
-        File[] mediaFiles = Environment.getExternalStoragePublicDirectory
-                (Environment.DIRECTORY_DCIM + appContext.getResources().getString(R.string.FC_ROOT)).listFiles();
+        File[] mediaFiles = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + appContext.getResources().getString(R.string.FC_ROOT)).
+                listFiles(new FileFilter() {
+                    @Override
+                    public boolean accept(File file) {
+                        if(!file.isDirectory()){
+                            return true;
+                        }
+                        return false;
+                    }
+                });
         ArrayList<FileMedia> mediaArrayList = new ArrayList<>();
         for(int i=0;i<mediaFiles.length;i++){
             FileMedia fileMedia = new FileMedia();

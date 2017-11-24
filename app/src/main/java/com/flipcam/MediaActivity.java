@@ -25,12 +25,9 @@ import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.MemoryCategory;
 import com.flipcam.media.FileMedia;
 import com.flipcam.util.Utilities;
 
-import java.io.File;
 import java.util.HashMap;
 
 import static com.flipcam.PermissionActivity.FC_MEDIA_PREFERENCE;
@@ -40,7 +37,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     private static final String TAG = "MediaActivity";
     private ViewPager mPager;
     private PagerAdapter mPagerAdapter;
-    File dcimFcImages = null;
     FileMedia[] medias = null;
     LinearLayout videoControls;
     LinearLayout topMediaControls;
@@ -81,11 +77,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         display.getRealSize(screenSize);
         getSupportActionBar().hide();
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        //dcimFcImages = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + getResources().getString(R.string.FC_ROOT));
         medias = Utilities.getMediaList(getApplicationContext());
-        for(int i=0;i<medias.length;i++){
-            Log.d(TAG,"media = "+medias[i].getPath());
-        }
         mPager = (ViewPager) findViewById(R.id.mediaPager);
         mPagerAdapter = new MediaSlidePager(getSupportFragmentManager());
         mPager.setAdapter(mPagerAdapter);
@@ -108,8 +100,8 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         if(savedInstanceState == null){
             clearPreferences();
             controlVisbilityPreference.setHideControl(true);
-            Glide.get(getApplicationContext()).setMemoryCategory(MemoryCategory.HIGH);
         }
+        mPager.setOffscreenPageLimit(3);
     }
 
     @Override
@@ -319,10 +311,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         super.onPause();
         mPager.removeOnPageChangeListener(this);
         Log.d(TAG,"onPause");
-        if(isFinishing()){
-            Log.d(TAG,"GLIDE Finishing");
-            Glide.get(getApplicationContext()).setMemoryCategory(MemoryCategory.NORMAL);
-        }
     }
 
     public boolean isImage(String path)
