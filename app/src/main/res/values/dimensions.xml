@@ -52,4 +52,8 @@
     <dimen name="recordSavePadding">30dp</dimen>
     //Padding below tick mark image
     <dimen name="recordSaveImagePaddingBottom">17dp</dimen>
+    //Top margin for share and delete buttons (Portrait)
+    <dimen name="shareDeleteTopMarginPortrait">15dp</dimen>
+    //Top margin for share and delete buttons (Landscape)
+    <dimen name="shareDeleteTopMarginLandscape">10dp</dimen>
 </resources>

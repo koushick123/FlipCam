@@ -96,18 +96,30 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
         controlVisbilityPreference = (ControlVisbilityPreference) getActivity().getApplicationContext();
         if(getUserVisibleHint()) {
             if(!isImage()) {
+                Media newVideo;
                 if (savedInstanceState != null) {
-                    Media savedVideo = savedInstanceState.getParcelable("currentVideo");
-                    if(savedVideo != null){
+                    newVideo = savedInstanceState.getParcelable("currentVideo");
+                    if(newVideo != null){
                         //Since we will re-construct the saved video using 'currentVideo' Parcelable, no need for this.
                         //This Bundle is created to maintain the saved video state when the user minimizes the app or opens task manager directly.
                         //We will use this in onResume() if it's not null.
                         getActivity().getIntent().removeExtra("saveVideoForMinimize");
                     }
-                    reConstructVideo(savedVideo);
-                    showTimeElapsed();
-                    calculateAndDisplayEndTime();
                 }
+                else{
+                    Log.d(TAG,"setup video");
+                    newVideo = new Media();
+                    newVideo.setMediaActualDuration(duration);
+                    newVideo.setMediaCompleted(false);
+                    newVideo.setMediaControlsHide(true);
+                    newVideo.setMediaPlaying(false);
+                    newVideo.setMediaPosition(0);
+                    newVideo.setMediaPreviousPos(0);
+                    newVideo.setSeekDuration(Integer.parseInt(duration));
+                }
+                reConstructVideo(newVideo);
+                showTimeElapsed();
+                calculateAndDisplayEndTime();
             }
         }
         if(!isImage()) {
