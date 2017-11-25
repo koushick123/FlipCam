@@ -101,7 +101,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             clearPreferences();
             controlVisbilityPreference.setHideControl(true);
         }
-        mPager.setOffscreenPageLimit(3);
     }
 
     @Override
@@ -142,6 +141,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         }
     }
 
+    boolean wasPlaying = false;
     @Override
     public void onPageSelected(int position) {
         Log.d(TAG,"onPageSelected = "+position+", previousSelectedFragment = "+previousSelectedFragment);
@@ -157,6 +157,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             if(previousFragment.videoView.isPlaying()){
                 Log.d(TAG,"Pause previous playback");
                 previousFragment.videoView.pause();
+                wasPlaying = true;
             }
             //previousFragment.videoView.setOnCompletionListener(null);
         }
@@ -200,13 +201,15 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             videoSeek.setProgress(0);
             videoSeek.setThumb(getResources().getDrawable(R.drawable.whitecircle));
             videoSeek.setProgressTintList(ColorStateList.valueOf(getResources().getColor(R.color.seekFill)));
-            currentFrag.videoView.seekTo(0);
             currentFrag.play=false;
             currentFrag.playInProgress=false;
-            currentFrag.mediaPlaceholder.removeAllViews();
+            /*currentFrag.mediaPlaceholder.removeAllViews();
             currentFrag.mediaPlaceholder.addView(currentFrag.videoView);
-            currentFrag.mediaPlaceholder.addView(currentFrag.preview);
-            currentFrag.showFirstFrame();
+            currentFrag.mediaPlaceholder.addView(currentFrag.preview);*/
+            if(currentFrag.videoView.getCurrentPosition() > 100){
+                currentFrag.videoView.seekTo(100);
+            }
+            //currentFrag.showFirstFrame();
             currentFrag.seconds=0;
             currentFrag.minutes=0;
             currentFrag.hours=0;
@@ -229,7 +232,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                         }
                         Log.d(TAG,"Set PLAY");
                         currentFrag.playInProgress = true;
-                        currentFrag.removeFirstFrame();
                         Log.d(TAG,"Duration of video = "+currentFrag.videoView.getDuration()+" , path = "+
                                 currentFrag.path.substring(currentFrag.path.lastIndexOf("/"),currentFrag.path.length()));
                         currentFrag.videoView.start();
@@ -251,6 +253,9 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             }
         }
         previousSelectedFragment = position;
+        if(mPager.getOffscreenPageLimit() != 3){
+            mPager.setOffscreenPageLimit(3);
+        }
     }
 
     @Override

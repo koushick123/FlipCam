@@ -37,7 +37,6 @@ import java.io.Serializable;
 import java.lang.ref.WeakReference;
 
 import static com.flipcam.PermissionActivity.FC_MEDIA_PREFERENCE;
-import static com.flipcam.constants.Constants.FIRST_SEC_MILLI;
 import static com.flipcam.constants.Constants.IMAGE_CONTROLS_HIDE;
 import static com.flipcam.constants.Constants.VIDEO_SEEK_UPDATE;
 
@@ -127,28 +126,31 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
                     playInProgress = savedInstanceState.getBoolean("videoPlayed");
                     if (!playInProgress) {
                         Log.d(TAG, "Video NOT played");
-                        frameBm = savedInstanceState.getParcelable("firstFrame");
+                        videoView.seekTo(100);
+                        /*frameBm = savedInstanceState.getParcelable("firstFrame");
                         preview.setImageBitmap(frameBm);
-                        showFirstFrame();
+                        showFirstFrame();*/
                     } else {
                         Log.d(TAG, "Video played");
                     }
                 }
                 else{
-                    Log.d(TAG,"CREATE Preview with savedinstance");
+                    /*Log.d(TAG,"CREATE Preview with savedinstance");
                     frameBm = savedInstanceState.getParcelable("firstFrame");
                     preview.setImageBitmap(frameBm);
                     //removeFirstFrame();
-                    showFirstFrame();
+                    showFirstFrame();*/
+                    videoView.seekTo(100);
                 }
             }
             else{
                 Log.d(TAG,"CREATE Preview");
-                MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
+                /*MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
                 mediaMetadataRetriever.setDataSource(path);
                 frameBm = mediaMetadataRetriever.getFrameAtTime(FIRST_SEC_MILLI);
                 preview.setImageBitmap(frameBm);
-                showFirstFrame();
+                showFirstFrame();*/
+                videoView.seekTo(100);
             }
         }
     }
