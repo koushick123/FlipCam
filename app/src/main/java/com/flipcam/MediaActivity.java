@@ -26,7 +26,7 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.flipcam.media.FileMedia;
-import com.flipcam.util.Utilities;
+import com.flipcam.util.MediaUtil;
 
 import java.util.HashMap;
 
@@ -77,7 +77,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         display.getRealSize(screenSize);
         getSupportActionBar().hide();
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        medias = Utilities.getMediaList(getApplicationContext());
+        medias = MediaUtil.getMediaList(getApplicationContext());
         mPager = (ViewPager) findViewById(R.id.mediaPager);
         mPagerAdapter = new MediaSlidePager(getSupportFragmentManager());
         mPager.setAdapter(mPagerAdapter);
@@ -206,6 +206,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             /*currentFrag.mediaPlaceholder.removeAllViews();
             currentFrag.mediaPlaceholder.addView(currentFrag.videoView);
             currentFrag.mediaPlaceholder.addView(currentFrag.preview);*/
+            currentFrag.videoView.forceLayout();
             if(currentFrag.videoView.getCurrentPosition() > 100){
                 currentFrag.videoView.seekTo(100);
             }
@@ -234,6 +235,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                         currentFrag.playInProgress = true;
                         Log.d(TAG,"Duration of video = "+currentFrag.videoView.getDuration()+" , path = "+
                                 currentFrag.path.substring(currentFrag.path.lastIndexOf("/"),currentFrag.path.length()));
+                        //currentFrag.removeFirstFrame();
                         currentFrag.videoView.start();
                         pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause_white_24dp));
                         currentFrag.play = true;

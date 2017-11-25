@@ -30,7 +30,7 @@ import android.widget.VideoView;
 
 import com.flipcam.media.FileMedia;
 import com.flipcam.media.Media;
-import com.flipcam.util.Utilities;
+import com.flipcam.util.MediaUtil;
 
 import java.io.File;
 import java.io.Serializable;
@@ -128,16 +128,18 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
                         Log.d(TAG, "Video NOT played");
                         videoView.seekTo(100);
                         /*frameBm = savedInstanceState.getParcelable("firstFrame");
-                        preview.setImageBitmap(frameBm);
+                        //preview.setImageBitmap(frameBm);
+                        GlideApp.with(getContext()).load(frameBm).into(preview);
                         showFirstFrame();*/
                     } else {
                         Log.d(TAG, "Video played");
                     }
                 }
                 else{
-                    /*Log.d(TAG,"CREATE Preview with savedinstance");
-                    frameBm = savedInstanceState.getParcelable("firstFrame");
-                    preview.setImageBitmap(frameBm);
+                    Log.d(TAG,"CREATE Preview with savedinstance");
+                    /*frameBm = savedInstanceState.getParcelable("firstFrame");
+                    GlideApp.with(getContext()).load(frameBm).into(preview);
+                    //preview.setImageBitmap(frameBm);
                     //removeFirstFrame();
                     showFirstFrame();*/
                     videoView.seekTo(100);
@@ -148,8 +150,8 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
                 /*MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
                 mediaMetadataRetriever.setDataSource(path);
                 frameBm = mediaMetadataRetriever.getFrameAtTime(FIRST_SEC_MILLI);
-                preview.setImageBitmap(frameBm);
-                showFirstFrame();*/
+                preview.setImageBitmap(frameBm);*/
+                //showFirstFrame();
                 videoView.seekTo(100);
             }
         }
@@ -195,7 +197,7 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
                         isCompleted = false;
                     }
                     Log.d(TAG, "Set PLAY post rotate");
-                    removeFirstFrame();
+                    //removeFirstFrame();
                     videoView.start();
                     playInProgress = true;
                     pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause_white_24dp));
@@ -253,7 +255,7 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
         }
     }
 
-    public void showFirstFrame(){
+    /*public void showFirstFrame(){
         Log.d(TAG,"preview path = "+path);
         preview.setVisibility(View.VISIBLE);
         Point screenSize=new Point();
@@ -278,7 +280,7 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
     public void removeFirstFrame(){
         Log.d(TAG,"preview visible? = "+preview.getVisibility());
         preview.setVisibility(View.GONE);
-    }
+    }*/
 
     @Override
     public void onStop() {
@@ -291,7 +293,7 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
         super.onCreate(savedInstanceState);
         framePosition = getArguments().getInt("position");
         //Log.d(TAG,"framePosition = "+framePosition);
-        images = Utilities.getMediaList(getContext());
+        images = MediaUtil.getMediaList(getContext());
         path = images[framePosition].getPath();
         Log.d(TAG,"media is == "+path);
         setRetainInstance(true);
@@ -308,7 +310,7 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
         if(!isImage()) {
             outState.putParcelable("firstFrame",frameBm);
             outState.putBoolean("videoPlayed", playInProgress);
-            removeFirstFrame();
+            //removeFirstFrame();
             if (getUserVisibleHint()) {
                 Media media = new Media();
                 //media.setMediaPlaying(videoView.isPlaying());
@@ -347,7 +349,7 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
         });
         Log.d(TAG,"onCreateView = "+path);
         videoView = (VideoView)view.findViewById(R.id.recordedVideo);
-        preview = (ImageView)view.findViewById(R.id.videoPreview);
+        //preview = (ImageView)view.findViewById(R.id.videoPreview);
         WindowManager windowManager = (WindowManager)getActivity().getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
         display = windowManager.getDefaultDisplay();
         //Log.d(TAG,"Rotation = "+display.getRotation());
@@ -356,7 +358,7 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
         if(isImage()) {
             Log.d(TAG,"show image");
             videoView.setVisibility(View.GONE);
-            preview.setVisibility(View.GONE);
+            //preview.setVisibility(View.GONE);
             picture = new ImageView(getActivity());
             picture.setId(picture.generateViewId());
             Uri uri = Uri.fromFile(new File(path));
@@ -626,16 +628,16 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
         videoView.setLayoutParams(layoutParams);
     }
 
-    public void adjustPreviewToFitScreen(){
+    /*public void adjustPreviewToFitScreen(){
         RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
         layoutParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
         layoutParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
         layoutParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
         layoutParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
-        preview.setAdjustViewBounds(true);
-        preview.setScaleType(ImageView.ScaleType.CENTER_CROP);
-        preview.setLayoutParams(layoutParams);
-    }
+        picture.setAdjustViewBounds(true);
+        picture.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        picture.setLayoutParams(layoutParams);
+    }*/
 
     class MainHandler extends Handler{
         WeakReference<MediaFragment> mediaFragment;

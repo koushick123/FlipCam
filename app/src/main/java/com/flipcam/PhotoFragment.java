@@ -11,7 +11,6 @@ import android.hardware.Camera;
 import android.hardware.SensorManager;
 import android.media.MediaMetadataRetriever;
 import android.os.Bundle;
-import android.os.Environment;
 import android.support.annotation.Nullable;
 import android.util.Log;
 import android.view.Gravity;
@@ -27,10 +26,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.flipcam.constants.Constants;
+import com.flipcam.media.FileMedia;
+import com.flipcam.util.MediaUtil;
 import com.flipcam.view.CameraView;
-
-import java.io.File;
-import java.util.Arrays;
 
 import static com.flipcam.PermissionActivity.FC_SHARED_PREFERENCE;
 
@@ -349,12 +347,10 @@ public class PhotoFragment extends Fragment {
 
     public void getLatestFileIfExists()
     {
-        File dcimFc = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + getResources().getString(R.string.FC_ROOT));
-        if (dcimFc.exists() && dcimFc.isDirectory() && dcimFc.listFiles().length > 0) {
-            File[] media = dcimFc.listFiles();
-            Arrays.sort(media);
-            Log.d(TAG, "Latest file is = " + media[media.length - 1].getPath());
-            final String filePath = media[media.length - 1].getPath();
+        FileMedia[] medias = MediaUtil.getMediaList(getActivity().getApplicationContext());
+        if (medias != null && medias.length > 0) {
+            Log.d(TAG, "Latest file is = " + medias[0].getPath());
+            final String filePath = medias[0].getPath();
             if (!isImage(filePath)) {
                 MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
                 mediaMetadataRetriever.setDataSource(filePath);

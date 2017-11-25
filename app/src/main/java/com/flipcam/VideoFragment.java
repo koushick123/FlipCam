@@ -27,10 +27,11 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.flipcam.constants.Constants;
+import com.flipcam.media.FileMedia;
+import com.flipcam.util.MediaUtil;
 import com.flipcam.view.CameraView;
 
 import java.io.File;
-import java.util.Arrays;
 
 import static android.widget.Toast.makeText;
 import static com.flipcam.PermissionActivity.FC_SHARED_PREFERENCE;
@@ -485,39 +486,19 @@ public class VideoFragment extends android.app.Fragment{
 
     public void getLatestFileIfExists()
     {
-        //SharedPreferences prefs = getActivity().getSharedPreferences(FC_SHARED_PREFERENCE, Context.MODE_PRIVATE);
-        //if(prefs.getBoolean("videoCapture",false))
-        //{
-            File dcimFc = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + getResources().getString(R.string.FC_ROOT));
-            if (dcimFc.exists() && dcimFc.isDirectory() && dcimFc.listFiles().length > 0) {
-                File[] media = dcimFc.listFiles();
-                Arrays.sort(media);
-                Log.d(TAG, "Latest file is = " + media[media.length - 1].getPath());
-                final String filePath = media[media.length - 1].getPath();
-                if (!isImage(filePath)) {
-                    MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
-                    mediaMetadataRetriever.setDataSource(filePath);
-                    Bitmap vid = mediaMetadataRetriever.getFrameAtTime(Constants.FIRST_SEC_MICRO);
-                    //If video cannot be played for whatever reason
-                    if (vid != null) {
-                        vid = Bitmap.createScaledBitmap(vid, (int) getResources().getDimension(R.dimen.thumbnailWidth),
-                                (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
-                        thumbnail.setImageBitmap(vid);
-                        thumbnail.setClickable(true);
-                        thumbnail.setOnClickListener(new View.OnClickListener() {
-                            @Override
-                            public void onClick(View view) {
-                                openMedia(filePath);
-                            }
-                        });
-                    } else {
-                        setPlaceholderThumbnail();
-                    }
-                } else {
-                    Bitmap pic = BitmapFactory.decodeFile(filePath);
-                    pic = Bitmap.createScaledBitmap(pic, (int) getResources().getDimension(R.dimen.thumbnailWidth),
+        FileMedia[] medias = MediaUtil.getMediaList(getActivity().getApplicationContext());
+        if (medias != null && medias.length > 0) {
+            Log.d(TAG, "Latest file is = " + medias[0].getPath());
+            final String filePath = medias[0].getPath();
+            if (!isImage(filePath)) {
+                MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
+                mediaMetadataRetriever.setDataSource(filePath);
+                Bitmap vid = mediaMetadataRetriever.getFrameAtTime(Constants.FIRST_SEC_MICRO);
+                //If video cannot be played for whatever reason
+                if (vid != null) {
+                    vid = Bitmap.createScaledBitmap(vid, (int) getResources().getDimension(R.dimen.thumbnailWidth),
                             (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
-                    thumbnail.setImageBitmap(pic);
+                    thumbnail.setImageBitmap(vid);
                     thumbnail.setClickable(true);
                     thumbnail.setOnClickListener(new View.OnClickListener() {
                         @Override
@@ -525,14 +506,26 @@ public class VideoFragment extends android.app.Fragment{
                             openMedia(filePath);
                         }
                     });
+                } else {
+                    setPlaceholderThumbnail();
                 }
+            } else {
+                Bitmap pic = BitmapFactory.decodeFile(filePath);
+                pic = Bitmap.createScaledBitmap(pic, (int) getResources().getDimension(R.dimen.thumbnailWidth),
+                        (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
+                thumbnail.setImageBitmap(pic);
+                thumbnail.setClickable(true);
+                thumbnail.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        openMedia(filePath);
+                    }
+                });
             }
-            else{
-                setPlaceholderThumbnail();
-            }
-        /*}
-        else {*/
-        //}
+        }
+        else{
+            setPlaceholderThumbnail();
+        }
     }
 
     public void setPlaceholderThumbnail()
