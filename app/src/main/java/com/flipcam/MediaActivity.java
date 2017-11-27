@@ -252,9 +252,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             }
         }
         previousSelectedFragment = position;
-        if(mPager.getOffscreenPageLimit() != 3){
-            mPager.setOffscreenPageLimit(3);
-        }
     }
 
     @Override

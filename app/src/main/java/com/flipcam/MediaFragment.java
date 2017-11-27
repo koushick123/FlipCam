@@ -163,7 +163,7 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
         videoSeek.setProgressTintList(ColorStateList.valueOf(getResources().getColor(R.color.seekFill)));
         Log.d(TAG, "Retrieve media completed == " + savedVideo.isMediaCompleted());
         if (savedVideo.isMediaCompleted()) {
-            videoView.seekTo(1000);
+            videoView.seekTo(100);
             videoSeek.setProgress(0);
             isCompleted = true;
         } else {
