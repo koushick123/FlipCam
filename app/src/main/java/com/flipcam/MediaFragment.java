@@ -44,7 +44,7 @@ import static com.flipcam.constants.Constants.VIDEO_SEEK_UPDATE;
  * Created by koushick on 29-Oct-17.
  */
 
-public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionListener, MediaPlayer.OnErrorListener, Serializable{
+public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionListener, MediaPlayer.OnErrorListener, MediaPlayer.OnPreparedListener, Serializable{
 
     private static final String TAG = "MediaFragment";
     transient RelativeLayout mediaPlaceholder;
@@ -396,6 +396,7 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
             }
             videoView.setOnCompletionListener(this);
             videoView.setOnErrorListener(this);
+            videoView.setOnPreparedListener(this);
         }
         return view;
     }
@@ -519,6 +520,7 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
     @Override
     public void onCompletion(MediaPlayer mediaPlayer) {
         Log.d(TAG,"Video Completed == "+path);
+        showAllControls();
         videoView.pause();
         isCompleted = true;
         pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow_white_24dp));
@@ -527,6 +529,11 @@ public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionL
         videoSeek.setProgress(0);
         seconds=0; minutes=0; hours=0;
         showTimeElapsed();
+    }
+
+    @Override
+    public void onPrepared(MediaPlayer mediaPlayer) {
+        Log.d(TAG,"onPrepared = "+path);
     }
 
     transient Object trackerSync = new Object();

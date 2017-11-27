@@ -141,7 +141,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         }
     }
 
-    boolean wasPlaying = false;
     @Override
     public void onPageSelected(int position) {
         Log.d(TAG,"onPageSelected = "+position+", previousSelectedFragment = "+previousSelectedFragment);
@@ -157,7 +156,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             if(previousFragment.videoView.isPlaying()){
                 Log.d(TAG,"Pause previous playback");
                 previousFragment.videoView.pause();
-                wasPlaying = true;
             }
             //previousFragment.videoView.setOnCompletionListener(null);
         }
@@ -191,7 +189,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             mediaMetadataRetriever.setDataSource(medias[position].getPath());
             duration = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
             calculateAndDisplayEndTime();
-            Log.d(TAG,"Set SEEKBAR");
+            Log.d(TAG,"Set MEDIA = "+medias[position].getPath());
             //Include tracker and reset position to start playing from start.
             videoControls.removeAllViews();
             videoControls.addView(timeControls);
@@ -206,7 +204,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             /*currentFrag.mediaPlaceholder.removeAllViews();
             currentFrag.mediaPlaceholder.addView(currentFrag.videoView);
             currentFrag.mediaPlaceholder.addView(currentFrag.preview);*/
-            currentFrag.videoView.forceLayout();
             if(currentFrag.videoView.getCurrentPosition() > 100){
                 currentFrag.videoView.seekTo(100);
             }
