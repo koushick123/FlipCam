@@ -202,8 +202,9 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             videoSeek.setProgressTintList(ColorStateList.valueOf(getResources().getColor(R.color.seekFill)));
             currentFrag.play=false;
             currentFrag.playInProgress=false;
-            currentFrag.resetMediaPlayer();
+            //currentFrag.resetMediaPlayer();
             //currentFrag.showFirstFrame();
+            currentFrag.mediaPlayer.seekTo(100);
             currentFrag.resetVideoTime();
             LinearLayout.LayoutParams pauseParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
             if (display.getRotation() == Surface.ROTATION_0) {
@@ -246,6 +247,9 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             }
         }
         previousSelectedFragment = position;
+        if(mPager.getOffscreenPageLimit()!=2){
+            mPager.setOffscreenPageLimit(2);
+        }
     }
 
     @Override

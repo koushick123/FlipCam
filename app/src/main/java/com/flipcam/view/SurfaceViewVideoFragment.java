@@ -1,6 +1,7 @@
 package com.flipcam.view;
 
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.graphics.Point;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
@@ -30,10 +31,12 @@ import com.flipcam.ControlVisbilityPreference;
 import com.flipcam.GlideApp;
 import com.flipcam.R;
 import com.flipcam.media.FileMedia;
+import com.flipcam.media.Media;
 import com.flipcam.util.MediaUtil;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 import java.lang.ref.WeakReference;
 
 import static com.flipcam.constants.Constants.VIDEO_SEEK_UPDATE;
@@ -42,10 +45,11 @@ import static com.flipcam.constants.Constants.VIDEO_SEEK_UPDATE;
  * Created by Koushick on 28-11-2017.
  */
 
-public class SurfaceViewVideoFragment extends Fragment implements SurfaceHolder.Callback, MediaPlayer.OnCompletionListener,MediaPlayer.OnPreparedListener {
+public class SurfaceViewVideoFragment extends Fragment implements SurfaceHolder.Callback, MediaPlayer.OnCompletionListener,MediaPlayer.OnPreparedListener,
+MediaPlayer.OnErrorListener, Serializable{
 
     static final String TAG = "SurfaceViewVideoFragmnt";
-    public MediaPlayer mediaPlayer;
+    public MediaPlayer mediaPlayer = null;
     transient RelativeLayout mediaPlaceholder;
     transient SurfaceView videoView=null;
     public boolean play=false;
@@ -70,6 +74,7 @@ public class SurfaceViewVideoFragment extends Fragment implements SurfaceHolder.
     transient FileMedia[] images=null;
     transient ImageView preview;
     ControlVisbilityPreference controlVisbilityPreference;
+    transient Display display;
     transient SurfaceViewVideoFragment.VideoTracker videoTracker;
 
     public static SurfaceViewVideoFragment newInstance(int pos){
@@ -91,6 +96,34 @@ public class SurfaceViewVideoFragment extends Fragment implements SurfaceHolder.
         endTime = (TextView)getActivity().findViewById(R.id.endTime);
         videoSeek = (SeekBar)getActivity().findViewById(R.id.videoSeek);
         controlVisbilityPreference = (ControlVisbilityPreference) getActivity().getApplicationContext();
+        if(getUserVisibleHint()) {
+            if(!isImage()) {
+                Media newVideo;
+                if (savedInstanceState != null) {
+                    newVideo = savedInstanceState.getParcelable("currentVideo");
+                    if(newVideo != null){
+                        //Since we will re-construct the saved video using 'currentVideo' Parcelable, no need for this.
+                        //This Bundle is created to maintain the saved video state when the user minimizes the app or opens task manager directly.
+                        //We will use this in onResume() if it's not null.
+                        getActivity().getIntent().removeExtra("saveVideoForMinimize");
+                    }
+                }
+                else{
+                    Log.d(TAG,"setup video");
+                    newVideo = new Media();
+                    newVideo.setMediaActualDuration(duration);
+                    newVideo.setMediaCompleted(false);
+                    newVideo.setMediaControlsHide(true);
+                    newVideo.setMediaPlaying(false);
+                    newVideo.setMediaPosition(0);
+                    newVideo.setMediaPreviousPos(0);
+                    newVideo.setSeekDuration(Integer.parseInt(duration));
+                }
+                reConstructVideo(newVideo);
+                showTimeElapsed();
+                calculateAndDisplayEndTime();
+            }
+        }
         if(!isImage()) {
             if (savedInstanceState != null) {
                 if(getUserVisibleHint()) {
@@ -128,6 +161,104 @@ public class SurfaceViewVideoFragment extends Fragment implements SurfaceHolder.
         }
     }
 
+    public void reConstructVideo(Media savedVideo){
+        videoSeek.setMax(savedVideo.getSeekDuration());
+        videoSeek.setThumb(getResources().getDrawable(R.drawable.whitecircle));
+        videoSeek.setProgressTintList(ColorStateList.valueOf(getResources().getColor(R.color.seekFill)));
+        Log.d(TAG, "Retrieve media completed == " + savedVideo.isMediaCompleted());
+        if (savedVideo.isMediaCompleted()) {
+            //mediaPlayer.seekTo(100);
+            videoSeek.setProgress(0);
+            isCompleted = true;
+        } else {
+            //Log.d(TAG,"Set SEEK to = "+savedVideo.getMediaPosition());
+            //mediaPlayer.seekTo(savedVideo.getMediaPosition());
+            videoSeek.setProgress(savedVideo.getMediaPosition());
+        }
+        Log.d(TAG, "Retrieve media playing = " + savedVideo.isMediaPlaying());
+        if (savedVideo.isMediaPlaying()) {
+            pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause_white_24dp));
+            play = true;
+        } else {
+            //mediaPlayer.pause();
+            pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow_white_24dp));
+            play = false;
+        }
+        LinearLayout.LayoutParams pauseParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        if (display.getRotation() == Surface.ROTATION_0) {
+            pauseParams.height = 100;
+            pause.setPadding(0, 0, 0, 0);
+        } else if (display.getRotation() == Surface.ROTATION_90 || display.getRotation() == Surface.ROTATION_270) {
+            pauseParams.height = 90;
+            pause.setPadding(0, 10, 0, 10);
+        }
+        pause.setLayoutParams(pauseParams);
+        pause.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (!play) {
+                    if (isCompleted) {
+                        isCompleted = false;
+                    }
+                    Log.d(TAG, "Set PLAY post rotate");
+                    //removeFirstFrame();
+                    mediaPlayer.start();
+                    playInProgress = true;
+                    pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause_white_24dp));
+                    play = true;
+                } else {
+                    Log.d(TAG, "Set PAUSE post rotate");
+                    mediaPlayer.pause();
+                    pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow_white_24dp));
+                    play = false;
+                }
+            }
+        });
+        //Get SAVED MEDIA CONTROLS VIEW STATE
+        Log.d(TAG, "Retrieve media controls hide = " + savedVideo.isMediaControlsHide());
+        if (savedVideo.isMediaControlsHide()) {
+            showAllControls();
+        } else {
+            hideAllControls();
+        }
+        controlVisbilityPreference.setHideControl(savedVideo.isMediaControlsHide());
+
+        //Get MEDIA DURATION
+        Log.d(TAG, "Retrieve media duration = " + savedVideo.getMediaActualDuration());
+        duration = savedVideo.getMediaActualDuration();
+
+        //Get SAVED PREVIOUS TIME
+        Log.d(TAG, "Retrieve media previous time = " + savedVideo.getMediaPreviousPos());
+        previousPos = savedVideo.getMediaPreviousPos();
+
+        //Get CURRENT TIME
+        //Log.d(TAG, "Retrieve current time = " + savedInstanceState.getString(MEDIA_CURRENT_TIME));
+        Log.d(TAG, "Retrieve current time = " +savedVideo.getMediaPosition() / 1000);
+        if(!isCompleted) {
+            seconds = savedVideo.getMediaPosition() / 1000;
+            if(seconds < 60){
+                minutes = 0;
+                hours = 0;
+            }
+            else{
+                minutes = seconds / 60;
+                if(minutes < 60) {
+                    hours = 0;
+                }
+                else{
+                    hours = minutes / 60;
+                    minutes = minutes % 60;
+                }
+                seconds = seconds % 60;
+            }
+        }
+        else{
+            seconds = 0;
+            minutes = 0;
+            hours = 0;
+        }
+    }
+
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -145,11 +276,15 @@ public class SurfaceViewVideoFragment extends Fragment implements SurfaceHolder.
         View view = inflater.inflate(R.layout.fragment_surfaceview_video, container, false);
         videoView = (SurfaceView) view.findViewById(R.id.recordedVideo);
         mediaPlaceholder = (RelativeLayout)view.findViewById(R.id.mediaPlaceholder);
+        mediaPlaceholder.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view) {
+                showMediaControls();
+            }
+        });
         WindowManager windowManager = (WindowManager)getActivity().getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
-        Display display = windowManager.getDefaultDisplay();
+        display = windowManager.getDefaultDisplay();
         //Log.d(TAG,"Rotation = "+display.getRotation());
-        Point screenSize=new Point();
-        display.getRealSize(screenSize);
         Log.d(TAG,"onCreateView = "+path);
         if(isImage()) {
             Log.d(TAG,"show image");
@@ -171,40 +306,86 @@ public class SurfaceViewVideoFragment extends Fragment implements SurfaceHolder.
                     showMediaControls();
                 }
             });
-            MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
-            mediaMetadataRetriever.setDataSource(path);
-            String width = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH);
-            String height = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT);
-            duration = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
             /*Log.d(TAG,"Video Width / Height = "+width+" / "+height);
             Log.d(TAG,"Aspect Ratio ==== "+Double.parseDouble(width)/Double.parseDouble(height));*/
-            double videoAR = Double.parseDouble(width) / Double.parseDouble(height);
-            double screenAR = (double) screenSize.x / (double) screenSize.y;
-            if (display.getRotation() == Surface.ROTATION_0) {
-                if (Math.abs(screenAR - videoAR) < 0.1) {
-                    adjustVideoToFitScreen();
-                }
-            } else if (display.getRotation() == Surface.ROTATION_90 || display.getRotation() == Surface.ROTATION_270) {
-                if (Math.abs(screenAR - videoAR) < 0.1) {
-                    adjustVideoToFitScreen();
-                }
-            }
+            fitVideoToScreen();
             mediaPlayer.setOnCompletionListener(this);
             mediaPlayer.setOnPreparedListener(this);
+            mediaPlayer.setOnErrorListener(this);
             SurfaceHolder holder = videoView.getHolder();
             holder.addCallback(this);
-            holder.setFixedSize(screenSize.x, screenSize.y);
+            //holder.setFixedSize(screenSize.x, screenSize.y);
         }
         return view;
     }
 
+    public void fitVideoToScreen(){
+        Point screenSize=new Point();
+        display.getRealSize(screenSize);
+        MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
+        mediaMetadataRetriever.setDataSource(path);
+        String width = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH);
+        String height = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT);
+        duration = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+        double videoAR = Double.parseDouble(width) / Double.parseDouble(height);
+        double screenAR = (double) screenSize.x / (double) screenSize.y;
+        if (display.getRotation() == Surface.ROTATION_0) {
+            if (Math.abs(screenAR - videoAR) < 0.1) {
+                adjustVideoToFitScreen();
+            }
+        } else if (display.getRotation() == Surface.ROTATION_90 || display.getRotation() == Surface.ROTATION_270) {
+            if (Math.abs(screenAR - videoAR) < 0.1) {
+                adjustVideoToFitScreen();
+            }
+        }
+    }
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        Log.d(TAG,"onSaveInstanceState = "+path+" , "+playInProgress);
+        Log.d(TAG,"getUserVisibleHint ? ="+getUserVisibleHint());
+        if(!isImage()) {
+            //outState.putParcelable("firstFrame",frameBm);
+            outState.putBoolean("videoPlayed", playInProgress);
+            //removeFirstFrame();
+            if (getUserVisibleHint()) {
+                Media media = new Media();
+                //media.setMediaPlaying(videoView.isPlaying());
+                media.setMediaPlaying(isMediaPlayingForMinmize);
+                //media.setMediaPosition(videoView.getCurrentPosition());
+                media.setMediaPosition(mediaPositionForMinimize);
+                media.setMediaControlsHide(controlVisbilityPreference.isHideControl());
+                media.setMediaActualDuration(duration);
+                media.setSeekDuration(videoSeek.getMax());
+                media.setMediaCompleted(isCompleted);
+                media.setMediaPreviousPos(previousPos);
+                outState.putParcelable("currentVideo",media);
+                if (mediaPlayer.isPlaying()) {
+                    mediaPlayer.pause();
+                }
+                Log.d(TAG,"saving isplaying = "+media.isMediaPlaying());
+                Log.d(TAG,"saving seek to = "+media.getMediaPosition());
+                getActivity().getIntent().putExtra("saveVideoForMinimize",media);
+            }
+        }
+    }
+
+    int mediaPositionForMinimize;
+    boolean isMediaPlayingForMinmize;
+
     public void adjustVideoToFitScreen(){
-        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+        /*RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
         layoutParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
         layoutParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
         layoutParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
         layoutParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
-        videoView.setLayoutParams(layoutParams);
+        videoView.setLayoutParams(layoutParams);*/
+        videoView.requestLayout();
+        ViewGroup.LayoutParams layoutParams = videoView.getLayoutParams();
+        Point screenSize=new Point();
+        display.getRealSize(screenSize);
+        layoutParams.width = screenSize.x;
+        layoutParams.height = screenSize.y;
     }
 
     public void showMediaControls()
@@ -262,6 +443,9 @@ public class SurfaceViewVideoFragment extends Fragment implements SurfaceHolder.
             } catch (IOException e) {
                 e.printStackTrace();
             }
+            if(getUserVisibleHint()){
+                startTrackerThread();
+            }
         }
     }
 
@@ -276,13 +460,55 @@ public class SurfaceViewVideoFragment extends Fragment implements SurfaceHolder.
         if(!isImage()){
             Log.d(TAG,"Released");
             mediaPlayer.release();
+            stopTrackerThread();
         }
     }
 
-    public void resetMediaPlayer(){
+    /*public void resetMediaPlayer(){
         if(mediaPlayer.getCurrentPosition() > 100){
             mediaPlayer.seekTo(100);
         }
+    }*/
+
+    public void calculateAndDisplayEndTime()
+    {
+        int videoLength = Integer.parseInt(duration);
+        int secs = (videoLength / 1000);
+        Log.d(TAG,"total no of secs = "+secs);
+        int hour = 0;
+        int mins = 0;
+        if(secs > 60){
+            mins = secs / 60;
+            if(mins > 60){
+                hour = mins / 60;
+                mins = mins % 60;
+            }
+            secs = secs % 60;
+        }
+        String showSec = "0";
+        String showMin = "0";
+        String showHr = "0";
+        if(secs < 10){
+            showSec += secs;
+        }
+        else{
+            showSec = secs+"";
+        }
+
+        if(mins < 10){
+            showMin += mins;
+        }
+        else{
+            showMin = mins+"";
+        }
+
+        if(hour < 10){
+            showHr += hour;
+        }
+        else{
+            showHr = hour+"";
+        }
+        endTime.setText(showHr+" : "+showMin+" : "+showSec);
     }
 
     public void resetVideoTime(){
@@ -312,17 +538,6 @@ public class SurfaceViewVideoFragment extends Fragment implements SurfaceHolder.
     }
 
     @Override
-    public void onPause() {
-        super.onPause();
-        Log.d(TAG,"onPause, visible? ="+getUserVisibleHint());
-        Log.d(TAG,"Path = "+images[framePosition].getPath());
-        if (videoView != null) {
-            Log.d(TAG, "Save media state hide = "+controlVisbilityPreference.isHideControl());
-            stopTrackerThread();
-        }
-    }
-
-    @Override
     public void onStop() {
         super.onStop();
     }
@@ -331,11 +546,11 @@ public class SurfaceViewVideoFragment extends Fragment implements SurfaceHolder.
     public void onCompletion(MediaPlayer mediaPlayer) {
         Log.d(TAG,"Video Completed == "+path);
         showAllControls();
-        mediaPlayer.pause();
+        //mediaPlayer.pause();
         isCompleted = true;
         pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow_white_24dp));
         play = false;
-        mediaPlayer.seekTo(0);
+        //mediaPlayer.seekTo(0);
         videoSeek.setProgress(0);
         seconds=0; minutes=0; hours=0;
         showTimeElapsed();
@@ -344,7 +559,23 @@ public class SurfaceViewVideoFragment extends Fragment implements SurfaceHolder.
     @Override
     public void onPrepared(MediaPlayer mediaPlayer) {
         Log.d(TAG,"onPrepared = "+path);
-        mediaPlayer.seekTo(100);
+        //mediaPlayer.seekTo(100);
+    }
+
+    @Override
+    public boolean onError(MediaPlayer mediaPlayer, int what, int extra) {
+        Log.d(TAG,"onError = "+path);
+        mediaPlayer.reset();
+        try {
+            Log.d(TAG,"set DATA SOURCE again");
+            mediaPlayer.setDataSource("file://"+path);
+            mediaPlayer.prepare();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        this.mediaPlayer = mediaPlayer;
+        fitVideoToScreen();
+        return true;
     }
 
     class MainHandler extends Handler {
@@ -374,7 +605,31 @@ public class SurfaceViewVideoFragment extends Fragment implements SurfaceHolder.
         Log.d(TAG,"Path = "+images[framePosition].getPath());
         if(!isImage()){
             previousPos = 0;
-            startTrackerThread();
+            //startTrackerThread();
+        }
+        else{
+            Media savedVideo = getActivity().getIntent().getParcelableExtra("saveVideoForMinimize");
+            Log.d(TAG,"SAVED VIDEO = "+savedVideo);
+            if(savedVideo != null) {
+                reConstructVideo(savedVideo);
+            }
+        }
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        Log.d(TAG,"onPause, visible? ="+getUserVisibleHint());
+        Log.d(TAG,"Path = "+images[framePosition].getPath());
+        if (videoView != null) {
+            Log.d(TAG, "Save media state hide = "+controlVisbilityPreference.isHideControl());
+            //stopTrackerThread();
+        }
+        if(!isImage()) {
+            if (getUserVisibleHint()) {
+                mediaPositionForMinimize = mediaPlayer.getCurrentPosition();
+                isMediaPlayingForMinmize = mediaPlayer.isPlaying();
+            }
         }
     }
 
