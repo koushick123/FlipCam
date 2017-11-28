@@ -204,7 +204,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             currentFrag.playInProgress=false;
             //currentFrag.resetMediaPlayer();
             //currentFrag.showFirstFrame();
-            currentFrag.mediaPlayer.seekTo(100);
+            currentFrag.resetMediaPlayer();
             currentFrag.resetVideoTime();
             LinearLayout.LayoutParams pauseParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
             if (display.getRotation() == Surface.ROTATION_0) {
@@ -245,10 +245,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             if(!currentFrag.isStartTracker()){
                 currentFrag.startTrackerThread();
             }
-        }
-        previousSelectedFragment = position;
-        if(mPager.getOffscreenPageLimit()!=2){
-            mPager.setOffscreenPageLimit(2);
         }
     }
 

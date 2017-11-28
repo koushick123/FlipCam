@@ -306,8 +306,6 @@ MediaPlayer.OnErrorListener, Serializable{
                     showMediaControls();
                 }
             });
-            /*Log.d(TAG,"Video Width / Height = "+width+" / "+height);
-            Log.d(TAG,"Aspect Ratio ==== "+Double.parseDouble(width)/Double.parseDouble(height));*/
             fitVideoToScreen();
             mediaPlayer.setOnCompletionListener(this);
             mediaPlayer.setOnPreparedListener(this);
@@ -327,8 +325,11 @@ MediaPlayer.OnErrorListener, Serializable{
         String width = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH);
         String height = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT);
         duration = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+        Log.d(TAG,"Video Width / Height = "+width+" / "+height);
+        Log.d(TAG,"Aspect Ratio ==== "+Double.parseDouble(width)/Double.parseDouble(height));
         double videoAR = Double.parseDouble(width) / Double.parseDouble(height);
         double screenAR = (double) screenSize.x / (double) screenSize.y;
+        Log.d(TAG,"Screen AR = "+screenAR);
         if (display.getRotation() == Surface.ROTATION_0) {
             if (Math.abs(screenAR - videoAR) < 0.1) {
                 adjustVideoToFitScreen();
@@ -432,9 +433,8 @@ MediaPlayer.OnErrorListener, Serializable{
 
     @Override
     public void surfaceCreated(SurfaceHolder surfaceHolder) {
-        Log.d(TAG,"surfaceCreated");
+        Log.d(TAG,"surfaceCreated = "+path);
         if(!isImage()){
-            Log.d(TAG,"For video = "+path);
             mediaPlayer.setDisplay(surfaceHolder);
             try {
                 mediaPlayer.setDataSource("file://"+path);
@@ -456,7 +456,7 @@ MediaPlayer.OnErrorListener, Serializable{
 
     @Override
     public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
-        Log.d(TAG,"surfaceDestroyed");
+        Log.d(TAG,"surfaceDestroyed = "+path);
         if(!isImage()){
             Log.d(TAG,"Released");
             mediaPlayer.release();
@@ -464,11 +464,11 @@ MediaPlayer.OnErrorListener, Serializable{
         }
     }
 
-    /*public void resetMediaPlayer(){
+    public void resetMediaPlayer(){
         if(mediaPlayer.getCurrentPosition() > 100){
             mediaPlayer.seekTo(100);
         }
-    }*/
+    }
 
     public void calculateAndDisplayEndTime()
     {
@@ -559,22 +559,12 @@ MediaPlayer.OnErrorListener, Serializable{
     @Override
     public void onPrepared(MediaPlayer mediaPlayer) {
         Log.d(TAG,"onPrepared = "+path);
-        //mediaPlayer.seekTo(100);
+        mediaPlayer.seekTo(100);
     }
 
     @Override
     public boolean onError(MediaPlayer mediaPlayer, int what, int extra) {
         Log.d(TAG,"onError = "+path);
-        mediaPlayer.reset();
-        try {
-            Log.d(TAG,"set DATA SOURCE again");
-            mediaPlayer.setDataSource("file://"+path);
-            mediaPlayer.prepare();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        this.mediaPlayer = mediaPlayer;
-        fitVideoToScreen();
         return true;
     }
 
