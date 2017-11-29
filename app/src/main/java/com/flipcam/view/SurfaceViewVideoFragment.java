@@ -52,7 +52,7 @@ MediaPlayer.OnErrorListener, Serializable{
     static final String TAG = "SurfaceViewVideoFragmnt";
     transient public MediaPlayer mediaPlayer = null;
     transient RelativeLayout mediaPlaceholder;
-    transient SurfaceView videoView=null;
+    transient public SurfaceView videoView=null;
     public boolean play=false;
     transient LinearLayout topBar;
     public String path;
@@ -76,7 +76,7 @@ MediaPlayer.OnErrorListener, Serializable{
     ControlVisbilityPreference controlVisbilityPreference;
     transient Display display;
     transient SurfaceViewVideoFragment.VideoTracker videoTracker;
-    public Media savedVideo = null;
+    transient public Media savedVideo = null;
 
     public static SurfaceViewVideoFragment newInstance(int pos){
         SurfaceViewVideoFragment surfaceViewVideoFragment = new SurfaceViewVideoFragment();
@@ -123,32 +123,6 @@ MediaPlayer.OnErrorListener, Serializable{
                 reConstructVideo(newVideo);
                 showTimeElapsed();
                 calculateAndDisplayEndTime();
-            }
-        }
-        if(!isImage()) {
-            if (savedInstanceState != null) {
-                /*if(getUserVisibleHint()) {
-                    playInProgress = savedInstanceState.getBoolean("videoPlayed");
-                    if (!playInProgress) {
-                        Log.d(TAG, "Video NOT played");
-                        mediaPlayer.seekTo(100);
-                        *//*frameBm = savedInstanceState.getParcelable("firstFrame");
-                        //preview.setImageBitmap(frameBm);
-                        GlideApp.with(getContext()).load(frameBm).into(preview);
-                        showFirstFrame();*//*
-                    } else {
-                        Log.d(TAG, "Video played");
-                    }
-                }
-                else{
-                    Log.d(TAG,"CREATE Preview with savedinstance");
-                    *//*frameBm = savedInstanceState.getParcelable("firstFrame");
-                    GlideApp.with(getContext()).load(frameBm).into(preview);
-                    //preview.setImageBitmap(frameBm);
-                    //removeFirstFrame();
-                    showFirstFrame();*//*
-
-                }*/
             }
         }
     }
@@ -248,6 +222,10 @@ MediaPlayer.OnErrorListener, Serializable{
             seconds = 0;
             minutes = 0;
             hours = 0;
+        }
+        if(savedVideo.isMediaCompleted()){
+            //Since we need to seekTo(100), we need to nullify savedVideo.
+            this.savedVideo = null;
         }
     }
 
@@ -357,9 +335,7 @@ MediaPlayer.OnErrorListener, Serializable{
             outState.putBoolean("videoPlayed", playInProgress);
             if (getUserVisibleHint()) {
                 Media media = new Media();
-                //media.setMediaPlaying(videoView.isPlaying());
                 media.setMediaPlaying(isMediaPlayingForMinmize);
-                //media.setMediaPosition(videoView.getCurrentPosition());
                 media.setMediaPosition(mediaPositionForMinimize);
                 media.setMediaControlsHide(controlVisbilityPreference.isHideControl());
                 media.setMediaActualDuration(duration);
@@ -367,9 +343,6 @@ MediaPlayer.OnErrorListener, Serializable{
                 media.setMediaCompleted(isCompleted);
                 media.setMediaPreviousPos(previousPos);
                 outState.putParcelable("currentVideo",media);
-                /*if (mediaPlayer.isPlaying()) {
-                    mediaPlayer.pause();
-                }*/
                 Log.d(TAG,"saving isplaying = "+media.isMediaPlaying());
                 Log.d(TAG,"saving seek to = "+media.getMediaPosition());
                 getActivity().getIntent().putExtra("saveVideoForMinimize",media);
@@ -439,30 +412,11 @@ MediaPlayer.OnErrorListener, Serializable{
                 mediaPlayer.setDataSource("file://"+path);
                 mediaPlayer.prepare();
                 Log.d(TAG,"MP prepared");
-                //savedVideo = getActivity().getIntent().getParcelableExtra("saveVideoForMinimize");
-                Log.d(TAG,"SAVED VIDEO for min = "+savedVideo);
-                if(savedVideo != null){
-                    reConstructVideo(savedVideo);
-                    /*pause.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View view) {
-                            if (!play) {
-                                if (isCompleted) {
-                                    isCompleted = false;
-                                }
-                                Log.d(TAG, "Set PLAY post rotate 22");
-                                mediaPlayer.start();
-                                playInProgress = true;
-                                pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause_white_24dp));
-                                play = true;
-                            } else {
-                                Log.d(TAG, "Set PAUSE post rotate 22");
-                                mediaPlayer.pause();
-                                pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow_white_24dp));
-                                play = false;
-                            }
-                        }
-                    });*/
+                if(getUserVisibleHint()) {
+                    Log.d(TAG, "SAVED VIDEO for min = " + savedVideo);
+                    if (savedVideo != null) {
+                        reConstructVideo(savedVideo);
+                    }
                 }
             } catch (IOException e) {
                 e.printStackTrace();
@@ -496,9 +450,8 @@ MediaPlayer.OnErrorListener, Serializable{
     }
 
     public void resetMediaPlayer(){
-        if(mediaPlayer.getCurrentPosition() > 100){
+        Log.d(TAG,"getCurrentPosition = "+mediaPlayer.getCurrentPosition());
             mediaPlayer.seekTo(100);
-        }
     }
 
     public void calculateAndDisplayEndTime()
@@ -588,13 +541,14 @@ MediaPlayer.OnErrorListener, Serializable{
     @Override
     public void onPrepared(MediaPlayer mediaPlayer) {
         Log.d(TAG,"onPrepared = "+path);
-        mediaPlayer.seekTo(100);
+        if(savedVideo == null) {
+            mediaPlayer.seekTo(100);
+        }
     }
 
     @Override
     public boolean onError(MediaPlayer mediaPlayer, int what, int extra) {
         Log.d(TAG,"onError = "+path);
-        videoView.requestLayout();
         return true;
     }
 
@@ -625,19 +579,8 @@ MediaPlayer.OnErrorListener, Serializable{
         Log.d(TAG,"Path = "+images[framePosition].getPath());
         if(!isImage()){
             previousPos = 0;
-            //startTrackerThread();
             savedVideo = getActivity().getIntent().getParcelableExtra("saveVideoForMinimize");
             Log.d(TAG,"SAVED VIDEO = "+savedVideo);
-            /*if(savedVideo != null) {
-                Log.d(TAG,"MP state = "+mediaPlayer);
-                if(mediaPlayer == null) {
-                    mediaPlayer = new MediaPlayer();
-                    mediaPlayer.setOnCompletionListener(this);
-                    mediaPlayer.setOnPreparedListener(this);
-                    mediaPlayer.setOnErrorListener(this);
-                }
-                reConstructVideo(savedVideo);
-            }*/
         }
     }
 

@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.graphics.Point;
 import android.media.MediaMetadataRetriever;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -29,6 +30,7 @@ import com.flipcam.media.FileMedia;
 import com.flipcam.util.MediaUtil;
 import com.flipcam.view.SurfaceViewVideoFragment;
 
+import java.io.IOException;
 import java.util.HashMap;
 
 import static com.flipcam.PermissionActivity.FC_MEDIA_PREFERENCE;
@@ -202,7 +204,27 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             videoSeek.setProgressTintList(ColorStateList.valueOf(getResources().getColor(R.color.seekFill)));
             currentFrag.play=false;
             currentFrag.playInProgress=false;
+            getIntent().removeExtra("saveVideoForMinimize");
             currentFrag.savedVideo = null;
+            currentFrag.setIsPlayCompleted(false);
+            final int pos = position;
+            currentFrag.mediaPlayer.setOnErrorListener(new MediaPlayer.OnErrorListener() {
+                @Override
+                public boolean onError(MediaPlayer mediaPlayer, int i, int i1) {
+                    Log.d(TAG,"CATCH onError");
+                    currentFrag.mediaPlayer.reset();
+                    try {
+                        currentFrag.mediaPlayer.setOnCompletionListener(currentFrag);
+                        currentFrag.mediaPlayer.setOnPreparedListener(currentFrag);
+                        currentFrag.mediaPlayer.setOnErrorListener(currentFrag);
+                        currentFrag.mediaPlayer.setDataSource("file://"+medias[pos].getPath());
+                        currentFrag.mediaPlayer.prepare();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    return true;
+                }
+            });
             currentFrag.resetMediaPlayer();
             currentFrag.resetVideoTime();
             LinearLayout.LayoutParams pauseParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -324,7 +346,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
 
         @Override
         public Fragment getItem(int position) {
-            //MediaFragment mediaFragment = MediaFragment.newInstance(position);
             SurfaceViewVideoFragment surfaceViewVideoFragment = SurfaceViewVideoFragment.newInstance(position);
             hashMapFrags.put(Integer.valueOf(position),surfaceViewVideoFragment);
             return surfaceViewVideoFragment;
