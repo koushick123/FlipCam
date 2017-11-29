@@ -202,8 +202,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             videoSeek.setProgressTintList(ColorStateList.valueOf(getResources().getColor(R.color.seekFill)));
             currentFrag.play=false;
             currentFrag.playInProgress=false;
-            //currentFrag.resetMediaPlayer();
-            //currentFrag.showFirstFrame();
+            currentFrag.savedVideo = null;
             currentFrag.resetMediaPlayer();
             currentFrag.resetVideoTime();
             LinearLayout.LayoutParams pauseParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -227,7 +226,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                         currentFrag.playInProgress = true;
                         Log.d(TAG,"Duration of video = "+currentFrag.mediaPlayer.getDuration()+" , path = "+
                                 currentFrag.path.substring(currentFrag.path.lastIndexOf("/"),currentFrag.path.length()));
-                        //currentFrag.removeFirstFrame();
                         currentFrag.mediaPlayer.start();
                         pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause_white_24dp));
                         currentFrag.play = true;
