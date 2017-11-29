@@ -246,6 +246,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 currentFrag.startTrackerThread();
             }
         }
+        previousSelectedFragment = position;
     }
 
     @Override
