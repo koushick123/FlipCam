@@ -11,8 +11,6 @@ import com.flipcam.R;
 
 import java.io.IOException;
 
-import static android.R.attr.path;
-
 /**
  * Created by Koushick on 29-11-2017.
  */
@@ -24,32 +22,41 @@ public class MediaView extends SurfaceView implements SurfaceHolder.Callback {
     String mediaPath;
     SurfaceViewVideoFragment surfaceViewVideoFragment;
 
-    public MediaView(Context context, AttributeSet attrs, MediaPlayer mediaPlayer, String path, SurfaceViewVideoFragment fragment) {
+    public MediaView(Context context, AttributeSet attrs) {
         super(context, attrs);
         Log.d(TAG,"start mediaView");
+        getHolder().addCallback(this);
+    }
+
+    public void setData(MediaPlayer mediaPlayer, String path, SurfaceViewVideoFragment fragment){
         mPlayer = mediaPlayer;
         mediaPath = path;
         surfaceViewVideoFragment = fragment;
-        getHolder().addCallback(this);
     }
 
     @Override
     public void surfaceCreated(SurfaceHolder surfaceHolder) {
-        Log.d(TAG,"surfaceCreated");
-        mPlayer.setDisplay(surfaceHolder);
-        try {
-            mPlayer.setDataSource("file://"+path);
-            mPlayer.prepare();
-            Log.d(TAG,"MP prepared");
-            if(surfaceViewVideoFragment.getUserVisibleHint()) {
-                /*Log.d(TAG, "SAVED VIDEO for min = " + savedVideo);
-                if (savedVideo != null) {
-                    reConstructVideo(savedVideo);
-                }*/
+        Log.d(TAG,"surfaceCreated = "+mediaPath);
+        if(!isImage()){
+            mPlayer.setDisplay(surfaceHolder);
+            try {
+                mPlayer.setDataSource("file://"+mediaPath);
+                mPlayer.prepare();
+                Log.d(TAG,"MP prepared");
+                if(surfaceViewVideoFragment.getUserVisibleHint()) {
+                    Log.d(TAG, "SAVED VIDEO for min = " + surfaceViewVideoFragment.savedVideo);
+                    if (surfaceViewVideoFragment.savedVideo != null) {
+                        surfaceViewVideoFragment.reConstructVideo(surfaceViewVideoFragment.savedVideo);
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-        } catch (IOException e) {
-            e.printStackTrace();
+            if(surfaceViewVideoFragment.getUserVisibleHint()){
+                surfaceViewVideoFragment.startTrackerThread();
+            }
         }
+        surfaceViewVideoFragment.fitVideoToScreen();
     }
 
     @Override
@@ -59,7 +66,19 @@ public class MediaView extends SurfaceView implements SurfaceHolder.Callback {
 
     @Override
     public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
-
+        Log.d(TAG,"surfaceDestroyed = "+mediaPath);
+        if(!isImage()){
+            if(surfaceViewVideoFragment.getUserVisibleHint()) {
+                Log.d(TAG, "Reset");
+                surfaceViewVideoFragment.stopTrackerThread();
+                try {
+                    surfaceViewVideoFragment.videoTracker.join();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            mPlayer.reset();
+        }
     }
 
     public boolean isImage()

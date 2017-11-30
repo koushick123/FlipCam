@@ -16,8 +16,6 @@ import android.util.Log;
 import android.view.Display;
 import android.view.LayoutInflater;
 import android.view.Surface;
-import android.view.SurfaceHolder;
-import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
@@ -36,7 +34,6 @@ import com.flipcam.media.Media;
 import com.flipcam.util.MediaUtil;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
 
@@ -46,13 +43,13 @@ import static com.flipcam.constants.Constants.VIDEO_SEEK_UPDATE;
  * Created by Koushick on 28-11-2017.
  */
 
-public class SurfaceViewVideoFragment extends Fragment implements SurfaceHolder.Callback, MediaPlayer.OnCompletionListener,MediaPlayer.OnPreparedListener,
+public class SurfaceViewVideoFragment extends Fragment implements MediaPlayer.OnCompletionListener,MediaPlayer.OnPreparedListener,
 MediaPlayer.OnErrorListener, Serializable{
 
     static final String TAG = "SurfaceViewVideoFragmnt";
     transient public MediaPlayer mediaPlayer = null;
     transient RelativeLayout mediaPlaceholder;
-    transient public SurfaceView videoView=null;
+    transient public MediaView videoView=null;
     public boolean play=false;
     transient LinearLayout topBar;
     public String path;
@@ -244,7 +241,7 @@ MediaPlayer.OnErrorListener, Serializable{
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_surfaceview_video, container, false);
-        videoView = (SurfaceView) view.findViewById(R.id.recordedVideo);
+        videoView = (MediaView) view.findViewById(R.id.recordedVideo);
         mediaPlaceholder = (RelativeLayout)view.findViewById(R.id.mediaPlaceholder);
         mediaPlaceholder.setOnClickListener(new View.OnClickListener(){
             @Override
@@ -258,6 +255,7 @@ MediaPlayer.OnErrorListener, Serializable{
         Log.d(TAG,"onCreateView = "+path);
         if(isImage()) {
             Log.d(TAG,"show image");
+            videoView.setData(null,path,this);
             videoView.setVisibility(View.GONE);
             picture = new ImageView(getActivity());
             picture.setId(picture.generateViewId());
@@ -268,6 +266,12 @@ MediaPlayer.OnErrorListener, Serializable{
         else {
             Log.d(TAG,"show video");
             mediaPlayer = new MediaPlayer();
+            mediaPlayer.setOnCompletionListener(this);
+            mediaPlayer.setOnPreparedListener(this);
+            mediaPlayer.setOnErrorListener(this);
+            /*SurfaceHolder holder = videoView.getHolder();
+            holder.addCallback(this);*/
+            videoView.setData(mediaPlayer,path,this);
             videoView.setKeepScreenOn(true);
             videoView.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -275,12 +279,9 @@ MediaPlayer.OnErrorListener, Serializable{
                     showMediaControls();
                 }
             });
-            fitVideoToScreen();
-            mediaPlayer.setOnCompletionListener(this);
-            mediaPlayer.setOnPreparedListener(this);
-            mediaPlayer.setOnErrorListener(this);
-            SurfaceHolder holder = videoView.getHolder();
-            holder.addCallback(this);
+            MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
+            mediaMetadataRetriever.setDataSource(path);
+            duration = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
         }
         return view;
     }
@@ -292,7 +293,6 @@ MediaPlayer.OnErrorListener, Serializable{
         mediaMetadataRetriever.setDataSource(path);
         String width = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH);
         String height = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT);
-        duration = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
         /*Log.d(TAG,"Video Width / Height = "+width+" / "+height);
         Log.d(TAG,"Aspect Ratio ==== "+Double.parseDouble(width)/Double.parseDouble(height));*/
         double videoAR = Double.parseDouble(width) / Double.parseDouble(height);
@@ -403,52 +403,6 @@ MediaPlayer.OnErrorListener, Serializable{
         videoSeek.setVisibility(View.VISIBLE);
     }
 
-    @Override
-    public void surfaceCreated(SurfaceHolder surfaceHolder) {
-        Log.d(TAG,"surfaceCreated = "+path);
-        if(!isImage()){
-            mediaPlayer.setDisplay(surfaceHolder);
-            try {
-                mediaPlayer.setDataSource("file://"+path);
-                mediaPlayer.prepare();
-                Log.d(TAG,"MP prepared");
-                if(getUserVisibleHint()) {
-                    Log.d(TAG, "SAVED VIDEO for min = " + savedVideo);
-                    if (savedVideo != null) {
-                        reConstructVideo(savedVideo);
-                    }
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            if(getUserVisibleHint()){
-                startTrackerThread();
-            }
-        }
-    }
-
-    @Override
-    public void surfaceChanged(SurfaceHolder surfaceHolder, int i, int i1, int i2) {
-
-    }
-
-    @Override
-    public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
-        Log.d(TAG,"surfaceDestroyed = "+path);
-        if(!isImage()){
-            if(getUserVisibleHint()) {
-                Log.d(TAG, "Reset");
-                stopTrackerThread();
-                try {
-                    videoTracker.join();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-            mediaPlayer.reset();
-        }
-    }
-
     public void resetMediaPlayer(){
         Log.d(TAG,"getCurrentPosition = "+mediaPlayer.getCurrentPosition());
             mediaPlayer.seekTo(100);
@@ -514,6 +468,10 @@ MediaPlayer.OnErrorListener, Serializable{
             return true;
         }
         return false;
+    }
+
+    public String getPath(){
+        return path;
     }
 
     @Override

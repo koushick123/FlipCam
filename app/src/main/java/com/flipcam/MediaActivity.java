@@ -82,6 +82,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         medias = MediaUtil.getMediaList(getApplicationContext());
         mPager = (ViewPager) findViewById(R.id.mediaPager);
+        mPager.setOffscreenPageLimit(1);
         mPagerAdapter = new MediaSlidePager(getSupportFragmentManager());
         mPager.setAdapter(mPagerAdapter);
         videoControls = (LinearLayout)findViewById(R.id.videoControls);
@@ -160,7 +161,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 Log.d(TAG,"Pause previous playback");
                 previousFragment.mediaPlayer.pause();
             }
-            //previousFragment.videoView.setOnCompletionListener(null);
         }
         //Display controls based on image/video
         if(isImage(medias[position].getPath())){
@@ -260,7 +260,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 }
             });
             currentFrag.previousPos = 0;
-            //currentFrag.videoView.setOnCompletionListener(currentFrag);
             Log.d(TAG,"Has VIDEO TRACKER STARTED? = "+currentFrag.isStartTracker());
             if(!currentFrag.isStartTracker()){
                 currentFrag.startTrackerThread();
