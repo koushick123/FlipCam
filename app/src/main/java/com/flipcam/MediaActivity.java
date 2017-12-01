@@ -32,7 +32,9 @@ import com.flipcam.util.MediaUtil;
 import com.flipcam.view.SurfaceViewVideoFragment;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Set;
 
 import static com.flipcam.PermissionActivity.FC_MEDIA_PREFERENCE;
 
@@ -74,16 +76,37 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         Log.d(TAG,"Length before delete = "+medias.length);
         Log.d(TAG,"Deleting file = "+medias[position].getPath());
         if(MediaUtil.deleteFile(medias[position])) {
+            FileMedia[] oldMedia;
+            oldMedia = Arrays.copyOf(medias,medias.length);
             Log.d(TAG, "Regenerate the list");
             medias = MediaUtil.getMediaList(getApplicationContext());
             Log.d(TAG,"Length AFTER delete = "+medias.length);
             if(medias.length > 0) {
+                previousSelectedFragment = -1;
                 mPagerAdapter = new MediaSlidePager(getSupportFragmentManager());
                 mPager.setAdapter(mPagerAdapter);
-                if (position < medias.length - 1) {
+                if (position < oldMedia.length - 1) {
                     Log.d(TAG, "Move to position = " + (position));
+                    //Update hashMapFrags to be able to navigate correctly
+                    Set keys = hashMapFrags.keySet();
+                    for(int i=0;i<keys.size();i++){
+                        Log.d(TAG,"Frag pos = "+i+", Path = "+hashMapFrags.get(i).getPath());
+                    }
+                    for(int i=0;i<hashMapFrags.size();i++){
+                        Log.d(TAG,"hashMapFrag pos = "+position);
+                        if(hashMapFrags.get(position + 1) != null) {
+                            Log.d(TAG,"Moving fragment to LEFT");
+                            hashMapFrags.remove(position);
+                            hashMapFrags.put(position,hashMapFrags.get(position + 1));
+                        }
+                        position++;
+                    }
+                    keys = hashMapFrags.keySet();
+                    for(int i=0;i<keys.size();i++){
+                        Log.d(TAG,"AFTER Frag pos = "+i+", Path = "+hashMapFrags.get(i).getPath());
+                    }
                     mPager.setCurrentItem(position);
-                } else if(position == medias.length - 1){
+                } else if(position == oldMedia.length - 1){
                     Log.d(TAG, "Move to LEFT new position = " + (position - 1));
                     mPager.setCurrentItem(position - 1);
                 }
@@ -185,6 +208,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         }
     }
 
+    //Default to first fragment, if user did not scroll.
     int selectedPosition = 0;
 
     @Override
@@ -195,14 +219,16 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         Log.d(TAG,"isHideControl = "+controlVisbilityPreference.isHideControl());
         //Reset preferences for every new fragment to be displayed.
         clearPreferences();
-        SurfaceViewVideoFragment previousFragment = hashMapFrags.get(previousSelectedFragment);
-        //If previous fragment had a video, stop the video and tracker thread immediately.
-        if(!isImage(medias[previousSelectedFragment].getPath())){
-            Log.d(TAG,"Stop previous tracker thread = "+previousFragment.path);
-            previousFragment.stopTrackerThread();
-            if(previousFragment.mediaPlayer.isPlaying()){
-                Log.d(TAG,"Pause previous playback");
-                previousFragment.mediaPlayer.pause();
+        if(previousSelectedFragment != -1) {
+            SurfaceViewVideoFragment previousFragment = hashMapFrags.get(previousSelectedFragment);
+            //If previous fragment had a video, stop the video and tracker thread immediately.
+            if (!isImage(medias[previousSelectedFragment].getPath())) {
+                Log.d(TAG, "Stop previous tracker thread = " + previousFragment.path);
+                previousFragment.stopTrackerThread();
+                if (previousFragment.mediaPlayer.isPlaying()) {
+                    Log.d(TAG, "Pause previous playback");
+                    previousFragment.mediaPlayer.pause();
+                }
             }
         }
         //Display controls based on image/video
