@@ -29,6 +29,7 @@ import android.os.Message;
 import android.support.v4.content.ContextCompat;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.OrientationEventListener;
 import android.view.Surface;
 import android.view.SurfaceHolder;
@@ -36,6 +37,7 @@ import android.view.SurfaceView;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -550,6 +552,13 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             Log.d(TAG, "Continuous AF");
             camera1.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
         }
+        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,LinearLayout.LayoutParams.WRAP_CONTENT);
+        layoutParams.height=(int)getResources().getDimension(R.dimen.flashOnHeight);
+        layoutParams.width=(int)getResources().getDimension(R.dimen.flashOnWidth);
+        layoutParams.setMargins((int)getResources().getDimension(R.dimen.flashOnLeftMargin),0,0,0);
+        layoutParams.weight=0.5f;
+        layoutParams.gravity= Gravity.CENTER;
+        flashBtn.setLayoutParams(layoutParams);
         if(this.photoFragment!=null){
             Log.d(TAG,"isSwitch = "+isSwitch);
             if(isSwitch){
@@ -565,7 +574,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 if (camera1.isFlashModeSupported(flashMode)) {
                     if (flashMode.equalsIgnoreCase(Camera.Parameters.FLASH_MODE_OFF)) {
                         flashOnOff(false);
-                        flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.flash_on));
+                        flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_on));
                     } else if (flashMode.equalsIgnoreCase(Camera.Parameters.FLASH_MODE_TORCH)) {
                         flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.flash_off));
                     }
@@ -573,13 +582,13 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                     if (flashMode != null && !flashMode.equalsIgnoreCase(Camera.Parameters.FLASH_MODE_OFF)) {
                         Toast.makeText(getContext(), "Flash Mode " + flashMode + " not supported by this camera.", Toast.LENGTH_SHORT).show();
                     }
-                    flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.flash_on));
+                    flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_on));
                 }
             }
             else {
                 //If you are going out of app and coming back, or switching between phone and video modes, switch off flash.
                 flashMode = Camera.Parameters.FLASH_MODE_OFF;
-                flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.flash_on));
+                flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_on));
                 flashOnOff(false);
                 this.photoFragment.setFlashOn(false);
             }
@@ -598,7 +607,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 if (camera1.isFlashModeSupported(flashMode)) {
                     if (flashMode.equalsIgnoreCase(Camera.Parameters.FLASH_MODE_OFF)) {
                         flashOnOff(false);
-                        flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.flash_on));
+                        flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_on));
                     } else if (flashMode.equalsIgnoreCase(Camera.Parameters.FLASH_MODE_TORCH)) {
                         flashOnOff(true);
                         flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.flash_off));
@@ -607,13 +616,13 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                     if (flashMode != null && !flashMode.equalsIgnoreCase(Camera.Parameters.FLASH_MODE_OFF)) {
                         Toast.makeText(getContext(), "Flash Mode " + flashMode + " not supported by this camera.", Toast.LENGTH_SHORT).show();
                     }
-                    flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.flash_on));
+                    flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_on));
                 }
             }
             else {
                 //If you are going out of app and coming back, or switching between phone and video modes, switch off flash.
                 flashMode = Camera.Parameters.FLASH_MODE_OFF;
-                flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.flash_on));
+                flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_on));
                 flashOnOff(false);
                 this.videoFragment.setFlashOn(false);
             }

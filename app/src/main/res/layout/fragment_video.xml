@@ -19,7 +19,8 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
         android:gravity="center"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:weightSum="1">
 
         <SeekBar
             android:id="@+id/zoomBar"
@@ -37,7 +38,8 @@
             android:background="@color/settingsBarColor"
             android:gravity="center"
             android:orientation="horizontal"
-            android:weightSum="1">
+            android:weightSum="1"
+            android:layout_weight="0.90">
 
             <ImageButton
                 android:id="@+id/substitute"
@@ -59,14 +61,15 @@
 
             <ImageButton
                 android:id="@+id/cameraRecord"
-                android:layout_width="67dp"
-                android:layout_height="76dp"
+                android:layout_width="@dimen/startButtonWidth"
+                android:layout_height="@dimen/startButtonHeight"
                 android:layout_gravity="center"
                 android:layout_marginLeft="15dp"
                 android:layout_marginRight="5dp"
                 android:background="@color/settingsBarColor"
                 android:scaleType="centerCrop"
-                android:src="@drawable/record_start" />
+                android:src="@drawable/camera_record_start"
+                android:layout_weight="0.08" />
 
             <ImageButton
                 android:id="@+id/photoMode"

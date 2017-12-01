@@ -181,10 +181,10 @@ public class VideoFragment extends android.app.Fragment{
                 videoBar.removeAllViews();
                 addStopAndPauseIcons();
                 hideSettingsBarAndIcon();
-                SharedPreferences.Editor editor = getActivity().getSharedPreferences(FC_SHARED_PREFERENCE, Context.MODE_PRIVATE).edit();
+                /*SharedPreferences.Editor editor = getActivity().getSharedPreferences(FC_SHARED_PREFERENCE, Context.MODE_PRIVATE).edit();
                 editor.putBoolean("videoCapture",true);
                 editor.commit();
-                cameraView.record();
+                cameraView.record();*/
             }
         });
         Log.d(TAG,"passing videofragment to cameraview");
@@ -220,7 +220,7 @@ public class VideoFragment extends android.app.Fragment{
         stopRecord = new ImageButton(getActivity().getApplicationContext());
         stopRecord.setScaleType(ImageView.ScaleType.CENTER_CROP);
         stopRecord.setBackgroundColor(getResources().getColor(R.color.transparentBar));
-        stopRecord.setImageDrawable(getResources().getDrawable(R.drawable.record_stop));
+        stopRecord.setImageDrawable(getResources().getDrawable(R.drawable.camera_record_stop));
         cameraView.setStopButton(stopRecord);
 
         layoutParams.height=(int)getResources().getDimension(R.dimen.stopButtonHeight);
@@ -321,7 +321,7 @@ public class VideoFragment extends android.app.Fragment{
             if (cameraView.isFlashOn()) {
                 flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_off));
             } else {
-                flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_on));
+                flash.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_on));
             }
         }
         LinearLayout.LayoutParams flashParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
@@ -356,7 +356,7 @@ public class VideoFragment extends android.app.Fragment{
             flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_off));
         }
         else{
-            flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_on));
+            flash.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_on));
         }
         flash.setOnClickListener(new View.OnClickListener(){
             @Override
@@ -418,7 +418,7 @@ public class VideoFragment extends android.app.Fragment{
         {
             Log.d(TAG,"Flash off");
             flashOn = false;
-            flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_on));
+            flash.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_on));
         }
         cameraView.flashOnOff(flashOn);
     }

@@ -1,15 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     //Settings bar
-    <dimen name="flashOnHeight">42dp</dimen>
-    <dimen name="flashOnWidth">37dp</dimen>
+    <dimen name="flashOnHeight">33dp</dimen>
+    <dimen name="flashOnWidth">30dp</dimen>
     <dimen name="flashOnLeftMargin">15dp</dimen>
     <dimen name="settingRightMargin">15dp</dimen>
     //Video fragment bar
     <dimen name="switchBtnLeftMargin">10dp</dimen>
     //Stop button
-    <dimen name="stopButtonHeight">76dp</dimen>
-    <dimen name="stopButtonWidth">67dp</dimen>
+    <dimen name="stopButtonHeight">80dp</dimen>
+    <dimen name="stopButtonWidth">72dp</dimen>
+    //Start button
+    <dimen name="startButtonHeight">73dp</dimen>
+    <dimen name="startButtonWidth">67dp</dimen>
     //Picture button
     <dimen name="pictureButtonWidth">67dp</dimen>
     <dimen name="pictureButtonHeight">76dp</dimen>
