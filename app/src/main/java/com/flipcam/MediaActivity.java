@@ -25,6 +25,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.flipcam.media.FileMedia;
 import com.flipcam.util.MediaUtil;
@@ -52,6 +53,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     LinearLayout parentMedia;
     HashMap<Integer,SurfaceViewVideoFragment> hashMapFrags = new HashMap<>();
     ControlVisbilityPreference controlVisbilityPreference;
+    ImageButton deleteMedia;
 
     @Override
     protected void onStop() {
@@ -66,6 +68,34 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     }
     Display display;
     Point screenSize;
+
+    public void deleteMedia(int position)
+    {
+        Log.d(TAG,"Length before delete = "+medias.length);
+        Log.d(TAG,"Deleting file = "+medias[position].getPath());
+        if(MediaUtil.deleteFile(medias[position])) {
+            Log.d(TAG, "Regenerate the list");
+            medias = MediaUtil.getMediaList(getApplicationContext());
+            Log.d(TAG,"Length AFTER delete = "+medias.length);
+            if(medias.length > 0) {
+                mPagerAdapter = new MediaSlidePager(getSupportFragmentManager());
+                mPager.setAdapter(mPagerAdapter);
+                if (position < medias.length - 1) {
+                    Log.d(TAG, "Move to position = " + (position));
+                    mPager.setCurrentItem(position);
+                } else if(position == medias.length - 1){
+                    Log.d(TAG, "Move to LEFT new position = " + (position - 1));
+                    mPager.setCurrentItem(position - 1);
+                }
+            }
+            else{
+                //Show empty media placeholder
+            }
+        }
+        else{
+            Toast.makeText(getApplicationContext(),"Unable to delete file",Toast.LENGTH_SHORT).show();
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,6 +115,14 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         mPager.setOffscreenPageLimit(1);
         mPagerAdapter = new MediaSlidePager(getSupportFragmentManager());
         mPager.setAdapter(mPagerAdapter);
+        deleteMedia = (ImageButton)findViewById(R.id.deleteMedia);
+        deleteMedia.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view) {
+                Log.d(TAG,"Delete position = "+selectedPosition);
+                deleteMedia(selectedPosition);
+            }
+        });
         videoControls = (LinearLayout)findViewById(R.id.videoControls);
         pause = (ImageButton) findViewById(R.id.playButton);
         startTime = (TextView)findViewById(R.id.startTime);
@@ -120,7 +158,8 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             previousSelectedFragment = savedInstanceState.getInt("previousSelectedFragment");
             Log.d(TAG,"previousSelectedFragment was = "+previousSelectedFragment);
             hashMapFrags = (HashMap)savedInstanceState.getSerializable("availableFragments");
-            //Log.d(TAG,"available fragments = "+hashMapFrags.size());
+            selectedPosition = savedInstanceState.getInt("selectedPosition");
+            Log.d(TAG,"select position = "+selectedPosition);
         }
         super.onRestoreInstanceState(savedInstanceState);
     }
@@ -128,6 +167,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         outState.putInt("previousSelectedFragment",previousSelectedFragment);
+        outState.putInt("selectedPosition",selectedPosition);
         outState.putSerializable("availableFragments",hashMapFrags);
         super.onSaveInstanceState(outState);
     }
@@ -145,9 +185,12 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         }
     }
 
+    int selectedPosition = 0;
+
     @Override
     public void onPageSelected(int position) {
         Log.d(TAG,"onPageSelected = "+position+", previousSelectedFragment = "+previousSelectedFragment);
+        selectedPosition = position;
         final SurfaceViewVideoFragment currentFrag = hashMapFrags.get(position);
         Log.d(TAG,"isHideControl = "+controlVisbilityPreference.isHideControl());
         //Reset preferences for every new fragment to be displayed.

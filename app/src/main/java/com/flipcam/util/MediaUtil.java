@@ -40,15 +40,18 @@ public class MediaUtil {
             });
             ArrayList<FileMedia> mediaArrayList = new ArrayList<>();
             for (int i = 0; i < mediaFiles.length; i++) {
-                //if(mediaFiles[i].getPath().endsWith(".mp4")) {
                     FileMedia fileMedia = new FileMedia();
                     fileMedia.setPath(mediaFiles[i].getPath());
                     fileMedia.setLastModified(mediaFiles[i].lastModified());
                     mediaArrayList.add(fileMedia);
-                //}
             }
             Collections.sort(mediaArrayList, new FileMediaLastModifiedComparator());
             mediaList = mediaArrayList.toArray(new FileMedia[mediaArrayList.size()]);
         }
+    }
+
+    public static boolean deleteFile(FileMedia media){
+        File deleteFile = new File(media.getPath());
+        return deleteFile.delete();
     }
 }

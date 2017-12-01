@@ -12,6 +12,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v4.view.ViewPager;
 import android.util.Log;
 import android.view.Display;
 import android.view.LayoutInflater;
@@ -74,6 +75,7 @@ MediaPlayer.OnErrorListener, Serializable{
     transient Display display;
     transient SurfaceViewVideoFragment.VideoTracker videoTracker;
     transient public Media savedVideo = null;
+    transient ViewPager viewPager;
 
     public static SurfaceViewVideoFragment newInstance(int pos){
         SurfaceViewVideoFragment surfaceViewVideoFragment = new SurfaceViewVideoFragment();
@@ -94,6 +96,8 @@ MediaPlayer.OnErrorListener, Serializable{
         endTime = (TextView)getActivity().findViewById(R.id.endTime);
         videoSeek = (SeekBar)getActivity().findViewById(R.id.videoSeek);
         controlVisbilityPreference = (ControlVisbilityPreference) getActivity().getApplicationContext();
+        //viewPager = (ViewPager)getActivity().findViewById(R.id.mediaPager);
+
         if(getUserVisibleHint()) {
             if(!isImage()) {
                 Media newVideo;
