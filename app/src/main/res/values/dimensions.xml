@@ -3,6 +3,7 @@
     //Settings bar
     <dimen name="flashOnHeight">33dp</dimen>
     <dimen name="flashOnWidth">30dp</dimen>
+    <dimen name="flashOnTopMargin">15dp</dimen>
     <dimen name="flashOnLeftMargin">15dp</dimen>
     <dimen name="settingRightMargin">15dp</dimen>
     //Video fragment bar

@@ -37,6 +37,7 @@ import android.view.SurfaceView;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -552,13 +553,14 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             Log.d(TAG, "Continuous AF");
             camera1.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
         }
-        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,LinearLayout.LayoutParams.WRAP_CONTENT);
-        layoutParams.height=(int)getResources().getDimension(R.dimen.flashOnHeight);
-        layoutParams.width=(int)getResources().getDimension(R.dimen.flashOnWidth);
-        layoutParams.setMargins((int)getResources().getDimension(R.dimen.flashOnLeftMargin),0,0,0);
-        layoutParams.weight=0.5f;
-        layoutParams.gravity= Gravity.CENTER;
-        flashBtn.setLayoutParams(layoutParams);
+        LinearLayout.LayoutParams flashParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,LinearLayout.LayoutParams.WRAP_CONTENT);
+        flashParams.weight=0.5f;
+        flashParams.height = (int)getResources().getDimension(R.dimen.flashOnHeight);
+        flashParams.width = (int)getResources().getDimension(R.dimen.flashOnWidth);
+        flashParams.setMargins((int)getResources().getDimension(R.dimen.flashOnLeftMargin),0,0,0);
+        flashParams.gravity= Gravity.CENTER;
+        flashBtn.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        flashBtn.setLayoutParams(flashParams);
         if(this.photoFragment!=null){
             Log.d(TAG,"isSwitch = "+isSwitch);
             if(isSwitch){
@@ -576,7 +578,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         flashOnOff(false);
                         flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_on));
                     } else if (flashMode.equalsIgnoreCase(Camera.Parameters.FLASH_MODE_TORCH)) {
-                        flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.flash_off));
+                        flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_off));
                     }
                 } else {
                     if (flashMode != null && !flashMode.equalsIgnoreCase(Camera.Parameters.FLASH_MODE_OFF)) {
@@ -610,7 +612,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_on));
                     } else if (flashMode.equalsIgnoreCase(Camera.Parameters.FLASH_MODE_TORCH)) {
                         flashOnOff(true);
-                        flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.flash_off));
+                        flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_off));
                     }
                 } else {
                     if (flashMode != null && !flashMode.equalsIgnoreCase(Camera.Parameters.FLASH_MODE_OFF)) {

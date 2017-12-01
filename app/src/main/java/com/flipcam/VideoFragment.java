@@ -181,10 +181,10 @@ public class VideoFragment extends android.app.Fragment{
                 videoBar.removeAllViews();
                 addStopAndPauseIcons();
                 hideSettingsBarAndIcon();
-                /*SharedPreferences.Editor editor = getActivity().getSharedPreferences(FC_SHARED_PREFERENCE, Context.MODE_PRIVATE).edit();
+                SharedPreferences.Editor editor = getActivity().getSharedPreferences(FC_SHARED_PREFERENCE, Context.MODE_PRIVATE).edit();
                 editor.putBoolean("videoCapture",true);
                 editor.commit();
-                cameraView.record();*/
+                cameraView.record();
             }
         });
         Log.d(TAG,"passing videofragment to cameraview");
@@ -330,6 +330,7 @@ public class VideoFragment extends android.app.Fragment{
         flashParams.width = (int)getResources().getDimension(R.dimen.flashOnWidth);
         flashParams.setMargins((int)getResources().getDimension(R.dimen.flashOnLeftMargin),0,0,0);
         flashParams.gravity=Gravity.CENTER;
+        flash.setScaleType(ImageView.ScaleType.FIT_CENTER);
         flash.setLayoutParams(flashParams);
         flash.setOnClickListener(new View.OnClickListener(){
             @Override
@@ -353,7 +354,7 @@ public class VideoFragment extends android.app.Fragment{
         settingsBar.removeView(settings);
         settingsBar.removeView(modeLayout);
         if(cameraView.isFlashOn()) {
-            flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_off));
+            flash.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_off));
         }
         else{
             flash.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_on));
@@ -367,6 +368,10 @@ public class VideoFragment extends android.app.Fragment{
         });
         LinearLayout.LayoutParams flashParam = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         flashParam.weight=0.3f;
+        flashParam.setMargins(0,(int)getResources().getDimension(R.dimen.flashOnTopMargin),0,0);
+        flashParam.width = (int)getResources().getDimension(R.dimen.flashOnWidth);
+        flashParam.height = (int)getResources().getDimension(R.dimen.flashOnHeight);
+        flash.setScaleType(ImageView.ScaleType.FIT_CENTER);
         flash.setLayoutParams(flashParam);
         flash.setBackgroundColor(getResources().getColor(R.color.transparentBar));
         cameraView.setFlashButton(flash);
@@ -408,7 +413,7 @@ public class VideoFragment extends android.app.Fragment{
             Log.d(TAG,"Flash on");
             if(cameraView.isFlashModeSupported(Camera.Parameters.FLASH_MODE_TORCH)) {
                 flashOn = true;
-                flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_off));
+                flash.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_off));
             }
             else{
                 makeText(getActivity().getApplicationContext(),"Flash Mode " + Camera.Parameters.FLASH_MODE_TORCH + " not supported by this camera.",Toast.LENGTH_SHORT).show();

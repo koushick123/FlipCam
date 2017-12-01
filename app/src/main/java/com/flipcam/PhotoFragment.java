@@ -291,7 +291,7 @@ public class PhotoFragment extends Fragment {
             Log.d(TAG,"Flash on");
             if(cameraView.isFlashModeSupported(Camera.Parameters.FLASH_MODE_TORCH)) {
                 flashOn = true;
-                flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_off));
+                flash.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_off));
             }
             else{
                 Toast.makeText(getActivity().getApplicationContext(),"Flash Mode " + Camera.Parameters.FLASH_MODE_TORCH + " not supported by this camera.",Toast.LENGTH_SHORT).show();
@@ -301,7 +301,7 @@ public class PhotoFragment extends Fragment {
         {
             Log.d(TAG,"Flash off");
             flashOn=false;
-            flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_on));
+            flash.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_on));
         }
     }
 
