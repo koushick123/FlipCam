@@ -273,8 +273,6 @@ MediaPlayer.OnErrorListener, Serializable{
             mediaPlayer.setOnCompletionListener(this);
             mediaPlayer.setOnPreparedListener(this);
             mediaPlayer.setOnErrorListener(this);
-            /*SurfaceHolder holder = videoView.getHolder();
-            holder.addCallback(this);*/
             videoView.setData(mediaPlayer,path,this);
             videoView.setKeepScreenOn(true);
             videoView.setOnClickListener(new View.OnClickListener() {
@@ -330,6 +328,7 @@ MediaPlayer.OnErrorListener, Serializable{
             }
         }
     }
+
     @Override
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);

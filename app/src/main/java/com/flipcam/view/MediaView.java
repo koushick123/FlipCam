@@ -72,7 +72,9 @@ public class MediaView extends SurfaceView implements SurfaceHolder.Callback {
                 Log.d(TAG, "Reset");
                 surfaceViewVideoFragment.stopTrackerThread();
                 try {
-                    surfaceViewVideoFragment.videoTracker.join();
+                    if(surfaceViewVideoFragment.videoTracker!=null) {
+                        surfaceViewVideoFragment.videoTracker.join();
+                    }
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }

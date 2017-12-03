@@ -32,8 +32,8 @@ import com.flipcam.util.MediaUtil;
 import com.flipcam.view.SurfaceViewVideoFragment;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Set;
 
 import static com.flipcam.PermissionActivity.FC_MEDIA_PREFERENCE;
@@ -76,35 +76,38 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         Log.d(TAG,"Length before delete = "+medias.length);
         Log.d(TAG,"Deleting file = "+medias[position].getPath());
         if(MediaUtil.deleteFile(medias[position])) {
-            FileMedia[] oldMedia;
+            /*FileMedia[] oldMedia;
             oldMedia = Arrays.copyOf(medias,medias.length);
             Log.d(TAG, "Regenerate the list");
             medias = MediaUtil.getMediaList(getApplicationContext());
             Log.d(TAG,"Length AFTER delete = "+medias.length);
             if(medias.length > 0) {
                 previousSelectedFragment = -1;
+                //Update hashMapFrags to be able to navigate correctly
+                Set<Integer> keys = hashMapFrags.keySet();
+                Iterator<Integer> iterator = keys.iterator();
+                while(iterator.hasNext()) {
+                    Integer pos = iterator.next();
+                    Log.d(TAG,"Frag pos = "+pos.intValue()+", Path = "+hashMapFrags.get(pos.intValue()).getPath());
+                    if(pos.intValue() == position){
+                        hashMapFrags.remove(pos.intValue());
+                        hashMapFrags.put(pos.intValue(),hashMapFrags.get(pos.intValue()+1));
+                        hashMapFrags.remove(pos.intValue()+1);
+                    }
+                }
+                keys = hashMapFrags.keySet();
+                iterator = keys.iterator();
+                while(iterator.hasNext()) {
+                    Integer pos = iterator.next();
+                    Log.d(TAG,"Frag pos AFTER delete = "+pos.intValue()+", Path = "+hashMapFrags.get(pos.intValue()).getPath());
+                }
+                HashMap<Integer,SurfaceViewVideoFragment> cloneMap = (HashMap)hashMapFrags.clone();
                 mPagerAdapter = new MediaSlidePager(getSupportFragmentManager());
                 mPager.setAdapter(mPagerAdapter);
+                //Repopulate the HashMap to maintain scroll order
+                hashMapFrags = cloneMap;
                 if (position < oldMedia.length - 1) {
                     Log.d(TAG, "Move to position = " + (position));
-                    //Update hashMapFrags to be able to navigate correctly
-                    Set keys = hashMapFrags.keySet();
-                    for(int i=0;i<keys.size();i++){
-                        Log.d(TAG,"Frag pos = "+i+", Path = "+hashMapFrags.get(i).getPath());
-                    }
-                    for(int i=0;i<hashMapFrags.size();i++){
-                        Log.d(TAG,"hashMapFrag pos = "+position);
-                        if(hashMapFrags.get(position + 1) != null) {
-                            Log.d(TAG,"Moving fragment to LEFT");
-                            hashMapFrags.remove(position);
-                            hashMapFrags.put(position,hashMapFrags.get(position + 1));
-                        }
-                        position++;
-                    }
-                    keys = hashMapFrags.keySet();
-                    for(int i=0;i<keys.size();i++){
-                        Log.d(TAG,"AFTER Frag pos = "+i+", Path = "+hashMapFrags.get(i).getPath());
-                    }
                     mPager.setCurrentItem(position);
                 } else if(position == oldMedia.length - 1){
                     Log.d(TAG, "Move to LEFT new position = " + (position - 1));
@@ -113,7 +116,15 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             }
             else{
                 //Show empty media placeholder
+            }*/
+            if(position < medias.length - 1){
+                setupVideo(hashMapFrags.get(position+1),position+1);
             }
+            else if(position == medias.length - 1){
+                setupVideo(hashMapFrags.get(position-1),position-1);
+            }
+            medias = MediaUtil.getMediaList(getApplicationContext());
+            mPagerAdapter.notifyDataSetChanged();
         }
         else{
             Toast.makeText(getApplicationContext(),"Unable to delete file",Toast.LENGTH_SHORT).show();
@@ -257,77 +268,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 endTime.setVisibility(View.GONE);
                 videoSeek.setVisibility(View.GONE);
             }
-            MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
-            mediaMetadataRetriever.setDataSource(medias[position].getPath());
-            duration = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
-            calculateAndDisplayEndTime();
-            Log.d(TAG,"Set MEDIA = "+medias[position].getPath());
-            //Include tracker and reset position to start playing from start.
-            videoControls.removeAllViews();
-            videoControls.addView(timeControls);
-            videoControls.addView(videoSeek);
-            videoControls.addView(parentMedia);
-            videoSeek.setMax(Integer.parseInt(duration));
-            videoSeek.setProgress(0);
-            videoSeek.setThumb(getResources().getDrawable(R.drawable.whitecircle));
-            videoSeek.setProgressTintList(ColorStateList.valueOf(getResources().getColor(R.color.seekFill)));
-            currentFrag.play=false;
-            currentFrag.playInProgress=false;
-            getIntent().removeExtra("saveVideoForMinimize");
-            currentFrag.savedVideo = null;
-            currentFrag.setIsPlayCompleted(false);
-            final int pos = position;
-            currentFrag.mediaPlayer.setOnErrorListener(new MediaPlayer.OnErrorListener() {
-                @Override
-                public boolean onError(MediaPlayer mediaPlayer, int i, int i1) {
-                    Log.d(TAG,"CATCH onError");
-                    currentFrag.mediaPlayer.reset();
-                    try {
-                        currentFrag.mediaPlayer.setOnCompletionListener(currentFrag);
-                        currentFrag.mediaPlayer.setOnPreparedListener(currentFrag);
-                        currentFrag.mediaPlayer.setOnErrorListener(currentFrag);
-                        currentFrag.mediaPlayer.setDataSource("file://"+medias[pos].getPath());
-                        currentFrag.mediaPlayer.prepare();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    return true;
-                }
-            });
-            currentFrag.resetMediaPlayer();
-            currentFrag.resetVideoTime();
-            LinearLayout.LayoutParams pauseParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-            if (display.getRotation() == Surface.ROTATION_0) {
-                pauseParams.height = 100;
-                pause.setPadding(0, 0, 0, 0);
-            } else if (display.getRotation() == Surface.ROTATION_90 || display.getRotation() == Surface.ROTATION_270) {
-                pauseParams.height = 90;
-                pause.setPadding(0, 10, 0, 10);
-            }
-            pause.setLayoutParams(pauseParams);
-            pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow_white_24dp));
-            pause.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    if (!currentFrag.play) {
-                        if (currentFrag.isPlayCompleted()) {
-                            currentFrag.setIsPlayCompleted(false);
-                        }
-                        Log.d(TAG,"Set PLAY");
-                        currentFrag.playInProgress = true;
-                        Log.d(TAG,"Duration of video = "+currentFrag.mediaPlayer.getDuration()+" , path = "+
-                                currentFrag.path.substring(currentFrag.path.lastIndexOf("/"),currentFrag.path.length()));
-                        currentFrag.mediaPlayer.start();
-                        pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause_white_24dp));
-                        currentFrag.play = true;
-                    } else {
-                        Log.d(TAG,"Set PAUSE");
-                        currentFrag.mediaPlayer.pause();
-                        pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow_white_24dp));
-                        currentFrag.play = false;
-                    }
-                }
-            });
+            setupVideo(currentFrag,position);
             currentFrag.previousPos = 0;
             Log.d(TAG,"Has VIDEO TRACKER STARTED? = "+currentFrag.isStartTracker());
             if(!currentFrag.isStartTracker()){
@@ -335,6 +276,80 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             }
         }
         previousSelectedFragment = position;
+    }
+
+    public void setupVideo(final SurfaceViewVideoFragment currentFrag, int position){
+        MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
+        mediaMetadataRetriever.setDataSource(medias[position].getPath());
+        duration = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+        calculateAndDisplayEndTime();
+        Log.d(TAG,"Set MEDIA = "+medias[position].getPath());
+        //Include tracker and reset position to start playing from start.
+        videoControls.removeAllViews();
+        videoControls.addView(timeControls);
+        videoControls.addView(videoSeek);
+        videoControls.addView(parentMedia);
+        videoSeek.setMax(Integer.parseInt(duration));
+        videoSeek.setProgress(0);
+        videoSeek.setThumb(getResources().getDrawable(R.drawable.whitecircle));
+        videoSeek.setProgressTintList(ColorStateList.valueOf(getResources().getColor(R.color.seekFill)));
+        currentFrag.play=false;
+        currentFrag.playInProgress=false;
+        getIntent().removeExtra("saveVideoForMinimize");
+        currentFrag.savedVideo = null;
+        currentFrag.setIsPlayCompleted(false);
+        final int pos = position;
+        currentFrag.mediaPlayer.setOnErrorListener(new MediaPlayer.OnErrorListener() {
+            @Override
+            public boolean onError(MediaPlayer mediaPlayer, int i, int i1) {
+                Log.d(TAG,"CATCH onError");
+                currentFrag.mediaPlayer.reset();
+                try {
+                    currentFrag.mediaPlayer.setOnCompletionListener(currentFrag);
+                    currentFrag.mediaPlayer.setOnPreparedListener(currentFrag);
+                    currentFrag.mediaPlayer.setOnErrorListener(currentFrag);
+                    currentFrag.mediaPlayer.setDataSource("file://"+medias[pos].getPath());
+                    currentFrag.mediaPlayer.prepare();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                return true;
+            }
+        });
+        currentFrag.resetMediaPlayer();
+        currentFrag.resetVideoTime();
+        LinearLayout.LayoutParams pauseParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        if (display.getRotation() == Surface.ROTATION_0) {
+            pauseParams.height = 100;
+            pause.setPadding(0, 0, 0, 0);
+        } else if (display.getRotation() == Surface.ROTATION_90 || display.getRotation() == Surface.ROTATION_270) {
+            pauseParams.height = 90;
+            pause.setPadding(0, 10, 0, 10);
+        }
+        pause.setLayoutParams(pauseParams);
+        pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow_white_24dp));
+        pause.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (!currentFrag.play) {
+                    if (currentFrag.isPlayCompleted()) {
+                        currentFrag.setIsPlayCompleted(false);
+                    }
+                    Log.d(TAG,"Set PLAY");
+                    currentFrag.playInProgress = true;
+                    Log.d(TAG,"Duration of video = "+currentFrag.mediaPlayer.getDuration()+" , path = "+
+                            currentFrag.path.substring(currentFrag.path.lastIndexOf("/"),currentFrag.path.length()));
+                    currentFrag.mediaPlayer.start();
+                    pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause_white_24dp));
+                    currentFrag.play = true;
+                } else {
+                    Log.d(TAG,"Set PAUSE");
+                    currentFrag.mediaPlayer.pause();
+                    pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow_white_24dp));
+                    currentFrag.play = false;
+                }
+            }
+        });
     }
 
     @Override
@@ -414,6 +429,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
 
         @Override
         public Fragment getItem(int position) {
+            Log.d(TAG,"getItem = "+position);
             SurfaceViewVideoFragment surfaceViewVideoFragment = SurfaceViewVideoFragment.newInstance(position);
             hashMapFrags.put(Integer.valueOf(position),surfaceViewVideoFragment);
             return surfaceViewVideoFragment;
@@ -427,6 +443,17 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
 
         public MediaSlidePager(FragmentManager fm) {
             super(fm);
+        }
+
+        @Override
+        public int getItemPosition(Object object) {
+            Set<Integer> keys = hashMapFrags.keySet();
+            Iterator<Integer> iterator = keys.iterator();
+            while(iterator.hasNext()) {
+                Integer pos = iterator.next();
+                Log.d(TAG,"Frag pos = "+pos.intValue()+", Path = "+hashMapFrags.get(pos.intValue()).getPath());
+            }
+            return POSITION_NONE;
         }
     }
 }
