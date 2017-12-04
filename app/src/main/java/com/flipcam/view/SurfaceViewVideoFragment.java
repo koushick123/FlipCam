@@ -74,11 +74,13 @@ MediaPlayer.OnErrorListener, Serializable{
     transient Display display;
     transient SurfaceViewVideoFragment.VideoTracker videoTracker;
     transient public Media savedVideo = null;
+    transient boolean recreate = false;
 
-    public static SurfaceViewVideoFragment newInstance(int pos){
+    public static SurfaceViewVideoFragment newInstance(int pos,boolean recreate){
         SurfaceViewVideoFragment surfaceViewVideoFragment = new SurfaceViewVideoFragment();
         Bundle args = new Bundle();
         args.putInt("position", pos);
+        args.putBoolean("recreate",recreate);
         surfaceViewVideoFragment.setArguments(args);
         return surfaceViewVideoFragment;
     }
@@ -105,6 +107,18 @@ MediaPlayer.OnErrorListener, Serializable{
                         //This Bundle is created to maintain the saved video state when the user minimizes the app or opens task manager directly.
                         //We will use this in onResume() if it's not null.
                         getActivity().getIntent().removeExtra("saveVideoForMinimize");
+                        if(recreate){
+                            recreate = false;
+                            Log.d(TAG,"recreate video");
+                            newVideo = new Media();
+                            newVideo.setMediaActualDuration(duration);
+                            newVideo.setMediaCompleted(false);
+                            newVideo.setMediaControlsHide(true);
+                            newVideo.setMediaPlaying(false);
+                            newVideo.setMediaPosition(0);
+                            newVideo.setMediaPreviousPos(0);
+                            newVideo.setSeekDuration(Integer.parseInt(duration));
+                        }
                     }
                 }
                 else{
@@ -231,11 +245,16 @@ MediaPlayer.OnErrorListener, Serializable{
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         framePosition = getArguments().getInt("position");
+        recreate = getArguments().getBoolean("recreate");
         //Log.d(TAG,"framePosition = "+framePosition);
         images = MediaUtil.getMediaList(getContext());
         path = images[framePosition].getPath();
-        Log.d(TAG,"media is == "+path);
+        Log.d(TAG,"media is == "+path+", recreate = "+recreate);
         setRetainInstance(true);
+    }
+
+    public int getFramePosition(){
+        return framePosition;
     }
 
     @Nullable

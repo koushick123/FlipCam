@@ -430,14 +430,15 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         @Override
         public Fragment getItem(int position) {
             Log.d(TAG,"getItem = "+position);
-            SurfaceViewVideoFragment surfaceViewVideoFragment = SurfaceViewVideoFragment.newInstance(position);
-            hashMapFrags.put(Integer.valueOf(position),surfaceViewVideoFragment);
-            if(isDelete){
+            SurfaceViewVideoFragment surfaceViewVideoFragment;
+            if(isDelete) {
                 isDelete = false;
-                if(!isImage(surfaceViewVideoFragment.getPath())) {
-                    setupVideo(surfaceViewVideoFragment, position);
-                }
+                surfaceViewVideoFragment = SurfaceViewVideoFragment.newInstance(position, true);
             }
+            else{
+                surfaceViewVideoFragment = SurfaceViewVideoFragment.newInstance(position, false);
+            }
+            hashMapFrags.put(Integer.valueOf(position),surfaceViewVideoFragment);
             return surfaceViewVideoFragment;
         }
 
@@ -451,14 +452,21 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             super(fm);
         }
 
+        int deletePosition = -1;
         @Override
         public int getItemPosition(Object object) {
             SurfaceViewVideoFragment fragment = (SurfaceViewVideoFragment)object;
-            Log.d(TAG,"getItemPos = "+fragment.getPath());
+            Log.d(TAG,"getItemPos = "+fragment.getPath()+", POS = "+fragment.getFramePosition());
             if(MediaUtil.doesPathExist(fragment.getPath())){
+                if(deletePosition != -1 && fragment.getFramePosition() == (deletePosition+1)){
+                    Log.d(TAG,"Recreate the next fragment as well");
+                    deletePosition = -1;
+                    return POSITION_NONE;
+                }
                 return POSITION_UNCHANGED;
             }
             else {
+                deletePosition = fragment.getFramePosition();
                 return POSITION_NONE;
             }
         }
