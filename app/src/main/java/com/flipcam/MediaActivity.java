@@ -33,8 +33,6 @@ import com.flipcam.view.SurfaceViewVideoFragment;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Set;
 
 import static com.flipcam.PermissionActivity.FC_MEDIA_PREFERENCE;
 
@@ -70,6 +68,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     }
     Display display;
     Point screenSize;
+    boolean isDelete = false;
 
     public void deleteMedia(int position)
     {
@@ -117,14 +116,15 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             else{
                 //Show empty media placeholder
             }*/
-            if(position < medias.length - 1){
-                setupVideo(hashMapFrags.get(position+1),position+1);
-            }
-            else if(position == medias.length - 1){
-                setupVideo(hashMapFrags.get(position-1),position-1);
-            }
+            isDelete = true;
             medias = MediaUtil.getMediaList(getApplicationContext());
             mPagerAdapter.notifyDataSetChanged();
+            /*if(position < medias.length - 1){
+                position++;
+            }
+            else if(position == medias.length - 1){
+                position--;
+            }*/
         }
         else{
             Toast.makeText(getApplicationContext(),"Unable to delete file",Toast.LENGTH_SHORT).show();
@@ -432,6 +432,12 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             Log.d(TAG,"getItem = "+position);
             SurfaceViewVideoFragment surfaceViewVideoFragment = SurfaceViewVideoFragment.newInstance(position);
             hashMapFrags.put(Integer.valueOf(position),surfaceViewVideoFragment);
+            if(isDelete){
+                isDelete = false;
+                if(!isImage(surfaceViewVideoFragment.getPath())) {
+                    setupVideo(surfaceViewVideoFragment, position);
+                }
+            }
             return surfaceViewVideoFragment;
         }
 
@@ -447,13 +453,14 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
 
         @Override
         public int getItemPosition(Object object) {
-            Set<Integer> keys = hashMapFrags.keySet();
-            Iterator<Integer> iterator = keys.iterator();
-            while(iterator.hasNext()) {
-                Integer pos = iterator.next();
-                Log.d(TAG,"Frag pos = "+pos.intValue()+", Path = "+hashMapFrags.get(pos.intValue()).getPath());
+            SurfaceViewVideoFragment fragment = (SurfaceViewVideoFragment)object;
+            Log.d(TAG,"getItemPos = "+fragment.getPath());
+            if(MediaUtil.doesPathExist(fragment.getPath())){
+                return POSITION_UNCHANGED;
             }
-            return POSITION_NONE;
+            else {
+                return POSITION_NONE;
+            }
         }
     }
 }

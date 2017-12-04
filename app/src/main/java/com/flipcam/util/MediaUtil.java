@@ -54,4 +54,14 @@ public class MediaUtil {
         File deleteFile = new File(media.getPath());
         return deleteFile.delete();
     }
+
+    public static boolean doesPathExist(String path){
+        sortAsPerLatest();
+        for(int i=0;i<mediaList.length;i++){
+            if(path.equalsIgnoreCase(mediaList[i].getPath())){
+                return true;
+            }
+        }
+        return false;
+    }
 }
