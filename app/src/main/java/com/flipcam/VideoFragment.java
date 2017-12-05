@@ -319,7 +319,7 @@ public class VideoFragment extends android.app.Fragment{
         settingsBar.removeAllViews();
         if(cameraView.isCameraReady()) {
             if (cameraView.isFlashOn()) {
-                flash.setImageDrawable(getResources().getDrawable(R.drawable.flash_off));
+                flash.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_off));
             } else {
                 flash.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_on));
             }

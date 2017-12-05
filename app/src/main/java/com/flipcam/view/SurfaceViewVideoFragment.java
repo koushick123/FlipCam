@@ -107,18 +107,18 @@ MediaPlayer.OnErrorListener, Serializable{
                         //This Bundle is created to maintain the saved video state when the user minimizes the app or opens task manager directly.
                         //We will use this in onResume() if it's not null.
                         getActivity().getIntent().removeExtra("saveVideoForMinimize");
-                        if(recreate){
-                            recreate = false;
-                            Log.d(TAG,"recreate video");
-                            newVideo = new Media();
-                            newVideo.setMediaActualDuration(duration);
-                            newVideo.setMediaCompleted(false);
-                            newVideo.setMediaControlsHide(true);
-                            newVideo.setMediaPlaying(false);
-                            newVideo.setMediaPosition(0);
-                            newVideo.setMediaPreviousPos(0);
-                            newVideo.setSeekDuration(Integer.parseInt(duration));
-                        }
+                    }
+                    if(recreate){
+                        recreate = false;
+                        Log.d(TAG,"recreate video");
+                        newVideo = new Media();
+                        newVideo.setMediaActualDuration(duration);
+                        newVideo.setMediaCompleted(false);
+                        newVideo.setMediaControlsHide(true);
+                        newVideo.setMediaPlaying(false);
+                        newVideo.setMediaPosition(0);
+                        newVideo.setMediaPreviousPos(0);
+                        newVideo.setSeekDuration(Integer.parseInt(duration));
                     }
                 }
                 else{
@@ -235,7 +235,7 @@ MediaPlayer.OnErrorListener, Serializable{
             minutes = 0;
             hours = 0;
         }
-        if(savedVideo.isMediaCompleted()){
+        if(savedVideo.isMediaCompleted() || recreate){
             //Since we need to seekTo(100), we need to nullify savedVideo.
             this.savedVideo = null;
         }

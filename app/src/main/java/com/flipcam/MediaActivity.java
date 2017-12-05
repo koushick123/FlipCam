@@ -245,28 +245,16 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         //Display controls based on image/video
         if(isImage(medias[position].getPath())){
             Log.d(TAG,"HIDE VIDEO");
-            videoControls.setVisibility(View.GONE);
-            pause.setVisibility(View.GONE);
-            startTime.setVisibility(View.GONE);
-            endTime.setVisibility(View.GONE);
-            videoSeek.setVisibility(View.GONE);
+            hideControls();
         }
         else{
             if(controlVisbilityPreference.isHideControl()) {
                 Log.d(TAG,"show controls");
-                videoControls.setVisibility(View.VISIBLE);
-                pause.setVisibility(View.VISIBLE);
-                startTime.setVisibility(View.VISIBLE);
-                endTime.setVisibility(View.VISIBLE);
-                videoSeek.setVisibility(View.VISIBLE);
+                showControls();
             }
             else{
                 Log.d(TAG,"hide controls");
-                videoControls.setVisibility(View.GONE);
-                pause.setVisibility(View.GONE);
-                startTime.setVisibility(View.GONE);
-                endTime.setVisibility(View.GONE);
-                videoSeek.setVisibility(View.GONE);
+                hideControls();
             }
             setupVideo(currentFrag,position);
             currentFrag.previousPos = 0;
@@ -276,6 +264,22 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             }
         }
         previousSelectedFragment = position;
+    }
+
+    public void hideControls(){
+        videoControls.setVisibility(View.GONE);
+        pause.setVisibility(View.GONE);
+        startTime.setVisibility(View.GONE);
+        endTime.setVisibility(View.GONE);
+        videoSeek.setVisibility(View.GONE);
+    }
+
+    public void showControls(){
+        videoControls.setVisibility(View.VISIBLE);
+        pause.setVisibility(View.VISIBLE);
+        startTime.setVisibility(View.VISIBLE);
+        endTime.setVisibility(View.VISIBLE);
+        videoSeek.setVisibility(View.VISIBLE);
     }
 
     public void setupVideo(final SurfaceViewVideoFragment currentFrag, int position){
@@ -434,6 +438,12 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             if(isDelete) {
                 isDelete = false;
                 surfaceViewVideoFragment = SurfaceViewVideoFragment.newInstance(position, true);
+                if(isImage(medias[position].getPath())){
+                    hideControls();
+                }
+                else{
+                    showControls();
+                }
             }
             else{
                 surfaceViewVideoFragment = SurfaceViewVideoFragment.newInstance(position, false);
