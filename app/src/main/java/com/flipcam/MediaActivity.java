@@ -54,11 +54,24 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     HashMap<Integer,SurfaceViewVideoFragment> hashMapFrags = new HashMap<>();
     ControlVisbilityPreference controlVisbilityPreference;
     ImageButton deleteMedia;
+    Display display;
+    Point screenSize;
+    boolean isDelete = false;
+    int previousSelectedFragment = 0;
+    //Default to first fragment, if user did not scroll.
+    int selectedPosition = 0;
+    int deletePosition = -1;
+    int itemCount = 0;
 
     @Override
     protected void onStop() {
         super.onStop();
         Log.d(TAG,"onStop");
+        SharedPreferences mediaValues = getSharedPreferences(FC_MEDIA_PREFERENCE,Context.MODE_PRIVATE);
+        SharedPreferences.Editor mediaState = mediaValues.edit();
+        mediaState.putInt("mediaCount",medias.length);
+        mediaState.commit();
+        Log.d(TAG,"Media length before leaving = "+medias.length);
     }
 
     @Override
@@ -66,70 +79,20 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         Log.d(TAG,"onDestroy");
         super.onDestroy();
     }
-    Display display;
-    Point screenSize;
-    boolean isDelete = false;
 
     public void deleteMedia(int position)
     {
         Log.d(TAG,"Length before delete = "+medias.length);
         Log.d(TAG,"Deleting file = "+medias[position].getPath());
         if(MediaUtil.deleteFile(medias[position])) {
-            /*FileMedia[] oldMedia;
-            oldMedia = Arrays.copyOf(medias,medias.length);
-            Log.d(TAG, "Regenerate the list");
-            medias = MediaUtil.getMediaList(getApplicationContext());
-            Log.d(TAG,"Length AFTER delete = "+medias.length);
-            if(medias.length > 0) {
-                previousSelectedFragment = -1;
-                //Update hashMapFrags to be able to navigate correctly
-                Set<Integer> keys = hashMapFrags.keySet();
-                Iterator<Integer> iterator = keys.iterator();
-                while(iterator.hasNext()) {
-                    Integer pos = iterator.next();
-                    Log.d(TAG,"Frag pos = "+pos.intValue()+", Path = "+hashMapFrags.get(pos.intValue()).getPath());
-                    if(pos.intValue() == position){
-                        hashMapFrags.remove(pos.intValue());
-                        hashMapFrags.put(pos.intValue(),hashMapFrags.get(pos.intValue()+1));
-                        hashMapFrags.remove(pos.intValue()+1);
-                    }
-                }
-                keys = hashMapFrags.keySet();
-                iterator = keys.iterator();
-                while(iterator.hasNext()) {
-                    Integer pos = iterator.next();
-                    Log.d(TAG,"Frag pos AFTER delete = "+pos.intValue()+", Path = "+hashMapFrags.get(pos.intValue()).getPath());
-                }
-                HashMap<Integer,SurfaceViewVideoFragment> cloneMap = (HashMap)hashMapFrags.clone();
-                mPagerAdapter = new MediaSlidePager(getSupportFragmentManager());
-                mPager.setAdapter(mPagerAdapter);
-                //Repopulate the HashMap to maintain scroll order
-                hashMapFrags = cloneMap;
-                if (position < oldMedia.length - 1) {
-                    Log.d(TAG, "Move to position = " + (position));
-                    mPager.setCurrentItem(position);
-                } else if(position == oldMedia.length - 1){
-                    Log.d(TAG, "Move to LEFT new position = " + (position - 1));
-                    mPager.setCurrentItem(position - 1);
-                }
-            }
-            else{
-                //Show empty media placeholder
-            }*/
+            itemCount = 0;
             isDelete = true;
             if(position == medias.length - 1){
                 //onPageSelected is called when deleting last media. Need to make previousSelectedFragment as -1.
                 previousSelectedFragment = -1;
             }
-            //if()
             medias = MediaUtil.getMediaList(getApplicationContext());
             mPagerAdapter.notifyDataSetChanged();
-            /*if(position < medias.length - 1){
-                position++;
-            }
-            else if(position == medias.length - 1){
-                position--;
-            }*/
         }
         else{
             Toast.makeText(getApplicationContext(),"Unable to delete file",Toast.LENGTH_SHORT).show();
@@ -188,11 +151,9 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
     }
 
-    int previousSelectedFragment = 0;
-
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
-        //Log.d(TAG,"onRestoreInstanceState");
+        Log.d(TAG,"onRestoreInstanceState");
         if(savedInstanceState!=null){
             previousSelectedFragment = savedInstanceState.getInt("previousSelectedFragment");
             Log.d(TAG,"previousSelectedFragment was = "+previousSelectedFragment);
@@ -223,9 +184,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             }
         }
     }
-
-    //Default to first fragment, if user did not scroll.
-    int selectedPosition = 0;
 
     @Override
     public void onPageSelected(int position) {
@@ -416,6 +374,18 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         super.onResume();
         mPager.addOnPageChangeListener(this);
         Log.d(TAG,"onResume");
+        itemCount = 0;
+        int oldLength = getSharedPreferences(FC_MEDIA_PREFERENCE,Context.MODE_PRIVATE).getInt("mediaCount",medias.length);
+        medias = MediaUtil.getMediaList(getApplicationContext());
+        if(medias.length < oldLength){
+            Log.d(TAG,"Possible deletions outside of App");
+            isDelete = true;
+            previousSelectedFragment = -1;
+        }
+        else{
+            Log.d(TAG,"Files added or no change");
+        }
+        mPagerAdapter.notifyDataSetChanged();
     }
 
     @Override
@@ -447,12 +417,13 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             if(isDelete) {
                 isDelete = false;
                 surfaceViewVideoFragment = SurfaceViewVideoFragment.newInstance(position, true);
-                if(isImage(medias[position].getPath())){
-                    hideControls();
-                }
-                else{
-                    showControls();
-                    setupVideoControls(position);
+                if(surfaceViewVideoFragment.getUserVisibleHint()) {
+                    if (isImage(medias[position].getPath())) {
+                        hideControls();
+                    } else {
+                        showControls();
+                        setupVideoControls(position);
+                    }
                 }
             }
             else{
@@ -472,16 +443,20 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             super(fm);
         }
 
-        int deletePosition = -1;
         @Override
         public int getItemPosition(Object object) {
             SurfaceViewVideoFragment fragment = (SurfaceViewVideoFragment)object;
-            Log.d(TAG,"getItemPos = "+fragment.getPath()+", POS = "+fragment.getFramePosition());
+            Log.d(TAG,"getItemPos = "+fragment.getPath()+", POS = "+fragment.getFramePosition()+", Uservisible? = "+fragment.getUserVisibleHint());
+            itemCount++;
             if(MediaUtil.doesPathExist(fragment.getPath())){
                 if(deletePosition != -1) {
-                    if (deletePosition < medias.length && fragment.getFramePosition() == (deletePosition + 1)) {
-                        Log.d(TAG, "Recreate the next fragment as well");
-                        deletePosition = -1;
+                    if (deletePosition < medias.length) {
+                        if(fragment.getFramePosition() == (deletePosition + 1) || fragment.getFramePosition() == (deletePosition + 2)) {
+                            Log.d(TAG, "Recreate the next fragment as well");
+                            if(itemCount == 3) {
+                                deletePosition = -1;
+                            }
+                        }
                         return POSITION_NONE;
                     } else if (deletePosition == medias.length - 1 && fragment.getFramePosition() == (deletePosition - 1)) {
                         Log.d(TAG, "Recreate the previous fragment as well");
