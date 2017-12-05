@@ -235,7 +235,7 @@ MediaPlayer.OnErrorListener, Serializable{
             minutes = 0;
             hours = 0;
         }
-        if(savedVideo.isMediaCompleted() || recreate){
+        if(savedVideo.isMediaCompleted()){
             //Since we need to seekTo(100), we need to nullify savedVideo.
             this.savedVideo = null;
         }
@@ -365,6 +365,9 @@ MediaPlayer.OnErrorListener, Serializable{
                 Log.d(TAG,"saving isplaying = "+media.isMediaPlaying());
                 Log.d(TAG,"saving seek to = "+media.getMediaPosition());
                 getActivity().getIntent().putExtra("saveVideoForMinimize",media);
+                if(mediaPlayer.isPlaying()){
+                    mediaPlayer.pause();
+                }
             }
         }
     }

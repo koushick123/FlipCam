@@ -117,6 +117,11 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 //Show empty media placeholder
             }*/
             isDelete = true;
+            if(position == medias.length - 1){
+                //onPageSelected is called when deleting last media. Need to make previousSelectedFragment as -1.
+                previousSelectedFragment = -1;
+            }
+            //if()
             medias = MediaUtil.getMediaList(getApplicationContext());
             mPagerAdapter.notifyDataSetChanged();
             /*if(position < medias.length - 1){
@@ -282,7 +287,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         videoSeek.setVisibility(View.VISIBLE);
     }
 
-    public void setupVideo(final SurfaceViewVideoFragment currentFrag, int position){
+    public void setupVideoControls(int position){
         MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
         mediaMetadataRetriever.setDataSource(medias[position].getPath());
         duration = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
@@ -297,6 +302,10 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         videoSeek.setProgress(0);
         videoSeek.setThumb(getResources().getDrawable(R.drawable.whitecircle));
         videoSeek.setProgressTintList(ColorStateList.valueOf(getResources().getColor(R.color.seekFill)));
+    }
+
+    public void setupVideo(final SurfaceViewVideoFragment currentFrag, int position){
+        setupVideoControls(position);
         currentFrag.play=false;
         currentFrag.playInProgress=false;
         getIntent().removeExtra("saveVideoForMinimize");
@@ -443,6 +452,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 }
                 else{
                     showControls();
+                    setupVideoControls(position);
                 }
             }
             else{
@@ -468,10 +478,16 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             SurfaceViewVideoFragment fragment = (SurfaceViewVideoFragment)object;
             Log.d(TAG,"getItemPos = "+fragment.getPath()+", POS = "+fragment.getFramePosition());
             if(MediaUtil.doesPathExist(fragment.getPath())){
-                if(deletePosition != -1 && fragment.getFramePosition() == (deletePosition+1)){
-                    Log.d(TAG,"Recreate the next fragment as well");
-                    deletePosition = -1;
-                    return POSITION_NONE;
+                if(deletePosition != -1) {
+                    if (deletePosition < medias.length && fragment.getFramePosition() == (deletePosition + 1)) {
+                        Log.d(TAG, "Recreate the next fragment as well");
+                        deletePosition = -1;
+                        return POSITION_NONE;
+                    } else if (deletePosition == medias.length - 1 && fragment.getFramePosition() == (deletePosition - 1)) {
+                        Log.d(TAG, "Recreate the previous fragment as well");
+                        deletePosition = -1;
+                        return POSITION_NONE;
+                    }
                 }
                 return POSITION_UNCHANGED;
             }
