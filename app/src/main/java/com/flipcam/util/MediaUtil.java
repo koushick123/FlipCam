@@ -48,6 +48,9 @@ public class MediaUtil {
             Collections.sort(mediaArrayList, new FileMediaLastModifiedComparator());
             mediaList = mediaArrayList.toArray(new FileMedia[mediaArrayList.size()]);
         }
+        else{
+            mediaList = null;
+        }
     }
 
     public static boolean deleteFile(FileMedia media){

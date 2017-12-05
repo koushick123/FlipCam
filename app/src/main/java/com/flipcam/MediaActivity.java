@@ -62,16 +62,25 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     int selectedPosition = 0;
     int deletePosition = -1;
     int itemCount = 0;
+    ImageView noImage;
 
     @Override
     protected void onStop() {
         super.onStop();
         Log.d(TAG,"onStop");
-        SharedPreferences mediaValues = getSharedPreferences(FC_MEDIA_PREFERENCE,Context.MODE_PRIVATE);
-        SharedPreferences.Editor mediaState = mediaValues.edit();
-        mediaState.putInt("mediaCount",medias.length);
-        mediaState.commit();
-        Log.d(TAG,"Media length before leaving = "+medias.length);
+        if(medias != null) {
+            SharedPreferences mediaValues = getSharedPreferences(FC_MEDIA_PREFERENCE, Context.MODE_PRIVATE);
+            SharedPreferences.Editor mediaState = mediaValues.edit();
+            mediaState.putInt("mediaCount", medias.length);
+            mediaState.commit();
+            Log.d(TAG, "Media length before leaving = " + medias.length);
+        }
+        else{
+            SharedPreferences mediaValues = getSharedPreferences(FC_MEDIA_PREFERENCE, Context.MODE_PRIVATE);
+            SharedPreferences.Editor mediaState = mediaValues.edit();
+            mediaState.putInt("mediaCount", 0);
+            mediaState.commit();
+        }
     }
 
     @Override
@@ -92,7 +101,12 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 previousSelectedFragment = -1;
             }
             medias = MediaUtil.getMediaList(getApplicationContext());
-            mPagerAdapter.notifyDataSetChanged();
+            if(medias != null) {
+                mPagerAdapter.notifyDataSetChanged();
+            }
+            else{
+                showNoImagePlaceholder();
+            }
         }
         else{
             Toast.makeText(getApplicationContext(),"Unable to delete file",Toast.LENGTH_SHORT).show();
@@ -134,6 +148,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         timeControls = (LinearLayout)findViewById(R.id.timeControls);
         parentMedia = (LinearLayout)findViewById(R.id.parentMedia);
         controlVisbilityPreference = (ControlVisbilityPreference)getApplicationContext();
+        noImage = (ImageView)findViewById(R.id.noImage);
         if(isImage(medias[0].getPath())) {
             videoControls.setVisibility(View.GONE);
             pause.setVisibility(View.GONE);
@@ -377,15 +392,30 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         itemCount = 0;
         int oldLength = getSharedPreferences(FC_MEDIA_PREFERENCE,Context.MODE_PRIVATE).getInt("mediaCount",medias.length);
         medias = MediaUtil.getMediaList(getApplicationContext());
-        if(medias.length < oldLength){
-            Log.d(TAG,"Possible deletions outside of App");
-            isDelete = true;
-            previousSelectedFragment = -1;
+        if(medias != null) {
+            if (medias.length < oldLength) {
+                Log.d(TAG, "Possible deletions outside of App");
+                isDelete = true;
+                previousSelectedFragment = -1;
+            } else {
+                Log.d(TAG, "Files added or no change");
+            }
+            topMediaControls.setVisibility(View.VISIBLE);
+            mPager.setVisibility(View.VISIBLE);
+            noImage.setVisibility(View.GONE);
         }
         else{
-            Log.d(TAG,"Files added or no change");
+            showNoImagePlaceholder();
         }
         mPagerAdapter.notifyDataSetChanged();
+    }
+
+    public void showNoImagePlaceholder(){
+        //No Images
+        topMediaControls.setVisibility(View.GONE);
+        videoControls.setVisibility(View.GONE);
+        mPager.setVisibility(View.GONE);
+        noImage.setVisibility(View.VISIBLE);
     }
 
     @Override
