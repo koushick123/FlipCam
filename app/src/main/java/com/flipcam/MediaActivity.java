@@ -3,6 +3,7 @@ package com.flipcam;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
+import android.content.res.Configuration;
 import android.graphics.Point;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
@@ -21,6 +22,7 @@ import android.view.Surface;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -65,6 +67,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     ImageView noImage;
     TextView noImageText;
     ImageButton pause;
+    ImageButton shareMedia;
 
     @Override
     protected void onStop() {
@@ -86,6 +89,44 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     protected void onDestroy() {
         Log.d(TAG,"onDestroy");
         super.onDestroy();
+    }
+
+    public void reDrawPause(){
+        LinearLayout.LayoutParams pauseParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        if(display.getRotation() == Surface.ROTATION_0) {
+            pauseParams.height = 100;
+            pauseParams.weight = 0.1f;
+        }
+        else{
+            pauseParams.height = 70;
+            pauseParams.weight = 0.04f;
+        }
+        pauseParams.gravity = Gravity.CENTER;
+        pause.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        pause.setLayoutParams(pauseParams);
+    }
+
+    public void reDrawTopMediaControls(){
+        FrameLayout.LayoutParams topMediaParams = new FrameLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        if(display.getRotation() == Surface.ROTATION_0){
+            topMediaParams.height = (int) getResources().getDimension(R.dimen.topMediaBarPortrait);
+            deleteMedia.setImageDrawable(getResources().getDrawable(R.drawable.ic_delete_portrait));
+            shareMedia.setImageDrawable(getResources().getDrawable(R.drawable.ic_share_portrait));
+        }
+        else{
+            topMediaParams.height = (int) getResources().getDimension(R.dimen.topMediaBarLandscape);
+            deleteMedia.setImageDrawable(getResources().getDrawable(R.drawable.ic_delete));
+            shareMedia.setImageDrawable(getResources().getDrawable(R.drawable.ic_share));
+        }
+        topMediaControls.setLayoutParams(topMediaParams);
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        Log.d(TAG,"onConfigurationChanged = "+display.getRotation());
+        reDrawPause();
+        reDrawTopMediaControls();
     }
 
     public void deleteMedia(int position)
@@ -140,6 +181,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         });
         videoControls = (LinearLayout)findViewById(R.id.videoControls);
         pause = (ImageButton) findViewById(R.id.playButton);
+        shareMedia = (ImageButton)findViewById(R.id.shareMedia);
         startTime = (TextView)findViewById(R.id.startTime);
         endTime = (TextView)findViewById(R.id.endTime);
         videoSeek = (SeekBar)findViewById(R.id.videoSeek);
@@ -159,6 +201,8 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         if(savedInstanceState == null){
             clearPreferences();
             controlVisbilityPreference.setHideControl(true);
+            reDrawPause();
+            reDrawTopMediaControls();
         }
     }
 
@@ -270,21 +314,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         videoControls.removeAllViews();
         videoControls.addView(timeControls);
         videoControls.addView(videoSeek);
-        parentMedia.removeAllViews();
-        LinearLayout.LayoutParams pauseParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        pauseParams.height=50;
-        pauseParams.gravity=Gravity.CENTER;
-        pauseParams.weight=0.1f;
-        pause.setScaleType(ImageView.ScaleType.CENTER_CROP);
-        pause.setBackgroundColor(getResources().getColor(R.color.mediaControlColor));
-        pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow));
-        pause.setLayoutParams(pauseParams);
-        parentMedia.addView(pause);
-        LinearLayout.LayoutParams mediaParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        mediaParams.weight=1f;
-        mediaParams.gravity= Gravity.CENTER;
-        parentMedia.setOrientation(LinearLayout.HORIZONTAL);
-        parentMedia.setLayoutParams(mediaParams);
         videoControls.addView(parentMedia);
         videoSeek.setMax(Integer.parseInt(duration));
         videoSeek.setProgress(0);
@@ -319,15 +348,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         });
         currentFrag.resetMediaPlayer();
         currentFrag.resetVideoTime();
-        LinearLayout.LayoutParams pauseParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        if (display.getRotation() == Surface.ROTATION_0) {
-            pauseParams.height = 100;
-            pause.setPadding(0, 0, 0, 0);
-        } else if (display.getRotation() == Surface.ROTATION_90 || display.getRotation() == Surface.ROTATION_270) {
-            pauseParams.height = 90;
-            pause.setPadding(0, 10, 0, 10);
-        }
-        pause.setLayoutParams(pauseParams);
+        reDrawPause();
         pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow));
         pause.setOnClickListener(new View.OnClickListener() {
             @Override

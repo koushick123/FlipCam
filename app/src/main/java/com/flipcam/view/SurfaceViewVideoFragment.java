@@ -162,15 +162,6 @@ MediaPlayer.OnErrorListener, Serializable{
             pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow));
             play = false;
         }
-        /*LinearLayout.LayoutParams pauseParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        if (display.getRotation() == Surface.ROTATION_0) {
-            pauseParams.height = 100;
-            pause.setPadding(0, 0, 0, 0);
-        } else if (display.getRotation() == Surface.ROTATION_90 || display.getRotation() == Surface.ROTATION_270) {
-            pauseParams.height = 90;
-            pause.setPadding(0, 10, 0, 10);
-        }
-        pause.setLayoutParams(pauseParams);*/
         pause.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -179,7 +170,6 @@ MediaPlayer.OnErrorListener, Serializable{
                         isCompleted = false;
                     }
                     Log.d(TAG, "Set PLAY post rotate");
-                    //removeFirstFrame();
                     mediaPlayer.start();
                     playInProgress = true;
                     pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause));
