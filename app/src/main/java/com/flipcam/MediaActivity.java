@@ -16,6 +16,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Display;
+import android.view.Gravity;
 import android.view.Surface;
 import android.view.View;
 import android.view.ViewGroup;
@@ -47,7 +48,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     String duration;
     TextView startTime;
     TextView endTime;
-    ImageView pause;
     SeekBar videoSeek;
     LinearLayout timeControls;
     LinearLayout parentMedia;
@@ -63,6 +63,8 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     int deletePosition = -1;
     int itemCount = 0;
     ImageView noImage;
+    TextView noImageText;
+    ImageButton pause;
 
     @Override
     protected void onStop() {
@@ -76,10 +78,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             Log.d(TAG, "Media length before leaving = " + medias.length);
         }
         else{
-            SharedPreferences mediaValues = getSharedPreferences(FC_MEDIA_PREFERENCE, Context.MODE_PRIVATE);
-            SharedPreferences.Editor mediaState = mediaValues.edit();
-            mediaState.putInt("mediaCount", 0);
-            mediaState.commit();
+            clearPreferences();
         }
     }
 
@@ -149,6 +148,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         parentMedia = (LinearLayout)findViewById(R.id.parentMedia);
         controlVisbilityPreference = (ControlVisbilityPreference)getApplicationContext();
         noImage = (ImageView)findViewById(R.id.noImage);
+        noImageText = (TextView)findViewById(R.id.noImageText);
         if(isImage(medias[0].getPath())) {
             videoControls.setVisibility(View.GONE);
             pause.setVisibility(View.GONE);
@@ -270,6 +270,21 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         videoControls.removeAllViews();
         videoControls.addView(timeControls);
         videoControls.addView(videoSeek);
+        parentMedia.removeAllViews();
+        LinearLayout.LayoutParams pauseParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        pauseParams.height=50;
+        pauseParams.gravity=Gravity.CENTER;
+        pauseParams.weight=0.1f;
+        pause.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        pause.setBackgroundColor(getResources().getColor(R.color.mediaControlColor));
+        pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow));
+        pause.setLayoutParams(pauseParams);
+        parentMedia.addView(pause);
+        LinearLayout.LayoutParams mediaParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        mediaParams.weight=1f;
+        mediaParams.gravity= Gravity.CENTER;
+        parentMedia.setOrientation(LinearLayout.HORIZONTAL);
+        parentMedia.setLayoutParams(mediaParams);
         videoControls.addView(parentMedia);
         videoSeek.setMax(Integer.parseInt(duration));
         videoSeek.setProgress(0);
@@ -313,7 +328,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             pause.setPadding(0, 10, 0, 10);
         }
         pause.setLayoutParams(pauseParams);
-        pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow_white_24dp));
+        pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow));
         pause.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -326,12 +341,12 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                     Log.d(TAG,"Duration of video = "+currentFrag.mediaPlayer.getDuration()+" , path = "+
                             currentFrag.path.substring(currentFrag.path.lastIndexOf("/"),currentFrag.path.length()));
                     currentFrag.mediaPlayer.start();
-                    pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause_white_24dp));
+                    pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause));
                     currentFrag.play = true;
                 } else {
                     Log.d(TAG,"Set PAUSE");
                     currentFrag.mediaPlayer.pause();
-                    pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow_white_24dp));
+                    pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow));
                     currentFrag.play = false;
                 }
             }
@@ -390,7 +405,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         mPager.addOnPageChangeListener(this);
         Log.d(TAG,"onResume");
         itemCount = 0;
-        int oldLength = getSharedPreferences(FC_MEDIA_PREFERENCE,Context.MODE_PRIVATE).getInt("mediaCount",medias.length);
+        int oldLength = getSharedPreferences(FC_MEDIA_PREFERENCE,Context.MODE_PRIVATE).getInt("mediaCount",0);
         medias = MediaUtil.getMediaList(getApplicationContext());
         if(medias != null) {
             if (medias.length < oldLength) {
@@ -400,14 +415,20 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             } else {
                 Log.d(TAG, "Files added or no change");
             }
-            topMediaControls.setVisibility(View.VISIBLE);
-            mPager.setVisibility(View.VISIBLE);
-            noImage.setVisibility(View.GONE);
+            hideNoImagePlaceholder();
+            mPagerAdapter.notifyDataSetChanged();
         }
         else{
+            clearPreferences();
             showNoImagePlaceholder();
         }
-        mPagerAdapter.notifyDataSetChanged();
+    }
+
+    public void hideNoImagePlaceholder(){
+        topMediaControls.setVisibility(View.VISIBLE);
+        mPager.setVisibility(View.VISIBLE);
+        noImage.setVisibility(View.GONE);
+        noImageText.setVisibility(View.GONE);
     }
 
     public void showNoImagePlaceholder(){
@@ -416,6 +437,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         videoControls.setVisibility(View.GONE);
         mPager.setVisibility(View.GONE);
         noImage.setVisibility(View.VISIBLE);
+        noImageText.setVisibility(View.VISIBLE);
     }
 
     @Override

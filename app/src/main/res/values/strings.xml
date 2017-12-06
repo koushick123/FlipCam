@@ -22,4 +22,5 @@
     <string name="MODE">MODE</string>
     <string name="RECORD_SAVED">VIDEO SAVED</string>
     <string name="IMAGE_SAVED">IMAGE SAVED</string>
+    <string name="NO_IMAGE">No Photos or Videos</string>
 </resources>

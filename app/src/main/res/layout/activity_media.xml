@@ -10,7 +10,20 @@
         android:layout_weight="0.5"
         android:background="@color/mediaControlColor"
         android:src="@drawable/ic_no_media"
-        android:visibility="gone" />
+        android:visibility="gone"
+         />
+
+    <TextView
+        android:id="@+id/noImageText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:gravity="center"
+        android:text="@string/NO_IMAGE"
+        android:textSize="@dimen/noImageTextSize"
+        android:textColor="@color/noImageTextColor"
+        android:visibility="gone"
+        />
 
     <android.support.v4.view.ViewPager xmlns:android="http://schemas.android.com/apk/res/android"
         android:id="@+id/mediaPager"
@@ -20,7 +33,7 @@
     <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
         android:id="@+id/topMediaControls"
         android:layout_width="match_parent"
-        android:layout_height="50dp"
+        android:layout_height="@dimen/topMediaBarPortrait"
         android:layout_gravity="top"
         android:gravity="center_vertical"
         android:background="@color/mediaControlColor"
@@ -32,7 +45,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="0.5"
             android:background="@color/mediaControlColor"
-            android:src="@drawable/ic_delete_black_24dp" />
+            android:src="@drawable/ic_delete" />
 
         <ImageButton
             android:id="@+id/shareMedia"
@@ -40,7 +53,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="0.5"
             android:background="@color/mediaControlColor"
-            android:src="@drawable/ic_share_black_24dp" />
+            android:src="@drawable/ic_share" />
 
     </LinearLayout>
     <LinearLayout
@@ -93,10 +106,10 @@
                 android:layout_width="wrap_content"
                 android:layout_height="50dp"
                 android:layout_gravity="center"
-                android:layout_weight="0.2"
+                android:layout_weight="0.1"
                 android:background="@color/mediaControlColor"
                 android:scaleType="centerCrop"
-                android:src="@drawable/ic_play_arrow_white_24dp" />
+                android:src="@drawable/ic_play_arrow" />
         </LinearLayout>
     </LinearLayout>
 </FrameLayout>

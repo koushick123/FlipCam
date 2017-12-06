@@ -283,7 +283,7 @@ public class VideoFragment extends android.app.Fragment{
         TextView recordSavedText = new TextView(getActivity());
         recordSavedText.setText(getResources().getString(R.string.RECORD_SAVED));
         ImageView recordSavedImg = new ImageView(getActivity());
-        recordSavedImg.setImageDrawable(getResources().getDrawable(R.drawable.ic_done_white_24dp));
+        recordSavedImg.setImageDrawable(getResources().getDrawable(R.drawable.ic_done_white));
         recordSavedText.setPadding((int)getResources().getDimension(R.dimen.recordSavePadding),(int)getResources().getDimension(R.dimen.recordSavePadding),
                 (int)getResources().getDimension(R.dimen.recordSavePadding),(int)getResources().getDimension(R.dimen.recordSavePadding));
         recordSavedText.setTextColor(getResources().getColor(R.color.saveText));

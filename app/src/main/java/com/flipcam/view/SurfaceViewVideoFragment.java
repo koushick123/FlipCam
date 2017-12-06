@@ -155,14 +155,14 @@ MediaPlayer.OnErrorListener, Serializable{
         }
         Log.d(TAG, "Retrieve media playing = " + savedVideo.isMediaPlaying());
         if (savedVideo.isMediaPlaying()) {
-            pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause_white_24dp));
+            pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause));
             play = true;
         } else {
             //mediaPlayer.pause();
-            pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow_white_24dp));
+            pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow));
             play = false;
         }
-        LinearLayout.LayoutParams pauseParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        /*LinearLayout.LayoutParams pauseParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         if (display.getRotation() == Surface.ROTATION_0) {
             pauseParams.height = 100;
             pause.setPadding(0, 0, 0, 0);
@@ -170,7 +170,7 @@ MediaPlayer.OnErrorListener, Serializable{
             pauseParams.height = 90;
             pause.setPadding(0, 10, 0, 10);
         }
-        pause.setLayoutParams(pauseParams);
+        pause.setLayoutParams(pauseParams);*/
         pause.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -182,12 +182,12 @@ MediaPlayer.OnErrorListener, Serializable{
                     //removeFirstFrame();
                     mediaPlayer.start();
                     playInProgress = true;
-                    pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause_white_24dp));
+                    pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause));
                     play = true;
                 } else {
                     Log.d(TAG, "Set PAUSE post rotate");
                     mediaPlayer.pause();
-                    pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow_white_24dp));
+                    pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow));
                     play = false;
                 }
             }
@@ -511,7 +511,7 @@ MediaPlayer.OnErrorListener, Serializable{
         Log.d(TAG,"Video Completed == "+path);
         showAllControls();
         isCompleted = true;
-        pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow_white_24dp));
+        pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow));
         play = false;
         videoSeek.setProgress(0);
         seconds=0; minutes=0; hours=0;

@@ -60,4 +60,10 @@
     <dimen name="shareDeleteTopMarginPortrait">15dp</dimen>
     //Top margin for share and delete buttons (Landscape)
     <dimen name="shareDeleteTopMarginLandscape">10dp</dimen>
+    //Size for no image text
+    <dimen name="noImageTextSize">25sp</dimen>
+    //Size of top bar for media (Portrait)
+    <dimen name="topMediaBarPortrait">60dp</dimen>
+    //Size of top bar for media (Landscape)
+    <dimen name="topMediaBarLandscape">40dp</dimen>
 </resources>
