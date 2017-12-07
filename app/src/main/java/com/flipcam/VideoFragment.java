@@ -565,9 +565,9 @@ public class VideoFragment extends android.app.Fragment{
     private void openMedia(String path)
     {
         setCameraClose();
-        Intent intent = new Intent(getActivity().getApplicationContext(), MediaActivity.class);
-        intent.putExtra("mediaPath",path);
-        startActivity(intent);
+        //Intent mediaIntent = new Intent(getActivity().getApplicationContext(), MediaActivity.class);
+        Intent mediaIntent = new Intent(getActivity().getApplicationContext(), ZoomActivity.class);
+        startActivity(mediaIntent);
     }
 
     private void setCameraClose()
