@@ -76,7 +76,8 @@
             android:layout_weight="0.5"
             android:gravity="left"
             android:text="@string/START_TIME"
-            android:textColor="@color/time" />
+            android:textStyle="bold"
+            android:textColor="@color/turqoise" />
 
         <TextView
             android:id="@+id/endTime"
@@ -84,7 +85,8 @@
             android:layout_height="wrap_content"
             android:layout_weight="0.5"
             android:gravity="right"
-            android:textColor="@color/time" />
+            android:textStyle="bold"
+            android:textColor="@color/turqoise" />
     </LinearLayout>
         <SeekBar
             android:id="@+id/videoSeek"

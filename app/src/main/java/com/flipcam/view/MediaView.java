@@ -52,7 +52,7 @@ public class MediaView extends SurfaceView implements SurfaceHolder.Callback {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            if(surfaceViewVideoFragment.getUserVisibleHint()){
+            if(surfaceViewVideoFragment.getUserVisibleHint() && !surfaceViewVideoFragment.isStartTracker()){
                 surfaceViewVideoFragment.startTrackerThread();
             }
         }

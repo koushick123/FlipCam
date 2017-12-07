@@ -317,8 +317,8 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         videoControls.addView(parentMedia);
         videoSeek.setMax(Integer.parseInt(duration));
         videoSeek.setProgress(0);
-        videoSeek.setThumb(getResources().getDrawable(R.drawable.whitecircle));
-        videoSeek.setProgressTintList(ColorStateList.valueOf(getResources().getColor(R.color.seekFill)));
+        videoSeek.setThumb(getResources().getDrawable(R.drawable.turqoise));
+        videoSeek.setProgressTintList(ColorStateList.valueOf(getResources().getColor(R.color.turqoise)));
     }
 
     public void setupVideo(final SurfaceViewVideoFragment currentFrag, int position){

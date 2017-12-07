@@ -141,8 +141,8 @@ MediaPlayer.OnErrorListener, Serializable{
 
     public void reConstructVideo(Media savedVideo){
         videoSeek.setMax(savedVideo.getSeekDuration());
-        videoSeek.setThumb(getResources().getDrawable(R.drawable.whitecircle));
-        videoSeek.setProgressTintList(ColorStateList.valueOf(getResources().getColor(R.color.seekFill)));
+        videoSeek.setThumb(getResources().getDrawable(R.drawable.turqoise));
+        videoSeek.setProgressTintList(ColorStateList.valueOf(getResources().getColor(R.color.turqoise)));
         Log.d(TAG, "Retrieve media completed == " + savedVideo.isMediaCompleted());
         if (savedVideo.isMediaCompleted()) {
             //mediaPlayer.seekTo(100);

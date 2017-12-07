@@ -5,6 +5,8 @@
     <color name="colorAccent">#FF4081</color>
     //Settings Bar
     <color name="settingsBarColor">#000000</color>
+    //Media background color
+    <color name="mediaBackground">#FFFFFF</color>
     //Transparent bar
     <color name="transparentBar">#00000000</color>
     //Black Background
@@ -20,7 +22,7 @@
     //Memory consumed text color
     <color name="memoryConsumed">#ff0000</color>
     //Top and Bottom media control color for image
-    <color name="mediaControlColor">#FFFFFF</color>
+    <color name="mediaControlColor">#000000</color>
     //Progress fill color for video seekbar
     <color name="seekFill">#FFFFFF</color>
     //Start and end time color
