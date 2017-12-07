@@ -23,4 +23,8 @@
     <string name="RECORD_SAVED">VIDEO SAVED</string>
     <string name="IMAGE_SAVED">IMAGE SAVED</string>
     <string name="NO_IMAGE">No Photos or Videos</string>
+    <string name="deleteTitle">Delete Media</string>
+    <string name="deleteMessage">Do you want to delete the Photo/Video?</string>
+    <string name="okToDelete">OK</string>
+    <string name="cancelToDelete">Cancel</string>
 </resources>

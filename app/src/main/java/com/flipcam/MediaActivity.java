@@ -1,5 +1,6 @@
 package com.flipcam;
 
+import android.app.Dialog;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
@@ -68,6 +69,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     TextView noImageText;
     ImageButton pause;
     ImageButton shareMedia;
+    Dialog deleteAlert;
 
     @Override
     protected void onStop() {
@@ -143,12 +145,15 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             medias = MediaUtil.getMediaList(getApplicationContext());
             if(medias != null) {
                 mPagerAdapter.notifyDataSetChanged();
+                deleteAlert.dismiss();
             }
             else{
+                deleteAlert.dismiss();
                 showNoImagePlaceholder();
             }
         }
         else{
+            deleteAlert.dismiss();
             Toast.makeText(getApplicationContext(),"Unable to delete file",Toast.LENGTH_SHORT).show();
         }
     }
@@ -172,11 +177,14 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         mPagerAdapter = new MediaSlidePager(getSupportFragmentManager());
         mPager.setAdapter(mPagerAdapter);
         deleteMedia = (ImageButton)findViewById(R.id.deleteMedia);
+        deleteAlert = new Dialog(this);
         deleteMedia.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view) {
                 Log.d(TAG,"Delete position = "+selectedPosition);
-                deleteMedia(selectedPosition);
+                deleteAlert.setContentView(R.layout.delete_media);
+                deleteAlert.setCancelable(true);
+                deleteAlert.show();
             }
         });
         videoControls = (LinearLayout)findViewById(R.id.videoControls);
@@ -204,6 +212,17 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             reDrawPause();
             reDrawTopMediaControls();
         }
+    }
+
+    public void delete(View view){
+        Log.d(TAG,"DELETE");
+        view.setClickable(false);
+        deleteMedia(selectedPosition);
+    }
+
+    public void cancel(View view){
+        Log.d(TAG,"CANCEL");
+        deleteAlert.dismiss();
     }
 
     @Override
