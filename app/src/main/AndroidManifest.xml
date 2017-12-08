@@ -48,7 +48,6 @@
         <activity
             android:name=".MediaActivity"
             android:configChanges="orientation|screenSize"></activity>
-        <activity android:name=".ZoomActivity"></activity>
     </application>
 
 </manifest>
