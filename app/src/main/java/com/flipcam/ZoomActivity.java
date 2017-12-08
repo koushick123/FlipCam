@@ -41,7 +41,6 @@ public class ZoomActivity extends AppCompatActivity {
         scaleGestureDetector = new ScaleGestureDetector(this,new ZoomActivity.ScaleListener());
     }
 
-    float factor;
     float xCoOrdinate = -1;
     float yCoOrdinate = -1;
 
@@ -51,24 +50,33 @@ public class ZoomActivity extends AppCompatActivity {
         return true;
     }
 
+    int pointers = 1;
     public boolean onTouch(View view, MotionEvent event) {
         switch (event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:
+                Log.d(TAG,"ACTION_DOWN");
                 xCoOrdinate = view.getX() - event.getRawX();
                 yCoOrdinate = view.getY() - event.getRawY();
                 break;
             case MotionEvent.ACTION_MOVE:
-                if(scaleFactor > 1 && scaleFactor <= 4) {
-                    Log.d(TAG,"Change coordinate");
-                    view.animate().x(event.getRawX() + xCoOrdinate).y(event.getRawY() + yCoOrdinate).setDuration(0).start();
-                }
-                else{
-                    view.animate().x(0).y(0).setDuration(500).start();
+                if(pointers == 1) {
+                    if (scaleFactor > 1 && scaleFactor <= 4) {
+                        view.animate().x(event.getRawX() + xCoOrdinate).y(event.getRawY() + yCoOrdinate).setDuration(0).start();
+                    } else {
+                        view.animate().x(0).y(0).setDuration(500).start();
+                    }
                 }
                 break;
             case MotionEvent.ACTION_POINTER_DOWN:
-                Log.d(TAG,"action index = "+event.getActionIndex());
-                Log.d(TAG,"Pointer id = "+event.getPointerId(event.getActionIndex()));
+                pointers++;
+                Log.d(TAG,"ACTION_POINTER_DOWN = "+pointers);
+                break;
+            case MotionEvent.ACTION_POINTER_UP:
+                Log.d(TAG,"ACTION_POINTER_UP = "+pointers);
+                break;
+            case MotionEvent.ACTION_UP:
+                pointers = 1;
+                Log.d(TAG,"ACTION_UP");
                 break;
             default:
                 return false;
@@ -94,15 +102,20 @@ public class ZoomActivity extends AppCompatActivity {
             }
             scaleFactor += detector.getScaleFactor() - 1;
             scaleFactor = (float) (Math.floor(scaleFactor * 100) / 100);
-            scaleFactor = scaleFactor < 1 ? 1 : (scaleFactor > 4 ? 4 : scaleFactor);
-            zoomPic.setScaleX(scaleFactor);
-            zoomPic.setScaleY(scaleFactor);
+            scaleFactor = scaleFactor < 1 ? 1 : (scaleFactor > 5 ? 5 : scaleFactor);
+            if(scaleFactor == 1){
+                zoomPic.setScaleX(scaleFactor);
+                zoomPic.setScaleY(scaleFactor);
+            }
+            else {
+                zoomPic.setScaleX(scaleFactor * 1.5f);
+                zoomPic.setScaleY(scaleFactor * 1.5f);
+            }
             return true;
         }
 
         @Override
         public boolean onScaleBegin(ScaleGestureDetector detector) {
-            factor = 1.0f;
             return true;
         }
 
