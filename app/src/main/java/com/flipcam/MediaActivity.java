@@ -70,6 +70,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     ImageButton pause;
     ImageButton shareMedia;
     Dialog deleteAlert;
+    Dialog shareAlert;
 
     @Override
     protected void onStop() {
@@ -190,6 +191,16 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         videoControls = (LinearLayout)findViewById(R.id.videoControls);
         pause = (ImageButton) findViewById(R.id.playButton);
         shareMedia = (ImageButton)findViewById(R.id.shareMedia);
+        shareAlert = new Dialog(this);
+        shareMedia.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Log.d(TAG,"Share position = "+selectedPosition);
+                shareAlert.setContentView(R.layout.share_media);
+                shareAlert.setCancelable(true);
+                shareAlert.show();
+            }
+        });
         startTime = (TextView)findViewById(R.id.startTime);
         endTime = (TextView)findViewById(R.id.endTime);
         videoSeek = (SeekBar)findViewById(R.id.videoSeek);
@@ -225,6 +236,29 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         deleteAlert.dismiss();
     }
 
+    public void selectToShare(View view){
+        LinearLayout linearLayout = (LinearLayout)view.getParent();
+        switch(view.getId()){
+            case R.id.facebookIcon:
+            case R.id.facebookText:
+                Log.d(TAG,"Share to FACEBOOK");
+                linearLayout.setBackgroundColor(getResources().getColor(R.color.turqoise));
+                if(view.getId() == R.id.facebookText) {
+                    TextView textView = (TextView)view;
+                    textView.setTextColor(getResources().getColor(R.color.mediaControlColor));
+                }
+                break;
+            case R.id.whatsappIcon:
+            case R.id.whatsappText:
+                Log.d(TAG,"Share to WHATSAPP");
+                linearLayout.setBackgroundColor(getResources().getColor(R.color.turqoise));
+                if(view.getId() == R.id.whatsappText) {
+                    TextView textView = (TextView)view;
+                    textView.setTextColor(getResources().getColor(R.color.mediaControlColor));
+                }
+                break;
+        }
+    }
     @Override
     public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
     }

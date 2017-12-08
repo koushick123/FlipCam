@@ -27,4 +27,8 @@
     <string name="deleteMessage">Do you want to delete the Photo/Video?</string>
     <string name="okToDelete">OK</string>
     <string name="cancelToDelete">Cancel</string>
+    <string name="shareTitle">Share Media</string>
+    <string name="shareMessage">How would you like to share?</string>
+    <string name="facebook">Facebook</string>
+    <string name="whatsapp">Whatsapp</string>
 </resources>
