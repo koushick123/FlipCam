@@ -475,7 +475,7 @@ public class VideoFragment extends android.app.Fragment{
             thumbnail.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    openMedia(cameraView.getMediaPath());
+                    openMedia();
                 }
             });
         }
@@ -508,7 +508,7 @@ public class VideoFragment extends android.app.Fragment{
                     thumbnail.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View view) {
-                            openMedia(filePath);
+                            openMedia();
                         }
                     });
                 } else {
@@ -523,7 +523,7 @@ public class VideoFragment extends android.app.Fragment{
                 thumbnail.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
-                        openMedia(filePath);
+                        openMedia();
                     }
                 });
             }
@@ -562,7 +562,7 @@ public class VideoFragment extends android.app.Fragment{
         }
     }
 
-    private void openMedia(String path)
+    private void openMedia()
     {
         setCameraClose();
         Intent mediaIntent = new Intent(getActivity().getApplicationContext(), MediaActivity.class);
