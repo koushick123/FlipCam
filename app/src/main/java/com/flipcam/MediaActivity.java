@@ -8,6 +8,7 @@ import android.content.res.Configuration;
 import android.graphics.Point;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -36,6 +37,7 @@ import com.flipcam.util.MediaUtil;
 import com.flipcam.view.SurfaceViewVideoFragment;
 import com.iceteck.silicompressorr.SiliCompressor;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.HashMap;
@@ -249,6 +251,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                     TextView textView = (TextView)view;
                     textView.setTextColor(getResources().getColor(R.color.mediaControlColor));
                 }
+                shareToFacebook();
                 break;
             case R.id.whatsappIcon:
             case R.id.whatsappText:
@@ -260,6 +263,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 }
                 break;
         }
+        shareAlert.dismiss();
     }
 
     public void shareToFacebook(){
@@ -267,7 +271,15 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         if(!isImage(medias[selectedPosition].getPath())) {
             try {
                 Log.d(TAG,"Compressing START");
-                SiliCompressor.with(getApplicationContext()).compressVideo(medias[selectedPosition].getPath(), "/storage/emulated/0/DCIM/FlipCam/Compressed.mp4");
+                File compressed = new File("/storage/emulated/0/DCIM/FlipCam/Compressed");
+                if(!compressed.exists()){
+                    compressed.mkdir();
+                }
+                /*String filepath = SiliCompressor.with(getApplicationContext()).compressVideo(Uri.parse(medias[selectedPosition].getPath())
+                        , compressed.getPath(),480,360,400000);*/
+                String filepath = SiliCompressor.with(getApplicationContext()).compressVideo(Uri.parse(medias[selectedPosition].getPath())
+                        , compressed.getPath());
+                Log.d(TAG,"FilePath = "+filepath);
                 Log.d(TAG,"Compressing done");
             } catch (URISyntaxException e) {
                 e.printStackTrace();
