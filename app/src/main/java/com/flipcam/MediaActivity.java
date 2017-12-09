@@ -34,8 +34,10 @@ import android.widget.Toast;
 import com.flipcam.media.FileMedia;
 import com.flipcam.util.MediaUtil;
 import com.flipcam.view.SurfaceViewVideoFragment;
+import com.iceteck.silicompressorr.SiliCompressor;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.HashMap;
 
 import static com.flipcam.PermissionActivity.FC_MEDIA_PREFERENCE;
@@ -259,6 +261,20 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 break;
         }
     }
+
+    public void shareToFacebook(){
+        //ShareDialog.show(this,);
+        if(!isImage(medias[selectedPosition].getPath())) {
+            try {
+                Log.d(TAG,"Compressing START");
+                SiliCompressor.with(getApplicationContext()).compressVideo(medias[selectedPosition].getPath(), "/storage/emulated/0/DCIM/FlipCam/Compressed.mp4");
+                Log.d(TAG,"Compressing done");
+            } catch (URISyntaxException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     @Override
     public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
     }

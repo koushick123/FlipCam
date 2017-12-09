@@ -50,4 +50,11 @@
             android:configChanges="orientation|screenSize"></activity>
     </application>
 
+    <provider android:authorities="com.facebook.app.FacebookContentProvider308890512940081"
+        android:name="com.facebook.FacebookContentProvider"
+        android:exported="true"/>
+
+    <meta-data android:name="com.facebook.sdk.AutoLogAppEventsEnabled"
+        android:value="false"/>
+
 </manifest>
