@@ -8,7 +8,6 @@ import android.content.res.Configuration;
 import android.graphics.Point;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -277,7 +276,8 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 }
                 /*String filepath = SiliCompressor.with(getApplicationContext()).compressVideo(Uri.parse(medias[selectedPosition].getPath())
                         , compressed.getPath(),480,360,400000);*/
-                String filepath = SiliCompressor.with(getApplicationContext()).compressVideo(Uri.parse(medias[selectedPosition].getPath())
+                Log.d(TAG,"video to compress = "+medias[selectedPosition].getPath());
+                String filepath = SiliCompressor.with(getApplicationContext()).compressVideo(medias[selectedPosition].getPath()
                         , compressed.getPath());
                 Log.d(TAG,"FilePath = "+filepath);
                 Log.d(TAG,"Compressing done");
