@@ -2,12 +2,14 @@ package com.flipcam;
 
 import android.app.Dialog;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.graphics.Point;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -31,14 +33,18 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.facebook.CallbackManager;
+import com.facebook.FacebookCallback;
+import com.facebook.FacebookException;
+import com.facebook.share.Sharer;
+import com.facebook.share.model.ShareLinkContent;
+import com.facebook.share.widget.ShareDialog;
 import com.flipcam.media.FileMedia;
 import com.flipcam.util.MediaUtil;
 import com.flipcam.view.SurfaceViewVideoFragment;
-import com.iceteck.silicompressorr.SiliCompressor;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.HashMap;
 
 import static com.flipcam.PermissionActivity.FC_MEDIA_PREFERENCE;
@@ -74,6 +80,8 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     ImageButton shareMedia;
     Dialog deleteAlert;
     Dialog shareAlert;
+    CallbackManager callbackManager;
+    ShareDialog shareDialog;
 
     @Override
     protected void onStop() {
@@ -265,24 +273,63 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         shareAlert.dismiss();
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        callbackManager.onActivityResult(requestCode, resultCode, data);
+    }
+
     public void shareToFacebook(){
         //ShareDialog.show(this,);
         if(!isImage(medias[selectedPosition].getPath())) {
-            try {
-                Log.d(TAG,"Compressing START");
-                File compressed = new File("/storage/emulated/0/DCIM/FlipCam/Compressed");
-                if(!compressed.exists()){
-                    compressed.mkdir();
+            Log.d(TAG,"Compressing START");
+            final File compressed = new File("/storage/emulated/0/DCIM/FlipCam/Compressed");
+            if(!compressed.exists()){
+                compressed.mkdir();
+            }
+            Log.d(TAG,"video to compress = "+medias[selectedPosition].getPath());
+            /*new Thread(new Runnable()
+                 {
+                @Override
+                public void run() {
+                    String filepath = null;
+                    long startTime = System.currentTimeMillis();
+                    try {
+                        filepath = SiliCompressor.with(getApplicationContext()).compressVideo(medias[selectedPosition].getPath()
+                                , compressed.getPath(),320,480,200000);
+                    } catch (URISyntaxException e) {
+                        e.printStackTrace();
+                    }
+                    long endTime = System.currentTimeMillis();
+                    Log.d(TAG,"FilePath = "+filepath);
+                    Log.d(TAG,"Compressing done in "+(endTime - startTime) / 1000 +" secs");
                 }
-                /*String filepath = SiliCompressor.with(getApplicationContext()).compressVideo(Uri.parse(medias[selectedPosition].getPath())
-                        , compressed.getPath(),480,360,400000);*/
-                Log.d(TAG,"video to compress = "+medias[selectedPosition].getPath());
-                String filepath = SiliCompressor.with(getApplicationContext()).compressVideo(medias[selectedPosition].getPath()
-                        , compressed.getPath());
-                Log.d(TAG,"FilePath = "+filepath);
-                Log.d(TAG,"Compressing done");
-            } catch (URISyntaxException e) {
-                e.printStackTrace();
+            }).start();*/
+            callbackManager = CallbackManager.Factory.create();
+            shareDialog = new ShareDialog(this);
+            shareDialog.registerCallback(callbackManager, new FacebookCallback<Sharer.Result>() {
+                @Override
+                public void onSuccess(Sharer.Result result) {
+                    Log.d(TAG,"onSuccess = "+result.toString());
+                }
+
+                @Override
+                public void onCancel() {
+                    Log.d(TAG,"onCancel");
+                }
+
+                @Override
+                public void onError(FacebookException error) {
+                    Log.d(TAG,"onError");
+                    error.printStackTrace();
+                }
+            });
+            if (ShareDialog.canShow(ShareLinkContent.class)) {
+                ShareLinkContent linkContent = new ShareLinkContent.Builder()
+                        //.setContentUrl(Uri.parse("http://developers.facebook.com/android"))
+                        .setContentUrl(Uri.parse("http://m.facebook.com"))
+                        .build();
+                shareDialog.show(linkContent);
             }
         }
     }

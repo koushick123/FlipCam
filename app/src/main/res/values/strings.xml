@@ -31,4 +31,5 @@
     <string name="shareMessage">How would you like to share?</string>
     <string name="facebook">Facebook</string>
     <string name="whatsapp">Whatsapp</string>
+    <string name="facebook_app_id">308890512940081</string>
 </resources>
