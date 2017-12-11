@@ -12,6 +12,15 @@
         android:name="android.hardware.camera"
         android:required="true" />
 
+    <provider
+        android:name="com.facebook.FacebookContentProvider"
+        android:authorities="com.facebook.app.FacebookContentProvider308890512940081"
+        android:exported="true" />
+
+    <meta-data
+        android:name="com.facebook.sdk.AutoLogAppEventsEnabled"
+        android:value="false" />
+
     <application
         android:name=".ControlVisbilityPreference"
         android:allowBackup="true"
@@ -20,7 +29,26 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <meta-data android:name="com.facebook.sdk.ApplicationId" android:value="@string/facebook_app_id"/>
+        <meta-data
+            android:name="com.facebook.sdk.ApplicationId"
+            android:value="@string/facebook_app_id" />
+
+        <activity
+            android:name="com.facebook.FacebookActivity"
+            android:configChanges="keyboard|keyboardHidden|screenLayout|screenSize|orientation"
+            android:label="@string/app_name" />
+        <activity
+            android:name="com.facebook.CustomTabActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="@string/fb_login_protocol_scheme" />
+            </intent-filter>
+        </activity>
         <activity
             android:name="com.dropbox.client2.android.AuthActivity"
             android:configChanges="orientation|keyboard"
@@ -49,14 +77,7 @@
             android:screenOrientation="nosensor" />
         <activity
             android:name=".MediaActivity"
-            android:configChanges="orientation|screenSize"></activity>
+            android:configChanges="orientation|screenSize" />
     </application>
-
-    <provider android:authorities="com.facebook.app.FacebookContentProvider308890512940081"
-        android:name="com.facebook.FacebookContentProvider"
-        android:exported="true"/>
-
-    <meta-data android:name="com.facebook.sdk.AutoLogAppEventsEnabled"
-        android:value="false"/>
 
 </manifest>

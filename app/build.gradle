@@ -41,8 +41,9 @@ dependencies {
     compile 'com.android.support:support-v4:25.3.1'
     compile 'com.android.support.constraint:constraint-layout:1.0.0-alpha6'
     compile 'com.github.bumptech.glide:glide:4.3.1'
-    testCompile 'junit:junit:4.12'
     compile 'com.facebook.android:facebook-share:4.28.0'
+    compile 'com.facebook.android:facebook-login:4.28.0'
     compile 'com.iceteck.silicompressorr:silicompressor:2.1'
+    testCompile 'junit:junit:4.12'
     annotationProcessor 'com.github.bumptech.glide:compiler:4.3.1'
 }

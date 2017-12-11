@@ -9,7 +9,7 @@ import android.content.res.Configuration;
 import android.graphics.Point;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
-import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -33,19 +33,30 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.facebook.AccessToken;
 import com.facebook.CallbackManager;
 import com.facebook.FacebookCallback;
 import com.facebook.FacebookException;
-import com.facebook.share.Sharer;
-import com.facebook.share.model.ShareLinkContent;
+import com.facebook.GraphRequest;
+import com.facebook.GraphResponse;
+import com.facebook.HttpMethod;
+import com.facebook.login.LoginManager;
+import com.facebook.login.LoginResult;
 import com.facebook.share.widget.ShareDialog;
 import com.flipcam.media.FileMedia;
 import com.flipcam.util.MediaUtil;
 import com.flipcam.view.SurfaceViewVideoFragment;
+import com.iceteck.silicompressorr.SiliCompressor;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Set;
 
 import static com.flipcam.PermissionActivity.FC_MEDIA_PREFERENCE;
 
@@ -279,60 +290,101 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         callbackManager.onActivityResult(requestCode, resultCode, data);
     }
 
+    File compressed;
+    String userId;
+    LoginManager loginManager = LoginManager.getInstance();
+    ArrayList<String> publishPermissions;
     public void shareToFacebook(){
-        //ShareDialog.show(this,);
         if(!isImage(medias[selectedPosition].getPath())) {
             Log.d(TAG,"Compressing START");
-            final File compressed = new File("/storage/emulated/0/DCIM/FlipCam/Compressed");
+            compressed = new File("/storage/emulated/0/DCIM/FlipCam/Compressed");
             if(!compressed.exists()){
                 compressed.mkdir();
             }
             Log.d(TAG,"video to compress = "+medias[selectedPosition].getPath());
-            /*new Thread(new Runnable()
-                 {
-                @Override
-                public void run() {
-                    String filepath = null;
-                    long startTime = System.currentTimeMillis();
-                    try {
-                        filepath = SiliCompressor.with(getApplicationContext()).compressVideo(medias[selectedPosition].getPath()
-                                , compressed.getPath(),320,480,200000);
-                    } catch (URISyntaxException e) {
-                        e.printStackTrace();
+            boolean loggedIn = AccessToken.getCurrentAccessToken() != null;
+            Log.d(TAG,"Access token = "+loggedIn);
+            if(!loggedIn) {
+                publishPermissions = new ArrayList<>();
+                callbackManager = CallbackManager.Factory.create();
+                publishPermissions.add("publish_actions");
+                loginManager = LoginManager.getInstance();
+                loginManager.logInWithPublishPermissions(this, publishPermissions);
+                ArrayList<String> readPerm = new ArrayList<>();
+                readPerm.add("read_custom_friendlists");
+                loginManager.logInWithReadPermissions(this,readPerm);
+                loginManager.registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
+                    @Override
+                    public void onSuccess(LoginResult loginResult) {
+                        // App code
+                        Log.d(TAG, "onSuccess = " + loginResult.toString());
+                        AccessToken accessToken = loginResult.getAccessToken();
+                        Set<String> grantedPermissions = loginResult.getRecentlyGrantedPermissions();
+                        Log.d(TAG, "access token = " + accessToken);
+                        Log.d(TAG, "granted perm = " + grantedPermissions.size());
                     }
-                    long endTime = System.currentTimeMillis();
-                    Log.d(TAG,"FilePath = "+filepath);
-                    Log.d(TAG,"Compressing done in "+(endTime - startTime) / 1000 +" secs");
-                }
-            }).start();*/
-            callbackManager = CallbackManager.Factory.create();
-            shareDialog = new ShareDialog(this);
-            shareDialog.registerCallback(callbackManager, new FacebookCallback<Sharer.Result>() {
-                @Override
-                public void onSuccess(Sharer.Result result) {
-                    Log.d(TAG,"onSuccess = "+result.toString());
-                }
 
-                @Override
-                public void onCancel() {
-                    Log.d(TAG,"onCancel");
-                }
+                    @Override
+                    public void onCancel() {
+                        // App code
+                        Log.d(TAG, "onCancel");
+                    }
 
-                @Override
-                public void onError(FacebookException error) {
-                    Log.d(TAG,"onError");
-                    error.printStackTrace();
-                }
-            });
-            if (ShareDialog.canShow(ShareLinkContent.class)) {
-                ShareLinkContent linkContent = new ShareLinkContent.Builder()
-                        //.setContentUrl(Uri.parse("http://developers.facebook.com/android"))
-                        .setContentUrl(Uri.parse("http://m.facebook.com"))
-                        .build();
-                shareDialog.show(linkContent);
+                    @Override
+                    public void onError(FacebookException exception) {
+                        // App code
+                        Log.d(TAG, "onError");
+                        exception.printStackTrace();
+                    }
+                });
+            }
+            else{
+                //Fetch the user ID to be used for subsequent requests
+                new GraphRequest(
+                        AccessToken.getCurrentAccessToken(),
+                        "/me", null,
+                        HttpMethod.GET,
+                        new GraphRequest.Callback() {
+                            @Override
+                            public void onCompleted(GraphResponse response) {
+                                Log.d(TAG,"Fetch user id = "+response.getRawResponse());
+                                if(response.getError() != null) {
+                                    Log.d(TAG, "onCompleted /me = " + response.getError().getErrorCode());
+                                    Log.d(TAG, "onCompleted /me = " + response.getError().getSubErrorCode());
+                                }
+                                JSONObject jsonObject = response.getJSONObject();
+                                try {
+                                    userId = (String)jsonObject.get("id");
+                                    Log.d(TAG,"USER ID = "+userId);
+                                    /*Bundle params = new Bundle();
+                                    params.putString("source", "/storage/emulated/0/DCIM/FlipCam/Compressed/VIDEO_20171211_044913.mp4");*/
+                                    new GraphRequest(
+                                            AccessToken.getCurrentAccessToken(),
+                                            "/"+userId+"/friendlists", null,
+                                            HttpMethod.GET,
+                                            new GraphRequest.Callback() {
+                                                @Override
+                                                public void onCompleted(GraphResponse response) {
+                                                    if(response.getError() != null) {
+                                                        Log.d(TAG, "onCompleted = " + response.getError().getErrorMessage());
+                                                        Log.d(TAG, "onCompleted getErrorCode = " + response.getError().getErrorCode());
+                                                        Log.d(TAG, "onCompleted getSubErrorCode = " + response.getError().getSubErrorCode());
+                                                    }
+                                                }
+                                            }
+                                    ).executeAsync();
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }
+                ).executeAsync();
+
             }
         }
     }
+
+    String compressedFilePath;
 
     @Override
     public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
@@ -671,6 +723,28 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 deletePosition = fragment.getFramePosition();
                 return POSITION_NONE;
             }
+        }
+    }
+
+    class ShareMediaToFacebook extends AsyncTask<String,String,String>{
+        @Override
+        protected void onPostExecute(String compressedFile) {
+            Log.d(TAG,"Post to FB");
+            //postToFacebook();
+        }
+
+        @Override
+        protected String doInBackground(String[] paths) {
+            long startTime = System.currentTimeMillis();
+            try {
+                compressedFilePath = SiliCompressor.with(getApplicationContext()).compressVideo(paths[0],paths[1],320,480,200000);
+            } catch (URISyntaxException e) {
+                e.printStackTrace();
+            }
+            long endTime = System.currentTimeMillis();
+            Log.d(TAG,"FilePath = "+compressedFilePath);
+            Log.d(TAG,"Compressing done in "+(endTime - startTime) / 1000 +" secs");
+            return compressedFilePath;
         }
     }
 }
