@@ -6,6 +6,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.content.res.Configuration;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Point;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
@@ -37,9 +39,11 @@ import com.facebook.AccessToken;
 import com.facebook.CallbackManager;
 import com.facebook.FacebookCallback;
 import com.facebook.FacebookException;
+import com.facebook.FacebookSdk;
 import com.facebook.GraphRequest;
 import com.facebook.GraphResponse;
 import com.facebook.HttpMethod;
+import com.facebook.LoggingBehavior;
 import com.facebook.login.LoginManager;
 import com.facebook.login.LoginResult;
 import com.facebook.share.widget.ShareDialog;
@@ -51,6 +55,7 @@ import com.iceteck.silicompressorr.SiliCompressor;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -296,12 +301,13 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     ArrayList<String> publishPermissions;
     public void shareToFacebook(){
         if(!isImage(medias[selectedPosition].getPath())) {
-            Log.d(TAG,"Compressing START");
+            Log.d(TAG, "Compressing START");
             compressed = new File("/storage/emulated/0/DCIM/FlipCam/Compressed");
-            if(!compressed.exists()){
+            if (!compressed.exists()) {
                 compressed.mkdir();
             }
-            Log.d(TAG,"video to compress = "+medias[selectedPosition].getPath());
+            Log.d(TAG, "video to compress = " + medias[selectedPosition].getPath());
+        }
             boolean loggedIn = AccessToken.getCurrentAccessToken() != null;
             Log.d(TAG,"Access token = "+loggedIn);
             if(!loggedIn) {
@@ -310,9 +316,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 publishPermissions.add("publish_actions");
                 loginManager = LoginManager.getInstance();
                 loginManager.logInWithPublishPermissions(this, publishPermissions);
-                ArrayList<String> readPerm = new ArrayList<>();
-                readPerm.add("read_custom_friendlists");
-                loginManager.logInWithReadPermissions(this,readPerm);
                 loginManager.registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
                     @Override
                     public void onSuccess(LoginResult loginResult) {
@@ -340,6 +343,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             }
             else{
                 //Fetch the user ID to be used for subsequent requests
+                FacebookSdk.addLoggingBehavior(LoggingBehavior.REQUESTS);
                 new GraphRequest(
                         AccessToken.getCurrentAccessToken(),
                         "/me", null,
@@ -356,23 +360,32 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                                 try {
                                     userId = (String)jsonObject.get("id");
                                     Log.d(TAG,"USER ID = "+userId);
-                                    /*Bundle params = new Bundle();
-                                    params.putString("source", "/storage/emulated/0/DCIM/FlipCam/Compressed/VIDEO_20171211_044913.mp4");*/
+                                    Bundle params = new Bundle();
+                                    //params.putString("source", "/storage/emulated/0/DCIM/FlipCam/Compressed/VIDEO_20171211_044913.mp4");
+                                    Log.d(TAG,"Photo = "+medias[selectedPosition].getPath());
+                                    Bitmap image = BitmapFactory.decodeFile(medias[selectedPosition].getPath());
+                                    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                                    image.compress(Bitmap.CompressFormat.JPEG,100,byteArrayOutputStream);
+                                    Log.d(TAG,"Image compressed");
+                                    params.putByteArray("source",byteArrayOutputStream.toByteArray());
                                     new GraphRequest(
                                             AccessToken.getCurrentAccessToken(),
-                                            "/"+userId+"/friendlists", null,
-                                            HttpMethod.GET,
+                                            "/"+userId+"/photos", params,
+                                            HttpMethod.POST,
                                             new GraphRequest.Callback() {
                                                 @Override
                                                 public void onCompleted(GraphResponse response) {
+                                                    Log.d(TAG,"response = "+response.getRawResponse());
                                                     if(response.getError() != null) {
                                                         Log.d(TAG, "onCompleted = " + response.getError().getErrorMessage());
                                                         Log.d(TAG, "onCompleted getErrorCode = " + response.getError().getErrorCode());
                                                         Log.d(TAG, "onCompleted getSubErrorCode = " + response.getError().getSubErrorCode());
+                                                        Log.d(TAG, "onCompleted getErrorRecoveryMessage = " + response.getError().getErrorRecoveryMessage());
                                                     }
                                                 }
                                             }
                                     ).executeAsync();
+                                    Log.d(TAG,"Request sent");
                                 } catch (JSONException e) {
                                     e.printStackTrace();
                                 }
@@ -381,7 +394,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 ).executeAsync();
 
             }
-        }
     }
 
     String compressedFilePath;
