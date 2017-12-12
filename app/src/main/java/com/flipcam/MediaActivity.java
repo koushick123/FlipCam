@@ -6,8 +6,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.content.res.Configuration;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Point;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
@@ -39,11 +37,9 @@ import com.facebook.AccessToken;
 import com.facebook.CallbackManager;
 import com.facebook.FacebookCallback;
 import com.facebook.FacebookException;
-import com.facebook.FacebookSdk;
 import com.facebook.GraphRequest;
 import com.facebook.GraphResponse;
 import com.facebook.HttpMethod;
-import com.facebook.LoggingBehavior;
 import com.facebook.login.LoginManager;
 import com.facebook.login.LoginResult;
 import com.facebook.share.widget.ShareDialog;
@@ -57,6 +53,8 @@ import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -343,59 +341,64 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             }
             else{
                 //Fetch the user ID to be used for subsequent requests
-                FacebookSdk.addLoggingBehavior(LoggingBehavior.REQUESTS);
-                new GraphRequest(
-                        AccessToken.getCurrentAccessToken(),
-                        "/me", null,
-                        HttpMethod.GET,
-                        new GraphRequest.Callback() {
-                            @Override
-                            public void onCompleted(GraphResponse response) {
-                                Log.d(TAG,"Fetch user id = "+response.getRawResponse());
-                                if(response.getError() != null) {
-                                    Log.d(TAG, "onCompleted /me = " + response.getError().getErrorCode());
-                                    Log.d(TAG, "onCompleted /me = " + response.getError().getSubErrorCode());
-                                }
-                                JSONObject jsonObject = response.getJSONObject();
-                                try {
-                                    userId = (String)jsonObject.get("id");
-                                    Log.d(TAG,"USER ID = "+userId);
-                                    Bundle params = new Bundle();
-                                    //params.putString("source", "/storage/emulated/0/DCIM/FlipCam/Compressed/VIDEO_20171211_044913.mp4");
-                                    Log.d(TAG,"Photo = "+medias[selectedPosition].getPath());
-                                    Bitmap image = BitmapFactory.decodeFile(medias[selectedPosition].getPath());
-                                    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-                                    image.compress(Bitmap.CompressFormat.JPEG,100,byteArrayOutputStream);
-                                    Log.d(TAG,"Image compressed");
-                                    params.putByteArray("source",byteArrayOutputStream.toByteArray());
-                                    new GraphRequest(
-                                            AccessToken.getCurrentAccessToken(),
-                                            "/"+userId+"/photos", params,
-                                            HttpMethod.POST,
-                                            new GraphRequest.Callback() {
-                                                @Override
-                                                public void onCompleted(GraphResponse response) {
-                                                    Log.d(TAG,"response = "+response.getRawResponse());
-                                                    if(response.getError() != null) {
-                                                        Log.d(TAG, "onCompleted = " + response.getError().getErrorMessage());
-                                                        Log.d(TAG, "onCompleted getErrorCode = " + response.getError().getErrorCode());
-                                                        Log.d(TAG, "onCompleted getSubErrorCode = " + response.getError().getSubErrorCode());
-                                                        Log.d(TAG, "onCompleted getErrorRecoveryMessage = " + response.getError().getErrorRecoveryMessage());
-                                                    }
-                                                }
-                                            }
-                                    ).executeAsync();
-                                    Log.d(TAG,"Request sent");
-                                } catch (JSONException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                        }
-                ).executeAsync();
-
+                GraphRequest meReq = new GraphRequest(AccessToken.getCurrentAccessToken(), "/me", null,HttpMethod.GET,getcallback);
+                meReq.executeAsync();
             }
     }
 
+    GraphRequest.Callback postcallback = new GraphRequest.Callback() {
+        @Override
+        public void onCompleted(GraphResponse response) {
+            Log.d(TAG,"response = "+response.getRawResponse());
+            if(response.getError() != null) {
+                Log.d(TAG, "onCompleted = " + response.getError().getErrorMessage());
+                Log.d(TAG, "onCompleted getErrorCode = " + response.getError().getErrorCode());
+                Log.d(TAG, "onCompleted getSubErrorCode = " + response.getError().getSubErrorCode());
+                Log.d(TAG, "onCompleted getErrorRecoveryMessage = " + response.getError().getErrorRecoveryMessage());
+            }
+        }
+    };
+
+    GraphRequest.Callback getcallback = new GraphRequest.Callback() {
+        @Override
+        public void onCompleted(GraphResponse response) {
+            Log.d(TAG,"Fetch user id = "+response.getRawResponse());
+            if(response.getError() != null) {
+                Log.d(TAG, "onCompleted /me = " + response.getError().getErrorCode());
+                Log.d(TAG, "onCompleted /me = " + response.getError().getSubErrorCode());
+            }
+            JSONObject jsonObject = response.getJSONObject();
+            try {
+                userId = (String)jsonObject.get("id");
+                Log.d(TAG,"USER ID = "+userId);
+                Bundle params = new Bundle();
+                FileInputStream uploadFile = new FileInputStream("/storage/emulated/0/DCIM/FlipCam/Compressed/VIDEO_20171211_045606.mp4");
+                byte[] buffer = new byte[10240];
+                ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                int len;
+                while((len = uploadFile.read(buffer)) != -1){
+                    byteArrayOutputStream.write(buffer,0,len);
+                }
+                params.putByteArray("VIDEO_20171211_044913.mp4",byteArrayOutputStream.toByteArray());
+                /*Log.d(TAG,"Photo = "+medias[selectedPosition].getPath());
+                Bitmap image = BitmapFactory.decodeFile(medias[selectedPosition].getPath());
+                ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                image.compress(Bitmap.CompressFormat.JPEG,100,byteArrayOutputStream);
+                Log.d(TAG,"Image compressed");
+                params.putByteArray("source",byteArrayOutputStream.toByteArray());*/
+                GraphRequest postReq = new GraphRequest(AccessToken.getCurrentAccessToken(), "/"+userId+"/videos", params, HttpMethod.POST,postcallback);
+                //Log.d(TAG,"Graph path = "+postReq.getGraphPath());
+                postReq.executeAsync();
+                Log.d(TAG,"Request sent");
+            } catch (JSONException e) {
+                e.printStackTrace();
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    };
     String compressedFilePath;
 
     @Override
