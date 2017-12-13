@@ -342,23 +342,39 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 /*ShareMediaToFacebook shareMediaToFacebook = new ShareMediaToFacebook();
                 shareMediaToFacebook.execute(medias[selectedPosition].getPath());*/
                 //FileInputStream uploadFile = null;
+                long startTime = System.currentTimeMillis();
                 try (FileInputStream uploadFile = new FileInputStream(medias[selectedPosition].getPath())){
                     File file = new File(medias[selectedPosition].getPath());
-                    int[] filenamePostfix = new int[]{1,2,3,4,5,6,7,8,9,10};
                     int bufferSize = (int) (file.length() / 10);
+                    int fileSize = (int) (file.length() / 10);
+                    file=null;
                     byte[] buffer = new byte[bufferSize];
                     Log.d(TAG,"buffer size = "+bufferSize);
-                    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
                     int len;
                     int index=0;
+                    String dir="";
+                    FileOutputStream fileOutputStream = null;
                     while((len = uploadFile.read(buffer)) != -1){
-                        byteArrayOutputStream.write(buffer,0,len);
-                        String dir = getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + getResources().getString(R.string.FC_ROOT))+"Compressed/Part_"+filenamePostfix[index++]+".mp4";
-                        try(FileOutputStream fileOutputStream = new FileOutputStream(dir)) {
-                            fileOutputStream.write(byteArrayOutputStream.toByteArray());
-                            Log.d(TAG,"Written "+byteArrayOutputStream.size()+" bytes to file "+dir);
+                        if(fileOutputStream == null){
+                            dir = getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM +
+                                    getResources().getString(R.string.FC_ROOT))+"/Compressed/Part_"+(index++)+".mp4";
+                            fileOutputStream = new FileOutputStream(dir);
+                            file = new File(dir);
+                        }
+                        Log.d(TAG,"File length = "+file.length()+" for "+dir);
+                        if(file.length() <= fileSize) {
+                            fileOutputStream.write(buffer);
+                            Log.d(TAG, "Written " + buffer.length + " bytes to file " + dir);
+                        }
+                        else{
+                            fileOutputStream.close();
+                            fileOutputStream = null;
+                            file = null;
+                            buffer =new byte[bufferSize];
                         }
                     }
+                    long endTime = System.currentTimeMillis();
+                    Log.d(TAG,(endTime - startTime) / 1000 +" secs");
                 } catch (FileNotFoundException e) {
                     e.printStackTrace();
                 } catch (IOException e) {
