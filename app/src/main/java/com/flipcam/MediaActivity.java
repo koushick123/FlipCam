@@ -11,7 +11,6 @@ import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Environment;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
@@ -44,7 +43,6 @@ import com.facebook.HttpMethod;
 import com.facebook.login.LoginManager;
 import com.facebook.login.LoginResult;
 import com.facebook.share.widget.ShareDialog;
-import com.flipcam.constants.Constants;
 import com.flipcam.media.FileMedia;
 import com.flipcam.util.MediaUtil;
 import com.flipcam.view.SurfaceViewVideoFragment;
@@ -53,18 +51,15 @@ import com.iceteck.silicompressorr.SiliCompressor;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Set;
 
-import static android.os.Environment.getExternalStoragePublicDirectory;
 import static com.flipcam.PermissionActivity.FC_MEDIA_PREFERENCE;
 
 public class MediaActivity extends AppCompatActivity implements ViewPager.OnPageChangeListener{
@@ -342,44 +337,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 /*ShareMediaToFacebook shareMediaToFacebook = new ShareMediaToFacebook();
                 shareMediaToFacebook.execute(medias[selectedPosition].getPath());*/
                 //FileInputStream uploadFile = null;
-                long startTime = System.currentTimeMillis();
-                try (FileInputStream uploadFile = new FileInputStream(medias[selectedPosition].getPath())){
-                    File file = new File(medias[selectedPosition].getPath());
-                    int bufferSize = (int) (file.length() / 10);
-                    int fileSize = (int) (file.length() / 10);
-                    file=null;
-                    byte[] buffer = new byte[bufferSize];
-                    Log.d(TAG,"buffer size = "+bufferSize);
-                    int len;
-                    int index=0;
-                    String dir="";
-                    FileOutputStream fileOutputStream = null;
-                    while((len = uploadFile.read(buffer)) != -1){
-                        if(fileOutputStream == null){
-                            dir = getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM +
-                                    getResources().getString(R.string.FC_ROOT))+"/Compressed/Part_"+(index++)+".mp4";
-                            fileOutputStream = new FileOutputStream(dir);
-                            file = new File(dir);
-                        }
-                        Log.d(TAG,"File length = "+file.length()+" for "+dir);
-                        if(file.length() <= fileSize) {
-                            fileOutputStream.write(buffer);
-                            Log.d(TAG, "Written " + buffer.length + " bytes to file " + dir);
-                        }
-                        else{
-                            fileOutputStream.close();
-                            fileOutputStream = null;
-                            file = null;
-                            buffer =new byte[bufferSize];
-                        }
-                    }
-                    long endTime = System.currentTimeMillis();
-                    Log.d(TAG,(endTime - startTime) / 1000 +" secs");
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                uploadToFacebook();
             }
     }
 
@@ -388,19 +346,73 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         meReq.executeAsync();
     }
 
+    RandomAccessFile randomAccessFile = null;
+    String upload_session_id = null;
     GraphRequest.Callback postcallback = new GraphRequest.Callback() {
         @Override
         public void onCompleted(GraphResponse response) {
-            Log.d(TAG,"response = "+response.getRawResponse());
-            long endTime = System.currentTimeMillis();
-            Log.d(TAG,"Time taken to upload = "+((endTime - startTimeUpload) / 1000) +" secs");
-            if(response.getError() != null) {
+            Log.d(TAG, "response = " + response.getRawResponse());
+            if (response.getError() != null) {
+                Log.d(TAG, "Error msg = " + response.getError().getErrorMessage());
+                Log.d(TAG, "Error code = " + response.getError().getErrorCode());
+                Log.d(TAG, "Error subcode = " + response.getError().getErrorMessage());
+                Log.d(TAG, "Error recovery msg = " + response.getError().getErrorRecoveryMessage());
+            }
+            else
+            {
+            JSONObject jsonObject = response.getJSONObject();
+            try {
+                if (jsonObject.has("upload_session_id") || (jsonObject.has("start_offset") || jsonObject.has("end_offset"))) {
+                    if (jsonObject.has("upload_session_id")) {
+                        upload_session_id = (String) jsonObject.get("upload_session_id");
+                    }
+                    String start_offset = (String) jsonObject.get("start_offset");
+                    String end_offset = (String) jsonObject.get("end_offset");
+                    //FileInputStream fileInputStream = new FileInputStream(medias[selectedPosition].getPath());
+                    byte[] buffer = new byte[Integer.parseInt(end_offset) - Integer.parseInt(start_offset)];
+                    randomAccessFile.seek(Integer.parseInt(start_offset));
+                    if (Integer.parseInt(start_offset) != Integer.parseInt(end_offset)) {
+                        Bundle params = new Bundle();
+                        Log.d(TAG, "Upload from " + start_offset + " to " + end_offset);
+                        params.putString("upload_phase", "transfer");
+                        params.putString("upload_session_id", upload_session_id);
+                        params.putString("start_offset", start_offset);
+                        randomAccessFile.read(buffer);
+                        params.putByteArray("video_file_chunk", buffer);
+                        GraphRequest postReq = new GraphRequest(AccessToken.getCurrentAccessToken(), "/" + userId + "/videos", params, HttpMethod.POST, postcallback);
+                        postReq.executeAsync();
+                    } else {
+                        Bundle params = new Bundle();
+                        Log.d(TAG, "Complete UPLOAD");
+                        params.putString("upload_phase", "finish");
+                        params.putString("upload_session_id", upload_session_id);
+                        GraphRequest postReq = new GraphRequest(AccessToken.getCurrentAccessToken(), "/" + userId + "/videos", params, HttpMethod.POST, postcallback);
+                        postReq.executeAsync();
+                    }
+                } else {
+                    if (jsonObject.has("success")) {
+                        String success = (String) jsonObject.get("success");
+                        Log.d(TAG, "success = " + success);
+                        long endtime = System.currentTimeMillis();
+                        Log.d(TAG, "time taken = " + (endtime - startTimeUpload) / 1000 + " secs");
+                    }
+                }
+            } catch (JSONException e) {
+                e.printStackTrace();
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            if (response.getError() != null) {
                 Log.d(TAG, "onCompleted = " + response.getError().getErrorMessage());
                 Log.d(TAG, "onCompleted getErrorCode = " + response.getError().getErrorCode());
                 Log.d(TAG, "onCompleted getSubErrorCode = " + response.getError().getSubErrorCode());
                 Log.d(TAG, "onCompleted getErrorRecoveryMessage = " + response.getError().getErrorRecoveryMessage());
             }
         }
+    }
     };
 
     long startTimeUpload;
@@ -418,17 +430,10 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 Log.d(TAG,"USER ID = "+userId);
                 Bundle params = new Bundle();
                 startTimeUpload = System.currentTimeMillis();
-                FileInputStream uploadFile = new FileInputStream(compressedFilePath);
-                int halfMb = (int) Constants.MEGA_BYTE / 2;
-                byte[] buffer = new byte[halfMb];
-                ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-                int len;
-                while((len = uploadFile.read(buffer)) != -1){
-                    byteArrayOutputStream.write(buffer,0,len);
-                }
-                params.putByteArray("video",byteArrayOutputStream.toByteArray());
-                params.putString("description","Test for large video upload");
-                params.putString("message","This ia a medium duration video");
+                params.putString("upload_phase","start");
+                randomAccessFile = new RandomAccessFile(new File(medias[selectedPosition].getPath()),"r");
+                params.putString("file_size",randomAccessFile.length()+"");
+                Log.d(TAG,"file size = "+randomAccessFile.length());
                 /*Log.d(TAG,"Photo = "+medias[selectedPosition].getPath());
                 Bitmap image = BitmapFactory.decodeFile(medias[selectedPosition].getPath());
                 ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();

@@ -444,12 +444,12 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         else if(videoFile.length() >= mBDelimiter && videoFile.length() < gBDelimiter){
             if(VERBOSE)Log.d(TAG,"MB = "+videoFile.length());
             double mbconsumed = videoFile.length()/mBDelimiter;
-            memoryConsumed.setText((Math.floor(mbconsumed * 100.0))/100.0 + getResources().getString(R.string.MEM_PF_MB));
+            memoryConsumed.setText((Math.floor(mbconsumed * 100.0))/100.0 + " " + getResources().getString(R.string.MEM_PF_MB));
         }
         else {
             if(VERBOSE)Log.d(TAG,"GB = "+videoFile.length());
             double gbconsumed = videoFile.length()/gBDelimiter;
-            memoryConsumed.setText((Math.floor(gbconsumed * 100.0))/100.0 + getResources().getString(R.string.MEM_PF_GB));
+            memoryConsumed.setText((Math.floor(gbconsumed * 100.0))/100.0 + " " + getResources().getString(R.string.MEM_PF_GB));
         }
     }
 
