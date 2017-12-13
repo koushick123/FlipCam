@@ -37,24 +37,16 @@ import com.facebook.AccessToken;
 import com.facebook.CallbackManager;
 import com.facebook.FacebookCallback;
 import com.facebook.FacebookException;
-import com.facebook.GraphRequest;
-import com.facebook.GraphResponse;
-import com.facebook.HttpMethod;
 import com.facebook.login.LoginManager;
 import com.facebook.login.LoginResult;
-import com.facebook.share.widget.ShareDialog;
 import com.flipcam.media.FileMedia;
+import com.flipcam.service.MediaUploadService;
 import com.flipcam.util.MediaUtil;
 import com.flipcam.view.SurfaceViewVideoFragment;
 import com.iceteck.silicompressorr.SiliCompressor;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -94,7 +86,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     Dialog deleteAlert;
     Dialog shareAlert;
     CallbackManager callbackManager;
-    ShareDialog shareDialog;
 
     @Override
     protected void onStop() {
@@ -342,110 +333,14 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     }
 
     public void uploadToFacebook(){
-        GraphRequest meReq = new GraphRequest(AccessToken.getCurrentAccessToken(), "/me", null,HttpMethod.GET,getcallback);
-        meReq.executeAsync();
+        /*GraphRequest meReq = new GraphRequest(AccessToken.getCurrentAccessToken(), "/me", null,HttpMethod.GET,getcallback);
+        meReq.executeAsync();*/
+        Intent mediaUploadIntent = new Intent(getApplicationContext(),MediaUploadService.class);
+        mediaUploadIntent.putExtra("uploadFile",medias[selectedPosition].getPath());
+        startService(mediaUploadIntent);
     }
 
-    RandomAccessFile randomAccessFile = null;
-    String upload_session_id = null;
-    GraphRequest.Callback postcallback = new GraphRequest.Callback() {
-        @Override
-        public void onCompleted(GraphResponse response) {
-            Log.d(TAG, "response = " + response.getRawResponse());
-            if (response.getError() != null) {
-                Log.d(TAG, "Error msg = " + response.getError().getErrorMessage());
-                Log.d(TAG, "Error code = " + response.getError().getErrorCode());
-                Log.d(TAG, "Error subcode = " + response.getError().getErrorMessage());
-                Log.d(TAG, "Error recovery msg = " + response.getError().getErrorRecoveryMessage());
-            }
-            else
-            {
-            JSONObject jsonObject = response.getJSONObject();
-            try {
-                if (jsonObject.has("upload_session_id") || (jsonObject.has("start_offset") || jsonObject.has("end_offset"))) {
-                    if (jsonObject.has("upload_session_id")) {
-                        upload_session_id = (String) jsonObject.get("upload_session_id");
-                    }
-                    String start_offset = (String) jsonObject.get("start_offset");
-                    String end_offset = (String) jsonObject.get("end_offset");
-                    //FileInputStream fileInputStream = new FileInputStream(medias[selectedPosition].getPath());
-                    byte[] buffer = new byte[(int)(Long.parseLong(end_offset) - Long.parseLong(start_offset))];
-                    randomAccessFile.seek(Long.parseLong(start_offset));
-                    if (Long.parseLong(start_offset) != Long.parseLong(end_offset)) {
-                        Bundle params = new Bundle();
-                        Log.d(TAG, "Upload from " + start_offset + " to " + end_offset);
-                        params.putString("upload_phase", "transfer");
-                        params.putString("upload_session_id", upload_session_id);
-                        params.putString("start_offset", start_offset);
-                        randomAccessFile.read(buffer);
-                        params.putByteArray("video_file_chunk", buffer);
-                        GraphRequest postReq = new GraphRequest(AccessToken.getCurrentAccessToken(), "/" + userId + "/videos", params, HttpMethod.POST, postcallback);
-                        postReq.executeAsync();
-                    } else {
-                        Bundle params = new Bundle();
-                        Log.d(TAG, "Complete UPLOAD");
-                        params.putString("upload_phase", "finish");
-                        params.putString("upload_session_id", upload_session_id);
-                        GraphRequest postReq = new GraphRequest(AccessToken.getCurrentAccessToken(), "/" + userId + "/videos", params, HttpMethod.POST, postcallback);
-                        postReq.executeAsync();
-                    }
-                } else {
-                    if (jsonObject.has("success")) {
-                        Boolean success = (Boolean) jsonObject.get("success");
-                        Log.d(TAG, "success = " + success);
-                        long endtime = System.currentTimeMillis();
-                        Log.d(TAG, "time taken = " + (endtime - startTimeUpload) / 1000 + " secs");
-                    }
-                }
-            } catch (JSONException e) {
-                e.printStackTrace();
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-    };
 
-    long startTimeUpload;
-    GraphRequest.Callback getcallback = new GraphRequest.Callback() {
-        @Override
-        public void onCompleted(GraphResponse response) {
-            Log.d(TAG,"Fetch user id = "+response.getRawResponse());
-            if(response.getError() != null) {
-                Log.d(TAG, "onCompleted /me = " + response.getError().getErrorCode());
-                Log.d(TAG, "onCompleted /me = " + response.getError().getSubErrorCode());
-            }
-            JSONObject jsonObject = response.getJSONObject();
-            try {
-                userId = (String)jsonObject.get("id");
-                Log.d(TAG,"USER ID = "+userId);
-                Bundle params = new Bundle();
-                startTimeUpload = System.currentTimeMillis();
-                params.putString("upload_phase","start");
-                randomAccessFile = new RandomAccessFile(new File(medias[selectedPosition].getPath()),"r");
-                params.putString("file_size",randomAccessFile.length()+"");
-                Log.d(TAG,"file size = "+randomAccessFile.length());
-                /*Log.d(TAG,"Photo = "+medias[selectedPosition].getPath());
-                Bitmap image = BitmapFactory.decodeFile(medias[selectedPosition].getPath());
-                ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-                image.compress(Bitmap.CompressFormat.JPEG,100,byteArrayOutputStream);
-                Log.d(TAG,"Image compressed");
-                params.putByteArray("source",byteArrayOutputStream.toByteArray());*/
-                GraphRequest postReq = new GraphRequest(AccessToken.getCurrentAccessToken(), "/"+userId+"/videos", params, HttpMethod.POST,postcallback);
-                //Log.d(TAG,"Graph path = "+postReq.getGraphPath());
-                postReq.executeAsync();
-                Log.d(TAG,"Request sent");
-            } catch (JSONException e) {
-                e.printStackTrace();
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    };
     String compressedFilePath;
 
     @Override
