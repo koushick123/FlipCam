@@ -369,9 +369,9 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                     String start_offset = (String) jsonObject.get("start_offset");
                     String end_offset = (String) jsonObject.get("end_offset");
                     //FileInputStream fileInputStream = new FileInputStream(medias[selectedPosition].getPath());
-                    byte[] buffer = new byte[Integer.parseInt(end_offset) - Integer.parseInt(start_offset)];
-                    randomAccessFile.seek(Integer.parseInt(start_offset));
-                    if (Integer.parseInt(start_offset) != Integer.parseInt(end_offset)) {
+                    byte[] buffer = new byte[(int)(Long.parseLong(end_offset) - Long.parseLong(start_offset))];
+                    randomAccessFile.seek(Long.parseLong(start_offset));
+                    if (Long.parseLong(start_offset) != Long.parseLong(end_offset)) {
                         Bundle params = new Bundle();
                         Log.d(TAG, "Upload from " + start_offset + " to " + end_offset);
                         params.putString("upload_phase", "transfer");
@@ -391,7 +391,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                     }
                 } else {
                     if (jsonObject.has("success")) {
-                        String success = (String) jsonObject.get("success");
+                        Boolean success = (Boolean) jsonObject.get("success");
                         Log.d(TAG, "success = " + success);
                         long endtime = System.currentTimeMillis();
                         Log.d(TAG, "time taken = " + (endtime - startTimeUpload) / 1000 + " secs");
@@ -403,13 +403,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
-            }
-
-            if (response.getError() != null) {
-                Log.d(TAG, "onCompleted = " + response.getError().getErrorMessage());
-                Log.d(TAG, "onCompleted getErrorCode = " + response.getError().getErrorCode());
-                Log.d(TAG, "onCompleted getSubErrorCode = " + response.getError().getSubErrorCode());
-                Log.d(TAG, "onCompleted getErrorRecoveryMessage = " + response.getError().getErrorRecoveryMessage());
             }
         }
     }
