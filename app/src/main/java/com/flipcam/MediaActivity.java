@@ -11,6 +11,7 @@ import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
@@ -43,6 +44,7 @@ import com.facebook.HttpMethod;
 import com.facebook.login.LoginManager;
 import com.facebook.login.LoginResult;
 import com.facebook.share.widget.ShareDialog;
+import com.flipcam.constants.Constants;
 import com.flipcam.media.FileMedia;
 import com.flipcam.util.MediaUtil;
 import com.flipcam.view.SurfaceViewVideoFragment;
@@ -55,12 +57,14 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Set;
 
+import static android.os.Environment.getExternalStoragePublicDirectory;
 import static com.flipcam.PermissionActivity.FC_MEDIA_PREFERENCE;
 
 public class MediaActivity extends AppCompatActivity implements ViewPager.OnPageChangeListener{
@@ -298,14 +302,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     LoginManager loginManager = LoginManager.getInstance();
     ArrayList<String> publishPermissions;
     public void shareToFacebook(){
-        if(!isImage(medias[selectedPosition].getPath())) {
-            Log.d(TAG, "Compressing START");
-            compressed = new File("/storage/emulated/0/DCIM/FlipCam/Compressed");
-            if (!compressed.exists()) {
-                compressed.mkdir();
-            }
-            Log.d(TAG, "video to compress = " + medias[selectedPosition].getPath());
-        }
             boolean loggedIn = AccessToken.getCurrentAccessToken() != null;
             Log.d(TAG,"Access token = "+loggedIn);
             if(!loggedIn) {
@@ -323,6 +319,8 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                         Set<String> grantedPermissions = loginResult.getRecentlyGrantedPermissions();
                         Log.d(TAG, "access token = " + accessToken);
                         Log.d(TAG, "granted perm = " + grantedPermissions.size());
+                        /*ShareMediaToFacebook shareMediaToFacebook = new ShareMediaToFacebook();
+                        shareMediaToFacebook.execute(medias[selectedPosition].getPath());*/
                     }
 
                     @Override
@@ -341,15 +339,45 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             }
             else{
                 //Fetch the user ID to be used for subsequent requests
-                GraphRequest meReq = new GraphRequest(AccessToken.getCurrentAccessToken(), "/me", null,HttpMethod.GET,getcallback);
-                meReq.executeAsync();
+                /*ShareMediaToFacebook shareMediaToFacebook = new ShareMediaToFacebook();
+                shareMediaToFacebook.execute(medias[selectedPosition].getPath());*/
+                //FileInputStream uploadFile = null;
+                try (FileInputStream uploadFile = new FileInputStream(medias[selectedPosition].getPath())){
+                    File file = new File(medias[selectedPosition].getPath());
+                    int[] filenamePostfix = new int[]{1,2,3,4,5,6,7,8,9,10};
+                    int bufferSize = (int) (file.length() / 10);
+                    byte[] buffer = new byte[bufferSize];
+                    Log.d(TAG,"buffer size = "+bufferSize);
+                    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                    int len;
+                    int index=0;
+                    while((len = uploadFile.read(buffer)) != -1){
+                        byteArrayOutputStream.write(buffer,0,len);
+                        String dir = getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + getResources().getString(R.string.FC_ROOT))+"Compressed/Part_"+filenamePostfix[index++]+".mp4";
+                        try(FileOutputStream fileOutputStream = new FileOutputStream(dir)) {
+                            fileOutputStream.write(byteArrayOutputStream.toByteArray());
+                            Log.d(TAG,"Written "+byteArrayOutputStream.size()+" bytes to file "+dir);
+                        }
+                    }
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
+    }
+
+    public void uploadToFacebook(){
+        GraphRequest meReq = new GraphRequest(AccessToken.getCurrentAccessToken(), "/me", null,HttpMethod.GET,getcallback);
+        meReq.executeAsync();
     }
 
     GraphRequest.Callback postcallback = new GraphRequest.Callback() {
         @Override
         public void onCompleted(GraphResponse response) {
             Log.d(TAG,"response = "+response.getRawResponse());
+            long endTime = System.currentTimeMillis();
+            Log.d(TAG,"Time taken to upload = "+((endTime - startTimeUpload) / 1000) +" secs");
             if(response.getError() != null) {
                 Log.d(TAG, "onCompleted = " + response.getError().getErrorMessage());
                 Log.d(TAG, "onCompleted getErrorCode = " + response.getError().getErrorCode());
@@ -359,6 +387,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         }
     };
 
+    long startTimeUpload;
     GraphRequest.Callback getcallback = new GraphRequest.Callback() {
         @Override
         public void onCompleted(GraphResponse response) {
@@ -372,14 +401,18 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 userId = (String)jsonObject.get("id");
                 Log.d(TAG,"USER ID = "+userId);
                 Bundle params = new Bundle();
-                FileInputStream uploadFile = new FileInputStream("/storage/emulated/0/DCIM/FlipCam/Compressed/VIDEO_20171211_045606.mp4");
-                byte[] buffer = new byte[10240];
+                startTimeUpload = System.currentTimeMillis();
+                FileInputStream uploadFile = new FileInputStream(compressedFilePath);
+                int halfMb = (int) Constants.MEGA_BYTE / 2;
+                byte[] buffer = new byte[halfMb];
                 ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
                 int len;
                 while((len = uploadFile.read(buffer)) != -1){
                     byteArrayOutputStream.write(buffer,0,len);
                 }
-                params.putByteArray("VIDEO_20171211_044913.mp4",byteArrayOutputStream.toByteArray());
+                params.putByteArray("video",byteArrayOutputStream.toByteArray());
+                params.putString("description","Test for large video upload");
+                params.putString("message","This ia a medium duration video");
                 /*Log.d(TAG,"Photo = "+medias[selectedPosition].getPath());
                 Bitmap image = BitmapFactory.decodeFile(medias[selectedPosition].getPath());
                 ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
@@ -741,18 +774,32 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         }
     }
 
-    class ShareMediaToFacebook extends AsyncTask<String,String,String>{
+    class ShareMediaToFacebook extends AsyncTask<String,Void,String>{
+
+        @Override
+        protected void onPreExecute() {
+            compressed = new File("/storage/emulated/0/DCIM/FlipCam/Compressed");
+            if (!compressed.exists()) {
+                compressed.mkdir();
+            }
+            Log.d(TAG, "video to compress = " + medias[selectedPosition].getPath());
+        }
+
         @Override
         protected void onPostExecute(String compressedFile) {
             Log.d(TAG,"Post to FB");
-            //postToFacebook();
+            uploadToFacebook();
         }
 
         @Override
         protected String doInBackground(String[] paths) {
             long startTime = System.currentTimeMillis();
+            MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
+            mediaMetadataRetriever.setDataSource(paths[0]);
+            String bitrate = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE);
+            Log.d(TAG,"Original bitrate = "+bitrate);
             try {
-                compressedFilePath = SiliCompressor.with(getApplicationContext()).compressVideo(paths[0],paths[1],320,480,200000);
+                compressedFilePath = SiliCompressor.with(getApplicationContext()).compressVideo(paths[0],compressed.getPath(),screenSize.x,screenSize.y,Integer.parseInt(bitrate) / 10);
             } catch (URISyntaxException e) {
                 e.printStackTrace();
             }
