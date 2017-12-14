@@ -110,7 +110,7 @@ public class MediaUploadService extends Service {
         @Override
         protected Boolean doInBackground(String... params) {
             uploadFile = params[0];
-            filename = uploadFile.substring(uploadFile.length()-1,uploadFile.lastIndexOf("/"));
+            filename = uploadFile.substring(uploadFile.lastIndexOf("/"),uploadFile.length()-1);
             startID = Integer.parseInt(params[1]);
             GraphRequest meReq = new GraphRequest(AccessToken.getCurrentAccessToken(), "/me", null,HttpMethod.GET,getcallback);
             meReq.executeAndWait();
@@ -194,9 +194,6 @@ public class MediaUploadService extends Service {
                         }
                         String start_offset = (String) jsonObject.get("start_offset");
                         String end_offset = (String) jsonObject.get("end_offset");
-                        if(uploadFileSize > 0){
-                            Toast.makeText(getApplicationContext(),"Uploaded "+uploadFileSize+" bytes for "+filename,Toast.LENGTH_SHORT).show();
-                        }
                         byte[] buffer = new byte[(int)(Long.parseLong(end_offset) - Long.parseLong(start_offset))];
                         randomAccessFile.seek(Long.parseLong(start_offset));
                         if (Long.parseLong(start_offset) != Long.parseLong(end_offset)) {
