@@ -72,12 +72,8 @@ public class MediaUploadService extends Service {
         super.onLowMemory();
     }
 
-
-    RandomAccessFile randomAccessFile = null;
-    String upload_session_id = null;
     String userId;
     Boolean success;
-    long startTimeUpload;
     String uploadFile;
 
     class MediaUploadTask extends AsyncTask<String,Void,Boolean>{
@@ -119,18 +115,20 @@ public class MediaUploadService extends Service {
             return success;
         }
     }
-
+    RandomAccessFile randomAccessFile = null;
+    String upload_session_id = null;
+    long startTimeUpload;
     GraphRequest.Callback getcallback = new GraphRequest.Callback() {
         @Override
         public void onCompleted(GraphResponse response) {
             Log.d(TAG,"Fetch user id = "+response.getRawResponse());
             if(response.getError() != null) {
                 Log.d(TAG, "onCompleted /me = " + response.getError().getErrorCode());
-                Log.d(TAG, "onCompleted suberror /me = " + response.getError().getSubErrorCode());
+                Log.d(TAG, "onCompleted /me = " + response.getError().getSubErrorCode());
             }
             JSONObject jsonObject = response.getJSONObject();
             try {
-                String userId = (String)jsonObject.get("id");
+                userId = (String)jsonObject.get("id");
                 Log.d(TAG,"USER ID = "+userId);
                 Bundle params = new Bundle();
                 startTimeUpload = System.currentTimeMillis();
@@ -158,6 +156,8 @@ public class MediaUploadService extends Service {
         }
     };
 
+    int retryCount = 3;
+
     GraphRequest.Callback postcallback = new GraphRequest.Callback() {
         @Override
         public void onCompleted(GraphResponse response) {
@@ -167,7 +167,17 @@ public class MediaUploadService extends Service {
                 Log.d(TAG, "Error code = " + response.getError().getErrorCode());
                 Log.d(TAG, "Error subcode = " + response.getError().getErrorMessage());
                 Log.d(TAG, "Error recovery msg = " + response.getError().getErrorRecoveryMessage());
-                stopSelf();
+                if(retryCount == 0){
+                    stopSelf();
+                }
+                else{
+                    retryCount--;
+                    Log.d(TAG,"Retrying....");
+                    GraphRequest postReq = new GraphRequest(AccessToken.getCurrentAccessToken(), "/" + userId + "/videos",
+                            response.getRequest().getParameters(),
+                            HttpMethod.POST, postcallback);
+                    postReq.executeAsync();
+                }
             }
             else
             {
@@ -202,10 +212,12 @@ public class MediaUploadService extends Service {
                         }
                     } else {
                         if (jsonObject.has("success")) {
-                            success = (Boolean) jsonObject.get("success");
+                            Boolean success = (Boolean) jsonObject.get("success");
                             Log.d(TAG, "success = " + success);
                             long endtime = System.currentTimeMillis();
                             Log.d(TAG, "time taken = " + (endtime - startTimeUpload) / 1000 + " secs");
+                            Toast.makeText(getApplicationContext(),"File "+uploadFile+" uploaded successfully",Toast.LENGTH_LONG).show();
+                            stopSelf();
                         }
                     }
                 } catch (JSONException e) {
