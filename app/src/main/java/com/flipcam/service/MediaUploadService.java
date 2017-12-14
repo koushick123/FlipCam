@@ -48,13 +48,21 @@ public class MediaUploadService extends Service {
         Log.d(TAG,"onStartCommand = "+startId);
         String uploadfilepath = (String)intent.getExtras().get("uploadFile");
         Log.d(TAG,"Upload file = "+uploadfilepath);
-        new MediaUploadTask().execute(uploadfilepath,startId+"");
+        //new MediaUploadTask().execute(uploadfilepath,startId+"");
+        uploadFile = uploadfilepath;
+        GraphRequest meReq = new GraphRequest(AccessToken.getCurrentAccessToken(), "/me", null,HttpMethod.GET,getcallback);
+        meReq.executeAsync();
         return Service.START_NOT_STICKY;
     }
 
     @Override
     public void onDestroy() {
         Log.d(TAG,"onDestroy");
+        try {
+            randomAccessFile.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         super.onDestroy();
     }
 
@@ -138,7 +146,7 @@ public class MediaUploadService extends Service {
                 params.putByteArray("source",byteArrayOutputStream.toByteArray());*/
                 GraphRequest postReq = new GraphRequest(AccessToken.getCurrentAccessToken(), "/"+userId+"/videos", params, HttpMethod.POST,postcallback);
                 //Log.d(TAG,"Graph path = "+postReq.getGraphPath());
-                postReq.executeAndWait();
+                postReq.executeAsync();
                 Log.d(TAG,"Request sent");
             } catch (JSONException e) {
                 e.printStackTrace();
@@ -159,6 +167,7 @@ public class MediaUploadService extends Service {
                 Log.d(TAG, "Error code = " + response.getError().getErrorCode());
                 Log.d(TAG, "Error subcode = " + response.getError().getErrorMessage());
                 Log.d(TAG, "Error recovery msg = " + response.getError().getErrorRecoveryMessage());
+                stopSelf();
             }
             else
             {
@@ -182,14 +191,14 @@ public class MediaUploadService extends Service {
                             randomAccessFile.read(buffer);
                             params.putByteArray("video_file_chunk", buffer);
                             GraphRequest postReq = new GraphRequest(AccessToken.getCurrentAccessToken(), "/" + userId + "/videos", params, HttpMethod.POST, postcallback);
-                            postReq.executeAndWait();
+                            postReq.executeAsync();
                         } else {
                             Bundle params = new Bundle();
                             Log.d(TAG, "Complete UPLOAD");
                             params.putString("upload_phase", "finish");
                             params.putString("upload_session_id", upload_session_id);
                             GraphRequest postReq = new GraphRequest(AccessToken.getCurrentAccessToken(), "/" + userId + "/videos", params, HttpMethod.POST, postcallback);
-                            postReq.executeAndWait();
+                            postReq.executeAsync();
                         }
                     } else {
                         if (jsonObject.has("success")) {
