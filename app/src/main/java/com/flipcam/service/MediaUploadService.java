@@ -29,7 +29,7 @@ import java.io.RandomAccessFile;
 public class MediaUploadService extends Service {
 
     public static final String TAG = "MediaUploadService";
-    int NO_OF_THREADS = 0;
+    int startID;
 
     @Nullable
     @Override
@@ -39,32 +39,30 @@ public class MediaUploadService extends Service {
 
     @Override
     public void onCreate() {
-        Log.d(TAG,"onCreate");
+        Log.i(TAG,"onCreate");
         super.onCreate();
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.d(TAG,"onStartCommand = "+startId);
-        final int startid = startId;
+        Log.i(TAG,"onStartCommand = "+startId);
+        startID = startId;
         final String uploadfilepath = (String)intent.getExtras().get("uploadFile");
-        Log.d(TAG,"Upload file = "+uploadfilepath);
+        userId = (String)intent.getExtras().get("userId");
+        Log.i(TAG,"Upload file = "+uploadfilepath);
         new Thread(new Runnable() {
             @Override
             public void run() {
-                Log.d(TAG,"Start NEW UPLOAD TASK");
-                new MediaUploadTask().execute(uploadfilepath,startid+"");
+                Log.i(TAG,"Start NEW UPLOAD TASK");
+                new MediaUploadTask().execute(uploadfilepath);
             }
         }).start();
-        /*uploadFile = uploadfilepath;
-        GraphRequest meReq = new GraphRequest(AccessToken.getCurrentAccessToken(), "/me", null,HttpMethod.GET,getcallback);
-        meReq.executeAsync();*/
         return Service.START_NOT_STICKY;
     }
 
     @Override
     public void onDestroy() {
-        Log.d(TAG,"onDestroy");
+        Log.i(TAG,"onDestroy");
         try {
             randomAccessFile.close();
         } catch (IOException e) {
@@ -75,7 +73,7 @@ public class MediaUploadService extends Service {
 
     @Override
     public void onLowMemory() {
-        Log.d(TAG,"onLowMemory");
+        Log.i(TAG,"onLowMemory");
         super.onLowMemory();
     }
 
@@ -85,99 +83,78 @@ public class MediaUploadService extends Service {
     String filename;
 
     class MediaUploadTask extends AsyncTask<String,Integer,Boolean>{
-        int startID;
 
         @Override
         protected void onPostExecute(Boolean aBoolean) {
-            Log.d(TAG,"onPostExecute");
-            Log.d(TAG,"Stopping ID = "+startID);
-            NO_OF_THREADS--;
+            Log.i(TAG,"onPostExecute");
             stopSelf(startID);
-            Toast.makeText(getApplicationContext(),"FILE UPLOADED "+filename,Toast.LENGTH_LONG).show();
-        }
-
-        @Override
-        protected void onPreExecute() {
-            NO_OF_THREADS++;
+            if(success) {
+                Toast.makeText(getApplicationContext(), "FILE UPLOADED " + filename, Toast.LENGTH_LONG).show();
+            }
+            else{
+                Toast.makeText(getApplicationContext(), "THERE WAS AN ISSUE UPLOADING YOUR FILE" + filename+". PLEASE TRY AGAIN LATER", Toast.LENGTH_LONG).show();
+            }
         }
 
         @Override
         protected void onCancelled() {
-            Log.d(TAG,"onCancelled");
+            Log.i(TAG,"onCancelled");
             super.onCancelled();
         }
 
         @Override
         protected Boolean doInBackground(String... params) {
             uploadFile = params[0];
-            filename = uploadFile.substring(uploadFile.lastIndexOf("/"),uploadFile.length()-1);
-            startID = Integer.parseInt(params[1]);
-            GraphRequest meReq = new GraphRequest(AccessToken.getCurrentAccessToken(), "/me", null,HttpMethod.GET,getcallback);
-            meReq.executeAndWait();
-            Log.d(TAG,"EXIT Thread");
+            filename = uploadFile.substring(uploadFile.lastIndexOf("/"),uploadFile.length());
+            startUpload();
+            Log.i(TAG,"EXIT Thread");
             return success;
+        }
+    }
+
+    public void startUpload(){
+        try {
+            randomAccessFile = new RandomAccessFile(new File(uploadFile),"r");
+            Bundle params = new Bundle();
+            params.putString("upload_phase","start");
+            params.putString("file_size",randomAccessFile.length()+"");
+            Log.i(TAG,"file size = "+randomAccessFile.length());
+                /*Log.i(TAG,"Photo = "+medias[selectedPosition].getPath());
+                Bitmap image = BitmapFactory.decodeFile(medias[selectedPosition].getPath());
+                ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                image.compress(Bitmap.CompressFormat.JPEG,100,byteArrayOutputStream);
+                Log.i(TAG,"Image compressed");
+                params.putByteArray("source",byteArrayOutputStream.toByteArray());*/
+            GraphRequest postReq = new GraphRequest(AccessToken.getCurrentAccessToken(), "/"+userId+"/videos", params, HttpMethod.POST,postcallback);
+            //Log.i(TAG,"Graph path = "+postReq.getGraphPath());
+            postReq.executeAndWait();
+            Log.i(TAG,"Request sent");
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
     RandomAccessFile randomAccessFile = null;
     String upload_session_id = null;
-    long startTimeUpload;
-    GraphRequest.Callback getcallback = new GraphRequest.Callback() {
-        @Override
-        public void onCompleted(GraphResponse response) {
-            Log.d(TAG,"Fetch user id = "+response.getRawResponse());
-            if(response.getError() != null) {
-                Log.d(TAG, "onCompleted /me = " + response.getError().getErrorCode());
-                Log.d(TAG, "onCompleted /me = " + response.getError().getSubErrorCode());
-            }
-            JSONObject jsonObject = response.getJSONObject();
-            try {
-                userId = (String)jsonObject.get("id");
-                Log.d(TAG,"USER ID = "+userId);
-                Bundle params = new Bundle();
-                startTimeUpload = System.currentTimeMillis();
-                params.putString("upload_phase","start");
-                randomAccessFile = new RandomAccessFile(new File(uploadFile),"r");
-                params.putString("file_size",randomAccessFile.length()+"");
-                Log.d(TAG,"file size = "+randomAccessFile.length());
-                /*Log.d(TAG,"Photo = "+medias[selectedPosition].getPath());
-                Bitmap image = BitmapFactory.decodeFile(medias[selectedPosition].getPath());
-                ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-                image.compress(Bitmap.CompressFormat.JPEG,100,byteArrayOutputStream);
-                Log.d(TAG,"Image compressed");
-                params.putByteArray("source",byteArrayOutputStream.toByteArray());*/
-                GraphRequest postReq = new GraphRequest(AccessToken.getCurrentAccessToken(), "/"+userId+"/videos", params, HttpMethod.POST,postcallback);
-                //Log.d(TAG,"Graph path = "+postReq.getGraphPath());
-                postReq.executeAndWait();
-                Log.d(TAG,"Request sent");
-            } catch (JSONException e) {
-                e.printStackTrace();
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    };
-
-    int retryCount = 3;
-    long uploadFileSize = 0;
+    int retryCount = 6;
 
     GraphRequest.Callback postcallback = new GraphRequest.Callback() {
         @Override
         public void onCompleted(GraphResponse response) {
-            Log.d(TAG, "response = " + response.getRawResponse());
+            Log.i(TAG, "response = " + response.getRawResponse());
             if (response.getError() != null) {
-                Log.d(TAG, "Error msg = " + response.getError().getErrorMessage());
-                Log.d(TAG, "Error code = " + response.getError().getErrorCode());
-                Log.d(TAG, "Error subcode = " + response.getError().getErrorMessage());
-                Log.d(TAG, "Error recovery msg = " + response.getError().getErrorRecoveryMessage());
+                Log.i(TAG, "Error msg = " + response.getError().getErrorMessage());
+                Log.i(TAG, "Error code = " + response.getError().getErrorCode());
+                Log.i(TAG, "Error subcode = " + response.getError().getErrorMessage());
+                Log.i(TAG, "Error recovery msg = " + response.getError().getErrorRecoveryMessage());
                 if(retryCount == 0){
-                    stopSelf();
+                    stopSelf(startID);
                 }
                 else{
                     retryCount--;
-                    Log.d(TAG,"Retrying....");
+                    Log.i(TAG,"Retrying....");
                     GraphRequest postReq = new GraphRequest(AccessToken.getCurrentAccessToken(), "/" + userId + "/videos",
                             response.getRequest().getParameters(),
                             HttpMethod.POST, postcallback);
@@ -198,18 +175,17 @@ public class MediaUploadService extends Service {
                         randomAccessFile.seek(Long.parseLong(start_offset));
                         if (Long.parseLong(start_offset) != Long.parseLong(end_offset)) {
                             Bundle params = new Bundle();
-                            Log.d(TAG, "Upload from " + start_offset + " to " + end_offset);
+                            Log.i(TAG, "Upload from " + start_offset + " to " + end_offset);
                             params.putString("upload_phase", "transfer");
                             params.putString("upload_session_id", upload_session_id);
                             params.putString("start_offset", start_offset);
                             randomAccessFile.read(buffer);
                             params.putByteArray("video_file_chunk", buffer);
-                            uploadFileSize += buffer.length;
                             GraphRequest postReq = new GraphRequest(AccessToken.getCurrentAccessToken(), "/" + userId + "/videos", params, HttpMethod.POST, postcallback);
                             postReq.executeAndWait();
                         } else {
                             Bundle params = new Bundle();
-                            Log.d(TAG, "Complete UPLOAD");
+                            Log.i(TAG, "Complete UPLOAD");
                             params.putString("upload_phase", "finish");
                             params.putString("upload_session_id", upload_session_id);
                             GraphRequest postReq = new GraphRequest(AccessToken.getCurrentAccessToken(), "/" + userId + "/videos", params, HttpMethod.POST, postcallback);
@@ -217,12 +193,8 @@ public class MediaUploadService extends Service {
                         }
                     } else {
                         if (jsonObject.has("success")) {
-                            Boolean success = (Boolean) jsonObject.get("success");
-                            Log.d(TAG, "success = " + success);
-                            long endtime = System.currentTimeMillis();
-                            Log.d(TAG, "time taken = " + (endtime - startTimeUpload) / 1000 + " secs");
-                            /*Toast.makeText(getApplicationContext(),"File "+uploadFile+" uploaded successfully",Toast.LENGTH_LONG).show();
-                            stopSelf();*/
+                            success = (Boolean) jsonObject.get("success");
+                            Log.i(TAG, "success = " + success);
                         }
                     }
                 } catch (JSONException e) {
