@@ -46,9 +46,16 @@ public class MediaUploadService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(TAG,"onStartCommand = "+startId);
-        String uploadfilepath = (String)intent.getExtras().get("uploadFile");
+        final int startid = startId;
+        final String uploadfilepath = (String)intent.getExtras().get("uploadFile");
         Log.d(TAG,"Upload file = "+uploadfilepath);
-        new MediaUploadTask().execute(uploadfilepath,startId+"");
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                Log.d(TAG,"Start NEW UPLOAD TASK");
+                new MediaUploadTask().execute(uploadfilepath,startid+"");
+            }
+        }).start();
         /*uploadFile = uploadfilepath;
         GraphRequest meReq = new GraphRequest(AccessToken.getCurrentAccessToken(), "/me", null,HttpMethod.GET,getcallback);
         meReq.executeAsync();*/
@@ -75,8 +82,9 @@ public class MediaUploadService extends Service {
     String userId;
     Boolean success;
     String uploadFile;
+    String filename;
 
-    class MediaUploadTask extends AsyncTask<String,Void,Boolean>{
+    class MediaUploadTask extends AsyncTask<String,Integer,Boolean>{
         int startID;
 
         @Override
@@ -85,17 +93,12 @@ public class MediaUploadService extends Service {
             Log.d(TAG,"Stopping ID = "+startID);
             NO_OF_THREADS--;
             stopSelf(startID);
-            Toast.makeText(getApplicationContext(),"FILE UPLOADED",Toast.LENGTH_LONG).show();
+            Toast.makeText(getApplicationContext(),"FILE UPLOADED "+filename,Toast.LENGTH_LONG).show();
         }
 
         @Override
         protected void onPreExecute() {
             NO_OF_THREADS++;
-        }
-
-        @Override
-        protected void onProgressUpdate(Void... values) {
-            super.onProgressUpdate(values);
         }
 
         @Override
@@ -107,6 +110,7 @@ public class MediaUploadService extends Service {
         @Override
         protected Boolean doInBackground(String... params) {
             uploadFile = params[0];
+            filename = uploadFile.substring(uploadFile.length()-1,uploadFile.lastIndexOf("/"));
             startID = Integer.parseInt(params[1]);
             GraphRequest meReq = new GraphRequest(AccessToken.getCurrentAccessToken(), "/me", null,HttpMethod.GET,getcallback);
             meReq.executeAndWait();
@@ -114,6 +118,7 @@ public class MediaUploadService extends Service {
             return success;
         }
     }
+
     RandomAccessFile randomAccessFile = null;
     String upload_session_id = null;
     long startTimeUpload;
@@ -156,6 +161,7 @@ public class MediaUploadService extends Service {
     };
 
     int retryCount = 3;
+    long uploadFileSize = 0;
 
     GraphRequest.Callback postcallback = new GraphRequest.Callback() {
         @Override
@@ -188,7 +194,9 @@ public class MediaUploadService extends Service {
                         }
                         String start_offset = (String) jsonObject.get("start_offset");
                         String end_offset = (String) jsonObject.get("end_offset");
-                        //FileInputStream fileInputStream = new FileInputStream(medias[selectedPosition].getPath());
+                        if(uploadFileSize > 0){
+                            Toast.makeText(getApplicationContext(),"Uploaded "+uploadFileSize+" bytes for "+filename,Toast.LENGTH_SHORT).show();
+                        }
                         byte[] buffer = new byte[(int)(Long.parseLong(end_offset) - Long.parseLong(start_offset))];
                         randomAccessFile.seek(Long.parseLong(start_offset));
                         if (Long.parseLong(start_offset) != Long.parseLong(end_offset)) {
@@ -199,6 +207,7 @@ public class MediaUploadService extends Service {
                             params.putString("start_offset", start_offset);
                             randomAccessFile.read(buffer);
                             params.putByteArray("video_file_chunk", buffer);
+                            uploadFileSize += buffer.length;
                             GraphRequest postReq = new GraphRequest(AccessToken.getCurrentAccessToken(), "/" + userId + "/videos", params, HttpMethod.POST, postcallback);
                             postReq.executeAndWait();
                         } else {
