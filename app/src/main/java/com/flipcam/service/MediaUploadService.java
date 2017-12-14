@@ -48,10 +48,10 @@ public class MediaUploadService extends Service {
         Log.d(TAG,"onStartCommand = "+startId);
         String uploadfilepath = (String)intent.getExtras().get("uploadFile");
         Log.d(TAG,"Upload file = "+uploadfilepath);
-        //new MediaUploadTask().execute(uploadfilepath,startId+"");
-        uploadFile = uploadfilepath;
+        new MediaUploadTask().execute(uploadfilepath,startId+"");
+        /*uploadFile = uploadfilepath;
         GraphRequest meReq = new GraphRequest(AccessToken.getCurrentAccessToken(), "/me", null,HttpMethod.GET,getcallback);
-        meReq.executeAsync();
+        meReq.executeAsync();*/
         return Service.START_NOT_STICKY;
     }
 
@@ -82,11 +82,10 @@ public class MediaUploadService extends Service {
         @Override
         protected void onPostExecute(Boolean aBoolean) {
             Log.d(TAG,"onPostExecute");
-            Log.d(TAG,"File Upload COMPLETE = "+aBoolean);
             Log.d(TAG,"Stopping ID = "+startID);
             NO_OF_THREADS--;
             stopSelf(startID);
-            Toast.makeText(getApplicationContext(),"FILE UPLOADED",Toast.LENGTH_SHORT).show();
+            Toast.makeText(getApplicationContext(),"FILE UPLOADED",Toast.LENGTH_LONG).show();
         }
 
         @Override
@@ -144,7 +143,7 @@ public class MediaUploadService extends Service {
                 params.putByteArray("source",byteArrayOutputStream.toByteArray());*/
                 GraphRequest postReq = new GraphRequest(AccessToken.getCurrentAccessToken(), "/"+userId+"/videos", params, HttpMethod.POST,postcallback);
                 //Log.d(TAG,"Graph path = "+postReq.getGraphPath());
-                postReq.executeAsync();
+                postReq.executeAndWait();
                 Log.d(TAG,"Request sent");
             } catch (JSONException e) {
                 e.printStackTrace();
@@ -176,7 +175,7 @@ public class MediaUploadService extends Service {
                     GraphRequest postReq = new GraphRequest(AccessToken.getCurrentAccessToken(), "/" + userId + "/videos",
                             response.getRequest().getParameters(),
                             HttpMethod.POST, postcallback);
-                    postReq.executeAsync();
+                    postReq.executeAndWait();
                 }
             }
             else
@@ -201,14 +200,14 @@ public class MediaUploadService extends Service {
                             randomAccessFile.read(buffer);
                             params.putByteArray("video_file_chunk", buffer);
                             GraphRequest postReq = new GraphRequest(AccessToken.getCurrentAccessToken(), "/" + userId + "/videos", params, HttpMethod.POST, postcallback);
-                            postReq.executeAsync();
+                            postReq.executeAndWait();
                         } else {
                             Bundle params = new Bundle();
                             Log.d(TAG, "Complete UPLOAD");
                             params.putString("upload_phase", "finish");
                             params.putString("upload_session_id", upload_session_id);
                             GraphRequest postReq = new GraphRequest(AccessToken.getCurrentAccessToken(), "/" + userId + "/videos", params, HttpMethod.POST, postcallback);
-                            postReq.executeAsync();
+                            postReq.executeAndWait();
                         }
                     } else {
                         if (jsonObject.has("success")) {
@@ -216,8 +215,8 @@ public class MediaUploadService extends Service {
                             Log.d(TAG, "success = " + success);
                             long endtime = System.currentTimeMillis();
                             Log.d(TAG, "time taken = " + (endtime - startTimeUpload) / 1000 + " secs");
-                            Toast.makeText(getApplicationContext(),"File "+uploadFile+" uploaded successfully",Toast.LENGTH_LONG).show();
-                            stopSelf();
+                            /*Toast.makeText(getApplicationContext(),"File "+uploadFile+" uploaded successfully",Toast.LENGTH_LONG).show();
+                            stopSelf();*/
                         }
                     }
                 } catch (JSONException e) {
