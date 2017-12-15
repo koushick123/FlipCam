@@ -24,17 +24,10 @@ public class Constants
 
     //To fetch first frame to display thumbnail
     public static final long FIRST_SEC_MICRO = 1000000;
-    public static final long FIRST_SEC_MILLI = 1000;
     //To update seek bar
     public static final int VIDEO_SEEK_UPDATE = 100;
-    //Constants for saving media controls settings
-    public static final String MEDIA_POSITION = "position";
-    public static final String MEDIA_PLAYING = "playing";
-    public static final String MEDIA_CONTROLS_HIDE = "mediaControlHide";
-    public static final String IMAGE_CONTROLS_HIDE = "imageControlHide";
-    public static final String SEEK_DURATION = "seekDuration";
-    public static final String MEDIA_ACTUAL_DURATION = "mediaActualDuration";
-    public static final String MEDIA_COMPLETED = "mediaCompleted";
-    public static final String MEDIA_PREVIOUS_POSITION = "previousPos";
-    public static final String MEDIA_CURRENT_TIME = "currentTime";
+    //Constant for retry count to upload media
+    public static final int RETRY_COUNT = 10;
+    //Message for upload progress
+    public static final int UPLOAD_PROGRESS = 1000;
 }

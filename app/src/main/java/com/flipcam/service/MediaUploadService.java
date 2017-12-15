@@ -4,7 +4,9 @@ import android.app.Service;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
 import android.support.annotation.Nullable;
 import android.util.Log;
 import android.widget.Toast;
@@ -13,6 +15,7 @@ import com.facebook.AccessToken;
 import com.facebook.GraphRequest;
 import com.facebook.GraphResponse;
 import com.facebook.HttpMethod;
+import com.flipcam.constants.Constants;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -21,6 +24,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.lang.ref.WeakReference;
 
 /**
  * Created by koushick on 13-Dec-17.
@@ -30,6 +34,11 @@ public class MediaUploadService extends Service {
 
     public static final String TAG = "MediaUploadService";
     int NO_OF_REQUESTS = 0;
+    String userId;
+    Boolean success;
+    String uploadFile;
+    String filename;
+    MediaUploadHandler mediaUploadHandler;
 
     @Nullable
     @Override
@@ -50,6 +59,7 @@ public class MediaUploadService extends Service {
         final String uploadfilepath = (String)intent.getExtras().get("uploadFile");
         userId = (String)intent.getExtras().get("userId");
         Log.i(TAG,"Upload file = "+uploadfilepath);
+        mediaUploadHandler = new MediaUploadHandler(this);
         new MediaUploadTask().execute(uploadfilepath, startID+"");
         return Service.START_NOT_STICKY;
     }
@@ -71,12 +81,24 @@ public class MediaUploadService extends Service {
         super.onLowMemory();
     }
 
-    String userId;
-    Boolean success;
-    String uploadFile;
-    String filename;
+    class MediaUploadHandler extends Handler{
+        WeakReference<MediaUploadService> serviceWeakReference;
+        public MediaUploadHandler(MediaUploadService service) {
+            serviceWeakReference = new WeakReference<>(service);
+        }
 
-    class MediaUploadTask extends AsyncTask<String,Integer,Boolean>{
+        @Override
+        public void handleMessage(Message msg) {
+            switch(msg.what){
+                case Constants.UPLOAD_PROGRESS:
+                    Log.d(TAG,"Uploaded ");
+                    Toast.makeText(getApplicationContext(),"Uploading ",Toast.LENGTH_SHORT).show();
+                    break;
+            }
+        }
+    }
+
+    class MediaUploadTask extends AsyncTask<String,Void,Boolean>{
 
         String uploadId;
         @Override
@@ -130,7 +152,6 @@ public class MediaUploadService extends Service {
             params.putString("uploadID",uploadid);
             Log.i(TAG,"file size = "+randomAccessFile.length());
             GraphRequest postReq = new GraphRequest(AccessToken.getCurrentAccessToken(), "/"+userId+"/videos", params, HttpMethod.POST,postcallback);
-            //Log.i(TAG,"Graph path = "+postReq.getGraphPath());
             postReq.executeAndWait();
             Log.i(TAG,"Request sent");
         } catch (FileNotFoundException e) {
@@ -142,17 +163,19 @@ public class MediaUploadService extends Service {
 
     RandomAccessFile randomAccessFile = null;
     String upload_session_id = null;
-    int retryCount = 20;
+    int retryCount = Constants.RETRY_COUNT;
+    int subErrorCode;
 
     GraphRequest.Callback postcallback = new GraphRequest.Callback() {
         @Override
         public void onCompleted(GraphResponse response) {
             Log.i(TAG, "response = " + response.getRawResponse());
             if (response.getError() != null) {
-                Log.i(TAG, "Error msg = " + response.getError().getErrorMessage());
                 Log.i(TAG, "Error code = " + response.getError().getErrorCode());
-                Log.i(TAG, "Error subcode = " + response.getError().getErrorMessage());
-                Log.i(TAG, "Error recovery msg = " + response.getError().getErrorRecoveryMessage());
+                Log.i(TAG, "Error user msg = "+response.getError().getErrorUserMessage());
+                Log.i(TAG, "Error subcode = " + response.getError().getSubErrorCode());
+                Log.i(TAG, "FB exception = "+response.getError().getException());
+                subErrorCode = response.getError().getSubErrorCode();
                 if(retryCount > 0){
                     Log.i(TAG,"Retrying...."+retryCount);
                     retryCount--;
@@ -167,13 +190,14 @@ public class MediaUploadService extends Service {
                     postReq.executeAndWait();
                 }
                 else if(retryCount == 0){
+                    retryCount = Constants.RETRY_COUNT;
                     success = false;
                 }
             }
             else
             {
-                if(retryCount < 10){
-                    retryCount = 10;
+                if(retryCount < Constants.RETRY_COUNT){
+                    retryCount = Constants.RETRY_COUNT;
                 }
                 JSONObject jsonObject = response.getJSONObject();
                 try {
@@ -192,6 +216,7 @@ public class MediaUploadService extends Service {
                             params.putString("upload_session_id", upload_session_id);
                             params.putString("start_offset", start_offset);
                             randomAccessFile.read(buffer);
+                            mediaUploadHandler.sendEmptyMessage(Constants.UPLOAD_PROGRESS);
                             params.putByteArray("video_file_chunk", buffer);
                             GraphRequest postReq = new GraphRequest(AccessToken.getCurrentAccessToken(), "/" + userId + "/videos", params, HttpMethod.POST, postcallback);
                             postReq.executeAndWait();
