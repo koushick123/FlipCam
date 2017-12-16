@@ -43,13 +43,9 @@ public class MediaUploadService extends Service {
     String uploadFile;
     String filename;
     MediaUploadHandler mediaUploadHandler;
-    NotificationManager mNotificationManager =
-            (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-    android.support.v4.app.NotificationCompat.Builder mBuilder =
-            new NotificationCompat.Builder(getApplicationContext())
-                    .setSmallIcon(R.mipmap.ic_launcher)
-                    .setContentTitle("Upload Media")
-                    .setContentText("Upload in Progress");
+    NotificationManager mNotificationManager;
+    android.support.v4.app.NotificationCompat.Builder mBuilder;
+    NotificationCompat.InboxStyle inboxStyle;
     String uploadId;
 
     @Nullable
@@ -61,6 +57,12 @@ public class MediaUploadService extends Service {
     @Override
     public void onCreate() {
         Log.i(TAG,"onCreate");
+        mNotificationManager = (NotificationManager) getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
+        mBuilder = new NotificationCompat.Builder(getApplicationContext())
+                        .setSmallIcon(R.drawable.settings)
+                        .setContentTitle("FlipCam")
+                        .setContentText("Upload in Progress");
+        inboxStyle = new NotificationCompat.InboxStyle();
         super.onCreate();
     }
 
@@ -94,6 +96,7 @@ public class MediaUploadService extends Service {
     }
 
     class MediaUploadHandler extends Handler{
+        double uploadedSize = 0;
         WeakReference<MediaUploadService> serviceWeakReference;
         public MediaUploadHandler(MediaUploadService service) {
             serviceWeakReference = new WeakReference<>(service);
@@ -103,10 +106,14 @@ public class MediaUploadService extends Service {
         public void handleMessage(Message msg) {
             switch(msg.what){
                 case Constants.UPLOAD_PROGRESS:
-                    //Log.d(TAG,"Uploaded ");
-                    //Toast.makeText(getApplicationContext(),"Uploading ",Toast.LENGTH_SHORT).show();
                     Log.i(TAG,"upload id = "+uploadId);
-                    mBuilder.setContentText("Uploaded "+msg.getData().get("uploadSize")+" bytes");
+                    Double maxSize = (Double)msg.getData().get("maxSize");
+                    Double uploadSize = (Double)msg.getData().get("uploadSize");
+                    uploadedSize += uploadSize.doubleValue();
+                    mBuilder.setProgress((int)maxSize.doubleValue(),(int)uploadedSize,false);
+                    double roundOffPercent = (Math.floor((uploadedSize / maxSize.intValue()) * 100.0) * 100.0)/100.0;
+                    Log.i(TAG,"Percent done = "+roundOffPercent);
+                    mBuilder.setContentText((int)roundOffPercent+"% Completed");
                     mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
                     break;
             }
@@ -165,6 +172,7 @@ public class MediaUploadService extends Service {
             params.putString("file_size",randomAccessFile.length()+"");
             params.putString("uploadID",uploadid);
             Log.i(TAG,"file size = "+randomAccessFile.length());
+            //convertFileSize(randomAccessFile.length());
             GraphRequest postReq = new GraphRequest(AccessToken.getCurrentAccessToken(), "/"+userId+"/videos", params, HttpMethod.POST,postcallback);
             postReq.executeAndWait();
             Log.i(TAG,"Request sent");
@@ -172,6 +180,21 @@ public class MediaUploadService extends Service {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    public void convertFileSize(long fileSize){
+        if(fileSize >= Constants.MEGA_BYTE && fileSize < Constants.GIGA_BYTE){
+            Log.i(TAG,"MB = "+fileSize);
+            double mbconsumed = fileSize/Constants.MEGA_BYTE;
+            int mbytes = (int) ((Math.floor(mbconsumed * 100.0))/100.0);
+            mBuilder.setProgress(mbytes,0,false);
+        }
+        else {
+            Log.d(TAG,"GB = "+fileSize);
+            double gbconsumed = fileSize/Constants.GIGA_BYTE;
+            int gbytes = (int) ((Math.floor(gbconsumed * 100.0))/100.0);
+            mBuilder.setProgress(gbytes,0,false);
         }
     }
 
@@ -232,10 +255,11 @@ public class MediaUploadService extends Service {
                             randomAccessFile.read(buffer);
                             Bundle bundle = new Bundle();
                             Message message = new Message();
-                            bundle.putInt("uploadSize",buffer.length);
+                            bundle.putDouble("uploadSize",buffer.length);
+                            bundle.putDouble("maxSize",randomAccessFile.length());
+                            bundle.putString("filename",uploadFile);
                             message.setData(bundle);
                             message.what = Constants.UPLOAD_PROGRESS;
-                            //mediaUploadHandler.sendEmptyMessage(Constants.UPLOAD_PROGRESS);
                             mediaUploadHandler.sendMessage(message);
                             params.putByteArray("video_file_chunk", buffer);
                             GraphRequest postReq = new GraphRequest(AccessToken.getCurrentAccessToken(), "/" + userId + "/videos", params, HttpMethod.POST, postcallback);

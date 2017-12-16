@@ -20,7 +20,7 @@ public class Constants
     //File size for calculating memory consumed
     public final static double KILO_BYTE = 1024.0;
     public final static double MEGA_BYTE = KILO_BYTE * KILO_BYTE;
-    public final static double GIGA_BYTE = MEGA_BYTE * KILO_BYTE;
+    public final static double GIGA_BYTE = KILO_BYTE * MEGA_BYTE;
 
     //To fetch first frame to display thumbnail
     public static final long FIRST_SEC_MICRO = 1000000;
