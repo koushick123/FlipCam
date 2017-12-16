@@ -1,6 +1,8 @@
 package com.flipcam.service;
 
+import android.app.NotificationManager;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -8,6 +10,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.support.annotation.Nullable;
+import android.support.v7.app.NotificationCompat;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -15,6 +18,7 @@ import com.facebook.AccessToken;
 import com.facebook.GraphRequest;
 import com.facebook.GraphResponse;
 import com.facebook.HttpMethod;
+import com.flipcam.R;
 import com.flipcam.constants.Constants;
 
 import org.json.JSONException;
@@ -39,6 +43,14 @@ public class MediaUploadService extends Service {
     String uploadFile;
     String filename;
     MediaUploadHandler mediaUploadHandler;
+    NotificationManager mNotificationManager =
+            (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+    android.support.v4.app.NotificationCompat.Builder mBuilder =
+            new NotificationCompat.Builder(getApplicationContext())
+                    .setSmallIcon(R.mipmap.ic_launcher)
+                    .setContentTitle("Upload Media")
+                    .setContentText("Upload in Progress");
+    String uploadId;
 
     @Nullable
     @Override
@@ -91,8 +103,11 @@ public class MediaUploadService extends Service {
         public void handleMessage(Message msg) {
             switch(msg.what){
                 case Constants.UPLOAD_PROGRESS:
-                    Log.d(TAG,"Uploaded ");
-                    Toast.makeText(getApplicationContext(),"Uploading ",Toast.LENGTH_SHORT).show();
+                    //Log.d(TAG,"Uploaded ");
+                    //Toast.makeText(getApplicationContext(),"Uploading ",Toast.LENGTH_SHORT).show();
+                    Log.i(TAG,"upload id = "+uploadId);
+                    mBuilder.setContentText("Uploaded "+msg.getData().get("uploadSize")+" bytes");
+                    mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
                     break;
             }
         }
@@ -100,7 +115,6 @@ public class MediaUploadService extends Service {
 
     class MediaUploadTask extends AsyncTask<String,Void,Boolean>{
 
-        String uploadId;
         @Override
         protected void onPostExecute(Boolean aBoolean) {
             Log.i(TAG,"onPostExecute = "+uploadId);
@@ -216,7 +230,13 @@ public class MediaUploadService extends Service {
                             params.putString("upload_session_id", upload_session_id);
                             params.putString("start_offset", start_offset);
                             randomAccessFile.read(buffer);
-                            mediaUploadHandler.sendEmptyMessage(Constants.UPLOAD_PROGRESS);
+                            Bundle bundle = new Bundle();
+                            Message message = new Message();
+                            bundle.putInt("uploadSize",buffer.length);
+                            message.setData(bundle);
+                            message.what = Constants.UPLOAD_PROGRESS;
+                            //mediaUploadHandler.sendEmptyMessage(Constants.UPLOAD_PROGRESS);
+                            mediaUploadHandler.sendMessage(message);
                             params.putByteArray("video_file_chunk", buffer);
                             GraphRequest postReq = new GraphRequest(AccessToken.getCurrentAccessToken(), "/" + userId + "/videos", params, HttpMethod.POST, postcallback);
                             postReq.executeAndWait();
