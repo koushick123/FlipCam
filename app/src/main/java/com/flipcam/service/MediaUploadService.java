@@ -12,7 +12,6 @@ import android.os.Message;
 import android.support.annotation.Nullable;
 import android.support.v7.app.NotificationCompat;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.facebook.AccessToken;
 import com.facebook.GraphRequest;
@@ -45,8 +44,8 @@ public class MediaUploadService extends Service {
     MediaUploadHandler mediaUploadHandler;
     NotificationManager mNotificationManager;
     android.support.v4.app.NotificationCompat.Builder mBuilder;
-    NotificationCompat.InboxStyle inboxStyle;
     String uploadId;
+    int TOTAL_REQUESTS = 0;
 
     @Nullable
     @Override
@@ -62,7 +61,6 @@ public class MediaUploadService extends Service {
                         .setSmallIcon(R.drawable.settings)
                         .setContentTitle("FlipCam")
                         .setContentText("Upload in Progress");
-        inboxStyle = new NotificationCompat.InboxStyle();
         super.onCreate();
     }
 
@@ -113,7 +111,11 @@ public class MediaUploadService extends Service {
                     mBuilder.setProgress((int)maxSize.doubleValue(),(int)uploadedSize,false);
                     double roundOffPercent = (Math.floor((uploadedSize / maxSize.intValue()) * 100.0) * 100.0)/100.0;
                     Log.i(TAG,"Percent done = "+roundOffPercent);
-                    mBuilder.setContentText((int)roundOffPercent+"% Completed");
+                    mBuilder.setColor(getResources().getColor(R.color.uploadColor));
+                    mBuilder.setContentText((int)roundOffPercent+"% Completed     Uploading "+uploadId+" of "+TOTAL_REQUESTS);
+                    if(roundOffPercent == 100){
+                        uploadedSize = 0;
+                    }
                     mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
                     break;
             }
@@ -125,14 +127,13 @@ public class MediaUploadService extends Service {
         @Override
         protected void onPostExecute(Boolean aBoolean) {
             Log.i(TAG,"onPostExecute = "+uploadId);
+            if(!success){
+                mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText("Unable to upload. Please check your internet connection and try again."));
+                mBuilder.setContentText("Upload Interrupted.");
+                mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
+            }
             NO_OF_REQUESTS--;
             Log.i(TAG,"No of requests = "+NO_OF_REQUESTS);
-            if(success) {
-                Toast.makeText(getApplicationContext(), "FILE UPLOADED " + filename, Toast.LENGTH_LONG).show();
-            }
-            else{
-                Toast.makeText(getApplicationContext(), "THERE WAS AN ISSUE UPLOADING YOUR FILE " + filename+". PLEASE TRY AGAIN LATER", Toast.LENGTH_LONG).show();
-            }
             if(NO_OF_REQUESTS > 0) {
                 stopSelf(Integer.parseInt(uploadId));
             }
@@ -151,6 +152,7 @@ public class MediaUploadService extends Service {
         protected void onPreExecute() {
             Log.i(TAG,"onPreExecute");
             NO_OF_REQUESTS++;
+            TOTAL_REQUESTS++;
         }
 
         @Override
@@ -172,7 +174,6 @@ public class MediaUploadService extends Service {
             params.putString("file_size",randomAccessFile.length()+"");
             params.putString("uploadID",uploadid);
             Log.i(TAG,"file size = "+randomAccessFile.length());
-            //convertFileSize(randomAccessFile.length());
             GraphRequest postReq = new GraphRequest(AccessToken.getCurrentAccessToken(), "/"+userId+"/videos", params, HttpMethod.POST,postcallback);
             postReq.executeAndWait();
             Log.i(TAG,"Request sent");
@@ -215,6 +216,9 @@ public class MediaUploadService extends Service {
                 subErrorCode = response.getError().getSubErrorCode();
                 if(retryCount > 0){
                     Log.i(TAG,"Retrying...."+retryCount);
+                    mBuilder.setColor(getResources().getColor(R.color.uploadError));
+                    mBuilder.setContentText("Possible Connection Loss. Retrying..."+retryCount+" secs");
+                    mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
                     retryCount--;
                     try {
                         Thread.sleep(1000);

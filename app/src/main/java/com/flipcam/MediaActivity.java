@@ -9,6 +9,8 @@ import android.content.res.Configuration;
 import android.graphics.Point;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -297,38 +299,60 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             boolean loggedIn = AccessToken.getCurrentAccessToken() != null;
             Log.d(TAG,"Access token = "+loggedIn);
             if(!loggedIn) {
-                publishPermissions = new ArrayList<>();
-                callbackManager = CallbackManager.Factory.create();
-                publishPermissions.add("publish_actions");
-                loginManager = LoginManager.getInstance();
-                loginManager.logInWithPublishPermissions(this, publishPermissions);
-                loginManager.registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
-                    @Override
-                    public void onSuccess(LoginResult loginResult) {
-                        // App code
-                        Log.d(TAG, "onSuccess = " + loginResult.toString());
-                        AccessToken accessToken = loginResult.getAccessToken();
-                        Set<String> grantedPermissions = loginResult.getRecentlyGrantedPermissions();
-                        Log.d(TAG, "access token = " + accessToken);
-                        Log.d(TAG, "granted perm = " + grantedPermissions.size());
-                        uploadToFacebook();
-                    }
-                    @Override
-                    public void onCancel() {
-                        // App code
-                        Log.d(TAG, "onCancel");
-                    }
-                    @Override
-                    public void onError(FacebookException exception) {
-                        // App code
-                        Log.d(TAG, "onError");
-                        exception.printStackTrace();
-                    }
-                });
+                if(isConnectedToInternet()) {
+                    publishPermissions = new ArrayList<>();
+                    callbackManager = CallbackManager.Factory.create();
+                    publishPermissions.add("publish_actions");
+                    loginManager = LoginManager.getInstance();
+                    loginManager.logInWithPublishPermissions(this, publishPermissions);
+                    loginManager.registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
+                        @Override
+                        public void onSuccess(LoginResult loginResult) {
+                            // App code
+                            Log.d(TAG, "onSuccess = " + loginResult.toString());
+                            AccessToken accessToken = loginResult.getAccessToken();
+                            Set<String> grantedPermissions = loginResult.getRecentlyGrantedPermissions();
+                            Log.d(TAG, "access token = " + accessToken);
+                            Log.d(TAG, "granted perm = " + grantedPermissions.size());
+                            uploadToFacebook();
+                        }
+
+                        @Override
+                        public void onCancel() {
+                            // App code
+                            Log.d(TAG, "onCancel");
+                        }
+
+                        @Override
+                        public void onError(FacebookException exception) {
+                            // App code
+                            Log.d(TAG, "onError");
+                            exception.printStackTrace();
+                        }
+                    });
+                }
+                else{
+                    Toast.makeText(getApplicationContext(),"No Internet Connection. Please check your connection and try again.",Toast.LENGTH_SHORT).show();
+                }
             }
             else{
-                uploadToFacebook();
+                if(isConnectedToInternet()) {
+                    uploadToFacebook();
+                }
+                else{
+                    Toast.makeText(getApplicationContext(),"No Internet Connection. Please check your connection and try again.",Toast.LENGTH_SHORT).show();
+                }
             }
+    }
+
+    public boolean isConnectedToInternet(){
+        ConnectivityManager cm =
+                (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
+
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        boolean isConnected = activeNetwork != null &&
+                activeNetwork.isConnectedOrConnecting();
+        return isConnected;
     }
 
     public void uploadToFacebook(){
