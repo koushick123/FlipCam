@@ -46,6 +46,7 @@ public class MediaUploadService extends Service {
     android.support.v4.app.NotificationCompat.Builder mBuilder;
     String uploadId;
     int TOTAL_REQUESTS = 0;
+    double uploadedSize = 0;
 
     @Nullable
     @Override
@@ -56,9 +57,10 @@ public class MediaUploadService extends Service {
     @Override
     public void onCreate() {
         Log.i(TAG,"onCreate");
+        //Bitmap notifyIcon = BitmapFactory.decodeResource(getApplicationContext().getResources(),R.drawable.ic_launcher);
         mNotificationManager = (NotificationManager) getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
         mBuilder = new NotificationCompat.Builder(getApplicationContext())
-                        .setSmallIcon(R.drawable.settings)
+                        .setSmallIcon(R.drawable.ic_launcher)
                         .setContentTitle("FlipCam")
                         .setContentText("Upload in Progress");
         super.onCreate();
@@ -79,11 +81,6 @@ public class MediaUploadService extends Service {
     @Override
     public void onDestroy() {
         Log.i(TAG,"onDestroy");
-        try {
-            randomAccessFile.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
         super.onDestroy();
     }
 
@@ -94,7 +91,6 @@ public class MediaUploadService extends Service {
     }
 
     class MediaUploadHandler extends Handler{
-        double uploadedSize = 0;
         WeakReference<MediaUploadService> serviceWeakReference;
         public MediaUploadHandler(MediaUploadService service) {
             serviceWeakReference = new WeakReference<>(service);
@@ -107,15 +103,14 @@ public class MediaUploadService extends Service {
                     Log.i(TAG,"upload id = "+uploadId);
                     Double maxSize = (Double)msg.getData().get("maxSize");
                     Double uploadSize = (Double)msg.getData().get("uploadSize");
+                    Log.i(TAG,"max size = "+maxSize);
+                    Log.i(TAG,"upload size = "+uploadSize);
                     uploadedSize += uploadSize.doubleValue();
                     mBuilder.setProgress((int)maxSize.doubleValue(),(int)uploadedSize,false);
                     double roundOffPercent = (Math.floor((uploadedSize / maxSize.intValue()) * 100.0) * 100.0)/100.0;
                     Log.i(TAG,"Percent done = "+roundOffPercent);
                     mBuilder.setColor(getResources().getColor(R.color.uploadColor));
-                    mBuilder.setContentText((int)roundOffPercent+"% Completed     Uploading "+uploadId+" of "+TOTAL_REQUESTS);
-                    if(roundOffPercent == 100){
-                        uploadedSize = 0;
-                    }
+                    mBuilder.setContentText((int)roundOffPercent+"% Completed of "+convertFileSize(maxSize));
                     mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
                     break;
             }
@@ -127,9 +122,10 @@ public class MediaUploadService extends Service {
         @Override
         protected void onPostExecute(Boolean aBoolean) {
             Log.i(TAG,"onPostExecute = "+uploadId);
-            if(!success){
-                mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText("Unable to upload. Please check your internet connection and try again."));
-                mBuilder.setContentText("Upload Interrupted.");
+            uploadedSize = 0;
+            if(success){
+                mBuilder.setColor(getResources().getColor(R.color.uploadColor));
+                mBuilder.setContentText("Upload Completed.");
                 mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
             }
             NO_OF_REQUESTS--;
@@ -138,6 +134,11 @@ public class MediaUploadService extends Service {
                 stopSelf(Integer.parseInt(uploadId));
             }
             else if(NO_OF_REQUESTS == 0){
+                try {
+                    randomAccessFile.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
                 stopSelf();
             }
         }
@@ -184,18 +185,18 @@ public class MediaUploadService extends Service {
         }
     }
 
-    public void convertFileSize(long fileSize){
+    public String convertFileSize(double fileSize){
         if(fileSize >= Constants.MEGA_BYTE && fileSize < Constants.GIGA_BYTE){
             Log.i(TAG,"MB = "+fileSize);
             double mbconsumed = fileSize/Constants.MEGA_BYTE;
             int mbytes = (int) ((Math.floor(mbconsumed * 100.0))/100.0);
-            mBuilder.setProgress(mbytes,0,false);
+            return mbytes+" "+getResources().getString(R.string.MEM_PF_MB);
         }
         else {
             Log.d(TAG,"GB = "+fileSize);
             double gbconsumed = fileSize/Constants.GIGA_BYTE;
             int gbytes = (int) ((Math.floor(gbconsumed * 100.0))/100.0);
-            mBuilder.setProgress(gbytes,0,false);
+            return gbytes+" "+getResources().getString(R.string.MEM_PF_GB);
         }
     }
 
@@ -217,7 +218,7 @@ public class MediaUploadService extends Service {
                 if(retryCount > 0){
                     Log.i(TAG,"Retrying...."+retryCount);
                     mBuilder.setColor(getResources().getColor(R.color.uploadError));
-                    mBuilder.setContentText("Possible Connection Loss. Retrying..."+retryCount+" secs");
+                    mBuilder.setContentText("Possible Connection Loss. Retrying in "+retryCount+" secs");
                     mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
                     retryCount--;
                     try {
@@ -233,6 +234,10 @@ public class MediaUploadService extends Service {
                 else if(retryCount == 0){
                     retryCount = Constants.RETRY_COUNT;
                     success = false;
+                    mBuilder.setColor(getResources().getColor(R.color.uploadError));
+                    mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText("Unable to upload. Please check your internet connection and try again."));
+                    mBuilder.setContentText("Upload Interrupted.");
+                    mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
                 }
             }
             else
