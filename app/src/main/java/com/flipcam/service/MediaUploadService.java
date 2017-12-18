@@ -208,6 +208,9 @@ public class MediaUploadService extends Service {
                 bitmap.recycle();
                 callback = postPhotoCallback;
                 url += "/photos";
+                Message message = new Message();
+                message.what = Constants.UPLOAD_PROGRESS;
+                mediaUploadHandler.sendMessage(message);
             }
             postReq = new GraphRequest(AccessToken.getCurrentAccessToken(), url , params, HttpMethod.POST, callback);
             postReq.executeAndWait();
@@ -248,9 +251,9 @@ public class MediaUploadService extends Service {
     int subErrorCode;
 
     public void showUploadErrorNotification(){
-        if(isImage(uploadFile)){
+        /*if(isImage(uploadFile)){
             mBuilder.setProgress(0, 0, false);
-        }
+        }*/
         mBuilder.setColor(getResources().getColor(R.color.uploadError));
         mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText("Unable to upload. Please check your internet connection and try again."));
         mBuilder.setContentText("Upload Interrupted.");
@@ -265,7 +268,7 @@ public class MediaUploadService extends Service {
                 if(retryCount > 0){
                     Log.i(TAG,"Retrying...."+retryCount);
                     mBuilder.setColor(getResources().getColor(R.color.uploadError));
-                    mBuilder.setContentText("Possible Connection Loss. Retrying in "+retryCount+" secs");
+                    mBuilder.setContentText("Possible Connection Loss. Retrying "+retryCount+" of "+Constants.RETRY_COUNT);
                     mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
                     retryCount--;
                     try {
