@@ -4,6 +4,8 @@ import android.app.NotificationManager;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
@@ -23,11 +25,14 @@ import com.flipcam.constants.Constants;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.lang.ref.WeakReference;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 /**
  * Created by koushick on 13-Dec-17.
@@ -57,10 +62,11 @@ public class MediaUploadService extends Service {
     @Override
     public void onCreate() {
         Log.i(TAG,"onCreate");
-        //Bitmap notifyIcon = BitmapFactory.decodeResource(getApplicationContext().getResources(),R.drawable.ic_launcher);
+        Bitmap notifyIcon = BitmapFactory.decodeResource(getApplicationContext().getResources(),R.drawable.ic_launcher);
         mNotificationManager = (NotificationManager) getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
         mBuilder = new NotificationCompat.Builder(getApplicationContext())
                         .setSmallIcon(R.drawable.ic_launcher)
+                        .setLargeIcon(notifyIcon)
                         .setContentTitle("FlipCam")
                         .setContentText("Upload in Progress");
         super.onCreate();
@@ -68,13 +74,15 @@ public class MediaUploadService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.i(TAG,"onStartCommand = "+startId);
-        final int startID = startId;
+        SimpleDateFormat sdf = new SimpleDateFormat(getResources().getString(R.string.DATE_FORMAT_FOR_UPLOAD_PROCESS));
+        String startID = sdf.format(new Date());
+        Log.i(TAG,"onStartCommand = "+startID);
+        //final int startID = startId;
         final String uploadfilepath = (String)intent.getExtras().get("uploadFile");
         userId = (String)intent.getExtras().get("userId");
         Log.i(TAG,"Upload file = "+uploadfilepath);
         mediaUploadHandler = new MediaUploadHandler(this);
-        new MediaUploadTask().execute(uploadfilepath, startID+"");
+        new MediaUploadTask().execute(uploadfilepath, startID);
         return Service.START_NOT_STICKY;
     }
 
@@ -101,17 +109,25 @@ public class MediaUploadService extends Service {
             switch(msg.what){
                 case Constants.UPLOAD_PROGRESS:
                     Log.i(TAG,"upload id = "+uploadId);
-                    Double maxSize = (Double)msg.getData().get("maxSize");
-                    Double uploadSize = (Double)msg.getData().get("uploadSize");
-                    Log.i(TAG,"max size = "+maxSize);
-                    Log.i(TAG,"upload size = "+uploadSize);
-                    uploadedSize += uploadSize.doubleValue();
-                    mBuilder.setProgress((int)maxSize.doubleValue(),(int)uploadedSize,false);
-                    double roundOffPercent = (Math.floor((uploadedSize / maxSize.intValue()) * 100.0) * 100.0)/100.0;
-                    Log.i(TAG,"Percent done = "+roundOffPercent);
-                    mBuilder.setColor(getResources().getColor(R.color.uploadColor));
-                    mBuilder.setContentText((int)roundOffPercent+"% Completed of "+convertFileSize(maxSize));
-                    mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
+                    if(!isImage(uploadFile)) {
+                        Double maxSize = (Double) msg.getData().get("maxSize");
+                        Double uploadSize = (Double) msg.getData().get("uploadSize");
+                        Log.i(TAG, "max size = " + maxSize);
+                        Log.i(TAG, "upload size = " + uploadSize);
+                        uploadedSize += uploadSize.doubleValue();
+                        mBuilder.setProgress((int) maxSize.doubleValue(), (int) uploadedSize, false);
+                        double roundOffPercent = (Math.floor((uploadedSize / maxSize.intValue()) * 100.0) * 100.0) / 100.0;
+                        Log.i(TAG, "Percent done = " + roundOffPercent);
+                        mBuilder.setColor(getResources().getColor(R.color.uploadColor));
+                        mBuilder.setContentText((int) roundOffPercent + "% Completed of " + convertFileSize(maxSize));
+                        mNotificationManager.notify(Integer.parseInt(uploadId), mBuilder.build());
+                    }
+                    else{
+                        mBuilder.setProgress(0, 0, true);
+                        mBuilder.setColor(getResources().getColor(R.color.uploadColor));
+                        mBuilder.setContentText("Uploading image in progress");
+                        mNotificationManager.notify(Integer.parseInt(uploadId), mBuilder.build());
+                    }
                     break;
             }
         }
@@ -171,11 +187,29 @@ public class MediaUploadService extends Service {
         try {
             randomAccessFile = new RandomAccessFile(new File(uploadFile),"r");
             Bundle params = new Bundle();
-            params.putString("upload_phase","start");
-            params.putString("file_size",randomAccessFile.length()+"");
-            params.putString("uploadID",uploadid);
-            Log.i(TAG,"file size = "+randomAccessFile.length());
-            GraphRequest postReq = new GraphRequest(AccessToken.getCurrentAccessToken(), "/"+userId+"/videos", params, HttpMethod.POST,postcallback);
+            GraphRequest postReq;
+            GraphRequest.Callback callback;
+            String url = "/"+userId;
+            if(!isImage(uploadFile)) {
+                params.putString("upload_phase","start");
+                params.putString("file_size",randomAccessFile.length()+"");
+                params.putString("uploadID",uploadid);
+                Log.i(TAG,"file size = "+randomAccessFile.length());
+                callback = postVideoCallback;
+                url += "/videos";
+            }
+            else{
+                Bitmap bitmap = BitmapFactory.decodeFile(uploadFile);
+                ByteArrayOutputStream baosBitmap = new ByteArrayOutputStream();
+                bitmap.compress(Bitmap.CompressFormat.JPEG,100,baosBitmap);
+                params.putByteArray("source",baosBitmap.toByteArray());
+                Log.i(TAG,"Upload image size = "+baosBitmap.size());
+                baosBitmap.close();
+                bitmap.recycle();
+                callback = postPhotoCallback;
+                url += "/photos";
+            }
+            postReq = new GraphRequest(AccessToken.getCurrentAccessToken(), url , params, HttpMethod.POST, callback);
             postReq.executeAndWait();
             Log.i(TAG,"Request sent");
         } catch (FileNotFoundException e) {
@@ -200,12 +234,78 @@ public class MediaUploadService extends Service {
         }
     }
 
+    public boolean isImage(String path)
+    {
+        if(path.endsWith(getResources().getString(R.string.IMG_EXT)) || path.endsWith(getResources().getString(R.string.ANOTHER_IMG_EXT))){
+            return true;
+        }
+        return false;
+    }
+
     RandomAccessFile randomAccessFile = null;
     String upload_session_id = null;
     int retryCount = Constants.RETRY_COUNT;
     int subErrorCode;
 
-    GraphRequest.Callback postcallback = new GraphRequest.Callback() {
+    public void showUploadErrorNotification(){
+        if(isImage(uploadFile)){
+            mBuilder.setProgress(0, 0, false);
+        }
+        mBuilder.setColor(getResources().getColor(R.color.uploadError));
+        mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText("Unable to upload. Please check your internet connection and try again."));
+        mBuilder.setContentText("Upload Interrupted.");
+        mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
+    }
+
+    GraphRequest.Callback postPhotoCallback = new GraphRequest.Callback() {
+        @Override
+        public void onCompleted(GraphResponse response) {
+            Log.i(TAG,"onCompleted response = "+response);
+            if(response.getError() != null){
+                if(retryCount > 0){
+                    Log.i(TAG,"Retrying...."+retryCount);
+                    mBuilder.setColor(getResources().getColor(R.color.uploadError));
+                    mBuilder.setContentText("Possible Connection Loss. Retrying in "+retryCount+" secs");
+                    mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
+                    retryCount--;
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    GraphRequest postReq = new GraphRequest(AccessToken.getCurrentAccessToken(), "/" + userId + "/photos",
+                            response.getRequest().getParameters(),
+                            HttpMethod.POST, postPhotoCallback);
+                    postReq.executeAndWait();
+                }
+                else if(retryCount == 0){
+                    retryCount = Constants.RETRY_COUNT;
+                    success = false;
+                    showUploadErrorNotification();
+                }
+            }
+            else{
+                if(retryCount < Constants.RETRY_COUNT){
+                    retryCount = Constants.RETRY_COUNT;
+                }
+                JSONObject jsonObject = response.getJSONObject();
+                try {
+                    if(jsonObject.has("id") && jsonObject.get("id") != null){
+                        success = true;
+                    }
+                    else{
+                        Log.i(TAG,"No id....");
+                        success = false;
+                        showUploadErrorNotification();
+                    }
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    };
+
+    GraphRequest.Callback postVideoCallback = new GraphRequest.Callback() {
         @Override
         public void onCompleted(GraphResponse response) {
             Log.i(TAG, "response = " + response.getRawResponse());
@@ -228,16 +328,13 @@ public class MediaUploadService extends Service {
                     }
                     GraphRequest postReq = new GraphRequest(AccessToken.getCurrentAccessToken(), "/" + userId + "/videos",
                             response.getRequest().getParameters(),
-                            HttpMethod.POST, postcallback);
+                            HttpMethod.POST, postVideoCallback);
                     postReq.executeAndWait();
                 }
                 else if(retryCount == 0){
                     retryCount = Constants.RETRY_COUNT;
                     success = false;
-                    mBuilder.setColor(getResources().getColor(R.color.uploadError));
-                    mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText("Unable to upload. Please check your internet connection and try again."));
-                    mBuilder.setContentText("Upload Interrupted.");
-                    mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
+                    showUploadErrorNotification();
                 }
             }
             else
@@ -271,14 +368,14 @@ public class MediaUploadService extends Service {
                             message.what = Constants.UPLOAD_PROGRESS;
                             mediaUploadHandler.sendMessage(message);
                             params.putByteArray("video_file_chunk", buffer);
-                            GraphRequest postReq = new GraphRequest(AccessToken.getCurrentAccessToken(), "/" + userId + "/videos", params, HttpMethod.POST, postcallback);
+                            GraphRequest postReq = new GraphRequest(AccessToken.getCurrentAccessToken(), "/" + userId + "/videos", params, HttpMethod.POST, postVideoCallback);
                             postReq.executeAndWait();
                         } else {
                             Bundle params = new Bundle();
                             Log.i(TAG, "Complete UPLOAD");
                             params.putString("upload_phase", "finish");
                             params.putString("upload_session_id", upload_session_id);
-                            GraphRequest postReq = new GraphRequest(AccessToken.getCurrentAccessToken(), "/" + userId + "/videos", params, HttpMethod.POST, postcallback);
+                            GraphRequest postReq = new GraphRequest(AccessToken.getCurrentAccessToken(), "/" + userId + "/videos", params, HttpMethod.POST, postVideoCallback);
                             postReq.executeAndWait();
                         }
                     } else {

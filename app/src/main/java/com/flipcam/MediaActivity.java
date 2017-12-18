@@ -11,7 +11,6 @@ import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -48,14 +47,11 @@ import com.flipcam.media.FileMedia;
 import com.flipcam.service.MediaUploadService;
 import com.flipcam.util.MediaUtil;
 import com.flipcam.view.SurfaceViewVideoFragment;
-import com.iceteck.silicompressorr.SiliCompressor;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.File;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Set;
@@ -93,6 +89,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     ImageButton shareMedia;
     Dialog deleteAlert;
     Dialog shareAlert;
+    Dialog noConnAlert;
     CallbackManager callbackManager;
 
     @Override
@@ -211,6 +208,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 deleteAlert.show();
             }
         });
+        noConnAlert = new Dialog(this);
         videoControls = (LinearLayout)findViewById(R.id.videoControls);
         pause = (ImageButton) findViewById(R.id.playButton);
         shareMedia = (ImageButton)findViewById(R.id.shareMedia);
@@ -248,6 +246,23 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         }
     }
 
+    public void selectToShare(View view){
+        switch(view.getId()){
+            case R.id.facebookIcon:
+                Log.d(TAG,"Share to FACEBOOK");
+                shareToFacebook();
+                break;
+            case R.id.whatsappIcon:
+                Log.d(TAG,"Share to WHATSAPP");
+                break;
+        }
+        shareAlert.dismiss();
+    }
+
+    public void okToClose(View view){
+        noConnAlert.dismiss();
+    }
+
     public void delete(View view){
         Log.d(TAG,"DELETE");
         view.setClickable(false);
@@ -259,39 +274,12 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         deleteAlert.dismiss();
     }
 
-    public void selectToShare(View view){
-        LinearLayout linearLayout = (LinearLayout)view.getParent();
-        switch(view.getId()){
-            case R.id.facebookIcon:
-            case R.id.facebookText:
-                Log.d(TAG,"Share to FACEBOOK");
-                linearLayout.setBackgroundColor(getResources().getColor(R.color.turqoise));
-                if(view.getId() == R.id.facebookText) {
-                    TextView textView = (TextView)view;
-                    textView.setTextColor(getResources().getColor(R.color.mediaControlColor));
-                }
-                shareToFacebook();
-                break;
-            case R.id.whatsappIcon:
-            case R.id.whatsappText:
-                Log.d(TAG,"Share to WHATSAPP");
-                linearLayout.setBackgroundColor(getResources().getColor(R.color.turqoise));
-                if(view.getId() == R.id.whatsappText) {
-                    TextView textView = (TextView)view;
-                    textView.setTextColor(getResources().getColor(R.color.mediaControlColor));
-                }
-                break;
-        }
-        shareAlert.dismiss();
-    }
-
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         callbackManager.onActivityResult(requestCode, resultCode, data);
     }
 
-    File compressed;
     String userId = null;
     LoginManager loginManager = LoginManager.getInstance();
     ArrayList<String> publishPermissions;
@@ -332,7 +320,10 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                     });
                 }
                 else{
-                    Toast.makeText(getApplicationContext(),"No Internet Connection. Please check your connection and try again.",Toast.LENGTH_SHORT).show();
+                    //Toast.makeText(getApplicationContext(),"No Internet Connection. Please check your connection and try again.",Toast.LENGTH_SHORT).show();
+                    noConnAlert.setContentView(R.layout.no_connection);
+                    noConnAlert.setCancelable(true);
+                    noConnAlert.show();
                 }
             }
             else{
@@ -340,7 +331,10 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                     uploadToFacebook();
                 }
                 else{
-                    Toast.makeText(getApplicationContext(),"No Internet Connection. Please check your connection and try again.",Toast.LENGTH_SHORT).show();
+                    //Toast.makeText(getApplicationContext(),"No Internet Connection. Please check your connection and try again.",Toast.LENGTH_SHORT).show();
+                    noConnAlert.setContentView(R.layout.no_connection);
+                    noConnAlert.setCancelable(true);
+                    noConnAlert.show();
                 }
             }
     }
@@ -729,42 +723,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 deletePosition = fragment.getFramePosition();
                 return POSITION_NONE;
             }
-        }
-    }
-
-    class ShareMediaToFacebook extends AsyncTask<String,Void,String>{
-
-        @Override
-        protected void onPreExecute() {
-            compressed = new File("/storage/emulated/0/DCIM/FlipCam/Compressed");
-            if (!compressed.exists()) {
-                compressed.mkdir();
-            }
-            Log.d(TAG, "video to compress = " + medias[selectedPosition].getPath());
-        }
-
-        @Override
-        protected void onPostExecute(String compressedFile) {
-            Log.d(TAG,"Post to FB");
-            uploadToFacebook();
-        }
-
-        @Override
-        protected String doInBackground(String[] paths) {
-            long startTime = System.currentTimeMillis();
-            MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
-            mediaMetadataRetriever.setDataSource(paths[0]);
-            String bitrate = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE);
-            Log.d(TAG,"Original bitrate = "+bitrate);
-            try {
-                compressedFilePath = SiliCompressor.with(getApplicationContext()).compressVideo(paths[0],compressed.getPath(),screenSize.x,screenSize.y,Integer.parseInt(bitrate) / 10);
-            } catch (URISyntaxException e) {
-                e.printStackTrace();
-            }
-            long endTime = System.currentTimeMillis();
-            Log.d(TAG,"FilePath = "+compressedFilePath);
-            Log.d(TAG,"Compressing done in "+(endTime - startTime) / 1000 +" secs");
-            return compressedFilePath;
         }
     }
 }

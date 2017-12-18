@@ -12,6 +12,7 @@
     <string name="IMG_EXT">.jpeg</string>
     <string name="ANOTHER_IMG_EXT">.jpg</string>
     <string name="DATE_FORMAT_FOR_FILE">yyyy-MM-dd-HH-mm-ss</string>
+    <string name="DATE_FORMAT_FOR_UPLOAD_PROCESS">yyyyMMddHHmmss</string>
     <string name="MEM_PF_KB"> KB</string>
     <string name="MEM_PF_MB"> MB</string>
     <string name="MEM_PF_GB"> GB</string>
@@ -25,9 +26,11 @@
     <string name="NO_IMAGE">No Photos or Videos</string>
     <string name="deleteTitle">Delete Media</string>
     <string name="deleteMessage">Do you want to delete the Photo/Video?</string>
+    <string name="noConnectionMessage">There seems to be no Internet Connection. Please check your connection, or enable Wi-Fi and try again.</string>
     <string name="okToDelete">OK</string>
     <string name="cancelToDelete">Cancel</string>
     <string name="shareTitle">Share Media</string>
+    <string name="noConnectionTitle">Connection Failure</string>
     <string name="shareMessage">How would you like to share?</string>
     <string name="facebook">Facebook</string>
     <string name="whatsapp">Whatsapp</string>
