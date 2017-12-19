@@ -37,10 +37,21 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
+        android:layout_marginBottom="10dp"
+        android:layout_marginTop="10dp"
         android:layout_weight=".05"
         android:gravity="center_vertical|center_horizontal"
         android:text="@string/logoutFBMessage"
         android:textColor="@color/turqoise"
         android:textStyle="bold" />
+
+    <Button
+        android:id="@+id/logoutoktoclose"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginBottom="20dp"
+        android:onClick="closeLogoutFB"
+        android:text="@string/okToDelete" />
 
 </LinearLayout>

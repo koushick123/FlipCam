@@ -19,6 +19,7 @@ import android.view.Surface;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -67,6 +68,8 @@ MediaPlayer.OnErrorListener, Serializable{
     volatile int hours = 0;
     public int previousPos = 0;
     transient LinearLayout videoControls;
+    transient LinearLayout parentMedia;
+    transient FrameLayout frameMedia;
     int framePosition;
     transient ImageView picture;
     transient FileMedia[] images=null;
@@ -95,6 +98,8 @@ MediaPlayer.OnErrorListener, Serializable{
         startTime = (TextView)getActivity().findViewById(R.id.startTime);
         endTime = (TextView)getActivity().findViewById(R.id.endTime);
         videoSeek = (SeekBar)getActivity().findViewById(R.id.videoSeek);
+        parentMedia = (LinearLayout)getActivity().findViewById(R.id.parentMedia);
+        frameMedia = (FrameLayout)getActivity().findViewById(R.id.frameMedia);
         controlVisbilityPreference = (ControlVisbilityPreference) getActivity().getApplicationContext();
 
         if(getUserVisibleHint()) {
@@ -380,9 +385,11 @@ MediaPlayer.OnErrorListener, Serializable{
             if (controlVisbilityPreference.isHideControl()) {
                 controlVisbilityPreference.setHideControl(false);
                 topBar.setVisibility(View.GONE);
+                videoControls.setVisibility(View.GONE);
             } else {
                 controlVisbilityPreference.setHideControl(true);
                 topBar.setVisibility(View.VISIBLE);
+                videoControls.setVisibility(View.VISIBLE);
             }
         }
         else{
@@ -551,6 +558,20 @@ MediaPlayer.OnErrorListener, Serializable{
             previousPos = 0;
             savedVideo = getActivity().getIntent().getParcelableExtra("saveVideoForMinimize");
             Log.d(TAG,"SAVED VIDEO = "+savedVideo);
+        }
+        if(getUserVisibleHint()){
+            if(isImage()) {
+                if(controlVisbilityPreference.isHideControl()) {
+                    Log.d(TAG,"show controls onResume");
+                    topBar.setVisibility(View.VISIBLE);
+                    videoControls.setVisibility(View.VISIBLE);
+                }
+                else{
+                    Log.d(TAG,"hide controls onResume");
+                    topBar.setVisibility(View.GONE);
+                    videoControls.setVisibility(View.GONE);
+                }
+            }
         }
     }
 

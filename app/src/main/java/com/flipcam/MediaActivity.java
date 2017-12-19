@@ -91,6 +91,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     Dialog shareAlert;
     Dialog noConnAlert;
     Dialog shareToFBAlert;
+    Dialog logoutFB;
     CallbackManager callbackManager;
 
     @Override
@@ -118,7 +119,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     public void reDrawPause(){
         LinearLayout.LayoutParams pauseParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         if(display.getRotation() == Surface.ROTATION_0) {
-            pauseParams.height = 100;
+            pauseParams.height = 125;
             pauseParams.weight = 0.1f;
         }
         else{
@@ -215,6 +216,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         shareMedia = (ImageButton)findViewById(R.id.shareMedia);
         shareToFBAlert = new Dialog(this);
         shareAlert = new Dialog(this);
+        logoutFB = new Dialog(this);
         shareMedia.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -234,11 +236,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         noImage = (ImageView)findViewById(R.id.noImage);
         noImageText = (TextView)findViewById(R.id.noImageText);
         if(isImage(medias[0].getPath())) {
-            videoControls.setVisibility(View.GONE);
-            pause.setVisibility(View.GONE);
-            startTime.setVisibility(View.GONE);
-            endTime.setVisibility(View.GONE);
-            videoSeek.setVisibility(View.GONE);
+            removeVideoControls();
         }
         if(savedInstanceState == null){
             clearPreferences();
@@ -364,7 +362,14 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     public void logoutOfFacebook(View view){
         LoginManager.getInstance().logOut();
         Log.d(TAG,"Logout DONE");
+        logoutFB.setContentView(R.layout.logout_facebook);
+        logoutFB.setCancelable(true);
+        logoutFB.show();
         shareToFBAlert.dismiss();
+    }
+
+    public void closeLogoutFB(View view){
+        logoutFB.dismiss();
     }
 
     public void uploadToFacebook(){
@@ -463,7 +468,15 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         //Display controls based on image/video
         if(isImage(medias[position].getPath())){
             Log.d(TAG,"HIDE VIDEO");
-            hideControls();
+            if(controlVisbilityPreference.isHideControl()) {
+                Log.d(TAG,"show controls");
+                videoControls.setVisibility(View.VISIBLE);
+            }
+            else{
+                Log.d(TAG,"hide controls");
+                videoControls.setVisibility(View.GONE);
+            }
+            removeVideoControls();
         }
         else{
             if(controlVisbilityPreference.isHideControl()) {
@@ -485,7 +498,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     }
 
     public void hideControls(){
-        //videoControls.setVisibility(View.VISIBLE);
         pause.setVisibility(View.GONE);
         startTime.setVisibility(View.GONE);
         endTime.setVisibility(View.GONE);
@@ -493,11 +505,17 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     }
 
     public void showControls(){
-        //videoControls.setVisibility(View.VISIBLE);
         pause.setVisibility(View.VISIBLE);
         startTime.setVisibility(View.VISIBLE);
         endTime.setVisibility(View.VISIBLE);
         videoSeek.setVisibility(View.VISIBLE);
+    }
+
+    public void removeVideoControls(){
+        pause.setVisibility(View.INVISIBLE);
+        startTime.setVisibility(View.INVISIBLE);
+        endTime.setVisibility(View.INVISIBLE);
+        videoSeek.setVisibility(View.INVISIBLE);
     }
 
     public void setupVideoControls(int position){
