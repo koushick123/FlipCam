@@ -90,6 +90,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     Dialog deleteAlert;
     Dialog shareAlert;
     Dialog noConnAlert;
+    Dialog shareToFBAlert;
     CallbackManager callbackManager;
 
     @Override
@@ -212,6 +213,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         videoControls = (LinearLayout)findViewById(R.id.videoControls);
         pause = (ImageButton) findViewById(R.id.playButton);
         shareMedia = (ImageButton)findViewById(R.id.shareMedia);
+        shareToFBAlert = new Dialog(this);
         shareAlert = new Dialog(this);
         shareMedia.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -302,7 +304,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                             Set<String> grantedPermissions = loginResult.getRecentlyGrantedPermissions();
                             Log.d(TAG, "access token = " + accessToken);
                             Log.d(TAG, "granted perm = " + grantedPermissions.size());
-                            uploadToFacebook();
+                            showFacebookShareScreen();
                         }
 
                         @Override
@@ -320,7 +322,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                     });
                 }
                 else{
-                    //Toast.makeText(getApplicationContext(),"No Internet Connection. Please check your connection and try again.",Toast.LENGTH_SHORT).show();
                     noConnAlert.setContentView(R.layout.no_connection);
                     noConnAlert.setCancelable(true);
                     noConnAlert.show();
@@ -328,10 +329,9 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             }
             else{
                 if(isConnectedToInternet()) {
-                    uploadToFacebook();
+                    showFacebookShareScreen();
                 }
                 else{
-                    //Toast.makeText(getApplicationContext(),"No Internet Connection. Please check your connection and try again.",Toast.LENGTH_SHORT).show();
                     noConnAlert.setContentView(R.layout.no_connection);
                     noConnAlert.setCancelable(true);
                     noConnAlert.show();
@@ -347,6 +347,24 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         boolean isConnected = activeNetwork != null &&
                 activeNetwork.isConnectedOrConnecting();
         return isConnected;
+    }
+
+    public void showFacebookShareScreen(){
+        shareToFBAlert.setContentView(R.layout.share_to_facebook);
+        shareToFBAlert.setCancelable(true);
+        shareToFBAlert.show();
+    }
+
+    public void continueToFB(View view){
+        uploadToFacebook();
+        shareToFBAlert.dismiss();
+        Toast.makeText(getApplicationContext(), getResources().getString(R.string.queuedForUpload), Toast.LENGTH_SHORT).show();
+    }
+
+    public void logoutOfFacebook(View view){
+        LoginManager.getInstance().logOut();
+        Log.d(TAG,"Logout DONE");
+        shareToFBAlert.dismiss();
     }
 
     public void uploadToFacebook(){
@@ -383,8 +401,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             }
         }
     };
-
-    String compressedFilePath;
 
     @Override
     public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
@@ -469,7 +485,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     }
 
     public void hideControls(){
-        videoControls.setVisibility(View.GONE);
+        //videoControls.setVisibility(View.VISIBLE);
         pause.setVisibility(View.GONE);
         startTime.setVisibility(View.GONE);
         endTime.setVisibility(View.GONE);
@@ -477,7 +493,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     }
 
     public void showControls(){
-        videoControls.setVisibility(View.VISIBLE);
+        //videoControls.setVisibility(View.VISIBLE);
         pause.setVisibility(View.VISIBLE);
         startTime.setVisibility(View.VISIBLE);
         endTime.setVisibility(View.VISIBLE);

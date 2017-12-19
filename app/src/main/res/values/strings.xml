@@ -30,8 +30,14 @@
     <string name="okToDelete">OK</string>
     <string name="cancelToDelete">Cancel</string>
     <string name="shareTitle">Share Media</string>
+    <string name="shareFacebook">Upload to Facebook</string>
     <string name="noConnectionTitle">Connection Failure</string>
     <string name="shareMessage">How would you like to share?</string>
+    <string name="shareFacebookMessage">The media will be uploaded to Facebook</string>
+    <string name="continuetoFB">CONTINUE</string>
+    <string name="queuedForUpload">Media queued for upload. Please check status bar for Progress.</string>
+    <string name="logoutFBMessage">YOU HAVE BEEN LOGGED OUT OF FACEBOOK</string>
+    <string name="logoutFB">LOGOUT OF FACEBOOK</string>
     <string name="facebook">Facebook</string>
     <string name="whatsapp">Whatsapp</string>
     <string name="facebook_app_id">308890512940081</string>

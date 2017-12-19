@@ -52,6 +52,7 @@ public class MediaUploadService extends Service {
     String uploadId;
     int TOTAL_REQUESTS = 0;
     double uploadedSize = 0;
+    Bitmap notifyIcon;
 
     @Nullable
     @Override
@@ -62,11 +63,11 @@ public class MediaUploadService extends Service {
     @Override
     public void onCreate() {
         Log.i(TAG,"onCreate");
-        Bitmap notifyIcon = BitmapFactory.decodeResource(getApplicationContext().getResources(),R.drawable.ic_launcher);
+        notifyIcon= BitmapFactory.decodeResource(getApplicationContext().getResources(),R.drawable.ic_launcher);
         mNotificationManager = (NotificationManager) getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
         mBuilder = new NotificationCompat.Builder(getApplicationContext())
-                        .setSmallIcon(R.drawable.ic_launcher)
                         .setLargeIcon(notifyIcon)
+                        .setSmallIcon(R.drawable.ic_launcher)
                         .setContentTitle("FlipCam")
                         .setContentText("Upload in Progress");
         super.onCreate();
@@ -208,9 +209,7 @@ public class MediaUploadService extends Service {
                 bitmap.recycle();
                 callback = postPhotoCallback;
                 url += "/photos";
-                Message message = new Message();
-                message.what = Constants.UPLOAD_PROGRESS;
-                mediaUploadHandler.sendMessage(message);
+                mediaUploadHandler.sendEmptyMessage(Constants.UPLOAD_PROGRESS);
             }
             postReq = new GraphRequest(AccessToken.getCurrentAccessToken(), url , params, HttpMethod.POST, callback);
             postReq.executeAndWait();
