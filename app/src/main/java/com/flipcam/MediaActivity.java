@@ -379,14 +379,17 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
 
     public void continueToFB(View view){
         shareToFBAlert.dismiss();
-        mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.uploadQueued)));
         mBuilder.setColor(getResources().getColor(R.color.uploadColor));
         mBuilder.setSound(queueNotification);
         String photo = getResources().getString(R.string.PHOTO_MODE).toLowerCase();
         photo = "P"+photo.substring(1,photo.length());
         String video = getResources().getString(R.string.VIDEO_MODE).toLowerCase();
         video = "V"+video.substring(1,video.length());
-        String message = getResources().getString(R.string.uploadQueued, (isImage(medias[selectedPosition].getPath()) ?  photo : video));
+        String filename = medias[selectedPosition].getPath().substring(medias[selectedPosition].getPath().lastIndexOf("/"),
+                medias[selectedPosition].getPath().length());
+        String message = getResources().getString(R.string.uploadQueuedFile, (isImage(medias[selectedPosition].getPath()) ?  photo : video), filename);
+        mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(message));
+        message = getResources().getString(R.string.uploadQueued, (isImage(medias[selectedPosition].getPath()) ?  photo : video));
         mBuilder.setContentText(message);
         SimpleDateFormat sdf = new SimpleDateFormat(getResources().getString(R.string.DATE_FORMAT_FOR_UPLOAD_PROCESS));
         startID = sdf.format(new Date());
@@ -417,6 +420,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             meReq.executeAsync();
         }
         else{
+            //mNotificationManager.cancel(Integer.parseInt(startUploadId));
             Intent mediaUploadIntent = new Intent(getApplicationContext(),MediaUploadService.class);
             mediaUploadIntent.putExtra("uploadFile",medias[selectedPosition].getPath());
             mediaUploadIntent.putExtra("userId",userId);
@@ -444,6 +448,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                     userId = (String) jsonObject.get("id");
                     String startId = (String)response.getRequest().getParameters().get("startID");
                     Log.i(TAG, "USER ID = " + userId+", Start Id = "+startId);
+                    //mNotificationManager.cancel(Integer.parseInt(startId));
                     Intent mediaUploadIntent = new Intent(getApplicationContext(), MediaUploadService.class);
                     mediaUploadIntent.putExtra("uploadFile", medias[selectedPosition].getPath());
                     mediaUploadIntent.putExtra("userId", userId);

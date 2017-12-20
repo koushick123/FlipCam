@@ -53,7 +53,8 @@ public class MediaUploadService extends Service {
     int TOTAL_REQUESTS = 0;
     double uploadedSize = 0;
     Bitmap notifyIcon;
-    Uri uploadNotification;
+    Uri uploadSuccessNotification;
+    Uri uploadErrorNotification;
 
     @Nullable
     @Override
@@ -72,7 +73,8 @@ public class MediaUploadService extends Service {
                         .setContentTitle("FlipCam")
                         .setContentText("Upload in Progress");
         mBuilder.setPriority(NotificationManager.IMPORTANCE_HIGH);
-        uploadNotification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+        uploadSuccessNotification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+        uploadErrorNotification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
         super.onCreate();
     }
 
@@ -121,14 +123,25 @@ public class MediaUploadService extends Service {
                         double roundOffPercent = (Math.floor((uploadedSize / maxSize.intValue()) * 100.0) * 100.0) / 100.0;
                         Log.i(TAG, "Percent done = " + roundOffPercent);
                         mBuilder.setColor(getResources().getColor(R.color.uploadColor));
-                        mBuilder.setContentText((int) roundOffPercent + "% Completed of " + convertFileSize(maxSize));
+                        if((int)roundOffPercent < 100.0d) {
+                            mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText((int) roundOffPercent + "% Completed of " + convertFileSize(maxSize)
+                                    + "\n" + getResources().getString(R.string.uploadInProgress, "Video")
+                                    + "\n" + "File "+filename));
+                        }
+                        else if(roundOffPercent == 100.0d){
+                            Log.i(TAG,"Upload finished");
+                            mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.uploadFinish)
+                                    + "\n" + "File "+filename));
+                        }
+                        mBuilder.setContentText("");
                         mNotificationManager.notify(Integer.parseInt(uploadId), mBuilder.build());
                     }
                     else{
                         mBuilder.setProgress(0, 0, true);
+                        mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.uploadInProgress, "Photo")
+                                + "\n" + "File "+filename));
                         mBuilder.setColor(getResources().getColor(R.color.uploadColor));
                         mBuilder.setContentText(getResources().getString(R.string.uploadInProgress));
-                        mBuilder.setSound(uploadNotification);
                         mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
                     }
                     break;
@@ -144,7 +157,9 @@ public class MediaUploadService extends Service {
             uploadedSize = 0;
             if(success){
                 mBuilder.setColor(getResources().getColor(R.color.uploadColor));
-                mBuilder.setContentText(getResources().getString(R.string.uploadSuccessMessage));
+                mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.uploadSuccessMessage, filename)));
+                mBuilder.setContentText("");
+                mBuilder.setSound(uploadSuccessNotification);
                 mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
             }
             NO_OF_REQUESTS--;
@@ -173,16 +188,6 @@ public class MediaUploadService extends Service {
             Log.i(TAG,"onPreExecute");
             NO_OF_REQUESTS++;
             TOTAL_REQUESTS++;
-            /*mBuilder.setColor(getResources().getColor(R.color.uploadColor));
-            String photo = getResources().getString(R.string.PHOTO_MODE).toLowerCase();
-            photo = "P"+photo.substring(1,photo.length());
-            String video = getResources().getString(R.string.PHOTO_MODE).toLowerCase();
-            video = "V"+video.substring(1,video.length());
-            String message = getResources().getString(R.string.uploadQueued, (isImage(uploadFile) ?  photo : video));
-            mBuilder.setContentText(message);
-            Uri queueNotification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
-            mBuilder.setSound(queueNotification);
-            mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());*/
         }
 
         @Override
@@ -273,8 +278,9 @@ public class MediaUploadService extends Service {
 
     public void showUploadErrorNotification(){
         mBuilder.setColor(getResources().getColor(R.color.uploadError));
-        mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.uploadErrorMessage)));
+        mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.uploadErrorMessage, filename)));
         mBuilder.setContentText(getResources().getString(R.string.errorTitle));
+        mBuilder.setSound(uploadErrorNotification);
         mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
     }
 
@@ -282,6 +288,7 @@ public class MediaUploadService extends Service {
         mBuilder.setColor(getResources().getColor(R.color.uploadError));
         String errorMsg = getResources().getString(R.string.fileErrorMessage, filename);
         mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(errorMsg));
+        mBuilder.setSound(uploadErrorNotification);
         mBuilder.setContentText(getResources().getString(R.string.errorTitle));
         mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
     }
@@ -294,7 +301,9 @@ public class MediaUploadService extends Service {
                 if(retryCount > 0){
                     Log.i(TAG,"Retrying...."+retryCount);
                     mBuilder.setColor(getResources().getColor(R.color.uploadError));
-                    mBuilder.setContentText("Possible Connection Loss. Retrying "+retryCount+" of "+Constants.RETRY_COUNT);
+                    mBuilder.setContentText("");
+                    mBuilder.setStyle(
+                            new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.connectionRetry, Constants.RETRY_COUNT, retryCount)));
                     mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
                     retryCount--;
                     try {
@@ -348,7 +357,9 @@ public class MediaUploadService extends Service {
                 if(retryCount > 0){
                     Log.i(TAG,"Retrying...."+retryCount);
                     mBuilder.setColor(getResources().getColor(R.color.uploadError));
-                    mBuilder.setContentText("Possible Connection Loss. Retrying in "+retryCount+" secs");
+                    mBuilder.setContentText("");
+                    mBuilder.setStyle(
+                            new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.connectionRetry, Constants.RETRY_COUNT, retryCount)));
                     mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
                     retryCount--;
                     try {

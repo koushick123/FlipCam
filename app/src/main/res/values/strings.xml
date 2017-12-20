@@ -43,10 +43,13 @@
     <string name="facebook_app_id">308890512940081</string>
     <string name="fb_login_protocol_scheme">fb308890512940081</string>
     <string name="mediaService">FlipCam Media Upload Service</string>
-    <string name="uploadErrorMessage">Unable to upload. Please check your internet connection and try again.</string>
+    <string name="uploadErrorMessage">Unable to upload. Please check your internet connection and try again.\n File %1$s</string>
     <string name="fileErrorMessage">Unable to upload. File %1$s has been deleted or moved.</string>
-    <string name="uploadSuccessMessage">Upload Completed Successfully.</string>
-    <string name="uploadInProgress">Upload image in progress</string>
-    <string name="uploadQueued">%1$s queued for upload</string>
+    <string name="uploadSuccessMessage">Upload Completed Successfully.\n File %1$s</string>
+    <string name="uploadInProgress">%1$s upload in progress</string>
+    <string name="uploadQueuedFile">%1$s queued for upload. \n File %2$s</string>
+    <string name="uploadQueued">%1$s queued for upload.</string>
+    <string name="uploadFinish">Finishing Upload.</string>
     <string name="errorTitle">Upload Interrupted</string>
+    <string name="connectionRetry">"Possible Connection Loss. \n Retry for %1$d secs (%2$d)</string>
 </resources>
