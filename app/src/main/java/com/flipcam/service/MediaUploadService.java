@@ -33,8 +33,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.lang.ref.WeakReference;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 /**
  * Created by koushick on 13-Dec-17.
@@ -73,16 +71,15 @@ public class MediaUploadService extends Service {
                         .setSmallIcon(R.drawable.ic_file_upload)
                         .setContentTitle("FlipCam")
                         .setContentText("Upload in Progress");
+        mBuilder.setPriority(NotificationManager.IMPORTANCE_HIGH);
         uploadNotification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
         super.onCreate();
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        SimpleDateFormat sdf = new SimpleDateFormat(getResources().getString(R.string.DATE_FORMAT_FOR_UPLOAD_PROCESS));
-        String startID = sdf.format(new Date());
+        String startID = (String)intent.getExtras().get("startID");
         Log.i(TAG,"onStartCommand = "+startID);
-        //final int startID = startId;
         final String uploadfilepath = (String)intent.getExtras().get("uploadFile");
         userId = (String)intent.getExtras().get("userId");
         Log.i(TAG,"Upload file = "+uploadfilepath);
@@ -132,7 +129,7 @@ public class MediaUploadService extends Service {
                         mBuilder.setColor(getResources().getColor(R.color.uploadColor));
                         mBuilder.setContentText(getResources().getString(R.string.uploadInProgress));
                         mBuilder.setSound(uploadNotification);
-                        mNotificationManager.notify(Integer.parseInt(uploadId), mBuilder.build());
+                        mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
                     }
                     break;
             }
@@ -176,6 +173,16 @@ public class MediaUploadService extends Service {
             Log.i(TAG,"onPreExecute");
             NO_OF_REQUESTS++;
             TOTAL_REQUESTS++;
+            /*mBuilder.setColor(getResources().getColor(R.color.uploadColor));
+            String photo = getResources().getString(R.string.PHOTO_MODE).toLowerCase();
+            photo = "P"+photo.substring(1,photo.length());
+            String video = getResources().getString(R.string.PHOTO_MODE).toLowerCase();
+            video = "V"+video.substring(1,video.length());
+            String message = getResources().getString(R.string.uploadQueued, (isImage(uploadFile) ?  photo : video));
+            mBuilder.setContentText(message);
+            Uri queueNotification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
+            mBuilder.setSound(queueNotification);
+            mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());*/
         }
 
         @Override

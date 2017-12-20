@@ -1,16 +1,21 @@
 package com.flipcam;
 
 import android.app.Dialog;
+import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.content.res.Configuration;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Point;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
+import android.media.RingtoneManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -18,6 +23,7 @@ import android.support.v4.app.FragmentStatePagerAdapter;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.app.NotificationCompat;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Display;
@@ -52,7 +58,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Set;
 
@@ -244,6 +252,15 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             reDrawPause();
             reDrawTopMediaControls();
         }
+        notifyIcon = BitmapFactory.decodeResource(getApplicationContext().getResources(),R.drawable.ic_launcher);
+        mNotificationManager = (NotificationManager) getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
+        mBuilder = new NotificationCompat.Builder(getApplicationContext())
+                .setLargeIcon(notifyIcon)
+                .setSmallIcon(R.drawable.ic_file_upload)
+                .setContentTitle("FlipCam")
+                .setContentText("");
+        mBuilder.setPriority(NotificationManager.IMPORTANCE_HIGH);
+        queueNotification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
     }
 
     public void selectToShare(View view){
@@ -320,9 +337,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                     });
                 }
                 else{
-                    noConnAlert.setContentView(R.layout.no_connection);
-                    noConnAlert.setCancelable(true);
-                    noConnAlert.show();
+                    showNoConnection();
                 }
             }
             else{
@@ -330,11 +345,15 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                     showFacebookShareScreen();
                 }
                 else{
-                    noConnAlert.setContentView(R.layout.no_connection);
-                    noConnAlert.setCancelable(true);
-                    noConnAlert.show();
+                    showNoConnection();
                 }
             }
+    }
+
+    public void showNoConnection(){
+        noConnAlert.setContentView(R.layout.no_connection);
+        noConnAlert.setCancelable(true);
+        noConnAlert.show();
     }
 
     public boolean isConnectedToInternet(){
@@ -353,34 +372,55 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         shareToFBAlert.show();
     }
 
+    NotificationManager mNotificationManager;
+    Bitmap notifyIcon;
+    android.support.v4.app.NotificationCompat.Builder mBuilder;
+    Uri queueNotification;
+
     public void continueToFB(View view){
-        uploadToFacebook();
         shareToFBAlert.dismiss();
-        Toast.makeText(getApplicationContext(), getResources().getString(R.string.queuedForUpload), Toast.LENGTH_SHORT).show();
+        mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.uploadQueued)));
+        mBuilder.setColor(getResources().getColor(R.color.uploadColor));
+        mBuilder.setSound(queueNotification);
+        String photo = getResources().getString(R.string.PHOTO_MODE).toLowerCase();
+        photo = "P"+photo.substring(1,photo.length());
+        String video = getResources().getString(R.string.VIDEO_MODE).toLowerCase();
+        video = "V"+video.substring(1,video.length());
+        String message = getResources().getString(R.string.uploadQueued, (isImage(medias[selectedPosition].getPath()) ?  photo : video));
+        mBuilder.setContentText(message);
+        SimpleDateFormat sdf = new SimpleDateFormat(getResources().getString(R.string.DATE_FORMAT_FOR_UPLOAD_PROCESS));
+        startID = sdf.format(new Date());
+        mNotificationManager.notify(Integer.parseInt(startID), mBuilder.build());
+        uploadToFacebook(startID);
     }
+
+    String startID;
 
     public void logoutOfFacebook(View view){
         LoginManager.getInstance().logOut();
         Log.d(TAG,"Logout DONE");
+        shareToFBAlert.dismiss();
         logoutFB.setContentView(R.layout.logout_facebook);
         logoutFB.setCancelable(true);
         logoutFB.show();
-        shareToFBAlert.dismiss();
     }
 
     public void closeLogoutFB(View view){
         logoutFB.dismiss();
     }
 
-    public void uploadToFacebook(){
+    public void uploadToFacebook(String startUploadId){
         if(userId == null) {
-            GraphRequest meReq = new GraphRequest(AccessToken.getCurrentAccessToken(), "/me", null, HttpMethod.GET, getcallback);
+            Bundle params = new Bundle();
+            params.putString("startID",startUploadId);
+            GraphRequest meReq = new GraphRequest(AccessToken.getCurrentAccessToken(), "/me", params, HttpMethod.GET, getcallback);
             meReq.executeAsync();
         }
         else{
             Intent mediaUploadIntent = new Intent(getApplicationContext(),MediaUploadService.class);
             mediaUploadIntent.putExtra("uploadFile",medias[selectedPosition].getPath());
             mediaUploadIntent.putExtra("userId",userId);
+            mediaUploadIntent.putExtra("startID",startUploadId);
             startService(mediaUploadIntent);
         }
     }
@@ -388,21 +428,30 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     GraphRequest.Callback getcallback = new GraphRequest.Callback() {
         @Override
         public void onCompleted(GraphResponse response) {
-            Log.i(TAG,"Fetch user id = "+response.getRawResponse());
-            if(response.getError() != null) {
+            Log.i(TAG, "Fetch user id = " + response.getRawResponse());
+            if (response.getError() != null) {
                 Log.i(TAG, "onCompleted /me = " + response.getError().getErrorCode());
                 Log.i(TAG, "onCompleted /me = " + response.getError().getSubErrorCode());
-            }
-            JSONObject jsonObject = response.getJSONObject();
-            try {
-                userId = (String)jsonObject.get("id");
-                Log.i(TAG,"USER ID = "+userId);
-                Intent mediaUploadIntent = new Intent(getApplicationContext(),MediaUploadService.class);
-                mediaUploadIntent.putExtra("uploadFile",medias[selectedPosition].getPath());
-                mediaUploadIntent.putExtra("userId",userId);
-                startService(mediaUploadIntent);
-            } catch (JSONException e) {
-                e.printStackTrace();
+                mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.noConnectionMessage)));
+                mBuilder.setColor(getResources().getColor(R.color.uploadError));
+                Uri errorNotification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
+                mBuilder.setSound(errorNotification);
+                String startId = (String)response.getRequest().getParameters().get("startID");
+                mNotificationManager.notify(Integer.parseInt(startId), mBuilder.build());
+            } else {
+                JSONObject jsonObject = response.getJSONObject();
+                try {
+                    userId = (String) jsonObject.get("id");
+                    String startId = (String)response.getRequest().getParameters().get("startID");
+                    Log.i(TAG, "USER ID = " + userId+", Start Id = "+startId);
+                    Intent mediaUploadIntent = new Intent(getApplicationContext(), MediaUploadService.class);
+                    mediaUploadIntent.putExtra("uploadFile", medias[selectedPosition].getPath());
+                    mediaUploadIntent.putExtra("userId", userId);
+                    mediaUploadIntent.putExtra("startID",startId);
+                    startService(mediaUploadIntent);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
             }
         }
     };

@@ -47,5 +47,6 @@
     <string name="fileErrorMessage">Unable to upload. File %1$s has been deleted or moved.</string>
     <string name="uploadSuccessMessage">Upload Completed Successfully.</string>
     <string name="uploadInProgress">Upload image in progress</string>
+    <string name="uploadQueued">%1$s queued for upload</string>
     <string name="errorTitle">Upload Interrupted</string>
 </resources>
