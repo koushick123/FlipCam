@@ -5,6 +5,8 @@ import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
@@ -57,6 +59,7 @@ import com.flipcam.view.SurfaceViewVideoFragment;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -101,6 +104,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     Dialog shareToFBAlert;
     Dialog logoutFB;
     Dialog permissionFB;
+    Dialog appNotExist;
     CallbackManager callbackManager;
     NotificationManager mNotificationManager;
     Bitmap notifyIcon;
@@ -234,6 +238,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         shareAlert = new Dialog(this);
         logoutFB = new Dialog(this);
         permissionFB = new Dialog(this);
+        appNotExist = new Dialog(this);
         shareMedia.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -272,14 +277,62 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         queueNotification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
     }
 
+    public boolean isPackageExisted(Context c, String targetPackage) {
+        PackageManager pm = c.getPackageManager();
+        try {
+            PackageInfo info = pm.getPackageInfo(targetPackage, PackageManager.GET_META_DATA);
+            if(info != null) {
+                Log.d(TAG, "package name= " + info.packageName);
+            }
+        } catch (PackageManager.NameNotFoundException e) {
+            Log.d(TAG,"Package "+targetPackage+" does NOT exist");
+            return false;
+        }
+        return true;
+    }
+
     public void selectToShare(View view){
         switch(view.getId()){
             case R.id.facebookIcon:
                 Log.d(TAG,"Share to FACEBOOK");
-                shareToFacebook();
+                if(!isPackageExisted(getApplicationContext(), getResources().getString(R.string.facebookPackage))){
+                    shareToFacebook();
+                }
+                else{
+                    Uri mediaUri = Uri.fromFile(new File(medias[selectedPosition].getPath()));
+                    Intent shareIntent = new Intent();
+                    shareIntent.setAction(Intent.ACTION_SEND);
+                    shareIntent.putExtra(Intent.EXTRA_STREAM, mediaUri);
+                    if(isImage(medias[selectedPosition].getPath())){
+                        shareIntent.setType("image/jpeg");
+                    }
+                    else{
+                        shareIntent.setType("video/mp4");
+                    }
+                    shareIntent.setPackage(getResources().getString(R.string.facebookPackage));
+                    startActivity(shareIntent);
+                }
                 break;
             case R.id.whatsappIcon:
                 Log.d(TAG,"Share to WHATSAPP");
+                if(!isPackageExisted(getApplicationContext(), getResources().getString(R.string.whatsappPackage))){
+                    appNotExist.setContentView(R.layout.app_not_exist);
+                    appNotExist.setCancelable(true);
+                    appNotExist.show();
+                }
+                else {
+                    Uri mediaUri = Uri.fromFile(new File(medias[selectedPosition].getPath()));
+                    Intent shareIntent = new Intent();
+                    shareIntent.setAction(Intent.ACTION_SEND);
+                    shareIntent.putExtra(Intent.EXTRA_STREAM, mediaUri);
+                    if (isImage(medias[selectedPosition].getPath())) {
+                        shareIntent.setType("image/jpeg");
+                    } else {
+                        shareIntent.setType("video/mp4");
+                    }
+                    shareIntent.setPackage(getResources().getString(R.string.whatsappPackage));
+                    startActivity(shareIntent);
+                }
                 break;
         }
         shareAlert.dismiss();
@@ -300,6 +353,10 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         deleteAlert.dismiss();
     }
 
+    public void closeAppNotExist(View view){
+        appNotExist.dismiss();
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -310,14 +367,9 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             boolean loggedIn = AccessToken.getCurrentAccessToken() != null;
             Log.d(TAG,"Access token = "+loggedIn);
             if(!loggedIn) {
-                if(isConnectedToInternet()) {
-                    permissionFB.setContentView(R.layout.permission_facebook);
-                    permissionFB.setCancelable(true);
-                    permissionFB.show();
-                }
-                else{
-                    showNoConnection();
-                }
+                permissionFB.setContentView(R.layout.permission_facebook);
+                permissionFB.setCancelable(true);
+                permissionFB.show();
             }
             else{
                 if(isConnectedToInternet()) {
@@ -336,36 +388,41 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     public void loginToFacebook(View view)
     {
         permissionFB.dismiss();
-        publishPermissions = new ArrayList<>();
-        callbackManager = CallbackManager.Factory.create();
-        publishPermissions.add(getResources().getString(R.string.FBPermissions));
-        loginManager = LoginManager.getInstance();
-        loginManager.logInWithPublishPermissions(this, publishPermissions);
-        loginManager.registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
-            @Override
-            public void onSuccess(LoginResult loginResult) {
-                // App code
-                Log.d(TAG, "onSuccess = " + loginResult.toString());
-                AccessToken accessToken = loginResult.getAccessToken();
-                Set<String> grantedPermissions = loginResult.getRecentlyGrantedPermissions();
-                Log.d(TAG, "access token = " + accessToken);
-                Log.d(TAG, "granted perm = " + grantedPermissions.size());
-                showFacebookShareScreen();
-            }
+        if(isConnectedToInternet()) {
+            publishPermissions = new ArrayList<>();
+            callbackManager = CallbackManager.Factory.create();
+            publishPermissions.add(getResources().getString(R.string.FBPermissions));
+            loginManager = LoginManager.getInstance();
+            loginManager.logInWithPublishPermissions(this, publishPermissions);
+            loginManager.registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
+                @Override
+                public void onSuccess(LoginResult loginResult) {
+                    // App code
+                    Log.d(TAG, "onSuccess = " + loginResult.toString());
+                    AccessToken accessToken = loginResult.getAccessToken();
+                    Set<String> grantedPermissions = loginResult.getRecentlyGrantedPermissions();
+                    Log.d(TAG, "access token = " + accessToken);
+                    Log.d(TAG, "granted perm = " + grantedPermissions.size());
+                    showFacebookShareScreen();
+                }
 
-            @Override
-            public void onCancel() {
-                // App code
-                Log.d(TAG, "onCancel");
-            }
+                @Override
+                public void onCancel() {
+                    // App code
+                    Log.d(TAG, "onCancel");
+                }
 
-            @Override
-            public void onError(FacebookException exception) {
-                // App code
-                Log.d(TAG, "onError");
-                exception.printStackTrace();
-            }
-        });
+                @Override
+                public void onError(FacebookException exception) {
+                    // App code
+                    Log.d(TAG, "onError");
+                    exception.printStackTrace();
+                }
+            });
+        }
+        else{
+            showNoConnection();
+        }
     }
     public void showNoConnection(){
         noConnAlert.setContentView(R.layout.no_connection);

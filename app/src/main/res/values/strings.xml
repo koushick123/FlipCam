@@ -39,6 +39,8 @@
     <string name="logoutFBMessage">YOU HAVE BEEN LOGGED OUT OF FACEBOOK</string>
     <string name="logoutFB">LOGOUT OF FACEBOOK</string>
     <string name="permissionTitleFacebook">Permission for Facebook</string>
+    <string name="noWhatsapp">Whatsapp not available</string>
+    <string name="whatsappRequired">Whatsapp needs to be installed to be able to share Photos/Videos to another Whatsapp contact.</string>
     <string name="uploadFB">Upload to Facebook</string>
     <string name="permissionMessageFacebook">FlipCam requires you to login to Facebook to request below permission(s) to upload Photos/Videos:</string>
     <string name="optionlogoutMessageFacebook">You have an option to logout before you upload.</string>
@@ -59,4 +61,6 @@
     <string name="uploadFinish">Finishing Upload.</string>
     <string name="errorTitle">Upload Interrupted</string>
     <string name="connectionRetry">Possible Connection Loss.\nRetry for %1$d secs (%2$d)....</string>
+    <string name="whatsappPackage">com.whatsapp</string>
+    <string name="facebookPackage">com.facebook.katana</string>
 </resources>
