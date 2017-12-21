@@ -1,5 +1,6 @@
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -30,6 +31,13 @@
             android:textColor="@color/mediaControlColor"
             android:textStyle="bold" />
 
+        <ImageView
+            android:id="@+id/imageView5"
+            android:layout_width="64dp"
+            android:layout_height="50dp"
+            android:layout_weight=".05"
+            app:srcCompat="@drawable/share_to_facebook" />
+
     </LinearLayout>
 
     <TextView
@@ -37,24 +45,35 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:layout_marginBottom="10dp"
-        android:layout_marginTop="10dp"
+        android:layout_marginBottom="30dp"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp"
+        android:layout_marginTop="30dp"
         android:layout_weight=".05"
         android:gravity="center_vertical|center_horizontal"
         android:text="@string/logoutFBMessage"
         android:textColor="@color/turqoise"
+        android:textSize="15sp"
         android:textStyle="bold" />
 
-    <Button
-        android:id="@+id/logoutoktoclose"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:layout_marginBottom="20dp"
-        android:onClick="closeLogoutFB"
-        android:background="@color/thumbnailPlaceholder"
-        android:text="@string/okToDelete"
-        android:textColor="@color/turqoise"
-        />
+        android:layout_marginBottom="30dp"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/logoutoktoclose"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginLeft="80dp"
+            android:layout_marginRight="80dp"
+            android:layout_weight="1"
+            android:background="@color/thumbnailPlaceholder"
+            android:onClick="closeLogoutFB"
+            android:text="@string/okToDelete"
+            android:textColor="@color/turqoise" />
+    </LinearLayout>
 
 </LinearLayout>

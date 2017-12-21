@@ -102,6 +102,13 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     Dialog logoutFB;
     Dialog permissionFB;
     CallbackManager callbackManager;
+    NotificationManager mNotificationManager;
+    Bitmap notifyIcon;
+    android.support.v4.app.NotificationCompat.Builder mBuilder;
+    Uri queueNotification;
+    String userId = null;
+    LoginManager loginManager = LoginManager.getInstance();
+    ArrayList<String> publishPermissions;
 
     @Override
     protected void onStop() {
@@ -299,9 +306,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         callbackManager.onActivityResult(requestCode, resultCode, data);
     }
 
-    String userId = null;
-    LoginManager loginManager = LoginManager.getInstance();
-    ArrayList<String> publishPermissions;
     public void shareToFacebook(){
             boolean loggedIn = AccessToken.getCurrentAccessToken() != null;
             Log.d(TAG,"Access token = "+loggedIn);
@@ -384,11 +388,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         shareToFBAlert.setCancelable(true);
         shareToFBAlert.show();
     }
-
-    NotificationManager mNotificationManager;
-    Bitmap notifyIcon;
-    android.support.v4.app.NotificationCompat.Builder mBuilder;
-    Uri queueNotification;
 
     public void continueToFB(View view){
         shareToFBAlert.dismiss();

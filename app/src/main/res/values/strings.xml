@@ -40,7 +40,7 @@
     <string name="logoutFB">LOGOUT OF FACEBOOK</string>
     <string name="permissionTitleFacebook">Permission for Facebook</string>
     <string name="uploadFB">Upload to Facebook</string>
-    <string name="permissionMessageFacebook">FlipCam requires you to login to Facebook to upload Photos/Videos.\n\nYou only need to login once.\n\nFlipCam will ask for below permission(s) only:</string>
+    <string name="permissionMessageFacebook">FlipCam requires you to login to Facebook to request below permission(s) to upload Photos/Videos:</string>
     <string name="optionlogoutMessageFacebook">You have an option to logout before you upload.</string>
     <string name="FBPermissions">publish_actions</string>
     <string name="loginFB">LOGIN TO FACEBOOK</string>
