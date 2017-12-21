@@ -61,6 +61,7 @@
             android:layout_marginRight="5dp"
             android:layout_weight="2.88"
             android:background="@color/thumbnailPlaceholder"
+            android:textColor="@color/turqoise"
             android:onClick="continueToFB"
             android:text="@string/continuetoFB" />
 
@@ -72,6 +73,7 @@
             android:layout_marginRight="10dp"
             android:layout_weight="1.07"
             android:background="@color/thumbnailPlaceholder"
+            android:textColor="@color/turqoise"
             android:onClick="logoutOfFacebook"
             android:text="@string/logoutFB" />
     </LinearLayout>

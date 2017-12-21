@@ -53,8 +53,7 @@ public class MediaUploadService extends Service {
     int TOTAL_REQUESTS = 0;
     double uploadedSize = 0;
     Bitmap notifyIcon;
-    Uri uploadSuccessNotification;
-    Uri uploadErrorNotification;
+    Uri uploadNotification;
 
     @Nullable
     @Override
@@ -73,8 +72,7 @@ public class MediaUploadService extends Service {
                         .setContentTitle("FlipCam")
                         .setContentText("Upload in Progress");
         mBuilder.setPriority(NotificationManager.IMPORTANCE_HIGH);
-        uploadSuccessNotification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-        uploadErrorNotification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
+        uploadNotification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
         super.onCreate();
     }
 
@@ -133,7 +131,7 @@ public class MediaUploadService extends Service {
                             mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.uploadFinish)
                                     + "\n" + "File "+filename));
                         }
-                        mBuilder.setContentText("");
+                        mBuilder.setContentText(getResources().getString(R.string.uploadInProgress, "Video"));
                         mNotificationManager.notify(Integer.parseInt(uploadId), mBuilder.build());
                     }
                     else{
@@ -141,7 +139,7 @@ public class MediaUploadService extends Service {
                         mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.uploadInProgress, "Photo")
                                 + "\n" + "File "+filename));
                         mBuilder.setColor(getResources().getColor(R.color.uploadColor));
-                        mBuilder.setContentText(getResources().getString(R.string.uploadInProgress));
+                        mBuilder.setContentText(getResources().getString(R.string.uploadInProgress, "Photo"));
                         mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
                     }
                     break;
@@ -157,9 +155,8 @@ public class MediaUploadService extends Service {
             uploadedSize = 0;
             if(success){
                 mBuilder.setColor(getResources().getColor(R.color.uploadColor));
-                mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.uploadSuccessMessage, filename)));
-                mBuilder.setContentText("");
-                mBuilder.setSound(uploadSuccessNotification);
+                mBuilder.setContentText(getResources().getString(R.string.uploadSuccessMessage, filename));
+                mBuilder.setSound(uploadNotification);
                 mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
             }
             NO_OF_REQUESTS--;
@@ -194,7 +191,7 @@ public class MediaUploadService extends Service {
         protected Boolean doInBackground(String... params) {
             uploadFile = params[0];
             uploadId = params[1];
-            filename = uploadFile.substring(uploadFile.lastIndexOf("/"),uploadFile.length());
+            filename = uploadFile.substring(uploadFile.lastIndexOf("/") + 1,uploadFile.length());
             startUpload(uploadId);
             Log.i(TAG,"EXIT Thread");
             return success;
@@ -278,18 +275,17 @@ public class MediaUploadService extends Service {
 
     public void showUploadErrorNotification(){
         mBuilder.setColor(getResources().getColor(R.color.uploadError));
-        mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.uploadErrorMessage, filename)));
-        mBuilder.setContentText(getResources().getString(R.string.errorTitle));
-        mBuilder.setSound(uploadErrorNotification);
+        mBuilder.setContentText(getResources().getString(R.string.uploadErrorMessage, filename));
+        mBuilder.setContentTitle(getResources().getString(R.string.errorTitle));
+        mBuilder.setSound(uploadNotification);
         mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
     }
 
     public void showFileErrorNotification(){
         mBuilder.setColor(getResources().getColor(R.color.uploadError));
-        String errorMsg = getResources().getString(R.string.fileErrorMessage, filename);
-        mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(errorMsg));
-        mBuilder.setSound(uploadErrorNotification);
-        mBuilder.setContentText(getResources().getString(R.string.errorTitle));
+        mBuilder.setContentText(getResources().getString(R.string.fileErrorMessage, filename));
+        mBuilder.setContentTitle(getResources().getString(R.string.errorTitle));
+        mBuilder.setSound(uploadNotification);
         mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
     }
 
@@ -325,8 +321,8 @@ public class MediaUploadService extends Service {
             else{
                 if(retryCount < Constants.RETRY_COUNT){
                     retryCount = Constants.RETRY_COUNT;
+                    //mediaUploadHandler.sendEmptyMessage(Constants.UPLOAD_PROGRESS);
                 }
-                mediaUploadHandler.sendEmptyMessage(Constants.UPLOAD_PROGRESS);
                 JSONObject jsonObject = response.getJSONObject();
                 try {
                     if(jsonObject.has("id") && jsonObject.get("id") != null){

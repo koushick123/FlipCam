@@ -100,6 +100,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     Dialog noConnAlert;
     Dialog shareToFBAlert;
     Dialog logoutFB;
+    Dialog permissionFB;
     CallbackManager callbackManager;
 
     @Override
@@ -225,6 +226,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         shareToFBAlert = new Dialog(this);
         shareAlert = new Dialog(this);
         logoutFB = new Dialog(this);
+        permissionFB = new Dialog(this);
         shareMedia.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -305,36 +307,9 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             Log.d(TAG,"Access token = "+loggedIn);
             if(!loggedIn) {
                 if(isConnectedToInternet()) {
-                    publishPermissions = new ArrayList<>();
-                    callbackManager = CallbackManager.Factory.create();
-                    publishPermissions.add("publish_actions");
-                    loginManager = LoginManager.getInstance();
-                    loginManager.logInWithPublishPermissions(this, publishPermissions);
-                    loginManager.registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
-                        @Override
-                        public void onSuccess(LoginResult loginResult) {
-                            // App code
-                            Log.d(TAG, "onSuccess = " + loginResult.toString());
-                            AccessToken accessToken = loginResult.getAccessToken();
-                            Set<String> grantedPermissions = loginResult.getRecentlyGrantedPermissions();
-                            Log.d(TAG, "access token = " + accessToken);
-                            Log.d(TAG, "granted perm = " + grantedPermissions.size());
-                            showFacebookShareScreen();
-                        }
-
-                        @Override
-                        public void onCancel() {
-                            // App code
-                            Log.d(TAG, "onCancel");
-                        }
-
-                        @Override
-                        public void onError(FacebookException exception) {
-                            // App code
-                            Log.d(TAG, "onError");
-                            exception.printStackTrace();
-                        }
-                    });
+                    permissionFB.setContentView(R.layout.permission_facebook);
+                    permissionFB.setCancelable(true);
+                    permissionFB.show();
                 }
                 else{
                     showNoConnection();
@@ -350,6 +325,44 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             }
     }
 
+    public void notNowFB(View view){
+        permissionFB.dismiss();
+    }
+
+    public void loginToFacebook(View view)
+    {
+        permissionFB.dismiss();
+        publishPermissions = new ArrayList<>();
+        callbackManager = CallbackManager.Factory.create();
+        publishPermissions.add(getResources().getString(R.string.FBPermissions));
+        loginManager = LoginManager.getInstance();
+        loginManager.logInWithPublishPermissions(this, publishPermissions);
+        loginManager.registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
+            @Override
+            public void onSuccess(LoginResult loginResult) {
+                // App code
+                Log.d(TAG, "onSuccess = " + loginResult.toString());
+                AccessToken accessToken = loginResult.getAccessToken();
+                Set<String> grantedPermissions = loginResult.getRecentlyGrantedPermissions();
+                Log.d(TAG, "access token = " + accessToken);
+                Log.d(TAG, "granted perm = " + grantedPermissions.size());
+                showFacebookShareScreen();
+            }
+
+            @Override
+            public void onCancel() {
+                // App code
+                Log.d(TAG, "onCancel");
+            }
+
+            @Override
+            public void onError(FacebookException exception) {
+                // App code
+                Log.d(TAG, "onError");
+                exception.printStackTrace();
+            }
+        });
+    }
     public void showNoConnection(){
         noConnAlert.setContentView(R.layout.no_connection);
         noConnAlert.setCancelable(true);

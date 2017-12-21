@@ -52,6 +52,9 @@
         android:layout_gravity="center"
         android:layout_marginBottom="20dp"
         android:onClick="closeLogoutFB"
-        android:text="@string/okToDelete" />
+        android:background="@color/thumbnailPlaceholder"
+        android:text="@string/okToDelete"
+        android:textColor="@color/turqoise"
+        />
 
 </LinearLayout>
