@@ -111,6 +111,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     String userId = null;
     LoginManager loginManager = LoginManager.getInstance();
     ArrayList<String> publishPermissions;
+    ImageView playCircle;
 
     @Override
     protected void onStop() {
@@ -255,8 +256,13 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         controlVisbilityPreference = (ControlVisbilityPreference)getApplicationContext();
         noImage = (ImageView)findViewById(R.id.noImage);
         noImageText = (TextView)findViewById(R.id.noImageText);
+        playCircle = (ImageView)findViewById(R.id.playVideo);
         if(isImage(medias[0].getPath())) {
             removeVideoControls();
+            hidePlayForVideo();
+        }
+        else{
+            showPlayForVideo(0);
         }
         if(savedInstanceState == null){
             clearPreferences();
@@ -267,6 +273,33 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         notifyIcon = BitmapFactory.decodeResource(getApplicationContext().getResources(),R.drawable.ic_launcher);
         mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         queueNotification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+    }
+
+    public void showPlayForVideo(final int videoPos){
+        playCircle.setVisibility(View.VISIBLE);
+        playCircle.setClickable(true);
+        playCircle.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                SurfaceViewVideoFragment currentFrag = hashMapFrags.get(videoPos);
+                if (currentFrag.isPlayCompleted()) {
+                    currentFrag.setIsPlayCompleted(false);
+                }
+                Log.d(TAG,"Set PLAY using Circle");
+                currentFrag.playInProgress = true;
+                Log.d(TAG,"Duration of video = "+currentFrag.mediaPlayer.getDuration()+" , path = "+
+                        currentFrag.path.substring(currentFrag.path.lastIndexOf("/"),currentFrag.path.length()));
+                currentFrag.mediaPlayer.start();
+                pause.setVisibility(View.VISIBLE);
+                pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause));
+                currentFrag.play = true;
+                playCircle.setVisibility(View.GONE);
+            }
+        });
+    }
+
+    public void hidePlayForVideo(){
+        playCircle.setVisibility(View.GONE);
     }
 
     public boolean isPackageExisted(Context c, String targetPackage) {
@@ -617,6 +650,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 Log.d(TAG,"hide controls");
                 videoControls.setVisibility(View.GONE);
             }
+            hidePlayForVideo();
             removeVideoControls();
         }
         else{
@@ -718,6 +752,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                             currentFrag.path.substring(currentFrag.path.lastIndexOf("/"),currentFrag.path.length()));
                     currentFrag.mediaPlayer.start();
                     pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause));
+                    playCircle.setVisibility(View.GONE);
                     currentFrag.play = true;
                 } else {
                     Log.d(TAG,"Set PAUSE");
@@ -727,6 +762,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 }
             }
         });
+        showPlayForVideo(position);
     }
 
     @Override

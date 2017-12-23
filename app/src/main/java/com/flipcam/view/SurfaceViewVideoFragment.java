@@ -78,6 +78,7 @@ MediaPlayer.OnErrorListener, Serializable{
     transient SurfaceViewVideoFragment.VideoTracker videoTracker;
     transient public Media savedVideo = null;
     transient boolean recreate = false;
+    transient ImageView playCircle;
 
     public static SurfaceViewVideoFragment newInstance(int pos,boolean recreate){
         SurfaceViewVideoFragment surfaceViewVideoFragment = new SurfaceViewVideoFragment();
@@ -101,6 +102,7 @@ MediaPlayer.OnErrorListener, Serializable{
         parentMedia = (LinearLayout)getActivity().findViewById(R.id.parentMedia);
         frameMedia = (FrameLayout)getActivity().findViewById(R.id.frameMedia);
         controlVisbilityPreference = (ControlVisbilityPreference) getActivity().getApplicationContext();
+        playCircle = (ImageView)getActivity().findViewById(R.id.playVideo);
 
         if(getUserVisibleHint()) {
             if(!isImage()) {
@@ -178,12 +180,29 @@ MediaPlayer.OnErrorListener, Serializable{
                     mediaPlayer.start();
                     playInProgress = true;
                     pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause));
+                    playCircle.setVisibility(View.GONE);
                     play = true;
                 } else {
                     Log.d(TAG, "Set PAUSE post rotate");
                     mediaPlayer.pause();
                     pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow));
                     play = false;
+                }
+            }
+        });
+        playCircle.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (!play) {
+                    if (isCompleted) {
+                        isCompleted = false;
+                    }
+                    Log.d(TAG, "Set PLAY post rotate");
+                    mediaPlayer.start();
+                    playInProgress = true;
+                    pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause));
+                    playCircle.setVisibility(View.GONE);
+                    play = true;
                 }
             }
         });
@@ -274,6 +293,14 @@ MediaPlayer.OnErrorListener, Serializable{
             videoView.setVisibility(View.GONE);
             picture = new ImageView(getActivity());
             picture.setId(picture.generateViewId());
+            RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.FILL_PARENT, ViewGroup.LayoutParams.FILL_PARENT);
+            layoutParams.height = 1280;
+            layoutParams.width = 720;
+            layoutParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+            layoutParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
+            layoutParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+            layoutParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+            picture.setLayoutParams(layoutParams);
             Uri uri = Uri.fromFile(new File(path));
             GlideApp.with(getContext()).load(uri).into(picture);
             mediaPlaceholder.addView(picture);
@@ -306,11 +333,8 @@ MediaPlayer.OnErrorListener, Serializable{
         mediaMetadataRetriever.setDataSource(path);
         String width = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH);
         String height = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT);
-        /*Log.d(TAG,"Video Width / Height = "+width+" / "+height);
-        Log.d(TAG,"Aspect Ratio ==== "+Double.parseDouble(width)/Double.parseDouble(height));*/
         double videoAR = Double.parseDouble(width) / Double.parseDouble(height);
         double screenAR = (double) screenSize.x / (double) screenSize.y;
-        //Log.d(TAG,"Screen AR = "+screenAR);
         if (display.getRotation() == Surface.ROTATION_0) {
             if (Math.abs(screenAR - videoAR) < 0.1) {
                 ViewGroup.LayoutParams layoutParams = videoView.getLayoutParams();
@@ -507,6 +531,7 @@ MediaPlayer.OnErrorListener, Serializable{
     public void onCompletion(MediaPlayer mediaPlayer) {
         Log.d(TAG,"Video Completed == "+path);
         showAllControls();
+        playCircle.setVisibility(View.VISIBLE);
         isCompleted = true;
         pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow));
         play = false;

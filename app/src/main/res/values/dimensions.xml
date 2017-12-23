@@ -62,6 +62,9 @@
     <dimen name="uploadMsgBottomMargin">80dp</dimen>
     <dimen name="uploadIconHeight">50dp</dimen>
     <dimen name="uploadIconWidth">50dp</dimen>
+    //Height and widht for play circle for video
+    <dimen name="playCircleHeight">64dp</dimen>
+    <dimen name="playCircleWidth">64dp</dimen>
     //Top margin for share and delete buttons (Portrait)
     <dimen name="shareDeleteTopMarginPortrait">15dp</dimen>
     //Top margin for share and delete buttons (Landscape)
