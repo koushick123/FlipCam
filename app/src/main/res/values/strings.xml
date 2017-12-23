@@ -52,15 +52,20 @@
     <string name="facebook_app_id">308890512940081</string>
     <string name="fb_login_protocol_scheme">fb308890512940081</string>
     <string name="mediaService">FlipCam Media Upload Service</string>
-    <string name="uploadErrorMessage">No internet connection for file %1$s</string>
+    <string name="uploadErrorMessage">No internet connection. Upload Canceled.</string>
     <string name="fileErrorMessage">File %1$s has been deleted or moved.</string>
-    <string name="uploadSuccessMessage">%1$s Uploaded.</string>
+    <string name="uploadSuccessMessageLess">%1$s Uploaded.</string>
+    <string name="uploadSuccessMessage">Upload Completed Successfully.\nFile %1$s</string>
     <string name="uploadInProgress">%1$s upload in progress</string>
     <string name="uploadQueuedFile">%1$s queued for upload. \n File %2$s</string>
     <string name="uploadQueued">%1$s queued for upload.</string>
+    <string name="uploadQueuedAlert">%1$s queued for upload.\nCheck status bar notification for progress.</string>
     <string name="uploadFinish">Finishing Upload.</string>
     <string name="errorTitle">Upload Interrupted</string>
+    <string name="uploadInProgressTitle">Upload in Progress</string>
+    <string name="uploadCompleted">Upload Completed</string>
     <string name="connectionRetry">Possible Connection Loss.\nRetry for %1$d secs (%2$d)....</string>
+    <string name="connectionRetryLess">Possible Connection Loss. Retrying...</string>
     <string name="whatsappPackage">com.whatsapp</string>
     <string name="facebookPackage">com.facebook.katana</string>
 </resources>

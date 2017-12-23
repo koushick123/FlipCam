@@ -298,7 +298,7 @@ public class VideoFragment extends android.app.Fragment{
             @Override
             public void run() {
                 try {
-                    Thread.sleep(1500);
+                    Thread.sleep(1700);
                     showCompleted.cancel();
                 }catch (InterruptedException ie){
                     ie.printStackTrace();

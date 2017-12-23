@@ -54,8 +54,14 @@
     <dimen name="settingsTopAndBottomMargin">1dp</dimen>
     //Padding around saved message
     <dimen name="recordSavePadding">30dp</dimen>
+    //Padding around upload message
+    <dimen name="uploadPadding">10dp</dimen>
     //Padding below tick mark image
     <dimen name="recordSaveImagePaddingBottom">17dp</dimen>
+    <dimen name="uploadImagePaddingRight">20dp</dimen>
+    <dimen name="uploadMsgBottomMargin">80dp</dimen>
+    <dimen name="uploadIconHeight">50dp</dimen>
+    <dimen name="uploadIconWidth">50dp</dimen>
     //Top margin for share and delete buttons (Portrait)
     <dimen name="shareDeleteTopMarginPortrait">15dp</dimen>
     //Top margin for share and delete buttons (Landscape)

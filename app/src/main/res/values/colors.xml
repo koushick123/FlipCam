@@ -35,6 +35,8 @@
     <color name="modeColor">#FFFFFF</color>
     //Transparent color for saved message
     <color name="savedMsg">#7F000000</color>
+    //Transparent color for upload message
+    <color name="uploadMsg">#1F000000</color>
     //Color for no image text
     <color name="noImageTextColor">#000000</color>
     //Color for upload error

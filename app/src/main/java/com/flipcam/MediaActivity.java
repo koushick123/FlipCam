@@ -61,9 +61,7 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Set;
 
@@ -267,13 +265,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             reDrawTopMediaControls();
         }
         notifyIcon = BitmapFactory.decodeResource(getApplicationContext().getResources(),R.drawable.ic_launcher);
-        mNotificationManager = (NotificationManager) getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
-        mBuilder = new NotificationCompat.Builder(getApplicationContext())
-                .setLargeIcon(notifyIcon)
-                .setSmallIcon(R.drawable.ic_file_upload)
-                .setContentTitle("FlipCam")
-                .setContentText("");
-        mBuilder.setPriority(NotificationManager.IMPORTANCE_HIGH);
+        mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         queueNotification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
     }
 
@@ -448,25 +440,56 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
 
     public void continueToFB(View view){
         shareToFBAlert.dismiss();
-        mBuilder.setColor(getResources().getColor(R.color.uploadColor));
-        mBuilder.setSound(queueNotification);
-        String photo = getResources().getString(R.string.PHOTO_MODE).toLowerCase();
-        photo = "P"+photo.substring(1,photo.length());
-        String video = getResources().getString(R.string.VIDEO_MODE).toLowerCase();
-        video = "V"+video.substring(1,video.length());
-        String filename = medias[selectedPosition].getPath().substring(medias[selectedPosition].getPath().lastIndexOf("/"),
-                medias[selectedPosition].getPath().length());
-        String message = getResources().getString(R.string.uploadQueuedFile, (isImage(medias[selectedPosition].getPath()) ?  photo : video), filename);
-        mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(message));
-        message = getResources().getString(R.string.uploadQueued, (isImage(medias[selectedPosition].getPath()) ?  photo : video));
-        mBuilder.setContentText(message);
-        SimpleDateFormat sdf = new SimpleDateFormat(getResources().getString(R.string.DATE_FORMAT_FOR_UPLOAD_PROCESS));
-        startID = sdf.format(new Date());
-        mNotificationManager.notify(Integer.parseInt(startID), mBuilder.build());
-        uploadToFacebook(startID);
+        showUploadMessage();
+        uploadToFacebook();
     }
 
-    String startID;
+    public void showUploadMessage()
+    {
+        LinearLayout imageUploadLayout = new LinearLayout(this);
+        imageUploadLayout.setOrientation(LinearLayout.HORIZONTAL);
+        imageUploadLayout.setBackgroundColor(getResources().getColor(R.color.mediaControlColor));
+        TextView imageUploadText = new TextView(this);
+        if(isImage(medias[selectedPosition].getPath())) {
+            imageUploadText.setText(getResources().getString(R.string.uploadQueuedAlert,"Photo"));
+        }
+        else{
+            imageUploadText.setText(getResources().getString(R.string.uploadQueuedAlert,"Video"));
+        }
+        ImageView imageUploadImg = new ImageView(this);
+        imageUploadImg.setImageDrawable(getResources().getDrawable(R.drawable.ic_file_upload));
+        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        layoutParams.height = (int)getResources().getDimension(R.dimen.uploadIconHeight);
+        layoutParams.width = (int)getResources().getDimension(R.dimen.uploadIconWidth);
+        layoutParams.weight = 0.25f;
+        layoutParams.gravity = Gravity.CENTER;
+        imageUploadImg.setLayoutParams(layoutParams);
+        layoutParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        layoutParams.weight = 0.75f;
+        layoutParams.gravity = Gravity.CENTER;
+        imageUploadText.setLayoutParams(layoutParams);
+        imageUploadText.setPadding((int)getResources().getDimension(R.dimen.uploadPadding),(int)getResources().getDimension(R.dimen.uploadPadding),
+                (int)getResources().getDimension(R.dimen.uploadPadding),(int)getResources().getDimension(R.dimen.uploadPadding));
+        imageUploadText.setTextColor(getResources().getColor(R.color.turqoise));
+        imageUploadImg.setPadding(0,0,(int)getResources().getDimension(R.dimen.uploadImagePaddingRight),0);
+        imageUploadLayout.addView(imageUploadText);
+        imageUploadLayout.addView(imageUploadImg);
+        final Toast showUploaded = Toast.makeText(this,"",Toast.LENGTH_SHORT);
+        showUploaded.setGravity(Gravity.BOTTOM,0,(int)getResources().getDimension(R.dimen.uploadMsgBottomMargin));
+        showUploaded.setView(imageUploadLayout);
+        showUploaded.show();
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Thread.sleep(2000);
+                    showUploaded.cancel();
+                }catch (InterruptedException ie){
+                    ie.printStackTrace();
+                }
+            }
+        }).start();
+    }
 
     public void logoutOfFacebook(View view){
         LoginManager.getInstance().logOut();
@@ -481,10 +504,9 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         logoutFB.dismiss();
     }
 
-    public void uploadToFacebook(String startUploadId){
+    public void uploadToFacebook(){
         if(userId == null) {
             Bundle params = new Bundle();
-            params.putString("startID",startUploadId);
             GraphRequest meReq = new GraphRequest(AccessToken.getCurrentAccessToken(), "/me", params, HttpMethod.GET, getcallback);
             meReq.executeAsync();
         }
@@ -493,7 +515,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             Intent mediaUploadIntent = new Intent(getApplicationContext(),MediaUploadService.class);
             mediaUploadIntent.putExtra("uploadFile",medias[selectedPosition].getPath());
             mediaUploadIntent.putExtra("userId",userId);
-            mediaUploadIntent.putExtra("startID",startUploadId);
             startService(mediaUploadIntent);
         }
     }
@@ -506,22 +527,19 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 Log.i(TAG, "onCompleted /me = " + response.getError().getErrorCode());
                 Log.i(TAG, "onCompleted /me = " + response.getError().getSubErrorCode());
                 mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.noConnectionMessage)));
+                mBuilder.setContentText(getResources().getString(R.string.uploadErrorMessage));
+                mBuilder.setContentTitle(getResources().getString(R.string.errorTitle));
                 mBuilder.setColor(getResources().getColor(R.color.uploadError));
-                Uri errorNotification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
-                mBuilder.setSound(errorNotification);
                 String startId = (String)response.getRequest().getParameters().get("startID");
                 mNotificationManager.notify(Integer.parseInt(startId), mBuilder.build());
             } else {
                 JSONObject jsonObject = response.getJSONObject();
                 try {
                     userId = (String) jsonObject.get("id");
-                    String startId = (String)response.getRequest().getParameters().get("startID");
-                    Log.i(TAG, "USER ID = " + userId+", Start Id = "+startId);
                     //mNotificationManager.cancel(Integer.parseInt(startId));
                     Intent mediaUploadIntent = new Intent(getApplicationContext(), MediaUploadService.class);
                     mediaUploadIntent.putExtra("uploadFile", medias[selectedPosition].getPath());
                     mediaUploadIntent.putExtra("userId", userId);
-                    mediaUploadIntent.putExtra("startID",startId);
                     startService(mediaUploadIntent);
                 } catch (JSONException e) {
                     e.printStackTrace();
