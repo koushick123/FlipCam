@@ -9,7 +9,7 @@
     <LinearLayout
         android:id="@+id/shareFB"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="45dp"
         android:background="@color/colorPrimary"
         android:orientation="horizontal">
 
@@ -43,7 +43,7 @@
         android:gravity="center"
         android:text="@string/permissionMessageFacebook"
         android:textColor="@color/turqoise"
-        android:textSize="16sp"
+        android:textSize="14sp"
         android:textStyle="bold" />
 
     <TextView
@@ -58,14 +58,14 @@
         android:gravity="center"
         android:text="@string/FBPermissions"
         android:textColor="@color/turqoise"
-        android:textSize="16sp"
+        android:textSize="13sp"
         android:textStyle="bold" />
 
     <TextView
         android:id="@+id/textView5"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="20dp"
+        android:layout_marginBottom="12dp"
         android:layout_marginLeft="10dp"
         android:layout_marginRight="10dp"
         android:layout_marginTop="20dp"
@@ -73,33 +73,33 @@
         android:gravity="center"
         android:text="@string/optionlogoutMessageFacebook"
         android:textColor="@color/turqoise"
-        android:textSize="16sp"
+        android:textSize="14sp"
         android:textStyle="bold" />
 
     <Button
         android:id="@+id/button2"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="36dp"
         android:layout_marginLeft="10dp"
         android:layout_marginRight="10dp"
         android:background="@color/colorPrimary"
+        android:onClick="loginToFacebook"
         android:text="@string/loginFB"
         android:textColor="@color/saveText"
-        android:onClick="loginToFacebook"
         android:textStyle="bold" />
 
     <Button
         android:id="@+id/button3"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="36dp"
         android:layout_marginBottom="20dp"
         android:layout_marginLeft="10dp"
         android:layout_marginRight="10dp"
         android:layout_marginTop="10dp"
         android:background="@color/colorPrimary"
+        android:onClick="notNowFB"
         android:text="@string/notnow"
         android:textColor="@color/saveText"
-        android:onClick="notNowFB"
         android:textStyle="bold" />
 
 </LinearLayout>
