@@ -3,6 +3,8 @@ package com.flipcam.view;
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.content.res.Configuration;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Point;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
@@ -49,7 +51,6 @@ MediaPlayer.OnErrorListener, Serializable{
 
     static final String TAG = "SurfaceViewVideoFragmnt";
     transient public MediaPlayer mediaPlayer = null;
-    transient RelativeLayout mediaPlaceholder;
     transient public MediaView videoView=null;
     public boolean play=false;
     transient LinearLayout topBar;
@@ -271,11 +272,16 @@ MediaPlayer.OnErrorListener, Serializable{
         return framePosition;
     }
 
+    transient int imageHeight;
+    transient int imageWidth;
+    transient RelativeLayout mediaPlaceholder;
+
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_surfaceview_video, container, false);
         videoView = (MediaView) view.findViewById(R.id.recordedVideo);
+        picture = (ImageView)view.findViewById(R.id.recordedImage);
         mediaPlaceholder = (RelativeLayout)view.findViewById(R.id.mediaPlaceholder);
         mediaPlaceholder.setOnClickListener(new View.OnClickListener(){
             @Override
@@ -285,28 +291,24 @@ MediaPlayer.OnErrorListener, Serializable{
         });
         WindowManager windowManager = (WindowManager)getActivity().getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
         display = windowManager.getDefaultDisplay();
+        Point screenSize=new Point();
+        display.getRealSize(screenSize);
         //Log.d(TAG,"Rotation = "+display.getRotation());
         Log.d(TAG,"onCreateView = "+path);
         if(isImage()) {
             Log.d(TAG,"show image");
             videoView.setData(null,path,this);
             videoView.setVisibility(View.GONE);
-            picture = new ImageView(getActivity());
-            picture.setId(picture.generateViewId());
-            RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.FILL_PARENT, ViewGroup.LayoutParams.FILL_PARENT);
-            layoutParams.height = 1280;
-            layoutParams.width = 720;
-            layoutParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
-            layoutParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
-            layoutParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
-            layoutParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
-            picture.setLayoutParams(layoutParams);
+            Bitmap image = BitmapFactory.decodeFile(path);
+            imageHeight = image.getHeight();
+            imageWidth = image.getWidth();
+            fitPhotoToScreen();
             Uri uri = Uri.fromFile(new File(path));
             GlideApp.with(getContext()).load(uri).into(picture);
-            mediaPlaceholder.addView(picture);
         }
         else {
             Log.d(TAG,"show video");
+            picture.setVisibility(View.GONE);
             mediaPlayer = new MediaPlayer();
             mediaPlayer.setOnCompletionListener(this);
             mediaPlayer.setOnPreparedListener(this);
@@ -324,6 +326,48 @@ MediaPlayer.OnErrorListener, Serializable{
             duration = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
         }
         return view;
+    }
+
+    public void fitPhotoToScreen(){
+        Point screenSize=new Point();
+        display.getRealSize(screenSize);
+        double screenAR = (double)screenSize.x / (double)screenSize.y;
+        double imageAR = (double)imageWidth / (double)imageHeight;
+        Log.d(TAG,"imageAR = "+imageAR);
+        Log.d(TAG,"screenAR = "+screenAR);
+        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.FILL_PARENT, ViewGroup.LayoutParams.FILL_PARENT);
+        if (display.getRotation() == Surface.ROTATION_0) {
+            if(Math.abs(screenAR - imageAR) < 0.1) {
+                Log.d(TAG,"Portrait");
+                layoutParams.width = screenSize.x;
+                layoutParams.height = screenSize.y;
+                layoutParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+                layoutParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
+                layoutParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+                layoutParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+            }
+            else{
+                layoutParams.width = screenSize.x;
+                layoutParams.height = (int)(screenSize.x / imageAR);
+                Log.d(TAG,"layoutParams.height = "+layoutParams.height);
+            }
+        }
+        else if (display.getRotation() == Surface.ROTATION_90 || display.getRotation() == Surface.ROTATION_270) {
+            if (Math.abs(screenAR - imageAR) < 0.1) {
+                Log.d(TAG,"Landscape");
+                layoutParams.width = screenSize.x;
+                layoutParams.height = screenSize.y;
+                layoutParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+                layoutParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
+                layoutParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+                layoutParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+            } else {
+                layoutParams.width = (int) (imageAR * screenSize.y);
+                layoutParams.height = screenSize.y;
+                Log.d(TAG,"layoutParams.width = "+layoutParams.width);
+            }
+        }
+        picture.setLayoutParams(layoutParams);
     }
 
     public void fitVideoToScreen(){
@@ -396,6 +440,9 @@ MediaPlayer.OnErrorListener, Serializable{
         super.onConfigurationChanged(newConfig);
         if(!isImage()) {
             fitVideoToScreen();
+        }
+        else{
+            fitPhotoToScreen();
         }
     }
 

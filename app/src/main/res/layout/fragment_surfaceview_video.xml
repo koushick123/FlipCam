@@ -8,11 +8,15 @@
     android:background="@color/mediaBackground"
     >
 
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/recordedImage"
+        />
     <com.flipcam.view.MediaView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/recordedVideo"
         android:layout_centerInParent="true"
         />
-
 </RelativeLayout>
