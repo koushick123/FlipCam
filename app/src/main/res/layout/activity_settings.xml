@@ -1,0 +1,292 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/settingsParent"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/mediaControlColor"
+    android:orientation="vertical"
+    tools:context="com.flipcam.SettingsActivity">
+
+    <LinearLayout
+        android:id="@+id/saveMedia"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/textView9"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="20dp"
+            android:layout_marginTop="10dp"
+            android:text="@string/saveMedia"
+            android:textColor="@color/turqoise"
+            android:textSize="@dimen/settingsMainText" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/phoneMem"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="20dp"
+                android:layout_marginTop="10dp"
+                android:layout_weight="1"
+                android:checked="true"
+                android:text="@string/phoneMemory"
+                android:textColor="@color/turqoise"
+                android:textSize="@dimen/settingsSubText"
+                android:buttonTint="@color/turqoise" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/internalseparator1"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_weight="1"
+            android:background="@color/turqoise"
+            android:checked="false"
+            android:orientation="horizontal"></LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/sdCardbutton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="20dp"
+                android:layout_weight="1"
+                android:text="@string/sdCard"
+                android:textColor="@color/turqoise"
+                android:textSize="@dimen/settingsSubText"
+                android:buttonTint="@color/turqoise" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/separator2"
+        android:layout_width="match_parent"
+        android:layout_height="3dp"
+        android:background="@color/turqoise"
+        android:orientation="horizontal">
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/phoneMemParent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp"
+        android:layout_marginTop="10dp"
+        android:orientation="horizontal">
+
+        <LinearLayout
+            android:id="@+id/phoneMemParentVert"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/phoneMemText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="20dp"
+                android:text="@string/phoneMemoryLimit"
+                android:textColor="@color/turqoise"
+                android:textSize="@dimen/settingsMainText" />
+
+            <TextView
+                android:id="@+id/textView11"
+                android:layout_width="258dp"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="20dp"
+                android:layout_marginTop="10dp"
+                android:text="@string/phoneMemoryLimitMsg"
+                android:textColor="@color/turqoise"
+                android:textSize="@dimen/settingsSubText" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/arrow"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <ImageView
+                android:id="@+id/imageView7"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:srcCompat="@drawable/ic_play_arrow" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/separator3"
+        android:layout_width="match_parent"
+        android:layout_height="3dp"
+        android:background="@color/turqoise"
+        android:orientation="horizontal">
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/saveToCloudParent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/textView12"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="20dp"
+            android:layout_marginTop="10dp"
+            android:layout_weight="1"
+            android:text="@string/saveToCloud"
+            android:textColor="@color/turqoise"
+            android:textSize="@dimen/settingsMainText" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/googleDrive"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:weightSum="1">
+
+        <Switch
+            android:id="@+id/switchOnDrive"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="20dp"
+            android:layout_marginRight="60dp"
+            android:autoText="false"
+            android:checked="false"
+            android:showText="true"
+            android:singleLine="true"
+            android:text="@string/googleDrive"
+            android:textColor="@color/turqoise"
+            android:textColorLink="@color/turqoise"
+            android:textOff="NO"
+            android:textOn="YES"
+            android:buttonTint="@color/turqoise" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/dropBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <Switch
+            android:id="@+id/switchOnDropbox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="5dp"
+            android:layout_marginLeft="20dp"
+            android:layout_marginRight="60dp"
+            android:checked="false"
+            android:showText="true"
+            android:text="@string/dropbox"
+            android:textColor="@color/turqoise"
+            android:buttonTint="@color/turqoise" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/separator4"
+        android:layout_width="match_parent"
+        android:layout_height="3dp"
+        android:background="@color/turqoise"
+        android:orientation="horizontal">
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/showMemParent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/textView15"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="20dp"
+            android:layout_marginTop="10dp"
+            android:layout_weight="1"
+            android:text="@string/showMemConsumed"
+            android:textColor="@color/turqoise"
+            android:textSize="@dimen/settingsMainText" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/showMemMsgParent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:weightSum="1">
+
+        <CheckBox
+            android:id="@+id/checkBox"
+            android:layout_width="match_parent"
+            android:layout_height="54dp"
+            android:layout_marginBottom="5dp"
+            android:layout_marginLeft="20dp"
+            android:layout_marginTop="5dp"
+            android:layout_weight="0.68"
+            android:checked="true"
+            android:paddingLeft="20dp"
+            android:text="@string/showMemConsumedMsg"
+            android:textColor="@color/turqoise"
+            android:textSize="@dimen/settingsSubText"
+            android:buttonTint="@color/turqoise" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/separator1"
+        android:layout_width="match_parent"
+        android:layout_height="3dp"
+        android:layout_marginTop="5dp"
+        android:background="@color/turqoise"
+        android:orientation="horizontal">
+
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/textView19"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="20dp"
+        android:layout_marginTop="10dp"
+        android:text="@string/resetAll"
+        android:textColor="@color/turqoise"
+        android:textSize="@dimen/settingsMainText" />
+
+    <TextView
+        android:id="@+id/resetAllMsgLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="20dp"
+        android:layout_marginTop="10dp"
+        android:text="@string/resetAllMsg"
+        android:textColor="@color/turqoise"
+        android:textSize="@dimen/settingsSubText" />
+
+</LinearLayout>

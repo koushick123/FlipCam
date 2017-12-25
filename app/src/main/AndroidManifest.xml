@@ -80,9 +80,12 @@
             android:name=".MediaActivity"
             android:configChanges="orientation|screenSize" />
 
-        <service android:name=".service.MediaUploadService"
-            android:exported="false"
-            android:description="@string/mediaService"/>
+        <service
+            android:name=".service.MediaUploadService"
+            android:description="@string/mediaService"
+            android:exported="false" />
+
+        <activity android:name=".SettingsActivity"></activity>
     </application>
 
 </manifest>

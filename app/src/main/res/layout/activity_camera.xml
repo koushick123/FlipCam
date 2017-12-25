@@ -70,6 +70,7 @@
             android:layout_marginRight="@dimen/settingRightMargin"
             android:layout_marginTop="@dimen/settingsTopAndBottomMargin"
             android:layout_weight="0.5"
+            android:onClick="goToSettings"
             android:background="@color/settingsBarColor"
             android:src="@drawable/settings" />
     </LinearLayout>

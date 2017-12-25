@@ -68,4 +68,17 @@
     <string name="connectionRetryLess">Possible Connection Loss. Retrying...</string>
     <string name="whatsappPackage">com.whatsapp</string>
     <string name="facebookPackage">com.facebook.katana</string>
+    <string name="settingTitle">FlipCam Settings</string>
+    <string name="saveMedia">Save Media in</string>
+    <string name="phoneMemory">Phone Memory</string>
+    <string name="sdCard">SD Card</string>
+    <string name="phoneMemoryLimit">Phone Memory Limit Warning (%1$s MB)</string>
+    <string name="phoneMemoryLimitMsg">The amount of phone memory below which you would like a warning.</string>
+    <string name="saveToCloud">Save To Cloud</string>
+    <string name="googleDrive">Google Drive</string>
+    <string name="dropbox">Dropbox</string>
+    <string name="showMemConsumed">Show Memory Consumed For Video</string>
+    <string name="showMemConsumedMsg">Show how much memory is being consumed by the current video recording, in the recording window.</string>
+    <string name="resetAll">Reset All to Default</string>
+    <string name="resetAllMsg">This will reset ALL FlipCam settings to their default values.</string>
 </resources>

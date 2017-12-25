@@ -75,4 +75,8 @@
     <dimen name="topMediaBarPortrait">60dp</dimen>
     //Size of top bar for media (Landscape)
     <dimen name="topMediaBarLandscape">40dp</dimen>
+    //Text size for settings
+    <dimen name="settingsMainText">18sp</dimen>
+    //Text size for subtext
+    <dimen name="settingsSubText">14sp</dimen>
 </resources>
