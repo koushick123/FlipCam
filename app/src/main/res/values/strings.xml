@@ -39,8 +39,8 @@
     <string name="logoutFBMessage">YOU HAVE BEEN LOGGED OUT OF FACEBOOK</string>
     <string name="logoutFB">LOGOUT OF FACEBOOK</string>
     <string name="permissionTitleFacebook">Permission for Facebook</string>
-    <string name="noWhatsapp">Whatsapp not available</string>
-    <string name="whatsappRequired">Whatsapp needs to be installed to be able to share Photos/Videos to another Whatsapp contact.</string>
+    <string name="noWhatsapp">WhatsApp not available</string>
+    <string name="whatsappRequired">WhatsApp needs to be installed to be able to share Photos/Videos to another WhatsApp contact.</string>
     <string name="uploadFB">Upload to Facebook</string>
     <string name="permissionMessageFacebook">FlipCam requires you to login to Facebook to request below permission(s) to upload Photos/Videos:</string>
     <string name="optionlogoutMessageFacebook">You have an option to logout before you upload.</string>
@@ -48,7 +48,7 @@
     <string name="loginFB">LOGIN TO FACEBOOK</string>
     <string name="notnow">NOT NOW</string>
     <string name="facebook">Facebook</string>
-    <string name="whatsapp">Whatsapp</string>
+    <string name="whatsapp">WhatsApp</string>
     <string name="facebook_app_id">308890512940081</string>
     <string name="fb_login_protocol_scheme">fb308890512940081</string>
     <string name="mediaService">FlipCam Media Upload Service</string>
