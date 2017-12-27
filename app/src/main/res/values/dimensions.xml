@@ -79,4 +79,13 @@
     <dimen name="settingsMainText">18sp</dimen>
     //Text size for subtext
     <dimen name="settingsSubText">14sp</dimen>
+    <dimen name="headTextLeftMargin">20dp</dimen>
+    <dimen name="headTextTopMargin">10dp</dimen>
+    <dimen name="greenArrowWidth">40dp</dimen>
+    <dimen name="greenArrowHeight">40dp</dimen>
+    <dimen name="switchRightMargin">60dp</dimen>
+    <dimen name="separatorHeight">3dp</dimen>
+    <dimen name="checkboxTextMsgHeight">54dp</dimen>
+    <dimen name="phoneMemRightMargin">100dp</dimen>
+    <dimen name="checkboxMarginTopBottom">5dp</dimen>
 </resources>

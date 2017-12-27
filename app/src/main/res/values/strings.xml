@@ -72,7 +72,7 @@
     <string name="saveMedia">Save Media in</string>
     <string name="phoneMemory">Phone Memory</string>
     <string name="sdCard">SD Card</string>
-    <string name="phoneMemoryLimit">Phone Memory Limit Warning (%1$s MB)</string>
+    <string name="phoneMemoryLimit">Phone Memory Limit Warning (%1$d MB)</string>
     <string name="phoneMemoryLimitMsg">The amount of phone memory below which you would like a warning.</string>
     <string name="saveToCloud">Save To Cloud</string>
     <string name="googleDrive">Google Drive</string>
