@@ -85,7 +85,8 @@
             android:description="@string/mediaService"
             android:exported="false" />
 
-        <activity android:name=".SettingsActivity"></activity>
+        <activity android:name=".SettingsActivity"
+            android:configChanges="orientation|screenSize"></activity>
     </application>
 
 </manifest>

@@ -1,13 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/mediaControlColor"
+    >
+<LinearLayout
     android:id="@+id/settingsParent"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/mediaControlColor"
-    android:orientation="vertical"
-    tools:context="com.flipcam.SettingsActivity">
+    android:orientation="vertical">
 
     <LinearLayout
         android:id="@+id/saveMedia"
@@ -89,6 +93,7 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="10dp"
         android:layout_marginTop="10dp"
+        android:layout_weight="0.7"
         android:orientation="horizontal">
 
         <LinearLayout
@@ -107,10 +112,11 @@
                 android:textSize="@dimen/settingsMainText" />
 
             <TextView
-                android:id="@+id/textView11"
-                android:layout_width="258dp"
+                android:id="@+id/phoneMemTextMsg"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="20dp"
+                android:layout_marginRight="100dp"
                 android:layout_marginTop="10dp"
                 android:text="@string/phoneMemoryLimitMsg"
                 android:textColor="@color/turqoise"
@@ -123,14 +129,15 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_gravity="center"
+            android:layout_weight="0.2"
             android:gravity="center"
             android:orientation="vertical">
 
             <ImageView
                 android:id="@+id/imageView7"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:srcCompat="@drawable/ic_play_arrow" />
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                app:srcCompat="@drawable/ic_keyboard_arrow_right" />
         </LinearLayout>
     </LinearLayout>
 
@@ -153,6 +160,7 @@
             android:id="@+id/textView12"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginBottom="10dp"
             android:layout_marginLeft="20dp"
             android:layout_marginTop="10dp"
             android:layout_weight="1"
@@ -172,18 +180,17 @@
             android:id="@+id/switchOnDrive"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginBottom="10dp"
             android:layout_marginLeft="20dp"
             android:layout_marginRight="60dp"
             android:autoText="false"
+            android:buttonTint="@color/turqoise"
             android:checked="false"
-            android:showText="true"
             android:singleLine="true"
             android:text="@string/googleDrive"
             android:textColor="@color/turqoise"
             android:textColorLink="@color/turqoise"
-            android:textOff="NO"
-            android:textOn="YES"
-            android:buttonTint="@color/turqoise" />
+            android:thumbTint="@color/turqoise" />
     </LinearLayout>
 
     <LinearLayout
@@ -196,14 +203,14 @@
             android:id="@+id/switchOnDropbox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="5dp"
+            android:layout_marginBottom="10dp"
             android:layout_marginLeft="20dp"
             android:layout_marginRight="60dp"
+            android:buttonTint="@color/turqoise"
             android:checked="false"
-            android:showText="true"
             android:text="@string/dropbox"
             android:textColor="@color/turqoise"
-            android:buttonTint="@color/turqoise" />
+            android:thumbTint="@color/turqoise" />
 
     </LinearLayout>
 
@@ -288,5 +295,5 @@
         android:text="@string/resetAllMsg"
         android:textColor="@color/turqoise"
         android:textSize="@dimen/settingsSubText" />
-
 </LinearLayout>
+</ScrollView>
