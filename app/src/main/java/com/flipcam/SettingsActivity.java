@@ -9,7 +9,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -34,7 +33,7 @@ public class SettingsActivity extends AppCompatActivity {
     RadioButton sdCardBtn;
     Dialog sdCardDialog;
     LinearLayout sdcardlayout;
-    TextView sdCardPathTMsg;
+    TextView sdCardPathMsg;
     ImageView editSdCardPath;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,11 +46,11 @@ public class SettingsActivity extends AppCompatActivity {
         greenArrow = (ImageView)findViewById(R.id.greenArrow);
         phoneMemBtn = (RadioButton)findViewById(R.id.phoneMemButton);
         sdCardBtn = (RadioButton)findViewById(R.id.sdCardbutton);
-        sdCardPathTMsg = (TextView)findViewById(R.id.sdcardpathmsg);
+        sdCardPathMsg = (TextView)findViewById(R.id.sdcardpathmsg);
         editSdCardPath = (ImageView)findViewById(R.id.editSdCardPath);
         sdCardDialog = new Dialog(this);
         sdcardlayout = (LinearLayout)findViewById(R.id.sdcardlayout);
-        reDrawPhoneMem();
+        //reDrawEditSdCard();
         phoneMemText.setText(getResources().getString(R.string.phoneMemoryLimit, getResources().getInteger(R.integer.minimumMemoryWarning)));
         getSupportActionBar().setTitle(getResources().getString(R.string.settingTitle));
         settingsPref = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
@@ -196,30 +195,12 @@ public class SettingsActivity extends AppCompatActivity {
     }
 
     public void showSDCardPath(String path){
-        sdCardPathTMsg.setText(path);
+        sdCardPathMsg.setText(path);
         sdcardlayout.setVisibility(View.VISIBLE);
     }
 
     public void hideSDCardPath(){
         sdcardlayout.setVisibility(View.GONE);
-    }
-
-    public void reDrawPhoneMem(){
-        Configuration config = getResources().getConfiguration();
-        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        if(config.orientation == Configuration.ORIENTATION_PORTRAIT){
-            Log.d(TAG,"oncreate portrait");
-            layoutParams.width = getResources().getInteger(R.integer.phoneMemTextWidthPortrait);
-            layoutParams.setMargins(getResources().getInteger(R.integer.phoneMemTextLeftMargin),0,0,0);
-        }
-        else{
-            Log.d(TAG,"oncreate landscape");
-            layoutParams.width = getResources().getInteger(R.integer.phoneMemTextWidthLandscape);
-            layoutParams.setMargins(getResources().getInteger(R.integer.phoneMemTextLeftMargin),0,getResources().getInteger(R.integer.greenArrowRightMargin),0);
-        }
-        phoneMemParentVert.setLayoutParams(layoutParams);
-        phoneMemText.setLayoutParams(layoutParams);
-        phoneMemTextMsg.setLayoutParams(layoutParams);
     }
 
     public void reDrawSDCardScreen(){
@@ -237,7 +218,7 @@ public class SettingsActivity extends AppCompatActivity {
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        reDrawPhoneMem();
+        //reDrawEditSdCard();
         reDrawSDCardScreen();
     }
 }

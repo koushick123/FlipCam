@@ -83,18 +83,20 @@
             <LinearLayout
                 android:id="@+id/sdcardlayout"
                 android:layout_width="match_parent"
-                android:layout_height="36dp"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
                 android:layout_marginLeft="@dimen/headTextLeftMargin"
                 android:layout_marginRight="@dimen/headTextLeftMargin"
                 android:layout_marginTop="10dp"
-                android:orientation="horizontal">
+                android:orientation="horizontal"
+                android:weightSum="1">
 
                 <TextView
                     android:id="@+id/sdcardpathmsg"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="5dp"
-                    android:layout_weight="0.79"
+                    android:layout_weight=".8"
                     android:text="TextView"
                     android:textColor="@color/turqoise" />
 
@@ -102,7 +104,7 @@
                     android:id="@+id/editSdCardPath"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_weight="0.1"
+                    android:layout_weight=".2"
                     android:onClick="openSdCardPath"
                     app:srcCompat="@drawable/ic_edit" />
 
@@ -127,13 +129,13 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="@dimen/headTextTopMargin"
         android:layout_marginTop="@dimen/headTextTopMargin"
-        android:layout_weight="0.7"
         android:orientation="horizontal">
 
         <LinearLayout
             android:id="@+id/phoneMemParentVert"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_weight=".1"
             android:orientation="vertical">
 
             <TextView
@@ -148,9 +150,8 @@
             <TextView
                 android:id="@+id/phoneMemTextMsg"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:layout_marginLeft="@dimen/headTextLeftMargin"
-                android:layout_marginRight="@dimen/phoneMemRightMargin"
                 android:layout_marginTop="@dimen/headTextTopMargin"
                 android:text="@string/phoneMemoryLimitMsg"
                 android:textColor="@color/turqoise"
@@ -163,7 +164,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_gravity="center"
-            android:layout_weight="0.2"
+            android:layout_weight=".5"
             android:gravity="center"
             android:orientation="vertical">
 
