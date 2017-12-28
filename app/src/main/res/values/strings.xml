@@ -82,12 +82,12 @@
     <string name="resetAll">Reset All to Default</string>
     <string name="sdCardLocation">SD CARD Location</string>
     <string name="sdCardPathPortrait">Please enter the SD CARD location below, starting from root.\n\n
-        You can obtain this info by using File Manager (which can be downloaded from Play Store if you don\'t have one).\n\n
+        You can use File Manager (which can be downloaded from Play Store if you don\'t have one) to get location.\n\n
         FlipCam will create a folder \'FlipCam\' inside that path and store all your Videos/Photos there.\n\n
         SD Card Path:
     </string>
     <string name="sdCardPathLandscape">Please enter the SD CARD location below, starting from root.\n
-    You can obtain this info by using File Manager (which can be downloaded from Play Store if you don\'t have one).\n
+    You can use File Manager (which can be downloaded from Play Store if you don\'t have one) to get location.\n
     FlipCam will create a folder \'FlipCam\' inside that path and store all your Videos/Photos there.\n\n
     SD Card Path:
     </string>

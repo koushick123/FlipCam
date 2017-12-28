@@ -35,6 +35,7 @@ public class SettingsActivity extends AppCompatActivity {
     Dialog sdCardDialog;
     LinearLayout sdcardlayout;
     TextView sdCardPathTMsg;
+    ImageView editSdCardPath;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -47,6 +48,7 @@ public class SettingsActivity extends AppCompatActivity {
         phoneMemBtn = (RadioButton)findViewById(R.id.phoneMemButton);
         sdCardBtn = (RadioButton)findViewById(R.id.sdCardbutton);
         sdCardPathTMsg = (TextView)findViewById(R.id.sdcardpathmsg);
+        editSdCardPath = (ImageView)findViewById(R.id.editSdCardPath);
         sdCardDialog = new Dialog(this);
         sdcardlayout = (LinearLayout)findViewById(R.id.sdcardlayout);
         reDrawPhoneMem();
@@ -60,11 +62,13 @@ public class SettingsActivity extends AppCompatActivity {
                 Log.d(TAG,"Phone memory is true");
                 phoneMemBtn.setChecked(true);
                 sdCardBtn.setChecked(false);
+                editSdCardPath.setClickable(false);
             }
             else{
                 Log.d(TAG,"Phone memory is false");
                 phoneMemBtn.setChecked(false);
                 sdCardBtn.setChecked(true);
+                editSdCardPath.setClickable(true);
             }
             if(settingsPref.contains(Constants.SD_CARD_PATH)) {
                 String sdcardpath = settingsPref.getString(Constants.SD_CARD_PATH, "");
@@ -89,8 +93,6 @@ public class SettingsActivity extends AppCompatActivity {
         }
         Configuration config = getResources().getConfiguration();
         if(config.orientation == Configuration.ORIENTATION_PORTRAIT) {
-            phoneMemBtn.setChecked(false);
-            sdCardBtn.setChecked(true);
             TextView sdcardText = (TextView)sdCardRoot.findViewById(R.id.sdCardMsg);
             sdcardText.setText(getResources().getString(R.string.sdCardPathPortrait));
         }
@@ -111,11 +113,13 @@ public class SettingsActivity extends AppCompatActivity {
                 settingsEditor.commit();
                 phoneMemBtn.setChecked(true);
                 sdCardBtn.setChecked(false);
+                editSdCardPath.setClickable(false);
                 break;
             case R.id.sdCardbutton:
                 Log.d(TAG,"Save in sd card");
                 phoneMemBtn.setChecked(false);
                 sdCardBtn.setChecked(true);
+                editSdCardPath.setClickable(true);
                 if(!settingsPref.contains(Constants.SD_CARD_PATH)) {
                     openSdCardPath(view);
                 }
@@ -173,6 +177,18 @@ public class SettingsActivity extends AppCompatActivity {
                 }
                 break;
             case R.id.cancelSdCard:
+                if(settingsPref.contains(Constants.SD_CARD_PATH) && !settingsPref.getString(Constants.SD_CARD_PATH,"").equalsIgnoreCase("")){
+                    phoneMemBtn.setChecked(false);
+                    sdCardBtn.setChecked(true);
+                    settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM,true);
+                    settingsEditor.commit();
+                }
+                else{
+                    phoneMemBtn.setChecked(true);
+                    sdCardBtn.setChecked(false);
+                    settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM,false);
+                    settingsEditor.commit();
+                }
                 sdCardDialog.dismiss();
                 Log.d(TAG,"cancel sd card");
                 break;
