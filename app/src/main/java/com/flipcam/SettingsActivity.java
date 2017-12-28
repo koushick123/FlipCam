@@ -33,7 +33,8 @@ public class SettingsActivity extends AppCompatActivity {
     RadioButton phoneMemBtn;
     RadioButton sdCardBtn;
     Dialog sdCardDialog;
-    LinearLayout sdCardParent;
+    LinearLayout sdcardlayout;
+    TextView sdCardPathTMsg;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -45,8 +46,9 @@ public class SettingsActivity extends AppCompatActivity {
         greenArrow = (ImageView)findViewById(R.id.greenArrow);
         phoneMemBtn = (RadioButton)findViewById(R.id.phoneMemButton);
         sdCardBtn = (RadioButton)findViewById(R.id.sdCardbutton);
+        sdCardPathTMsg = (TextView)findViewById(R.id.sdcardpathmsg);
         sdCardDialog = new Dialog(this);
-        sdCardParent = (LinearLayout)findViewById(R.id.sdCardParent);
+        sdcardlayout = (LinearLayout)findViewById(R.id.sdcardlayout);
         reDrawPhoneMem();
         phoneMemText.setText(getResources().getString(R.string.phoneMemoryLimit, getResources().getInteger(R.integer.minimumMemoryWarning)));
         getSupportActionBar().setTitle(getResources().getString(R.string.settingTitle));
@@ -64,6 +66,13 @@ public class SettingsActivity extends AppCompatActivity {
                 phoneMemBtn.setChecked(false);
                 sdCardBtn.setChecked(true);
             }
+            if(settingsPref.contains(Constants.SD_CARD_PATH)) {
+                String sdcardpath = settingsPref.getString(Constants.SD_CARD_PATH, "");
+                showSDCardPath(sdcardpath);
+            }
+            else{
+                hideSDCardPath();
+            }
         }
         else{
             Log.d(TAG,"Phone memory NOT exists");
@@ -72,6 +81,26 @@ public class SettingsActivity extends AppCompatActivity {
         }
         layoutInflater = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         sdCardRoot = layoutInflater.inflate(R.layout.sd_card_location,null);
+    }
+
+    public void openSdCardPath(View view){
+        if(settingsPref.contains(Constants.SD_CARD_PATH)) {
+            ((EditText) sdCardRoot.findViewById(R.id.sdCardPathText)).setText(settingsPref.getString(Constants.SD_CARD_PATH,""));
+        }
+        Configuration config = getResources().getConfiguration();
+        if(config.orientation == Configuration.ORIENTATION_PORTRAIT) {
+            phoneMemBtn.setChecked(false);
+            sdCardBtn.setChecked(true);
+            TextView sdcardText = (TextView)sdCardRoot.findViewById(R.id.sdCardMsg);
+            sdcardText.setText(getResources().getString(R.string.sdCardPathPortrait));
+        }
+        else{
+            TextView sdcardText = (TextView)sdCardRoot.findViewById(R.id.sdCardMsg);
+            sdcardText.setText(getResources().getString(R.string.sdCardPathLandscape));
+        }
+        sdCardDialog.setContentView(sdCardRoot);
+        sdCardDialog.setCancelable(true);
+        sdCardDialog.show();
     }
 
     public void selectSaveMedia(View view){
@@ -87,9 +116,13 @@ public class SettingsActivity extends AppCompatActivity {
                 Log.d(TAG,"Save in sd card");
                 phoneMemBtn.setChecked(false);
                 sdCardBtn.setChecked(true);
-                sdCardDialog.setContentView(sdCardRoot);
-                sdCardDialog.setCancelable(true);
-                sdCardDialog.show();
+                if(!settingsPref.contains(Constants.SD_CARD_PATH)) {
+                    openSdCardPath(view);
+                }
+                else{
+                    settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM,false);
+                    settingsEditor.commit();
+                }
                 break;
         }
     }
@@ -100,36 +133,43 @@ public class SettingsActivity extends AppCompatActivity {
         switch (view.getId()){
             case R.id.okSdCard:
                 Log.d(TAG,"Checking if path is valid");
-                String path = ((EditText)sdCardRoot.findViewById(R.id.sdCardPathText)).getText().toString();
+                String path;
+                path = ((EditText) sdCardRoot.findViewById(R.id.sdCardPathText)).getText().toString();
                 Log.d(TAG,"Path = "+path);
                 File sdCard = new File(path);
-                if(!sdCard.exists()){
+                if(!sdCard.exists() || !sdCard.isDirectory()){
                     Toast.makeText(getApplicationContext(),getResources().getString(R.string.sdCardPathNotExist),Toast.LENGTH_SHORT).show();
                 }
                 else{
                     String fullPath;
-                    if(sdCard.getPath().endsWith("/")) {
-                        fullPath = sdCard.getPath() + getResources().getString(R.string.FC_ROOT);
-                    }
-                    else{
-                        fullPath = sdCard.getPath() + "/ "+ getResources().getString(R.string.FC_ROOT);
-                    }
-                    Log.d(TAG, "Full path = " +fullPath);
-                    File fc = new File(fullPath);
-                    if(fc.exists()) {
-                        Log.d(TAG, "Able to create FC");
-                        sdCardDialog.dismiss();
+                    Log.d(TAG,"Existing path = "+sdCard.getPath());
+                    if(!sdCard.getPath().contains(getResources().getString(R.string.app_name))) {
+                        if (sdCard.getPath().endsWith("/")) {
+                            String pathExcludeFrontSlash = sdCard.getPath().substring(0, sdCard.getPath().length() - 1);
+                            fullPath = pathExcludeFrontSlash + getResources().getString(R.string.FC_ROOT);
+                        } else {
+                            fullPath = sdCard.getPath() + getResources().getString(R.string.FC_ROOT);
+                        }
+                        Log.d(TAG, "Full path = " + fullPath);
+                        File fc = new File(fullPath);
+                        if (!fc.exists()) {
+                            fc.mkdir();
+                            Log.d(TAG, "Able to create FC");
+                        }
                         Toast.makeText(getApplicationContext(),getResources().getString(R.string.sdCardPathSaved),Toast.LENGTH_SHORT).show();
                         settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM,false);
+                        settingsEditor.putString(Constants.SD_CARD_PATH,fc.getPath());
                         settingsEditor.commit();
-                        TextView sdCardPath = new TextView(this);
-                        sdCardPath.setText(fc.getPath());
-                        sdCardPath.setTextColor(getResources().getColor(R.color.turqoise));
-                        LinearLayout.LayoutParams sdcardParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
-                        sdcardParams.setMargins(20,0,0,0);
-                        sdCardPath.setLayoutParams(sdcardParams);
-                        sdCardParent.addView(sdCardPath);
+                        showSDCardPath(fc.getPath());
                     }
+                    else{
+                        Toast.makeText(getApplicationContext(),getResources().getString(R.string.sdCardPathSaved),Toast.LENGTH_SHORT).show();
+                        settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM,false);
+                        settingsEditor.putString(Constants.SD_CARD_PATH,sdCard.getPath());
+                        settingsEditor.commit();
+                        showSDCardPath(sdCard.getPath());
+                    }
+                    sdCardDialog.dismiss();
                 }
                 break;
             case R.id.cancelSdCard:
@@ -137,6 +177,15 @@ public class SettingsActivity extends AppCompatActivity {
                 Log.d(TAG,"cancel sd card");
                 break;
         }
+    }
+
+    public void showSDCardPath(String path){
+        sdCardPathTMsg.setText(path);
+        sdcardlayout.setVisibility(View.VISIBLE);
+    }
+
+    public void hideSDCardPath(){
+        sdcardlayout.setVisibility(View.GONE);
     }
 
     public void reDrawPhoneMem(){
@@ -156,9 +205,23 @@ public class SettingsActivity extends AppCompatActivity {
         phoneMemText.setLayoutParams(layoutParams);
         phoneMemTextMsg.setLayoutParams(layoutParams);
     }
+
+    public void reDrawSDCardScreen(){
+        Configuration config = getResources().getConfiguration();
+        if(config.orientation == Configuration.ORIENTATION_PORTRAIT){
+            TextView sdcardText = (TextView)sdCardRoot.findViewById(R.id.sdCardMsg);
+            sdcardText.setText(getResources().getString(R.string.sdCardPathPortrait));
+        }
+        else{
+            TextView sdcardText = (TextView)sdCardRoot.findViewById(R.id.sdCardMsg);
+            sdcardText.setText(getResources().getString(R.string.sdCardPathLandscape));
+        }
+    }
+
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         reDrawPhoneMem();
+        reDrawSDCardScreen();
     }
 }

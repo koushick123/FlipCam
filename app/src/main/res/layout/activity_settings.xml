@@ -38,16 +38,16 @@
                 android:id="@+id/phoneMemButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginBottom="5dp"
                 android:layout_marginLeft="@dimen/headTextLeftMargin"
                 android:layout_marginTop="@dimen/headTextTopMargin"
                 android:layout_weight="1"
                 android:buttonTint="@color/turqoise"
                 android:checked="true"
+                android:onClick="selectSaveMedia"
                 android:text="@string/phoneMemory"
                 android:textColor="@color/turqoise"
-                android:textSize="@dimen/settingsSubText"
-                android:onClick="selectSaveMedia"
-                />
+                android:textSize="@dimen/settingsSubText" />
 
         </LinearLayout>
 
@@ -72,12 +72,42 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="@dimen/headTextLeftMargin"
+                android:layout_marginTop="5dp"
                 android:layout_weight="1"
                 android:buttonTint="@color/turqoise"
                 android:onClick="selectSaveMedia"
                 android:text="@string/sdCard"
                 android:textColor="@color/turqoise"
                 android:textSize="@dimen/settingsSubText" />
+
+            <LinearLayout
+                android:id="@+id/sdcardlayout"
+                android:layout_width="match_parent"
+                android:layout_height="36dp"
+                android:layout_marginLeft="@dimen/headTextLeftMargin"
+                android:layout_marginRight="@dimen/headTextLeftMargin"
+                android:layout_marginTop="10dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/sdcardpathmsg"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:layout_weight="0.79"
+                    android:text="TextView"
+                    android:textColor="@color/turqoise" />
+
+                <ImageView
+                    android:id="@+id/editSdCardPath"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.1"
+                    android:onClick="openSdCardPath"
+                    app:srcCompat="@drawable/ic_edit" />
+
+            </LinearLayout>
+
         </LinearLayout>
 
     </LinearLayout>

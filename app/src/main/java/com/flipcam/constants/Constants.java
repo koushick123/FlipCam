@@ -34,6 +34,7 @@ public class Constants
     public static final String FC_SETTINGS = "FlipCam_Settings";
     //Save Media
     public static final String SAVE_MEDIA_PHONE_MEM = "Save_Media_Phone_Mem";
+    public static final String SD_CARD_PATH = "SD_Card_Path";
     //Phone Memory Limit
     public static final String PHONE_MEMORY_LIMIT = "PhoneMemoryLimit";
     //Save to cloud
