@@ -80,5 +80,16 @@
     <string name="showMemConsumed">Show Memory Consumed For Video</string>
     <string name="showMemConsumedMsg">Show how much memory is being consumed by the current video recording, in the recording window.</string>
     <string name="resetAll">Reset All to Default</string>
+    <string name="sdCardLocation">SD CARD Location</string>
+    <string name="sdCardPath">Please enter the SD CARD location below, starting from root.\n\n
+        You can obtain this info by using File Manager (which can be downloaded from Play Store if you don\'t have one).\n\n
+        FlipCam will create a folder \'FlipCam\' inside that path and store all your Videos/Photos there.\n\n
+        SD Card Path:
+    </string>
+    <string name="sdCardPathHint">Path example : /storage/mnt/sdcard/</string>
     <string name="resetAllMsg">This will reset ALL FlipCam settings to their default values.</string>
+    <string name="okBtn">OK</string>
+    <string name="cancelBtn">Cancel</string>
+    <string name="sdCardPathNotExist">The SD Card Path does not exist or is invalid. Please try again.</string>
+    <string name="sdCardPathSaved">SD Card Path Saved.</string>
 </resources>

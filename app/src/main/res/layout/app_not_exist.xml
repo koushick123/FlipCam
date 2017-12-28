@@ -1,10 +1,9 @@
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/mediaControlColor"
+    android:background="@color/backColorDialog"
+    android:orientation="vertical"
     android:weightSum="1">
 
     <LinearLayout
@@ -29,7 +28,7 @@
             android:gravity="center"
             android:paddingLeft="10dp"
             android:text="@string/noWhatsapp"
-            android:textColor="@color/mediaControlColor"
+            android:textColor="@color/backColorDialog"
             android:textStyle="bold" />
 
         <ImageView

@@ -30,4 +30,15 @@ public class Constants
     public static final int RETRY_COUNT = 30;
     //Message for upload progress
     public static final int UPLOAD_PROGRESS = 1000;
+    //Settings prefs
+    public static final String FC_SETTINGS = "FlipCam_Settings";
+    //Save Media
+    public static final String SAVE_MEDIA_PHONE_MEM = "Save_Media_Phone_Mem";
+    //Phone Memory Limit
+    public static final String PHONE_MEMORY_LIMIT = "PhoneMemoryLimit";
+    //Save to cloud
+    public static final String SAVE_TO_GOOGLE_DRIVE = "SaveToDrive";
+    public static final String SAVE_TO_DROPBOX = "SaveToDropBox";
+    //Show memory consumed msg
+    public static final String SHOW_MEMORY_CONSUMED_MSG = "ShowMemoryConsumedText";
 }

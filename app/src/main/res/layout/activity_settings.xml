@@ -35,17 +35,19 @@
             android:orientation="horizontal">
 
             <RadioButton
-                android:id="@+id/phoneMem"
+                android:id="@+id/phoneMemButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="@dimen/headTextLeftMargin"
                 android:layout_marginTop="@dimen/headTextTopMargin"
                 android:layout_weight="1"
+                android:buttonTint="@color/turqoise"
                 android:checked="true"
                 android:text="@string/phoneMemory"
                 android:textColor="@color/turqoise"
                 android:textSize="@dimen/settingsSubText"
-                android:buttonTint="@color/turqoise" />
+                android:onClick="selectSaveMedia"
+                />
 
         </LinearLayout>
 
@@ -59,10 +61,11 @@
             android:orientation="horizontal"></LinearLayout>
 
         <LinearLayout
+            android:id="@+id/sdCardParent"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:orientation="horizontal">
+            android:orientation="vertical">
 
             <RadioButton
                 android:id="@+id/sdCardbutton"
@@ -70,10 +73,11 @@
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="@dimen/headTextLeftMargin"
                 android:layout_weight="1"
+                android:buttonTint="@color/turqoise"
+                android:onClick="selectSaveMedia"
                 android:text="@string/sdCard"
                 android:textColor="@color/turqoise"
-                android:textSize="@dimen/settingsSubText"
-                android:buttonTint="@color/turqoise" />
+                android:textSize="@dimen/settingsSubText" />
         </LinearLayout>
 
     </LinearLayout>

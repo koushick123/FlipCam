@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <integer name="minimumMemoryWarning">40</integer>
+    <integer name="phoneMemTextLeftMargin">20</integer>
+    <integer name="greenArrowRightMargin">60</integer>
+    <integer name="phoneMemTextWidthPortrait">523</integer>
+    <integer name="phoneMemTextWidthLandscape">760</integer>
 </resources>

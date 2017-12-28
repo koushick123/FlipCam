@@ -80,6 +80,7 @@
     //Text size for subtext
     <dimen name="settingsSubText">14sp</dimen>
     <dimen name="headTextLeftMargin">20dp</dimen>
+    <dimen name="phoneMemTextLeftMargin">17dp</dimen>
     <dimen name="headTextTopMargin">10dp</dimen>
     <dimen name="greenArrowWidth">40dp</dimen>
     <dimen name="greenArrowHeight">40dp</dimen>
