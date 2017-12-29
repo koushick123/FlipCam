@@ -5,4 +5,5 @@
     <integer name="greenArrowRightMargin">60</integer>
     <integer name="phoneMemTextWidthPortrait">523</integer>
     <integer name="phoneMemTextWidthLandscape">760</integer>
+    <integer name="slide_animation_duration">300</integer>
 </resources>

@@ -37,6 +37,8 @@ public class Constants
     public static final String SD_CARD_PATH = "SD_Card_Path";
     //Phone Memory Limit
     public static final String PHONE_MEMORY_LIMIT = "PhoneMemoryLimit";
+    public static final String PHONE_MEMORY_METRIC = "PhoneMemoryMetric";
+    public static final String PHONE_MEMORY_DISABLE = "PhoneMemoryDisable";
     //Save to cloud
     public static final String SAVE_TO_GOOGLE_DRIVE = "SaveToDrive";
     public static final String SAVE_TO_DROPBOX = "SaveToDropBox";

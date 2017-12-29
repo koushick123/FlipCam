@@ -129,7 +129,8 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="@dimen/headTextTopMargin"
         android:layout_marginTop="@dimen/headTextTopMargin"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:onClick="showMemoryConsumed">
 
         <LinearLayout
             android:id="@+id/phoneMemParentVert"

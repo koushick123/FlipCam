@@ -85,8 +85,10 @@
             android:description="@string/mediaService"
             android:exported="false" />
 
-        <activity android:name=".SettingsActivity"
-            android:configChanges="orientation|screenSize"></activity>
+        <activity
+            android:name=".SettingsActivity"
+            android:configChanges="orientation|screenSize" />
+        <activity android:name=".MemoryLimitActivity"></activity>
     </application>
 
 </manifest>

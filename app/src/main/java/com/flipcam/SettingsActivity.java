@@ -2,6 +2,7 @@ package com.flipcam;
 
 import android.app.Dialog;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.os.Bundle;
@@ -50,8 +51,7 @@ public class SettingsActivity extends AppCompatActivity {
         editSdCardPath = (ImageView)findViewById(R.id.editSdCardPath);
         sdCardDialog = new Dialog(this);
         sdcardlayout = (LinearLayout)findViewById(R.id.sdcardlayout);
-        //reDrawEditSdCard();
-        phoneMemText.setText(getResources().getString(R.string.phoneMemoryLimit, getResources().getInteger(R.integer.minimumMemoryWarning)));
+        phoneMemText.setText(getResources().getString(R.string.phoneMemoryLimit, getResources().getInteger(R.integer.minimumMemoryWarning), "MB"));
         getSupportActionBar().setTitle(getResources().getString(R.string.settingTitle));
         settingsPref = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
         settingsEditor = settingsPref.edit();
@@ -84,6 +84,32 @@ public class SettingsActivity extends AppCompatActivity {
         }
         layoutInflater = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         sdCardRoot = layoutInflater.inflate(R.layout.sd_card_location,null);
+        updatePhoneMemoryText();
+    }
+
+    public void updatePhoneMemoryText(){
+        if(settingsPref.contains(Constants.PHONE_MEMORY_DISABLE)){
+            if(!settingsPref.getBoolean(Constants.PHONE_MEMORY_DISABLE, false)){
+                String memoryLimit = settingsPref.getString(Constants.PHONE_MEMORY_LIMIT, getResources().getInteger(R.integer.minimumMemoryWarning) + "");
+                String memoryMetric = settingsPref.getString(Constants.PHONE_MEMORY_METRIC, "MB");
+                phoneMemText.setText(getResources().getString(R.string.phoneMemoryLimit, Integer.parseInt(memoryLimit), memoryMetric));
+            }
+            else{
+                phoneMemText.setText(getResources().getString(R.string.phoneMemoryLimitDisabled));
+            }
+        }
+        else{
+            String memoryLimit = settingsPref.getString(Constants.PHONE_MEMORY_LIMIT, getResources().getInteger(R.integer.minimumMemoryWarning) + "");
+            String memoryMetric = settingsPref.getString(Constants.PHONE_MEMORY_METRIC, "MB");
+            phoneMemText.setText(getResources().getString(R.string.phoneMemoryLimit, Integer.parseInt(memoryLimit), memoryMetric));
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.d(TAG,"onResume");
+        updatePhoneMemoryText();
     }
 
     public void openSdCardPath(View view){
@@ -215,10 +241,14 @@ public class SettingsActivity extends AppCompatActivity {
         }
     }
 
+    public void showMemoryConsumed(View view){
+        Intent memoryAct = new Intent(SettingsActivity.this, MemoryLimitActivity.class);
+        startActivity(memoryAct);
+        overridePendingTransition(R.anim.slide_from_right,R.anim.slide_to_left);
+    }
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        //reDrawEditSdCard();
         reDrawSDCardScreen();
     }
 }

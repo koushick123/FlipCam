@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/backColorDialog"
+    android:gravity="top"
+    android:orientation="vertical"
+    tools:context="com.flipcam.MemoryLimitActivity">
+
+    <TextView
+        android:id="@+id/textView10"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp"
+        android:layout_marginLeft="@dimen/headTextLeftMargin"
+        android:layout_marginRight="@dimen/headTextLeftMargin"
+        android:layout_marginTop="@dimen/headTextLeftMargin"
+        android:text="@string/memoryThreasholdTitle"
+        android:textColor="@color/turqoise"
+        android:textSize="16sp" />
+
+    <TextView
+        android:id="@+id/thresholdText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp"
+        android:layout_marginLeft="@dimen/headTextLeftMargin"
+        android:layout_marginRight="@dimen/headTextLeftMargin"
+        android:text="@string/memoryThreshold"
+        android:textColor="@color/turqoise"
+        android:textSize="13sp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="20dp"
+        android:orientation="horizontal"
+        android:weightSum="1">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight=".5"
+            android:orientation="vertical">
+
+            <EditText
+                android:id="@+id/memoryThresholdText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="@dimen/headTextLeftMargin"
+                android:backgroundTint="@color/turqoise"
+                android:hint="@string/validValuesThreshold"
+                android:inputType="number"
+                android:textColor="@color/turqoise"
+                android:textColorHint="@color/turqoiseLight"
+                android:textColorLink="@color/turqoise"
+                android:textCursorDrawable="@null" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="@dimen/headTextLeftMargin"
+            android:layout_weight=".5"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/mbButton"
+                android:layout_width="wrap_content"
+                android:layout_height="60dp"
+                android:layout_weight="0.98"
+                android:checked="true"
+                android:onClick="selectMB"
+                android:text="MB"
+                android:textColor="@color/turqoise"
+                android:textColorLink="@color/turqoise"
+                app:buttonTint="@color/turqoise" />
+
+            <RadioButton
+                android:id="@+id/gbButton"
+                android:layout_width="wrap_content"
+                android:layout_height="60dp"
+                android:layout_weight="1"
+                android:onClick="selectGB"
+                android:text="GB"
+                android:textColor="@color/turqoise"
+                app:buttonTint="@color/turqoise" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <CheckBox
+        android:id="@+id/disablethresholdCheck"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="@dimen/headTextLeftMargin"
+        android:layout_marginRight="@dimen/headTextLeftMargin"
+        android:layout_weight="0.02"
+        android:checked="false"
+        android:gravity="top"
+        android:paddingTop="7dp"
+        android:text="@string/disableThreshold"
+        android:textColor="@color/turqoise"
+        android:onClick="disableThresholdCheck"
+        app:buttonTint="@color/turqoise" />
+
+</LinearLayout>

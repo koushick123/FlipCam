@@ -72,7 +72,8 @@
     <string name="saveMedia">Save Media in</string>
     <string name="phoneMemory">Phone Memory</string>
     <string name="sdCard">SD Card</string>
-    <string name="phoneMemoryLimit">Phone Memory Limit Warning (%1$d MB)</string>
+    <string name="phoneMemoryLimit"><font size="18">Phone Memory Limit Warning (%1$d %2$s)</font></string>
+    <string name="phoneMemoryLimitDisabled"><font size="14">Phone Memory Limit Warning Disabled.\nClick here to enable.</font></string>
     <string name="phoneMemoryLimitMsg">The amount of phone memory below which you would like a warning.</string>
     <string name="saveToCloud">Save To Cloud</string>
     <string name="googleDrive">Google Drive</string>
@@ -97,4 +98,11 @@
     <string name="cancelBtn">Cancel</string>
     <string name="sdCardPathNotExist">The SD Card Path does not exist or is invalid. Please try again.</string>
     <string name="sdCardPathSaved">SD Card Path Saved.</string>
+    <string name="phoneMemoryLimitHeading">Phone Memory Limit Warning</string>
+    <string name="memoryThreshold">If the amount of available phone memory is below this limit, FlipCam will give you a warning message.</string>
+    <string name="memoryThreasholdTitle">Phone Memory Threshold</string>
+    <string name="validValuesThreshold"><font size="12">Threshold value should be\n greater than 0</font></string>
+    <string name="validThresholdMsg">Please enter a number greater than 0</string>
+    <string name="thresholdSaved">Phone memory threshold set to %1$s %2$s.</string>
+    <string name="disableThreshold">Disable Threshold Check</string>
 </resources>
