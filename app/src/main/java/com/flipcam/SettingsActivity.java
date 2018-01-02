@@ -71,19 +71,19 @@ public class SettingsActivity extends AppCompatActivity {
                 sdCardBtn.setChecked(true);
                 editSdCardPath.setClickable(true);
             }
-            Log.d(TAG,"SD Card Path onCreate = "+settingsPref.getString(Constants.SD_CARD_PATH,""));
-            if(settingsPref.contains(Constants.SD_CARD_PATH) && !settingsPref.getString(Constants.SD_CARD_PATH,"").equals("")) {
-                String sdcardpath = settingsPref.getString(Constants.SD_CARD_PATH, "");
-                showSDCardPath(sdcardpath);
-            }
-            else{
-                hideSDCardPath();
-            }
         }
         else{
             Log.d(TAG,"Phone memory NOT exists");
             phoneMemBtn.setChecked(true);
             sdCardBtn.setChecked(false);
+        }
+        Log.d(TAG,"SD Card Path onCreate = "+settingsPref.getString(Constants.SD_CARD_PATH,""));
+        if(settingsPref.contains(Constants.SD_CARD_PATH) && !settingsPref.getString(Constants.SD_CARD_PATH,"").equals("")) {
+            String sdcardpath = settingsPref.getString(Constants.SD_CARD_PATH, "");
+            showSDCardPath(sdcardpath);
+        }
+        else{
+            hideSDCardPath();
         }
         layoutInflater = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         sdCardRoot = layoutInflater.inflate(R.layout.sd_card_location,null);

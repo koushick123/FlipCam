@@ -8,7 +8,6 @@ import android.os.StatFs;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.RadioButton;
@@ -81,10 +80,6 @@ public class MemoryLimitActivity extends AppCompatActivity {
             memoryThresholdText.setText(getResources().getInteger(R.integer.minimumMemoryWarning) + "");
             disableCheck = false;
         }
-        if(!disablethresholdCheck.isChecked()) {
-            memoryThresholdText.requestFocus();
-            showSoftKeyboard(memoryThresholdText);
-        }
     }
 
     public void enableThresholdElements(){
@@ -130,15 +125,6 @@ public class MemoryLimitActivity extends AppCompatActivity {
         }
     }
 
-    public void showSoftKeyboard(View view) {
-        if (view.requestFocus()) {
-            Log.d(TAG,"showSoftKeyboard");
-            InputMethodManager imm = (InputMethodManager)
-                    getSystemService(Context.INPUT_METHOD_SERVICE);
-            imm.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT);
-        }
-    }
-
     public void disableThresholdCheck(View view){
         if(disablethresholdCheck.isChecked()){
             disableThresholdElements();
@@ -157,14 +143,14 @@ public class MemoryLimitActivity extends AppCompatActivity {
 
         if(availableMem > GIGA_BYTE){
             double gbs = (availableMem / GIGA_BYTE);
-            gbs = (Math.floor(gbs * 100.0))/100.0;
+            gbs = (Math.ceil(gbs * 100.0))/100.0;
             Log.d(TAG,"GBs = "+gbs);
             memory = gbs+"";
             memorymetric = "GB";
         }
         else{
             double mbs = (availableMem / MEGA_BYTE);
-            mbs = (Math.floor(mbs * 100.0))/100.0;
+            mbs = (Math.ceil(mbs * 100.0))/100.0;
             Log.d(TAG,"MBs = "+mbs);
             memory = mbs+"";
             memorymetric = "MB";
