@@ -16,6 +16,9 @@ import android.widget.Toast;
 
 import com.flipcam.constants.Constants;
 
+import static com.flipcam.constants.Constants.GIGA_BYTE;
+import static com.flipcam.constants.Constants.MEGA_BYTE;
+
 public class MemoryLimitActivity extends AppCompatActivity {
 
     public static final String TAG = "MemoryLimitActivity";
@@ -79,6 +82,7 @@ public class MemoryLimitActivity extends AppCompatActivity {
             disableCheck = false;
         }
         if(!disablethresholdCheck.isChecked()) {
+            memoryThresholdText.requestFocus();
             showSoftKeyboard(memoryThresholdText);
         }
     }
@@ -128,6 +132,7 @@ public class MemoryLimitActivity extends AppCompatActivity {
 
     public void showSoftKeyboard(View view) {
         if (view.requestFocus()) {
+            Log.d(TAG,"showSoftKeyboard");
             InputMethodManager imm = (InputMethodManager)
                     getSystemService(Context.INPUT_METHOD_SERVICE);
             imm.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT);
@@ -142,12 +147,44 @@ public class MemoryLimitActivity extends AppCompatActivity {
             enableThresholdElements();
         }
     }
+    String memorymetric;
+    String memory;
 
-    public void calculateIfThresholdExceedsInternalMemory(){
+    public boolean calculateIfThresholdIsWithinInternalMemory(){
         StatFs stat = new StatFs(Environment.getDataDirectory().getPath());
-        Log.d(TAG,"Free size = "+stat.getFreeBytes());
-        Log.d(TAG,"Total size = "+stat.getTotalBytes());
         Log.d(TAG,"Available size = "+stat.getAvailableBytes());
+        long availableMem = stat.getAvailableBytes();
+
+        if(availableMem > GIGA_BYTE){
+            double gbs = (availableMem / GIGA_BYTE);
+            gbs = (Math.floor(gbs * 100.0))/100.0;
+            Log.d(TAG,"GBs = "+gbs);
+            memory = gbs+"";
+            memorymetric = "GB";
+        }
+        else{
+            double mbs = (availableMem / MEGA_BYTE);
+            mbs = (Math.floor(mbs * 100.0))/100.0;
+            Log.d(TAG,"MBs = "+mbs);
+            memory = mbs+"";
+            memorymetric = "MB";
+        }
+        int threshold = Integer.parseInt(memoryThresholdText.getText().toString());
+        long thresholdMem;
+        if(mbButton.isChecked()){
+            thresholdMem = (long)MEGA_BYTE * threshold;
+            Log.d(TAG,"thresholdMem MB = "+thresholdMem );
+        }
+        else{
+            thresholdMem = (long)GIGA_BYTE * threshold;
+            Log.d(TAG,"thresholdMem GB = "+thresholdMem );
+        }
+        if(thresholdMem > stat.getAvailableBytes()){
+            return false;
+        }
+        else{
+            return true;
+        }
     }
 
     @Override
@@ -160,17 +197,19 @@ public class MemoryLimitActivity extends AppCompatActivity {
             settingsEditor.commit();
         } else {
             if (validateThreshold()) {
-                super.onBackPressed();
-                calculateIfThresholdExceedsInternalMemory();
-                settingsEditor.putString(Constants.PHONE_MEMORY_LIMIT, memoryThresholdText.getText().toString());
-                settingsEditor.putString(Constants.PHONE_MEMORY_METRIC, mbSelect ? "MB" : "GB");
-                settingsEditor.putBoolean(Constants.PHONE_MEMORY_DISABLE, false);
-                settingsEditor.commit();
-                /*Intent settingsAct = new Intent(this, SettingsActivity.class);
-                startActivity(settingsAct);*/
-                overridePendingTransition(R.anim.slide_from_left, R.anim.slide_to_right);
-                Toast.makeText(getApplicationContext(), getResources().getString(R.string.thresholdSaved, memoryThresholdText.getText().toString(), mbSelect ? "MB" : "GB"),
-                        Toast.LENGTH_SHORT).show();
+                if (calculateIfThresholdIsWithinInternalMemory()) {
+                    super.onBackPressed();
+                    settingsEditor.putString(Constants.PHONE_MEMORY_LIMIT, memoryThresholdText.getText().toString());
+                    settingsEditor.putString(Constants.PHONE_MEMORY_METRIC, mbSelect ? "MB" : "GB");
+                    settingsEditor.putBoolean(Constants.PHONE_MEMORY_DISABLE, false);
+                    settingsEditor.commit();
+                    overridePendingTransition(R.anim.slide_from_left, R.anim.slide_to_right);
+                    Toast.makeText(getApplicationContext(), getResources().getString(R.string.thresholdSaved, memoryThresholdText.getText().toString(), mbSelect ? "MB" : "GB"),
+                            Toast.LENGTH_SHORT).show();
+                }
+                else{
+                    Toast.makeText(getApplicationContext(), getResources().getString(R.string.thresholdExceeds,memory,memorymetric), Toast.LENGTH_LONG).show();
+                }
             } else {
                 Toast.makeText(getApplicationContext(), getResources().getString(R.string.validThresholdMsg), Toast.LENGTH_SHORT).show();
             }

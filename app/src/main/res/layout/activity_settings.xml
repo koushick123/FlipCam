@@ -97,7 +97,6 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="5dp"
                     android:layout_weight=".8"
-                    android:text="TextView"
                     android:textColor="@color/turqoise" />
 
                 <ImageView

@@ -21,6 +21,8 @@ import com.flipcam.constants.Constants;
 
 import java.io.File;
 
+import static com.flipcam.R.id.sdcardpathmsg;
+
 public class SettingsActivity extends AppCompatActivity {
 
     public static final String TAG = "SettingsActivity";
@@ -47,7 +49,7 @@ public class SettingsActivity extends AppCompatActivity {
         greenArrow = (ImageView)findViewById(R.id.greenArrow);
         phoneMemBtn = (RadioButton)findViewById(R.id.phoneMemButton);
         sdCardBtn = (RadioButton)findViewById(R.id.sdCardbutton);
-        sdCardPathMsg = (TextView)findViewById(R.id.sdcardpathmsg);
+        sdCardPathMsg = (TextView)findViewById(sdcardpathmsg);
         editSdCardPath = (ImageView)findViewById(R.id.editSdCardPath);
         sdCardDialog = new Dialog(this);
         sdcardlayout = (LinearLayout)findViewById(R.id.sdcardlayout);
@@ -69,7 +71,8 @@ public class SettingsActivity extends AppCompatActivity {
                 sdCardBtn.setChecked(true);
                 editSdCardPath.setClickable(true);
             }
-            if(settingsPref.contains(Constants.SD_CARD_PATH)) {
+            Log.d(TAG,"SD Card Path onCreate = "+settingsPref.getString(Constants.SD_CARD_PATH,""));
+            if(settingsPref.contains(Constants.SD_CARD_PATH) && !settingsPref.getString(Constants.SD_CARD_PATH,"").equals("")) {
                 String sdcardpath = settingsPref.getString(Constants.SD_CARD_PATH, "");
                 showSDCardPath(sdcardpath);
             }
@@ -126,7 +129,7 @@ public class SettingsActivity extends AppCompatActivity {
             sdcardText.setText(getResources().getString(R.string.sdCardPathLandscape));
         }
         sdCardDialog.setContentView(sdCardRoot);
-        sdCardDialog.setCancelable(true);
+        sdCardDialog.setCancelable(false);
         sdCardDialog.show();
     }
 
@@ -155,6 +158,7 @@ public class SettingsActivity extends AppCompatActivity {
                 break;
         }
     }
+
     LayoutInflater layoutInflater;
     View sdCardRoot;
 
@@ -202,16 +206,17 @@ public class SettingsActivity extends AppCompatActivity {
                 }
                 break;
             case R.id.cancelSdCard:
+                Log.d(TAG,"SD Card Path = "+settingsPref.getString(Constants.SD_CARD_PATH,""));
                 if(settingsPref.contains(Constants.SD_CARD_PATH) && !settingsPref.getString(Constants.SD_CARD_PATH,"").equalsIgnoreCase("")){
                     phoneMemBtn.setChecked(false);
                     sdCardBtn.setChecked(true);
-                    settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM,true);
+                    settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM,false);
                     settingsEditor.commit();
                 }
                 else{
                     phoneMemBtn.setChecked(true);
                     sdCardBtn.setChecked(false);
-                    settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM,false);
+                    settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM,true);
                     settingsEditor.commit();
                 }
                 sdCardDialog.dismiss();
