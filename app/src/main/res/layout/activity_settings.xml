@@ -225,7 +225,9 @@
             android:text="@string/googleDrive"
             android:textColor="@color/turqoise"
             android:textColorLink="@color/turqoise"
-            android:thumbTint="@color/turqoise" />
+            android:thumbTint="@color/turqoise"
+            android:onClick="saveToCloudDrive"
+            />
     </LinearLayout>
 
     <LinearLayout

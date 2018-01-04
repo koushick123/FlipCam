@@ -37,7 +37,8 @@ dependencies {
     compile files('libs/dropbox-android-sdk-1.6.3.jar')
     compile files('libs/json_simple-1.1.jar')
     compile 'com.android.support:appcompat-v7:25.3.1'
-    compile 'com.google.android.gms:play-services-drive:11.0.2'
+    compile 'com.google.android.gms:play-services-auth:11.6.0'
+    compile 'com.google.android.gms:play-services-drive:11.6.0'
     compile 'com.android.support:support-v4:25.3.1'
     compile 'com.android.support.constraint:constraint-layout:1.0.0-alpha6'
     compile 'com.github.bumptech.glide:glide:4.3.1'

@@ -28,7 +28,7 @@
     <string name="deleteMessage">Do you want to delete the Photo/Video?</string>
     <string name="noConnectionMessage">There seems to be no Internet Connection. Please check your connection, or enable Wi-Fi and try again.</string>
     <string name="okToDelete">OK</string>
-    <string name="cancelToDelete">Cancel</string>
+    <string name="cancelToDelete">CANCEL</string>
     <string name="shareTitle">Share Media</string>
     <string name="shareFacebook">Upload to Facebook</string>
     <string name="noConnectionTitle">Connection Failure</string>
@@ -75,7 +75,7 @@
     <string name="phoneMemoryLimit"><font size="18">Phone Memory Limit Warning (%1$d %2$s)</font></string>
     <string name="phoneMemoryLimitDisabled"><font size="14">Phone Memory Limit Warning Disabled.\nClick here to enable.</font></string>
     <string name="phoneMemoryLimitMsg">The amount of phone memory below which you would like a warning.</string>
-    <string name="saveToCloud">Save To Cloud</string>
+    <string name="saveToCloud">Auto Save To Cloud</string>
     <string name="googleDrive">Google Drive</string>
     <string name="dropbox">Dropbox</string>
     <string name="showMemConsumed">Show Memory Consumed For Video</string>
@@ -95,7 +95,7 @@
     <string name="sdCardPathHint">Path example : /storage/mnt/sdcard/</string>
     <string name="resetAllMsg">This will reset ALL FlipCam settings to their default values.</string>
     <string name="okBtn">OK</string>
-    <string name="cancelBtn">Cancel</string>
+    <string name="cancelBtn">CANCEL</string>
     <string name="sdCardPathNotExist">The SD Card Path does not exist or is invalid. Please try again.</string>
     <string name="sdCardPathSaved">SD Card Path Saved.</string>
     <string name="phoneMemoryLimitHeading">Phone Memory Limit Warning</string>
@@ -107,4 +107,14 @@
     <string name="thresholdSaved">Phone memory threshold set to %1$s %2$s.</string>
     <string name="disableThreshold">Disable Threshold Check</string>
     <string name="thresholdExceeds">The threshold entered is the same or more than the internal storage (%1$s %2$s) of your phone. Please enter a lower value.</string>
+    <string name="saveToCloudTitle">Auto Save to %1$s</string>
+    <string name="continuesignin">CONTINUE</string>
+    <string name="notnowsignin">NOT NOW</string>
+    <string name="signinmsg">This option will auto save your photo/video from now on onto %1$s.\nYou would need to sign in for this.</string>
+    <string name="signinfail">Sign In failed either due to connection issue or user cancelled it.</string>
+    <string name="signoutcloud">Signed out of %1$s</string>
+    <string name="uploadFolder">Give a name for the folder which will be used to keep all FlipCam photos/videos in %1$s.</string>
+    <string name="uploadFolderTitle">Upload Folder in %1$s</string>
+    <string name="createUploadFolder">CREATE</string>
+    <string name="cancelUploadFolder">CANCEL</string>
 </resources>

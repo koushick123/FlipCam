@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -14,16 +15,34 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.flipcam.constants.Constants;
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.common.api.Scope;
+import com.google.android.gms.drive.Drive;
+import com.google.android.gms.drive.DriveClient;
+import com.google.android.gms.drive.DriveFolder;
+import com.google.android.gms.drive.DriveId;
+import com.google.android.gms.drive.DriveResourceClient;
+import com.google.android.gms.drive.MetadataChangeSet;
+import com.google.android.gms.drive.OpenFileActivityOptions;
+import com.google.android.gms.tasks.Continuation;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.TaskCompletionSource;
 
 import java.io.File;
+import java.util.HashSet;
+import java.util.Set;
 
-import static com.flipcam.R.id.sdcardpathmsg;
-
-public class SettingsActivity extends AppCompatActivity {
+public class SettingsActivity extends AppCompatActivity{
 
     public static final String TAG = "SettingsActivity";
     LinearLayout phoneMemParentVert;
@@ -38,6 +57,29 @@ public class SettingsActivity extends AppCompatActivity {
     LinearLayout sdcardlayout;
     TextView sdCardPathMsg;
     ImageView editSdCardPath;
+    LayoutInflater layoutInflater;
+    View sdCardRoot;
+    View saveToCloudRoot;
+    Switch switchOnDrive;
+    Switch switchOnDropbox;
+    Dialog saveToCloud;
+    TextView savetocloudtitle;
+    TextView savetocloudmsg;
+    DriveClient mDriveClient;
+    DriveResourceClient mDriveResourceClient;
+    static final int REQUEST_CODE_SIGN_IN = 0;
+    static final int REQUEST_CODE_OPEN_ITEM = 1;
+    TaskCompletionSource<DriveId> mOpenItemTaskSource;
+    GoogleSignInOptions signInOptions;
+    GoogleSignInClient googleSignInClient;
+    boolean signedInDrive = false;
+    boolean signInDropbox = false;
+    Dialog cloudUpload;
+    View cloudUploadRoot;
+    TextView uploadFolderTitle;
+    TextView uploadFolderMsg;
+    int cloud = 0; //Default to Google Drive. 1 for Dropbox.
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -49,9 +91,10 @@ public class SettingsActivity extends AppCompatActivity {
         greenArrow = (ImageView)findViewById(R.id.greenArrow);
         phoneMemBtn = (RadioButton)findViewById(R.id.phoneMemButton);
         sdCardBtn = (RadioButton)findViewById(R.id.sdCardbutton);
-        sdCardPathMsg = (TextView)findViewById(sdcardpathmsg);
+        sdCardPathMsg = (TextView)findViewById(R.id.sdcardpathmsg);
         editSdCardPath = (ImageView)findViewById(R.id.editSdCardPath);
-        sdCardDialog = new Dialog(this);
+        switchOnDropbox = (Switch)findViewById(R.id.switchOnDropbox);
+        switchOnDrive = (Switch)findViewById(R.id.switchOnDrive);
         sdcardlayout = (LinearLayout)findViewById(R.id.sdcardlayout);
         phoneMemText.setText(getResources().getString(R.string.phoneMemoryLimit, getResources().getInteger(R.integer.minimumMemoryWarning), "MB"));
         getSupportActionBar().setTitle(getResources().getString(R.string.settingTitle));
@@ -87,6 +130,8 @@ public class SettingsActivity extends AppCompatActivity {
         }
         layoutInflater = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         sdCardRoot = layoutInflater.inflate(R.layout.sd_card_location,null);
+        saveToCloudRoot = layoutInflater.inflate(R.layout.save_to_cloud,null);
+        cloudUploadRoot = layoutInflater.inflate(R.layout.cloud_upload_folder,null);
         updatePhoneMemoryText();
     }
 
@@ -116,6 +161,7 @@ public class SettingsActivity extends AppCompatActivity {
     }
 
     public void openSdCardPath(View view){
+        sdCardDialog = new Dialog(this);
         if(settingsPref.contains(Constants.SD_CARD_PATH)) {
             ((EditText) sdCardRoot.findViewById(R.id.sdCardPathText)).setText(settingsPref.getString(Constants.SD_CARD_PATH,""));
         }
@@ -158,9 +204,6 @@ public class SettingsActivity extends AppCompatActivity {
                 break;
         }
     }
-
-    LayoutInflater layoutInflater;
-    View sdCardRoot;
 
     public void saveSdCardPath(View view){
         switch (view.getId()){
@@ -251,6 +294,168 @@ public class SettingsActivity extends AppCompatActivity {
         startActivity(memoryAct);
         overridePendingTransition(R.anim.slide_from_right,R.anim.slide_to_left);
     }
+
+    public void saveToCloudDrive(View view) {
+        saveToCloud = new Dialog(this);
+        if (switchOnDrive.isChecked()) {
+            cloud = 0;
+            savetocloudtitle = (TextView)saveToCloudRoot.findViewById(R.id.savetocloudtitle);
+            savetocloudtitle.setText(getResources().getString(R.string.saveToCloudTitle, getResources().getString(R.string.googleDrive)));
+            savetocloudmsg = (TextView)saveToCloudRoot.findViewById(R.id.savetocloudmsg);
+            savetocloudmsg.setText(getResources().getString(R.string.signinmsg, getResources().getString(R.string.googleDrive)));
+            saveToCloud.setContentView(saveToCloudRoot);
+            saveToCloud.setCancelable(false);
+            saveToCloud.show();
+        }
+        else{
+            if(signedInDrive) {
+                googleSignInClient.signOut();
+                Toast.makeText(getApplicationContext(), getResources().getString(R.string.signoutcloud, getResources().getString(R.string.googleDrive)), Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    public void signInToCloud(View view){
+        switch (view.getId()){
+            case R.id.continueSignIn:
+                saveToCloud.dismiss();
+                if(cloud == 0){
+                    //Sign in to Google Drive
+                    Set<Scope> requiredScopes = new HashSet<>(2);
+                    requiredScopes.add(Drive.SCOPE_FILE);
+                    requiredScopes.add(Drive.SCOPE_APPFOLDER);
+                    GoogleSignInAccount signInAccount = GoogleSignIn.getLastSignedInAccount(this);
+                    if(signInAccount != null && signInAccount.getGrantedScopes().containsAll(requiredScopes)){
+                        getDriveClient(signInAccount);
+                    }
+                    else{
+                        signInOptions =
+                                new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                                        .requestScopes(Drive.SCOPE_FILE)
+                                        .requestScopes(Drive.SCOPE_APPFOLDER)
+                                        .build();
+                        googleSignInClient = GoogleSignIn.getClient(this, signInOptions);
+                        startActivityForResult(googleSignInClient.getSignInIntent(), REQUEST_CODE_SIGN_IN);
+                    }
+                }
+                else{
+                    //Sign in to Dropbox
+                }
+                break;
+            case R.id.cancelSignIn:
+                saveToCloud.dismiss();
+                switchOnDrive.setChecked(false);
+                break;
+            }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        switch (requestCode) {
+            case REQUEST_CODE_SIGN_IN:
+                if (resultCode != RESULT_OK) {
+                    //Sign in failed due to connection problem or user cancelled it.
+                    Log.d(TAG, "Sign-in failed.");
+                    Toast.makeText(getApplicationContext(),getResources().getString(R.string.signinfail),Toast.LENGTH_LONG).show();
+                    switchOnDrive.setChecked(false);
+                    signedInDrive = false;
+                    return;
+                }
+
+                Task<GoogleSignInAccount> getAccountTask = GoogleSignIn.getSignedInAccountFromIntent(data);
+                if (getAccountTask.isSuccessful()) {
+                    getDriveClient(getAccountTask.getResult());
+                    signedInDrive = true;
+                } else {
+                    Log.e(TAG, "Sign-in failed.");
+                    Toast.makeText(getApplicationContext(),getResources().getString(R.string.signinfail),Toast.LENGTH_LONG).show();
+                    switchOnDrive.setChecked(false);
+                    signedInDrive = false;
+                }
+                break;
+            case REQUEST_CODE_OPEN_ITEM:
+                if (resultCode == RESULT_OK) {
+                    DriveId driveId = data.getParcelableExtra(OpenFileActivityOptions.EXTRA_RESPONSE_DRIVE_ID);
+                    mOpenItemTaskSource.setResult(driveId);
+                } else {
+                    mOpenItemTaskSource.setException(new RuntimeException("Unable to open file"));
+                }
+                break;
+        }
+        super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    private void getDriveClient(GoogleSignInAccount signInAccount) {
+        mDriveClient = Drive.getDriveClient(getApplicationContext(), signInAccount);
+        mDriveResourceClient = Drive.getDriveResourceClient(getApplicationContext(), signInAccount);
+        Log.d(TAG, "Sign-in SUCCESS.");
+    }
+
+    EditText folderNameText;
+    public void createUploadFolder(){
+        cloudUpload = new Dialog(this);
+        uploadFolderMsg = (TextView)cloudUploadRoot.findViewById(R.id.uploadFolderMsg);
+        uploadFolderTitle = (TextView)cloudUploadRoot.findViewById(R.id.uploadFolderTitle);
+        if(cloud == 0) {
+            uploadFolderMsg.setText(getResources().getString(R.string.uploadFolder, getResources().getString(R.string.googleDrive)));
+            uploadFolderTitle.setText(getResources().getString(R.string.uploadFolderTitle, getResources().getString(R.string.googleDrive)));
+        }
+        cloudUpload.setContentView(cloudUploadRoot);
+        cloudUpload.setCancelable(false);
+        cloudUpload.show();
+    }
+
+    private boolean validateFolderName(){
+        String folderName = ((EditText)cloudUploadRoot.findViewById(R.id.folderNameText)).getText().toString();
+        //if(folderName.trim().equals("") || folderName.)
+        return true;
+    }
+
+    public void uploadFolder(View view) {
+        switch (view.getId()) {
+            case R.id.createFolder:
+                cloudUpload.dismiss();
+                if(validateFolderName()) {
+                    mDriveResourceClient
+                            .getRootFolder()
+                            .continueWithTask(new Continuation<DriveFolder, Task<DriveFolder>>() {
+                                @Override
+                                public Task<DriveFolder> then(@NonNull Task<DriveFolder> task)
+                                        throws Exception {
+                                    DriveFolder parentFolder = task.getResult();
+                                    MetadataChangeSet changeSet = new MetadataChangeSet.Builder()
+                                            .setTitle("")
+                                            .setMimeType(DriveFolder.MIME_TYPE)
+                                            .setStarred(true)
+                                            .build();
+                                    return mDriveResourceClient.createFolder(parentFolder, changeSet);
+                                }
+                            })
+                            .addOnSuccessListener(this,
+                                    new OnSuccessListener<DriveFolder>() {
+                                        @Override
+                                        public void onSuccess(DriveFolder driveFolder) {
+
+                                        }
+                                    })
+                            .addOnFailureListener(this, new OnFailureListener() {
+                                @Override
+                                public void onFailure(@NonNull Exception e) {
+                                    Log.d(TAG, "Unable to create file", e);
+
+                                }
+                            });
+                }
+                break;
+            case R.id.cancelFolder:
+                cloudUpload.dismiss();
+                Toast.makeText(getApplicationContext(),getResources().getString(R.string.signinfail),Toast.LENGTH_LONG).show();
+                signedInDrive = false;
+                switchOnDrive.setChecked(false);
+        }
+    }
+
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
