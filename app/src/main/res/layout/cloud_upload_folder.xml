@@ -72,7 +72,7 @@
                 android:layout_marginRight="10dp"
                 android:layout_weight="1"
                 android:text="@string/createUploadFolder"
-                android:onClick="signInToCloud"/>
+                android:onClick="uploadFolder"/>
 
             <Button
                 android:id="@+id/cancelFolder"
@@ -82,7 +82,7 @@
                 android:layout_marginRight="20dp"
                 android:layout_weight="1"
                 android:text="@string/cancelUploadFolder"
-                android:onClick="signInToCloud"/>
+                android:onClick="uploadFolder"/>
         </LinearLayout>
     </LinearLayout>
 </ScrollView>

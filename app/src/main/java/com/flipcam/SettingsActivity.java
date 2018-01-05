@@ -41,6 +41,7 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import java.io.File;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 public class SettingsActivity extends AppCompatActivity{
 
@@ -132,6 +133,10 @@ public class SettingsActivity extends AppCompatActivity{
         sdCardRoot = layoutInflater.inflate(R.layout.sd_card_location,null);
         saveToCloudRoot = layoutInflater.inflate(R.layout.save_to_cloud,null);
         cloudUploadRoot = layoutInflater.inflate(R.layout.cloud_upload_folder,null);
+        sdCardDialog = new Dialog(this);
+        saveToCloud = new Dialog(this);
+        cloudUpload = new Dialog(this);
+        Log.d(TAG,"saveToCloud = "+saveToCloud );
         updatePhoneMemoryText();
     }
 
@@ -161,7 +166,6 @@ public class SettingsActivity extends AppCompatActivity{
     }
 
     public void openSdCardPath(View view){
-        sdCardDialog = new Dialog(this);
         if(settingsPref.contains(Constants.SD_CARD_PATH)) {
             ((EditText) sdCardRoot.findViewById(R.id.sdCardPathText)).setText(settingsPref.getString(Constants.SD_CARD_PATH,""));
         }
@@ -296,7 +300,6 @@ public class SettingsActivity extends AppCompatActivity{
     }
 
     public void saveToCloudDrive(View view) {
-        saveToCloud = new Dialog(this);
         if (switchOnDrive.isChecked()) {
             cloud = 0;
             savetocloudtitle = (TextView)saveToCloudRoot.findViewById(R.id.savetocloudtitle);
@@ -367,6 +370,7 @@ public class SettingsActivity extends AppCompatActivity{
                 if (getAccountTask.isSuccessful()) {
                     getDriveClient(getAccountTask.getResult());
                     signedInDrive = true;
+                    createUploadFolder();
                 } else {
                     Log.e(TAG, "Sign-in failed.");
                     Toast.makeText(getApplicationContext(),getResources().getString(R.string.signinfail),Toast.LENGTH_LONG).show();
@@ -394,7 +398,6 @@ public class SettingsActivity extends AppCompatActivity{
 
     EditText folderNameText;
     public void createUploadFolder(){
-        cloudUpload = new Dialog(this);
         uploadFolderMsg = (TextView)cloudUploadRoot.findViewById(R.id.uploadFolderMsg);
         uploadFolderTitle = (TextView)cloudUploadRoot.findViewById(R.id.uploadFolderTitle);
         if(cloud == 0) {
@@ -404,19 +407,19 @@ public class SettingsActivity extends AppCompatActivity{
         cloudUpload.setContentView(cloudUploadRoot);
         cloudUpload.setCancelable(false);
         cloudUpload.show();
+        folderNameText = (EditText)cloudUploadRoot.findViewById(R.id.folderNameText);
     }
 
     private boolean validateFolderName(){
         String folderName = ((EditText)cloudUploadRoot.findViewById(R.id.folderNameText)).getText().toString();
-        //if(folderName.trim().equals("") || folderName.)
-        return true;
+        return Pattern.matches("[a-zA-Z0-9_[.]]", folderName);
     }
 
     public void uploadFolder(View view) {
         switch (view.getId()) {
             case R.id.createFolder:
-                cloudUpload.dismiss();
                 if(validateFolderName()) {
+                    cloudUpload.dismiss();
                     mDriveResourceClient
                             .getRootFolder()
                             .continueWithTask(new Continuation<DriveFolder, Task<DriveFolder>>() {
@@ -446,6 +449,9 @@ public class SettingsActivity extends AppCompatActivity{
 
                                 }
                             });
+                }
+                else{
+                    Toast.makeText(getApplicationContext(),getResources().getString(R.string.uploadFolderIncorrect),Toast.LENGTH_SHORT).show();
                 }
                 break;
             case R.id.cancelFolder:
