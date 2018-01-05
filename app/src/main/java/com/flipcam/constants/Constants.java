@@ -41,7 +41,9 @@ public class Constants
     public static final String PHONE_MEMORY_DISABLE = "PhoneMemoryDisable";
     //Save to cloud
     public static final String SAVE_TO_GOOGLE_DRIVE = "SaveToDrive";
+    public static final String GOOGLE_DRIVE_FOLDER = "GoogleDriveFolder";
     public static final String SAVE_TO_DROPBOX = "SaveToDropBox";
+    public static final String DROPBOX_FOLDER = "DropboxFolder";
     //Show memory consumed msg
     public static final String SHOW_MEMORY_CONSUMED_MSG = "ShowMemoryConsumedText";
 }

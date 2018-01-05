@@ -11,6 +11,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -41,7 +42,6 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import java.io.File;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 public class SettingsActivity extends AppCompatActivity{
 
@@ -324,20 +324,22 @@ public class SettingsActivity extends AppCompatActivity{
                 saveToCloud.dismiss();
                 if(cloud == 0){
                     //Sign in to Google Drive
+                    signInOptions =
+                            new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                                    .requestScopes(Drive.SCOPE_FILE)
+                                    .requestScopes(Drive.SCOPE_APPFOLDER)
+                                    .build();
+                    googleSignInClient = GoogleSignIn.getClient(this, signInOptions);
                     Set<Scope> requiredScopes = new HashSet<>(2);
                     requiredScopes.add(Drive.SCOPE_FILE);
                     requiredScopes.add(Drive.SCOPE_APPFOLDER);
                     GoogleSignInAccount signInAccount = GoogleSignIn.getLastSignedInAccount(this);
                     if(signInAccount != null && signInAccount.getGrantedScopes().containsAll(requiredScopes)){
                         getDriveClient(signInAccount);
+                        signedInDrive = true;
+                        createUploadFolder();
                     }
                     else{
-                        signInOptions =
-                                new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                                        .requestScopes(Drive.SCOPE_FILE)
-                                        .requestScopes(Drive.SCOPE_APPFOLDER)
-                                        .build();
-                        googleSignInClient = GoogleSignIn.getClient(this, signInOptions);
                         startActivityForResult(googleSignInClient.getSignInIntent(), REQUEST_CODE_SIGN_IN);
                     }
                 }
@@ -404,21 +406,42 @@ public class SettingsActivity extends AppCompatActivity{
             uploadFolderMsg.setText(getResources().getString(R.string.uploadFolder, getResources().getString(R.string.googleDrive)));
             uploadFolderTitle.setText(getResources().getString(R.string.uploadFolderTitle, getResources().getString(R.string.googleDrive)));
         }
+        Log.d(TAG,"Open cloud upload dialog");
         cloudUpload.setContentView(cloudUploadRoot);
         cloudUpload.setCancelable(false);
         cloudUpload.show();
         folderNameText = (EditText)cloudUploadRoot.findViewById(R.id.folderNameText);
+        folderNameText.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View view, boolean hasFocus) {
+                Log.d(TAG,"hasFocus = "+hasFocus);
+                if(hasFocus){
+                    cloudUpload.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
+                }
+            }
+        });
     }
 
-    private boolean validateFolderName(){
+    private boolean validateFolderNameDropBox(){
         String folderName = ((EditText)cloudUploadRoot.findViewById(R.id.folderNameText)).getText().toString();
-        return Pattern.matches("[a-zA-Z0-9_[.]]", folderName);
+        String[] invalidChars = new String[]{"\\","/","?",":","*","\"","|"};
+        for(int i=0;i<invalidChars.length;i++){
+            if(folderName.contains(invalidChars[i])){
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean validateFolderNameIsNotEmpty(){
+        String folderName = ((EditText)cloudUploadRoot.findViewById(R.id.folderNameText)).getText().toString();
+        return !folderName.trim().equals("");
     }
 
     public void uploadFolder(View view) {
         switch (view.getId()) {
             case R.id.createFolder:
-                if(validateFolderName()) {
+                if(validateFolderNameIsNotEmpty()) {
                     cloudUpload.dismiss();
                     mDriveResourceClient
                             .getRootFolder()
@@ -428,7 +451,7 @@ public class SettingsActivity extends AppCompatActivity{
                                         throws Exception {
                                     DriveFolder parentFolder = task.getResult();
                                     MetadataChangeSet changeSet = new MetadataChangeSet.Builder()
-                                            .setTitle("")
+                                            .setTitle(folderNameText.getText().toString())
                                             .setMimeType(DriveFolder.MIME_TYPE)
                                             .setStarred(true)
                                             .build();
@@ -439,19 +462,23 @@ public class SettingsActivity extends AppCompatActivity{
                                     new OnSuccessListener<DriveFolder>() {
                                         @Override
                                         public void onSuccess(DriveFolder driveFolder) {
-
+                                            Toast.makeText(getApplicationContext(),
+                                                    getResources().getString(R.string.foldercreateSuccessGoogleDrive, folderNameText.getText().toString()),
+                                                    Toast.LENGTH_SHORT).show();
                                         }
                                     })
                             .addOnFailureListener(this, new OnFailureListener() {
                                 @Override
                                 public void onFailure(@NonNull Exception e) {
-                                    Log.d(TAG, "Unable to create file", e);
-
+                                    Log.d(TAG, "Unable to create folder", e);
+                                    Toast.makeText(getApplicationContext(),
+                                            getResources().getString(R.string.foldercreateErrorGoogleDrive, folderNameText.getText().toString()),
+                                            Toast.LENGTH_SHORT).show();
                                 }
                             });
                 }
                 else{
-                    Toast.makeText(getApplicationContext(),getResources().getString(R.string.uploadFolderIncorrect),Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(),getResources().getString(R.string.uploadFolderEmpty),Toast.LENGTH_SHORT).show();
                 }
                 break;
             case R.id.cancelFolder:
