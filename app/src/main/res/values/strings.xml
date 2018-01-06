@@ -111,7 +111,7 @@
     <string name="continuesignin">CONTINUE</string>
     <string name="notnowsignin">NOT NOW</string>
     <string name="signinmsg">This option will automatically save your photo/video from now on onto %1$s.\nYou would need to sign in for this.</string>
-    <string name="signinfail">Sign In failed either due to connection issue or user cancelled it.</string>
+    <string name="signinfail">Sign In failed either due to Internet connection issue or cancellation by user.</string>
     <string name="signoutcloud">Signed out of %1$s</string>
     <string name="uploadFolder">Give a name for the folder which will be used to keep all FlipCam photos/videos in %1$s.</string>
     <string name="uploadFolderTitle">Upload Folder in %1$s</string>
@@ -121,4 +121,9 @@
     <string name="uploadFolderEmpty">Folder Name is empty. Please give a folder name.</string>
     <string name="foldercreateSuccessGoogleDrive">Folder %1$s Created Successfully.</string>
     <string name="foldercreateErrorGoogleDrive">Error in creating folder %1$s. Please try again.</string>
+    <string name="permissionRationale">We need the google accounts info to check if you have already signed in. </string>
+    <string name="permissionForAccounts">FlipCam would like to check if you have already signed in to your Google Account.\nThis is necessary to be able to auto upload to Google Drive. Click Yes to give permission.</string>
+    <string name="permissionHeader">Account Check Permission</string>
+    <string name="yesPermission">YES</string>
+    <string name="noPermission">LATER</string>
 </resources>

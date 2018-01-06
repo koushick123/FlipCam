@@ -1,12 +1,17 @@
 package com.flipcam;
 
+import android.Manifest;
+import android.accounts.Account;
+import android.accounts.AccountManager;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -80,6 +85,9 @@ public class SettingsActivity extends AppCompatActivity{
     TextView uploadFolderTitle;
     TextView uploadFolderMsg;
     int cloud = 0; //Default to Google Drive. 1 for Dropbox.
+    AccountManager accountManager;
+    final int GET_ACCOUNTS_PERM = 100;
+    Dialog permissionAccount;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -136,6 +144,8 @@ public class SettingsActivity extends AppCompatActivity{
         sdCardDialog = new Dialog(this);
         saveToCloud = new Dialog(this);
         cloudUpload = new Dialog(this);
+        permissionAccount = new Dialog(this);
+        accountManager = (AccountManager)getSystemService(Context.ACCOUNT_SERVICE);
         Log.d(TAG,"saveToCloud = "+saveToCloud );
         updatePhoneMemoryText();
     }
@@ -324,23 +334,13 @@ public class SettingsActivity extends AppCompatActivity{
                 saveToCloud.dismiss();
                 if(cloud == 0){
                     //Sign in to Google Drive
-                    signInOptions =
-                            new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                                    .requestScopes(Drive.SCOPE_FILE)
-                                    .requestScopes(Drive.SCOPE_APPFOLDER)
-                                    .build();
-                    googleSignInClient = GoogleSignIn.getClient(this, signInOptions);
-                    Set<Scope> requiredScopes = new HashSet<>(2);
-                    requiredScopes.add(Drive.SCOPE_FILE);
-                    requiredScopes.add(Drive.SCOPE_APPFOLDER);
-                    GoogleSignInAccount signInAccount = GoogleSignIn.getLastSignedInAccount(this);
-                    if(signInAccount != null && signInAccount.getGrantedScopes().containsAll(requiredScopes)){
-                        getDriveClient(signInAccount);
-                        signedInDrive = true;
-                        createUploadFolder();
+                    int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.GET_ACCOUNTS);
+                    if(permissionCheck == PackageManager.PERMISSION_GRANTED) {
+                        continueToGoogleDrive();
                     }
                     else{
-                        startActivityForResult(googleSignInClient.getSignInIntent(), REQUEST_CODE_SIGN_IN);
+                        permissionAccount.setContentView(R.layout.permission_account);
+
                     }
                 }
                 else{
@@ -352,6 +352,54 @@ public class SettingsActivity extends AppCompatActivity{
                 switchOnDrive.setChecked(false);
                 break;
             }
+    }
+
+    public void continueToGoogleDrive(){
+        signInOptions =
+                new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                        .requestScopes(Drive.SCOPE_FILE)
+                        .requestScopes(Drive.SCOPE_APPFOLDER)
+                        .build();
+        googleSignInClient = GoogleSignIn.getClient(this, signInOptions);
+        Set<Scope> requiredScopes = new HashSet<>(2);
+        requiredScopes.add(Drive.SCOPE_FILE);
+        requiredScopes.add(Drive.SCOPE_APPFOLDER);
+        GoogleSignInAccount signInAccount = GoogleSignIn.getLastSignedInAccount(this);
+        Account[] googleAccount = accountManager.getAccountsByType("com.google");
+        if (googleAccount != null && googleAccount.length > 0) {
+            for (int i = 0; i < googleAccount.length; i++) {
+                Log.d(TAG, "Acc name = " + googleAccount[i].name);
+            }
+        } else {
+            Log.d(TAG, "No google account");
+        }
+        if ((googleAccount != null && googleAccount.length > 0) && signInAccount != null && signInAccount.getGrantedScopes().containsAll(requiredScopes)) {
+            getDriveClient(signInAccount);
+            signedInDrive = true;
+            createUploadFolder();
+        } else {
+            startActivityForResult(googleSignInClient.getSignInIntent(), REQUEST_CODE_SIGN_IN);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        switch(requestCode){
+            case GET_ACCOUNTS_PERM:
+                if(permissions != null && permissions.length > 0) {
+                    if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                        continueToGoogleDrive();
+                    } else {
+                        Toast.makeText(getApplicationContext(), getResources().getString(R.string.permissionRationale), Toast.LENGTH_LONG).show();
+                        saveToCloud.dismiss();
+                        switchOnDrive.setChecked(false);
+                    }
+                }
+                else{
+                    super.onRequestPermissionsResult(requestCode,permissions,grantResults);
+                }
+                break;
+        }
     }
 
     @Override
