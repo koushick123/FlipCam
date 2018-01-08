@@ -11,7 +11,7 @@ import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.v4.content.ContextCompat;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -334,13 +334,14 @@ public class SettingsActivity extends AppCompatActivity{
                 saveToCloud.dismiss();
                 if(cloud == 0){
                     //Sign in to Google Drive
-                    int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.GET_ACCOUNTS);
+                    int permissionCheck = ActivityCompat.checkSelfPermission(this, Manifest.permission.GET_ACCOUNTS);
                     if(permissionCheck == PackageManager.PERMISSION_GRANTED) {
                         continueToGoogleDrive();
                     }
                     else{
                         permissionAccount.setContentView(R.layout.permission_account);
-
+                        permissionAccount.setCancelable(false);
+                        permissionAccount.show();
                     }
                 }
                 else{
@@ -349,9 +350,29 @@ public class SettingsActivity extends AppCompatActivity{
                 break;
             case R.id.cancelSignIn:
                 saveToCloud.dismiss();
-                switchOnDrive.setChecked(false);
+                if(cloud == 0) {
+                    switchOnDrive.setChecked(false);
+                }
                 break;
             }
+    }
+
+    public void accountsPermission(View view){
+        switch (view.getId()){
+            case R.id.yesPermission:
+                Log.d(TAG,"yesPermission");
+                permissionAccount.dismiss();
+                ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.GET_ACCOUNTS}, GET_ACCOUNTS_PERM);
+                break;
+            case R.id.noPermission:
+                Log.d(TAG,"noPermission");
+                if(cloud == 0) {
+                    switchOnDrive.setChecked(false);
+                }
+                permissionAccount.dismiss();
+                Toast.makeText(getApplicationContext(), getResources().getString(R.string.permissionRationale), Toast.LENGTH_LONG).show();
+                break;
+        }
     }
 
     public void continueToGoogleDrive(){
@@ -375,6 +396,7 @@ public class SettingsActivity extends AppCompatActivity{
         }
         if ((googleAccount != null && googleAccount.length > 0) && signInAccount != null && signInAccount.getGrantedScopes().containsAll(requiredScopes)) {
             getDriveClient(signInAccount);
+            mDriveClient.getDriveId(folderNameText.getText().toString());
             signedInDrive = true;
             createUploadFolder();
         } else {
@@ -388,11 +410,17 @@ public class SettingsActivity extends AppCompatActivity{
             case GET_ACCOUNTS_PERM:
                 if(permissions != null && permissions.length > 0) {
                     if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                        continueToGoogleDrive();
+                        Log.d(TAG,"permission given");
+                        if(cloud == 0) {
+                            continueToGoogleDrive();
+                        }
                     } else {
-                        Toast.makeText(getApplicationContext(), getResources().getString(R.string.permissionRationale), Toast.LENGTH_LONG).show();
+                        Log.d(TAG,"permission rational");
                         saveToCloud.dismiss();
-                        switchOnDrive.setChecked(false);
+                        if(cloud == 0) {
+                            Toast.makeText(getApplicationContext(), getResources().getString(R.string.permissionRationale), Toast.LENGTH_LONG).show();
+                            switchOnDrive.setChecked(false);
+                        }
                     }
                 }
                 else{
@@ -411,8 +439,10 @@ public class SettingsActivity extends AppCompatActivity{
                     //Sign in failed due to connection problem or user cancelled it.
                     Log.d(TAG, "Sign-in failed.");
                     Toast.makeText(getApplicationContext(),getResources().getString(R.string.signinfail),Toast.LENGTH_LONG).show();
-                    switchOnDrive.setChecked(false);
-                    signedInDrive = false;
+                    if(cloud == 0) {
+                        switchOnDrive.setChecked(false);
+                        signedInDrive = false;
+                    }
                     return;
                 }
 
@@ -424,8 +454,10 @@ public class SettingsActivity extends AppCompatActivity{
                 } else {
                     Log.e(TAG, "Sign-in failed.");
                     Toast.makeText(getApplicationContext(),getResources().getString(R.string.signinfail),Toast.LENGTH_LONG).show();
-                    switchOnDrive.setChecked(false);
-                    signedInDrive = false;
+                    if(cloud == 0) {
+                        switchOnDrive.setChecked(false);
+                        signedInDrive = false;
+                    }
                 }
                 break;
             case REQUEST_CODE_OPEN_ITEM:
@@ -501,7 +533,6 @@ public class SettingsActivity extends AppCompatActivity{
                                     MetadataChangeSet changeSet = new MetadataChangeSet.Builder()
                                             .setTitle(folderNameText.getText().toString())
                                             .setMimeType(DriveFolder.MIME_TYPE)
-                                            .setStarred(true)
                                             .build();
                                     return mDriveResourceClient.createFolder(parentFolder, changeSet);
                                 }
@@ -532,8 +563,10 @@ public class SettingsActivity extends AppCompatActivity{
             case R.id.cancelFolder:
                 cloudUpload.dismiss();
                 Toast.makeText(getApplicationContext(),getResources().getString(R.string.signinfail),Toast.LENGTH_LONG).show();
-                signedInDrive = false;
-                switchOnDrive.setChecked(false);
+                if(cloud == 0) {
+                    switchOnDrive.setChecked(false);
+                    signedInDrive = false;
+                }
         }
     }
 

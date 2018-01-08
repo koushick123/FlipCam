@@ -8,6 +8,7 @@ import android.os.StatFs;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.RadioButton;
@@ -80,6 +81,14 @@ public class MemoryLimitActivity extends AppCompatActivity {
             memoryThresholdText.setText(getResources().getInteger(R.integer.minimumMemoryWarning) + "");
             disableCheck = false;
         }
+        memoryThresholdText.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View view, boolean hasFocus) {
+                if(hasFocus){
+                    getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
+                }
+            }
+        });
     }
 
     public void enableThresholdElements(){

@@ -122,7 +122,8 @@
     <string name="foldercreateSuccessGoogleDrive">Folder %1$s Created Successfully.</string>
     <string name="foldercreateErrorGoogleDrive">Error in creating folder %1$s. Please try again.</string>
     <string name="permissionRationale">We need the google accounts info to check if you have already signed in. </string>
-    <string name="permissionForAccounts">FlipCam would like to check if you have already signed in to your Google Account.\nThis is necessary to be able to auto upload to Google Drive. Click Yes to give permission.</string>
+    <string name="permissionForAccounts">FlipCam would like to read your contacts, only to check if you have already signed in to your Google Account.
+        \nThis is necessary to be able to auto upload to Google Drive. Click Yes to give permission.</string>
     <string name="permissionHeader">Account Check Permission</string>
     <string name="yesPermission">YES</string>
     <string name="noPermission">LATER</string>
