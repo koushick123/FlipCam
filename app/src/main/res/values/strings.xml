@@ -110,7 +110,7 @@
     <string name="saveToCloudTitle">Auto Save to %1$s</string>
     <string name="continuesignin">CONTINUE</string>
     <string name="notnowsignin">NOT NOW</string>
-    <string name="signinmsg">This option will automatically save your photo/video from now on onto %1$s.\nYou would need to sign in for this.</string>
+    <string name="signinmsg">This option will automatically save your photo/video from now on onto %1$s. FlipCam will prompt you to sign in, if not signed in earlier.</string>
     <string name="signinfail">Sign In failed either due to Internet connection issue or cancellation by user.</string>
     <string name="signoutcloud">Signed out of %1$s</string>
     <string name="uploadFolder">Give a name for the folder which will be used to keep all FlipCam photos/videos in %1$s.</string>

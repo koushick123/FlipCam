@@ -37,6 +37,7 @@ import com.google.android.gms.drive.DriveClient;
 import com.google.android.gms.drive.DriveFolder;
 import com.google.android.gms.drive.DriveId;
 import com.google.android.gms.drive.DriveResourceClient;
+import com.google.android.gms.drive.Metadata;
 import com.google.android.gms.drive.MetadataChangeSet;
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.OnFailureListener;
@@ -334,6 +335,8 @@ public class SettingsActivity extends AppCompatActivity{
             if(signedInDrive) {
                 googleSignInClient.signOut();
                 Toast.makeText(getApplicationContext(), getResources().getString(R.string.signoutcloud, getResources().getString(R.string.googleDrive)), Toast.LENGTH_SHORT).show();
+                settingsEditor.putBoolean(Constants.SAVE_TO_GOOGLE_DRIVE , false);
+                settingsEditor.commit();
             }
         }
     }
@@ -361,7 +364,6 @@ public class SettingsActivity extends AppCompatActivity{
             case R.id.cancelSignIn:
                 saveToCloud.dismiss();
                 if(cloud == 0) {
-                    settingsEditor = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE).edit();
                     settingsEditor.putBoolean(Constants.SAVE_TO_GOOGLE_DRIVE , false);
                     settingsEditor.commit();
                     switchOnDrive.setChecked(false);
@@ -409,31 +411,60 @@ public class SettingsActivity extends AppCompatActivity{
         }
         if ((googleAccount != null && googleAccount.length > 0) && signInAccount != null && signInAccount.getGrantedScopes().containsAll(requiredScopes)) {
             getDriveClient(signInAccount);
-            final String driveFolder = getSharedPreferences(Constants.FC_SETTINGS,Context.MODE_PRIVATE).getString(Constants.GOOGLE_DRIVE_FOLDER,"");
-            if(driveFolder != null && !driveFolder.equals("")) {
-                Log.d(TAG,"folder name = "+driveFolder);
-                Task<DriveId> driveIdTask = mDriveClient.getDriveId(driveFolder);
-                driveIdTask.addOnFailureListener(this, new OnFailureListener() {
+            signedInDrive = true;
+            checkIfFolderCreatedInDrive();
+        } else {
+            startActivityForResult(googleSignInClient.getSignInIntent(), REQUEST_CODE_SIGN_IN);
+        }
+    }
+
+    public void checkIfFolderCreatedInDrive(){
+        final String driveFolder = getSharedPreferences(Constants.FC_SETTINGS,Context.MODE_PRIVATE).getString(Constants.GOOGLE_DRIVE_FOLDER,"");
+        Log.d(TAG,"folder name = "+driveFolder);
+        if(driveFolder != null && !driveFolder.equals("")) {
+            String driveId = getSharedPreferences(Constants.FC_SETTINGS,Context.MODE_PRIVATE).getString(Constants.GOOGLE_DRIVE_FOLDER_ID,"");
+            Log.d(TAG,"GET DriveId = "+driveId);
+            if(driveId != null && !driveId.equals("")){
+                DriveId folderId = DriveId.decodeFromString(driveId);
+                Task<Metadata> metadata = mDriveResourceClient.getMetadata(folderId.asDriveFolder());
+                metadata.addOnFailureListener(this, new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception e) {
                         Log.d(TAG, "Unable to get Folder = " + driveFolder);
                         createUploadFolder();
                     }
                 });
-                driveIdTask.addOnSuccessListener(this, new OnSuccessListener<DriveId>() {
+                metadata.addOnSuccessListener(this, new OnSuccessListener<Metadata>() {
                     @Override
-                    public void onSuccess(DriveId driveId) {
-                        Log.d(TAG, "Drive id is = " + driveId);
-                        Toast.makeText(getApplicationContext(),getResources().getString(R.string.googleDriveFolderCreated),Toast.LENGTH_SHORT).show();
+                    public void onSuccess(Metadata metadata) {
+                        Log.d(TAG,"metadata isInAppFolder = "+metadata.isInAppFolder());
+                        Log.d(TAG, "Drive id is = " + metadata.getDriveId());
+                        Log.d(TAG, "created datte = "+metadata.getCreatedDate());
+                        Log.d(TAG, "Title = "+metadata.getTitle());
+                        Toast.makeText(getApplicationContext(),getResources().getString(R.string.googleDriveFolderCreated, metadata.getTitle()),Toast.LENGTH_SHORT).show();
                     }
                 });
             }
             else{
                 createUploadFolder();
             }
-            signedInDrive = true;
-        } else {
-            startActivityForResult(googleSignInClient.getSignInIntent(), REQUEST_CODE_SIGN_IN);
+            /*driveIdTask.addOnFailureListener(this, new OnFailureListener() {
+                @Override
+                public void onFailure(@NonNull Exception e) {
+                    Log.d(TAG, "Unable to get Folder = " + driveFolder);
+                    createUploadFolder();
+                }
+            });
+            driveIdTask.addOnSuccessListener(this, new OnSuccessListener<DriveId>() {
+                @Override
+                public void onSuccess(DriveId driveId) {
+                    Log.d(TAG, "Drive id is = " + driveId);
+                    Toast.makeText(getApplicationContext(),getResources().getString(R.string.googleDriveFolderCreated),Toast.LENGTH_SHORT).show();
+                }
+            });*/
+        }
+        else{
+            createUploadFolder();
         }
     }
 
@@ -483,7 +514,7 @@ public class SettingsActivity extends AppCompatActivity{
                 if (getAccountTask.isSuccessful()) {
                     getDriveClient(getAccountTask.getResult());
                     signedInDrive = true;
-                    createUploadFolder();
+                    checkIfFolderCreatedInDrive();
                 } else {
                     Log.e(TAG, "Sign-in failed.");
                     Toast.makeText(getApplicationContext(),getResources().getString(R.string.signinfail),Toast.LENGTH_LONG).show();
@@ -569,10 +600,8 @@ public class SettingsActivity extends AppCompatActivity{
                                             Toast.makeText(getApplicationContext(),
                                                     getResources().getString(R.string.foldercreateSuccessGoogleDrive, folderNameText.getText().toString()),
                                                     Toast.LENGTH_SHORT).show();
-                                            settingsEditor = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE).edit();
-                                            settingsEditor.putString(Constants.GOOGLE_DRIVE_FOLDER,folderNameText.getText().toString());
-                                            settingsEditor.putBoolean(Constants.SAVE_TO_GOOGLE_DRIVE, true);
-                                            settingsEditor.commit();
+                                            Log.d(TAG,"SAVE Driveid = "+driveFolder.getDriveId().encodeToString());
+                                            updateGoogleDriveInSetting(folderNameText.getText().toString(),true,driveFolder.getDriveId().encodeToString());
                                         }
                                     })
                             .addOnFailureListener(this, new OnFailureListener() {
@@ -584,9 +613,7 @@ public class SettingsActivity extends AppCompatActivity{
                                             Toast.LENGTH_SHORT).show();
                                     switchOnDrive.setChecked(false);
                                     signedInDrive = false;
-                                    settingsEditor.putString(Constants.GOOGLE_DRIVE_FOLDER,"");
-                                    settingsEditor.putBoolean(Constants.SAVE_TO_GOOGLE_DRIVE, false);
-                                    settingsEditor.commit();
+                                    updateGoogleDriveInSetting("",false,"");
                                 }
                             });
                 }
@@ -600,11 +627,16 @@ public class SettingsActivity extends AppCompatActivity{
                 if(cloud == 0) {
                     switchOnDrive.setChecked(false);
                     signedInDrive = false;
-                    settingsEditor.putString(Constants.GOOGLE_DRIVE_FOLDER,"");
-                    settingsEditor.putBoolean(Constants.SAVE_TO_GOOGLE_DRIVE, false);
-                    settingsEditor.commit();
+                    updateGoogleDriveInSetting("",false,"");
                 }
         }
+    }
+
+    public void updateGoogleDriveInSetting(String folderName, boolean saveTo, String folderId){
+        settingsEditor.putString(Constants.GOOGLE_DRIVE_FOLDER,folderName);
+        settingsEditor.putBoolean(Constants.SAVE_TO_GOOGLE_DRIVE, saveTo);
+        settingsEditor.putString(Constants.GOOGLE_DRIVE_FOLDER_ID, folderId);
+        settingsEditor.commit();
     }
 
     @Override
