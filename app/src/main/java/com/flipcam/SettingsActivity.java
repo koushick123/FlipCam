@@ -10,6 +10,8 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.pm.Signature;
 import android.content.res.Configuration;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
@@ -37,6 +39,7 @@ import com.google.android.gms.drive.DriveClient;
 import com.google.android.gms.drive.DriveFolder;
 import com.google.android.gms.drive.DriveId;
 import com.google.android.gms.drive.DriveResourceClient;
+import com.google.android.gms.drive.DriveStatusCodes;
 import com.google.android.gms.drive.Metadata;
 import com.google.android.gms.drive.MetadataChangeSet;
 import com.google.android.gms.tasks.Continuation;
@@ -334,6 +337,7 @@ public class SettingsActivity extends AppCompatActivity{
         else{
             if(signedInDrive) {
                 googleSignInClient.signOut();
+                signedInDrive = false;
                 Toast.makeText(getApplicationContext(), getResources().getString(R.string.signoutcloud, getResources().getString(R.string.googleDrive)), Toast.LENGTH_SHORT).show();
                 settingsEditor.putBoolean(Constants.SAVE_TO_GOOGLE_DRIVE , false);
                 settingsEditor.commit();
@@ -391,6 +395,11 @@ public class SettingsActivity extends AppCompatActivity{
     }
 
     public void continueToGoogleDrive(){
+        if(!isConnectedToInternet()){
+            Toast.makeText(getApplicationContext(),getResources().getString(R.string.noConnectionMessage),Toast.LENGTH_SHORT).show();
+            switchOnDrive.setChecked(false);
+            return;
+        }
         signInOptions =
                 new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                         .requestScopes(Drive.SCOPE_FILE)
@@ -418,6 +427,16 @@ public class SettingsActivity extends AppCompatActivity{
         }
     }
 
+    public boolean isConnectedToInternet(){
+        ConnectivityManager cm =
+                (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
+
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        boolean isConnected = activeNetwork != null &&
+                activeNetwork.isConnectedOrConnecting();
+        return isConnected;
+    }
+
     public void checkIfFolderCreatedInDrive(){
         final String driveFolder = getSharedPreferences(Constants.FC_SETTINGS,Context.MODE_PRIVATE).getString(Constants.GOOGLE_DRIVE_FOLDER,"");
         Log.d(TAG,"folder name = "+driveFolder);
@@ -425,47 +444,62 @@ public class SettingsActivity extends AppCompatActivity{
             String driveId = getSharedPreferences(Constants.FC_SETTINGS,Context.MODE_PRIVATE).getString(Constants.GOOGLE_DRIVE_FOLDER_ID,"");
             Log.d(TAG,"GET DriveId = "+driveId);
             if(driveId != null && !driveId.equals("")){
-                DriveId folderId = DriveId.decodeFromString(driveId);
-                Task<Metadata> metadata = mDriveResourceClient.getMetadata(folderId.asDriveFolder());
-                metadata.addOnFailureListener(this, new OnFailureListener() {
+                final DriveId folderId = DriveId.decodeFromString(driveId);
+                mDriveClient.requestSync()
+                .addOnFailureListener(this, new OnFailureListener(){
                     @Override
                     public void onFailure(@NonNull Exception e) {
-                        Log.d(TAG, "Unable to get Folder = " + driveFolder);
-                        createUploadFolder();
+                        Log.d(TAG,"Unable to sync = ");
+                        Log.d(TAG,"Message = "+e.getMessage());
+                        if(e.getMessage().contains(String.valueOf(DriveStatusCodes.DRIVE_RATE_LIMIT_EXCEEDED))){
+                            //Continue as is, since already synced.
+                            fetchDriveFolderMetadata(folderId);
+                        }
                     }
-                });
-                metadata.addOnSuccessListener(this, new OnSuccessListener<Metadata>() {
+                })
+                .addOnSuccessListener(this, new OnSuccessListener<Void>() {
                     @Override
-                    public void onSuccess(Metadata metadata) {
-                        Log.d(TAG,"metadata isInAppFolder = "+metadata.isInAppFolder());
-                        Log.d(TAG, "Drive id is = " + metadata.getDriveId());
-                        Log.d(TAG, "created datte = "+metadata.getCreatedDate());
-                        Log.d(TAG, "Title = "+metadata.getTitle());
-                        Toast.makeText(getApplicationContext(),getResources().getString(R.string.googleDriveFolderCreated, metadata.getTitle()),Toast.LENGTH_SHORT).show();
+                    public void onSuccess(Void aVoid) {
+                        Log.d(TAG,"Metadata upto date");
+                        fetchDriveFolderMetadata(folderId);
                     }
                 });
             }
             else{
                 createUploadFolder();
             }
-            /*driveIdTask.addOnFailureListener(this, new OnFailureListener() {
-                @Override
-                public void onFailure(@NonNull Exception e) {
-                    Log.d(TAG, "Unable to get Folder = " + driveFolder);
-                    createUploadFolder();
-                }
-            });
-            driveIdTask.addOnSuccessListener(this, new OnSuccessListener<DriveId>() {
-                @Override
-                public void onSuccess(DriveId driveId) {
-                    Log.d(TAG, "Drive id is = " + driveId);
-                    Toast.makeText(getApplicationContext(),getResources().getString(R.string.googleDriveFolderCreated),Toast.LENGTH_SHORT).show();
-                }
-            });*/
         }
         else{
             createUploadFolder();
         }
+    }
+
+    public void fetchDriveFolderMetadata(DriveId folderId){
+        Task<Metadata> metadata = mDriveResourceClient.getMetadata(folderId.asDriveFolder());
+        metadata.addOnFailureListener(this, new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Log.d(TAG, "Message = "+e.getMessage());
+                if(e.getMessage().contains(String.valueOf(DriveStatusCodes.DRIVE_RESOURCE_NOT_AVAILABLE))) {
+                    createUploadFolder();
+                }
+            }
+        });
+        metadata.addOnSuccessListener(this, new OnSuccessListener<Metadata>() {
+            @Override
+            public void onSuccess(Metadata metadata) {
+                Log.d(TAG,"metadata isTrashed = "+metadata.isTrashed());
+                Log.d(TAG, "Drive id is = " + metadata.getDriveId());
+                Log.d(TAG, "created datte = "+metadata.getCreatedDate());
+                Log.d(TAG, "Title = "+metadata.getTitle());
+                if(!metadata.isTrashed()) {
+                    Toast.makeText(getApplicationContext(), getResources().getString(R.string.googleDriveFolderCreated, metadata.getTitle()), Toast.LENGTH_SHORT).show();
+                }
+                else{
+                    createUploadFolder();
+                }
+            }
+        });
     }
 
     @Override

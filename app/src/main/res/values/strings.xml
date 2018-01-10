@@ -127,5 +127,6 @@
     <string name="permissionHeader">Account Check Permission</string>
     <string name="yesPermission">YES</string>
     <string name="noPermission">LATER</string>
-    <string name="googleDriveFolderCreated">FlipCam will auto upload your media onto %1$s folder in Google Drive.</string>
+    <string name="googleDriveFolderCreated">FlipCam will auto upload your media onto %1$s folder in Google Drive.</string>s
 </resources>
+
