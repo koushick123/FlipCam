@@ -46,7 +46,6 @@ import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.TaskCompletionSource;
 
 import java.io.File;
 import java.util.HashSet;
@@ -78,10 +77,8 @@ public class SettingsActivity extends AppCompatActivity{
     DriveClient mDriveClient;
     DriveResourceClient mDriveResourceClient;
     static final int REQUEST_CODE_SIGN_IN = 0;
-    static final int REQUEST_CODE_OPEN_ITEM = 1;
-    TaskCompletionSource<DriveId> mOpenItemTaskSource;
     GoogleSignInOptions signInOptions;
-    GoogleSignInClient googleSignInClient;
+    GoogleSignInClient googleSignInClient = null;
     boolean signedInDrive = false;
     boolean signInDropbox = false;
     Dialog cloudUpload;
@@ -152,6 +149,7 @@ public class SettingsActivity extends AppCompatActivity{
         accountManager = (AccountManager)getSystemService(Context.ACCOUNT_SERVICE);
         Log.d(TAG,"saveToCloud = "+saveToCloud );
         updatePhoneMemoryText();
+        updateSaveToCloud();
         Signature[] sigs = new Signature[0];
         try {
             sigs = getPackageManager().getPackageInfo(getPackageName(), PackageManager.GET_SIGNATURES).signatures;
@@ -182,11 +180,26 @@ public class SettingsActivity extends AppCompatActivity{
         }
     }
 
+    public void updateSaveToCloud(){
+        if(settingsPref.contains(Constants.SAVE_TO_GOOGLE_DRIVE)){
+            if(settingsPref.getBoolean(Constants.SAVE_TO_GOOGLE_DRIVE, false)){
+                switchOnDrive.setChecked(true);
+            }
+            else{
+                switchOnDrive.setChecked(false);
+            }
+        }
+        else{
+            switchOnDrive.setChecked(false);
+        }
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
         Log.d(TAG,"onResume");
         updatePhoneMemoryText();
+        updateSaveToCloud();
     }
 
     public void openSdCardPath(View view){
@@ -335,7 +348,11 @@ public class SettingsActivity extends AppCompatActivity{
             saveToCloud.show();
         }
         else{
-            if(signedInDrive) {
+            boolean saveToDrive = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE).getBoolean(Constants.SAVE_TO_GOOGLE_DRIVE, false);
+            if(saveToDrive) {
+                if(googleSignInClient == null){
+                    initializeGoogleSignIn();
+                }
                 googleSignInClient.signOut();
                 signedInDrive = false;
                 Toast.makeText(getApplicationContext(), getResources().getString(R.string.signoutcloud, getResources().getString(R.string.googleDrive)), Toast.LENGTH_SHORT).show();
@@ -394,18 +411,21 @@ public class SettingsActivity extends AppCompatActivity{
         }
     }
 
-    public void continueToGoogleDrive(){
-        if(!isConnectedToInternet()){
-            Toast.makeText(getApplicationContext(),getResources().getString(R.string.noConnectionMessage),Toast.LENGTH_SHORT).show();
-            switchOnDrive.setChecked(false);
-            return;
-        }
+    public void initializeGoogleSignIn(){
         signInOptions =
                 new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                         .requestScopes(Drive.SCOPE_FILE)
                         .requestScopes(Drive.SCOPE_APPFOLDER)
                         .build();
         googleSignInClient = GoogleSignIn.getClient(this, signInOptions);
+    }
+
+    public void continueToGoogleDrive(){
+        if(!isConnectedToInternet()){
+            Toast.makeText(getApplicationContext(),getResources().getString(R.string.noConnectionMessage),Toast.LENGTH_SHORT).show();
+            switchOnDrive.setChecked(false);
+            return;
+        }
         Set<Scope> requiredScopes = new HashSet<>(2);
         requiredScopes.add(Drive.SCOPE_FILE);
         requiredScopes.add(Drive.SCOPE_APPFOLDER);
@@ -418,6 +438,8 @@ public class SettingsActivity extends AppCompatActivity{
         } else {
             Log.d(TAG, "No google account");
         }
+        initializeGoogleSignIn();
+        Log.d(TAG,"initializeGoogleSignIn");
         if ((googleAccount != null && googleAccount.length > 0) && signInAccount != null && signInAccount.getGrantedScopes().containsAll(requiredScopes)) {
             getDriveClient(signInAccount);
             signedInDrive = true;
@@ -494,6 +516,8 @@ public class SettingsActivity extends AppCompatActivity{
                 Log.d(TAG, "Title = "+metadata.getTitle());
                 if(!metadata.isTrashed()) {
                     Toast.makeText(getApplicationContext(), getResources().getString(R.string.googleDriveFolderCreated, metadata.getTitle()), Toast.LENGTH_SHORT).show();
+                    switchOnDrive.setChecked(true);
+                    updateGoogleDriveInSetting(metadata.getTitle(),true,metadata.getDriveId().encodeToString());
                 }
                 else{
                     createUploadFolder();
@@ -540,10 +564,11 @@ public class SettingsActivity extends AppCompatActivity{
                     if(cloud == 0) {
                         switchOnDrive.setChecked(false);
                         signedInDrive = false;
+                        settingsEditor.putBoolean(Constants.SAVE_TO_GOOGLE_DRIVE, false);
+                        settingsEditor.commit();
                     }
                     return;
                 }
-
                 Task<GoogleSignInAccount> getAccountTask = GoogleSignIn.getSignedInAccountFromIntent(data);
                 if (getAccountTask.isSuccessful()) {
                     getDriveClient(getAccountTask.getResult());
@@ -555,6 +580,8 @@ public class SettingsActivity extends AppCompatActivity{
                     if(cloud == 0) {
                         switchOnDrive.setChecked(false);
                         signedInDrive = false;
+                        settingsEditor.putBoolean(Constants.SAVE_TO_GOOGLE_DRIVE, false);
+                        settingsEditor.commit();
                     }
                 }
                 break;
@@ -563,6 +590,7 @@ public class SettingsActivity extends AppCompatActivity{
     }
 
     private void getDriveClient(GoogleSignInAccount signInAccount) {
+        Log.d(TAG,"getDriveClient");
         mDriveClient = Drive.getDriveClient(getApplicationContext(), signInAccount);
         mDriveResourceClient = Drive.getDriveResourceClient(getApplicationContext(), signInAccount);
         Log.d(TAG, "Sign-in SUCCESS.");

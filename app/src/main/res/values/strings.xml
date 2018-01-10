@@ -110,7 +110,7 @@
     <string name="saveToCloudTitle">Auto Save to %1$s</string>
     <string name="continuesignin">CONTINUE</string>
     <string name="notnowsignin">NOT NOW</string>
-    <string name="signinmsg">This option will automatically save your photo/video from now on onto %1$s. FlipCam will prompt you to sign in, if not signed in earlier.</string>
+    <string name="signinmsg">This option will automatically save your photo/video from now on onto %1$s.\nYou may be prompted to sign in, if not signed in earlier.</string>
     <string name="signinfail">Sign In failed either due to Internet connection issue or cancellation by user.</string>
     <string name="signoutcloud">Signed out of %1$s</string>
     <string name="uploadFolder">Give a name for the folder which will be used to keep all FlipCam photos/videos in %1$s.</string>
@@ -119,7 +119,7 @@
     <string name="cancelUploadFolder">CANCEL</string>
     <string name="uploadFolderIncorrectDropbox">Incorrect characters in folder name. Please try again.</string>
     <string name="uploadFolderEmpty">Folder Name is empty. Please give a folder name.</string>
-    <string name="foldercreateSuccessGoogleDrive">Folder %1$s Created Successfully.</string>
+    <string name="foldercreateSuccessGoogleDrive">Folder %1$s Created Successfully.\nFlipCam will now auto upload your media onto this folder in Google Drive.</string>
     <string name="foldercreateErrorGoogleDrive">Error in creating folder %1$s. Please check your internet connection and try again.</string>
     <string name="permissionRationale">We need the google accounts info to check if you have already signed in. </string>
     <string name="permissionForAccounts">FlipCam would like to read your contacts, only to check if you have already signed in to your Google Account.
@@ -127,6 +127,6 @@
     <string name="permissionHeader">Account Check Permission</string>
     <string name="yesPermission">YES</string>
     <string name="noPermission">LATER</string>
-    <string name="googleDriveFolderCreated">FlipCam will auto upload your media onto %1$s folder in Google Drive.</string>s
+    <string name="googleDriveFolderCreated">FlipCam will now auto upload your media onto %1$s folder in Google Drive.</string>s
 </resources>
 

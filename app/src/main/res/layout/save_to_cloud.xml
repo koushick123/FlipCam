@@ -10,6 +10,7 @@
         android:orientation="vertical">
 
         <LinearLayout
+            android:id="@+id/saveToHeader"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@color/turqoise"
@@ -29,8 +30,8 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:paddingLeft="10dp"
-                android:textColor="@color/mediaControlColor"
                 android:text="@string/saveToCloudTitle"
+                android:textColor="@color/mediaControlColor"
                 android:textStyle="bold" />
 
         </LinearLayout>
