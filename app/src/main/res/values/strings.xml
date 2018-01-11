@@ -112,7 +112,7 @@
     <string name="notnowsignin">NOT NOW</string>
     <string name="signinmsg">This option will automatically save your photo/video from now on onto %1$s.\nYou may be prompted to sign in, if not signed in earlier.</string>
     <string name="signinfail">Sign In failed either due to Internet connection issue or cancellation by user.</string>
-    <string name="signoutcloud">Signed out of %1$s</string>
+    <string name="signoutcloud">Signed out of %1$s. Auto upload disabled.</string>
     <string name="uploadFolder">Give a name for the folder which will be used to keep all FlipCam photos/videos in %1$s.</string>
     <string name="uploadFolderTitle">Upload Folder in %1$s</string>
     <string name="createUploadFolder">CREATE</string>
@@ -127,6 +127,7 @@
     <string name="permissionHeader">Account Check Permission</string>
     <string name="yesPermission">YES</string>
     <string name="noPermission">LATER</string>
-    <string name="googleDriveFolderCreated">FlipCam will now auto upload your media onto %1$s folder in Google Drive.</string>s
+    <string name="googleDriveFolderCreated">FlipCam will now auto upload your media onto %1$s folder in Google Drive.</string>
+    <string name="uploadCancelled">Auto upload disabled.</string>
 </resources>
 
