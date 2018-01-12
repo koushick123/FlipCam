@@ -83,12 +83,15 @@ public class SettingsActivity extends AppCompatActivity{
     boolean signInDropbox = false;
     Dialog cloudUpload;
     View cloudUploadRoot;
+    View signInProgressRoot;
     TextView uploadFolderTitle;
     TextView uploadFolderMsg;
     int cloud = 0; //Default to Google Drive. 1 for Dropbox.
     AccountManager accountManager;
     final int GET_ACCOUNTS_PERM = 100;
     Dialog permissionAccount;
+    Dialog signInProgressDialog;
+    boolean signInProgress = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -142,10 +145,12 @@ public class SettingsActivity extends AppCompatActivity{
         sdCardRoot = layoutInflater.inflate(R.layout.sd_card_location,null);
         saveToCloudRoot = layoutInflater.inflate(R.layout.save_to_cloud,null);
         cloudUploadRoot = layoutInflater.inflate(R.layout.cloud_upload_folder,null);
+        signInProgressRoot = layoutInflater.inflate(R.layout.sign_in_progress,null);
         sdCardDialog = new Dialog(this);
         saveToCloud = new Dialog(this);
         cloudUpload = new Dialog(this);
         permissionAccount = new Dialog(this);
+        signInProgressDialog = new Dialog(this);
         accountManager = (AccountManager)getSystemService(Context.ACCOUNT_SERVICE);
         Log.d(TAG,"saveToCloud = "+saveToCloud );
         updatePhoneMemoryText();
@@ -199,6 +204,11 @@ public class SettingsActivity extends AppCompatActivity{
         super.onResume();
         Log.d(TAG,"onResume");
         updatePhoneMemoryText();
+        if(signInProgress){
+            signInProgressDialog.dismiss();
+            Log.d(TAG,"Reset signinprogess");
+            signInProgress = false;
+        }
     }
 
     public void openSdCardPath(View view){
@@ -420,6 +430,29 @@ public class SettingsActivity extends AppCompatActivity{
         googleSignInClient = GoogleSignIn.getClient(this, signInOptions);
     }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+        Log.d(TAG,"onPause");
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        Log.d(TAG,"onStart");
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        Log.d(TAG,"onStop");
+        if(signInProgress){
+            signInProgressDialog.dismiss();
+            Log.d(TAG,"Reset signinprogess");
+            signInProgress = false;
+        }
+    }
+
     public void continueToGoogleDrive(){
         if(!isConnectedToInternet()){
             Toast.makeText(getApplicationContext(),getResources().getString(R.string.noConnectionMessage),Toast.LENGTH_SHORT).show();
@@ -446,6 +479,16 @@ public class SettingsActivity extends AppCompatActivity{
             checkIfFolderCreatedInDrive();
         } else {
             Log.d(TAG,"startActivity");
+            signInProgress = true;
+            TextView signInText = (TextView)signInProgressRoot.findViewById(R.id.signInText);
+            TextView signInprogressTitle = (TextView)signInProgressRoot.findViewById(R.id.savetocloudtitle);
+            signInprogressTitle.setText(getResources().getString(R.string.signInProgressTitle, getResources().getString(R.string.googleDrive)));
+            signInText.setText(getResources().getString(R.string.signInProgress, getResources().getString(R.string.googleDrive)));
+            ImageView signInImage = (ImageView)signInProgressRoot.findViewById(R.id.signInImage);
+            signInImage.setImageDrawable(getResources().getDrawable(R.drawable.google_drive));
+            signInProgressDialog.setContentView(signInProgressRoot);
+            signInProgressDialog.setCancelable(false);
+            signInProgressDialog.show();
             startActivityForResult(googleSignInClient.getSignInIntent(), REQUEST_CODE_SIGN_IN);
         }
     }
@@ -521,6 +564,7 @@ public class SettingsActivity extends AppCompatActivity{
                     switchOnDrive.setChecked(false);
                     switchOnDrive.setClickable(true);
                     disableGoogleDriveInSetting();
+                    googleSignInClient.signOut();
                 }
             }
         });
@@ -604,7 +648,7 @@ public class SettingsActivity extends AppCompatActivity{
                         checkIfFolderCreatedInDrive();
                     }
                 } else {
-                    Log.e(TAG, "Sign-in failed.");
+                    Log.e(TAG, "Sign-in failed 222.");
                     Toast.makeText(getApplicationContext(),getResources().getString(R.string.signinfail),Toast.LENGTH_LONG).show();
                     if(cloud == 0) {
                         switchOnDrive.setChecked(false);
@@ -713,6 +757,7 @@ public class SettingsActivity extends AppCompatActivity{
                                         signedInDrive = false;
                                         updateGoogleDriveInSetting("", false, "");
                                         switchOnDrive.setClickable(true);
+                                        googleSignInClient.signOut();
                                     }
                                 });
                     } else {
@@ -722,12 +767,13 @@ public class SettingsActivity extends AppCompatActivity{
                 break;
             case R.id.cancelFolder:
                 cloudUpload.dismiss();
-                Toast.makeText(getApplicationContext(),getResources().getString(R.string.uploadCancelled),Toast.LENGTH_LONG).show();
+                Toast.makeText(getApplicationContext(),getResources().getString(R.string.uploadCancelled),Toast.LENGTH_SHORT).show();
                 if(cloud == 0) {
                     switchOnDrive.setChecked(false);
                     signedInDrive = false;
                     updateGoogleDriveInSetting("",false,"");
                     switchOnDrive.setClickable(true);
+                    googleSignInClient.signOut();
                 }
         }
     }

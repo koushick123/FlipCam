@@ -1,12 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/backColorDialog"
-    android:orientation="vertical"
-    android:weightSum="1">
+    android:background="@color/backColorSettingMsg"
+    android:orientation="vertical">
 
     <LinearLayout
+        android:id="@+id/saveToHeader"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/turqoise"
@@ -21,59 +22,34 @@
             android:src="@mipmap/ic_launcher" />
 
         <TextView
-            android:id="@+id/textView"
+            android:id="@+id/savetocloudtitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:paddingLeft="10dp"
-            android:text="@string/logoutFB"
+            android:text="@string/signInProgressTitle"
             android:textAlignment="center"
             android:textColor="@color/mediaControlColor"
             android:textStyle="bold" />
 
         <ImageView
-            android:id="@+id/imageView5"
+            android:id="@+id/signInImage"
             android:layout_width="64dp"
             android:layout_height="50dp"
-            android:layout_weight=".05"
-            app:srcCompat="@drawable/share_to_facebook" />
+            app:srcCompat="@drawable/placeholder" />
 
     </LinearLayout>
 
     <TextView
-        android:id="@+id/logoutFB"
+        android:id="@+id/signInText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center"
         android:layout_marginBottom="30dp"
         android:layout_marginLeft="20dp"
         android:layout_marginRight="20dp"
         android:layout_marginTop="30dp"
-        android:layout_weight=".05"
-        android:gravity="center_vertical|center_horizontal"
-        android:text="@string/logoutFBMessage"
+        android:text="@string/signInProgress"
+        android:textAlignment="center"
         android:textColor="@color/turqoise"
-        android:textSize="15sp"
-        android:textStyle="bold" />
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="30dp"
-        android:orientation="horizontal">
-
-        <Button
-            android:id="@+id/logoutoktoclose"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:layout_marginLeft="80dp"
-            android:layout_marginRight="80dp"
-            android:layout_weight="1"
-            android:background="@color/thumbnailPlaceholder"
-            android:onClick="closeLogoutFB"
-            android:text="@string/okToDelete"
-            android:textColor="@color/turqoise" />
-    </LinearLayout>
-
+        android:textSize="15sp" />
 </LinearLayout>

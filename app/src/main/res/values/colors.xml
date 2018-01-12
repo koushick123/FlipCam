@@ -46,4 +46,6 @@
     <color name="uploadColor">#5c5454</color>
     //Background color for dialogs
     <color name="backColorDialog">#000000</color>
+    //Background color for sign in message
+    <color name="backColorSettingMsg">#cF000000</color>
 </resources>

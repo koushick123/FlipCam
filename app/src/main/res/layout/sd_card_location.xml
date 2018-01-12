@@ -1,91 +1,91 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-     android:layout_height="match_parent"
     android:layout_width="match_parent"
-    android:background="@color/backColorDialog">
-<LinearLayout
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@color/backColorDialog"
-    android:orientation="vertical">
+    android:layout_height="match_parent">
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/turqoise"
-        android:gravity="center"
-        android:orientation="horizontal">
+        android:layout_height="match_parent"
+        android:background="@color/backColorSettingMsg"
+        android:orientation="vertical">
 
-        <ImageView
-            android:id="@+id/imageView"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight=".05"
-            android:src="@mipmap/ic_launcher" />
+            android:background="@color/turqoise"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/imageView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight=".05"
+                android:src="@mipmap/ic_launcher" />
+
+            <TextView
+                android:id="@+id/textView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:paddingLeft="10dp"
+                android:text="@string/sdCardLocation"
+                android:textColor="@color/mediaControlColor"
+                android:textStyle="bold" />
+
+        </LinearLayout>
 
         <TextView
-            android:id="@+id/textView"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:paddingLeft="10dp"
-            android:text="@string/sdCardLocation"
-            android:textColor="@color/mediaControlColor"
-            android:textStyle="bold" />
-
-    </LinearLayout>
-
-    <TextView
-        android:id="@+id/sdCardMsg"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginLeft="20dp"
-        android:layout_marginRight="20dp"
-        android:layout_marginTop="20dp"
-        android:layout_weight="0.00"
-        android:text="@string/sdCardPathPortrait"
-        android:textColor="@color/turqoise" />
-
-    <EditText
-        android:id="@+id/sdCardPathText"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginLeft="20dp"
-        android:layout_marginRight="20dp"
-        android:ems="10"
-        android:hint="@string/sdCardPathHint"
-        android:inputType="text"
-        android:textColor="@color/turqoise"
-        android:textColorHint="@color/turqoiseLight"
-        android:textColorLink="@color/turqoise"
-        android:textSize="15sp" />
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="10dp"
-        android:orientation="horizontal">
-
-        <Button
-            android:id="@+id/okSdCard"
-            android:layout_width="wrap_content"
+            android:id="@+id/sdCardMsg"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginLeft="20dp"
-            android:layout_marginRight="10dp"
-            android:layout_weight="1"
-            android:text="@string/okBtn"
-            android:onClick="saveSdCardPath"/>
-
-        <Button
-            android:id="@+id/cancelSdCard"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="10dp"
             android:layout_marginRight="20dp"
-            android:layout_weight="1"
-            android:text="@string/cancelBtn"
-            android:onClick="saveSdCardPath"/>
-    </LinearLayout>
+            android:layout_marginTop="20dp"
+            android:layout_weight="0.00"
+            android:text="@string/sdCardPathPortrait"
+            android:textColor="@color/turqoise" />
 
-</LinearLayout>
+        <EditText
+            android:id="@+id/sdCardPathText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="20dp"
+            android:layout_marginRight="20dp"
+            android:ems="10"
+            android:hint="@string/sdCardPathHint"
+            android:inputType="text"
+            android:textColor="@color/turqoise"
+            android:textColorHint="@color/turqoiseLight"
+            android:textColorLink="@color/turqoise"
+            android:textSize="15sp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="10dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/okSdCard"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="20dp"
+                android:layout_marginRight="10dp"
+                android:layout_weight="1"
+                android:onClick="saveSdCardPath"
+                android:text="@string/okBtn" />
+
+            <Button
+                android:id="@+id/cancelSdCard"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="10dp"
+                android:layout_marginRight="20dp"
+                android:layout_weight="1"
+                android:onClick="saveSdCardPath"
+                android:text="@string/cancelBtn" />
+        </LinearLayout>
+
+    </LinearLayout>
 </ScrollView>

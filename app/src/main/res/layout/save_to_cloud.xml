@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_height="match_parent"
     android:layout_width="match_parent"
-    android:background="@color/backColorDialog">
+    android:layout_height="match_parent">
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@color/backColorDialog"
+        android:background="@color/backColorSettingMsg"
         android:orientation="vertical">
 
         <LinearLayout
@@ -61,8 +61,8 @@
                 android:layout_marginLeft="20dp"
                 android:layout_marginRight="10dp"
                 android:layout_weight="1"
-                android:text="@string/continuesignin"
-                android:onClick="signInToCloud"/>
+                android:onClick="signInToCloud"
+                android:text="@string/continuesignin" />
 
             <Button
                 android:id="@+id/cancelSignIn"
@@ -71,8 +71,8 @@
                 android:layout_marginLeft="10dp"
                 android:layout_marginRight="20dp"
                 android:layout_weight="1"
-                android:text="@string/notnowsignin"
-                android:onClick="signInToCloud"/>
+                android:onClick="signInToCloud"
+                android:text="@string/notnowsignin" />
         </LinearLayout>
     </LinearLayout>
 </ScrollView>

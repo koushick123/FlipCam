@@ -129,5 +129,7 @@
     <string name="noPermission">LATER</string>
     <string name="googleDriveFolderCreated">FlipCam will now auto upload your media onto %1$s folder in Google Drive.</string>
     <string name="uploadCancelled">Auto upload disabled.</string>
+    <string name="signInProgress">Signing into %1$s for authentication. Please Wait...</string>
+    <string name="signInProgressTitle">Sign In to %1$s</string>
 </resources>
 
