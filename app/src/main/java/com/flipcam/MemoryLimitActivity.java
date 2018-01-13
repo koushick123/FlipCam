@@ -13,6 +13,7 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.RadioButton;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.flipcam.constants.Constants;
@@ -31,6 +32,11 @@ public class MemoryLimitActivity extends AppCompatActivity {
     CheckBox disablethresholdCheck;
     boolean mbSelect = true;
     boolean disableCheck = false;
+    TextView totalPhoneMemory;
+    TextView freeMemory;
+    StatFs storageStat;
+    String memorymetric;
+    String memory;
 
     @Override
     protected void onPause() {
@@ -42,6 +48,7 @@ public class MemoryLimitActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.d(TAG, "onCreate = "+savedInstanceState);
+        storageStat = new StatFs(Environment.getDataDirectory().getPath());
         setContentView(R.layout.activity_memory_limit);
         getSupportActionBar().setTitle(getResources().getString(R.string.phoneMemoryLimitHeading));
         memoryThresholdText = (EditText)findViewById(R.id.memoryThresholdText);
@@ -113,6 +120,34 @@ public class MemoryLimitActivity extends AppCompatActivity {
                 disableThresholdElements();
             }
         }
+        totalPhoneMemory = (TextView)findViewById(R.id.totalMemory);
+        freeMemory = (TextView)findViewById(R.id.freeMemory);
+        //Convert total memory to better readable format.
+        if(storageStat.getTotalBytes() > GIGA_BYTE){
+            double gbs = (storageStat.getTotalBytes() / GIGA_BYTE);
+            gbs = (Math.ceil(gbs * 100.0))/100.0;
+            Log.d(TAG,"GBs = "+gbs);
+            totalPhoneMemory.setText(gbs+" GB");
+        }
+        else{
+            double mbs = (storageStat.getTotalBytes() / MEGA_BYTE);
+            mbs = (Math.ceil(mbs * 100.0))/100.0;
+            Log.d(TAG,"MBs = "+mbs);
+            totalPhoneMemory.setText(mbs+" MB");
+        }
+        //Convert free memory to better readable format.
+        if(storageStat.getAvailableBytes() > GIGA_BYTE){
+            double gbs = (storageStat.getAvailableBytes() / GIGA_BYTE);
+            gbs = (Math.ceil(gbs * 100.0))/100.0;
+            Log.d(TAG,"GBs = "+gbs);
+            freeMemory.setText(gbs+" GB");
+        }
+        else{
+            double mbs = (storageStat.getAvailableBytes() / MEGA_BYTE);
+            mbs = (Math.ceil(mbs * 100.0))/100.0;
+            Log.d(TAG,"MBs = "+mbs);
+            freeMemory.setText(mbs+" MB");
+        }
     }
 
     public void enableThresholdElements(){
@@ -179,13 +214,10 @@ public class MemoryLimitActivity extends AppCompatActivity {
             enableThresholdElements();
         }
     }
-    String memorymetric;
-    String memory;
 
     public boolean calculateIfThresholdIsWithinInternalMemory(){
-        StatFs stat = new StatFs(Environment.getDataDirectory().getPath());
-        Log.d(TAG,"Available size = "+stat.getAvailableBytes());
-        long availableMem = stat.getAvailableBytes();
+        Log.d(TAG,"Available size = "+storageStat.getAvailableBytes());
+        long availableMem = storageStat.getAvailableBytes();
 
         if(availableMem > GIGA_BYTE){
             double gbs = (availableMem / GIGA_BYTE);
@@ -211,17 +243,12 @@ public class MemoryLimitActivity extends AppCompatActivity {
             thresholdMem = (long)GIGA_BYTE * threshold;
             Log.d(TAG,"thresholdMem GB = "+thresholdMem );
         }
-        if(thresholdMem > stat.getAvailableBytes()){
+        if(thresholdMem > storageStat.getAvailableBytes()){
             return false;
         }
         else{
             return true;
         }
-    }
-
-    @Override
-    protected void onRestoreInstanceState(Bundle savedInstanceState) {
-        Log.d(TAG, "onRestoreInstanceState = "+savedInstanceState);
     }
 
     @Override

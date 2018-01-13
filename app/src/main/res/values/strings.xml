@@ -130,5 +130,8 @@
     <string name="googleDriveFolderCreated">FlipCam will now auto upload your media onto <u>%1$s</u> folder in Google Drive.</string>
     <string name="signInProgress">Fetching Google Account information in your phone for signing into %1$s.\n\nPlease Wait...</string>
     <string name="signInProgressTitle">Sign In to %1$s</string>
+    <string name="totalPhoneMemory">Total Phone Memory</string>
+    <string name="totalFreeMemory">Free Memory</string>
+    <string name="memoryStatus">Phone Memory Status</string>
 </resources>
 
