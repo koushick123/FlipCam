@@ -89,4 +89,6 @@
     <dimen name="checkboxTextMsgHeight">54dp</dimen>
     <dimen name="phoneMemRightMargin">100dp</dimen>
     <dimen name="checkboxMarginTopBottom">5dp</dimen>
+    <dimen name="googleDriveIconHeight">50dp</dimen>
+    <dimen name="googleDriveIconWidth">64dp</dimen>
 </resources>

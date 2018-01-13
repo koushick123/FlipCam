@@ -199,18 +199,6 @@ public class SettingsActivity extends AppCompatActivity{
         }
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        Log.d(TAG,"onResume");
-        updatePhoneMemoryText();
-        if(signInProgress){
-            signInProgressDialog.dismiss();
-            Log.d(TAG,"Reset signinprogess");
-            signInProgress = false;
-        }
-    }
-
     public void openSdCardPath(View view){
         if(settingsPref.contains(Constants.SD_CARD_PATH)) {
             ((EditText) sdCardRoot.findViewById(R.id.sdCardPathText)).setText(settingsPref.getString(Constants.SD_CARD_PATH,""));
@@ -352,6 +340,19 @@ public class SettingsActivity extends AppCompatActivity{
             savetocloudtitle.setText(getResources().getString(R.string.saveToCloudTitle, getResources().getString(R.string.googleDrive)));
             savetocloudmsg = (TextView)saveToCloudRoot.findViewById(R.id.savetocloudmsg);
             savetocloudmsg.setText(getResources().getString(R.string.signinmsg, getResources().getString(R.string.googleDrive)));
+            LinearLayout saveToHeader = (LinearLayout)saveToCloudRoot.findViewById(R.id.saveToHeader);
+            ImageView driveIcon = new ImageView(this);
+            ImageView fcIcon = (ImageView)saveToCloudRoot.findViewById(R.id.flipCamIcon);
+            TextView savetoCloudTitle = (TextView)saveToCloudRoot.findViewById(R.id.savetocloudtitle);
+            driveIcon.setImageDrawable(getResources().getDrawable(R.drawable.google_drive));
+            LinearLayout.LayoutParams imageParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            imageParams.height = (int)getResources().getDimension(R.dimen.googleDriveIconHeight);
+            imageParams.width = (int)getResources().getDimension(R.dimen.googleDriveIconWidth);
+            driveIcon.setLayoutParams(imageParams);
+            saveToHeader.removeAllViews();
+            saveToHeader.addView(fcIcon);
+            saveToHeader.addView(savetoCloudTitle);
+            saveToHeader.addView(driveIcon);
             saveToCloud.setContentView(saveToCloudRoot);
             saveToCloud.setCancelable(false);
             saveToCloud.show();
@@ -376,7 +377,6 @@ public class SettingsActivity extends AppCompatActivity{
             case R.id.continueSignIn:
                 saveToCloud.dismiss();
                 if(cloud == 0){
-                    switchOnDrive.setClickable(false);
                     //Sign in to Google Drive
                     int permissionCheck = ActivityCompat.checkSelfPermission(this, Manifest.permission.GET_ACCOUNTS);
                     if(permissionCheck == PackageManager.PERMISSION_GRANTED) {
@@ -416,7 +416,7 @@ public class SettingsActivity extends AppCompatActivity{
                     switchOnDrive.setChecked(false);
                 }
                 permissionAccount.dismiss();
-                Toast.makeText(getApplicationContext(), getResources().getString(R.string.permissionRationale), Toast.LENGTH_LONG).show();
+                //Toast.makeText(getApplicationContext(), getResources().getString(R.string.permissionRationale), Toast.LENGTH_LONG).show();
                 break;
         }
     }
@@ -434,6 +434,18 @@ public class SettingsActivity extends AppCompatActivity{
     protected void onPause() {
         super.onPause();
         Log.d(TAG,"onPause");
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.d(TAG,"onResume");
+        updatePhoneMemoryText();
+        if(signInProgress){
+            signInProgressDialog.dismiss();
+            Log.d(TAG,"Reset signinprogess");
+            signInProgress = false;
+        }
     }
 
     @Override
@@ -457,7 +469,6 @@ public class SettingsActivity extends AppCompatActivity{
         if(!isConnectedToInternet()){
             Toast.makeText(getApplicationContext(),getResources().getString(R.string.noConnectionMessage),Toast.LENGTH_SHORT).show();
             switchOnDrive.setChecked(false);
-            switchOnDrive.setClickable(true);
             return;
         }
         initializeGoogleSignIn();
@@ -526,7 +537,6 @@ public class SettingsActivity extends AppCompatActivity{
                                 Toast.makeText(getApplicationContext(),getResources().getString(R.string.noConnectionMessage),Toast.LENGTH_SHORT).show();
                             }
                             switchOnDrive.setChecked(false);
-                            switchOnDrive.setClickable(true);
                             disableGoogleDriveInSetting();
                             googleSignInClient.signOut();
                         }
@@ -563,7 +573,6 @@ public class SettingsActivity extends AppCompatActivity{
                         Toast.makeText(getApplicationContext(),getResources().getString(R.string.noConnectionMessage),Toast.LENGTH_SHORT).show();
                     }
                     switchOnDrive.setChecked(false);
-                    switchOnDrive.setClickable(true);
                     disableGoogleDriveInSetting();
                     googleSignInClient.signOut();
                 }
@@ -579,7 +588,6 @@ public class SettingsActivity extends AppCompatActivity{
                 if(!metadata.isTrashed()) {
                     Toast.makeText(getApplicationContext(), getResources().getString(R.string.googleDriveFolderCreated, metadata.getTitle()), Toast.LENGTH_SHORT).show();
                     switchOnDrive.setChecked(true);
-                    switchOnDrive.setClickable(true);
                     updateGoogleDriveInSetting(metadata.getTitle(),true,metadata.getDriveId().encodeToString());
                 }
                 else{
@@ -603,7 +611,7 @@ public class SettingsActivity extends AppCompatActivity{
                         Log.d(TAG,"permission rational");
                         saveToCloud.dismiss();
                         if(cloud == 0) {
-                            Toast.makeText(getApplicationContext(), getResources().getString(R.string.permissionRationale), Toast.LENGTH_LONG).show();
+                            //Toast.makeText(getApplicationContext(), getResources().getString(R.string.permissionRationale), Toast.LENGTH_LONG).show();
                             switchOnDrive.setChecked(false);
                         }
                     }
@@ -627,7 +635,6 @@ public class SettingsActivity extends AppCompatActivity{
                     if(cloud == 0) {
                         switchOnDrive.setChecked(false);
                         signedInDrive = false;
-                        switchOnDrive.setClickable(true);
                         disableGoogleDriveInSetting();
                     }
                     return;
@@ -642,7 +649,6 @@ public class SettingsActivity extends AppCompatActivity{
                         Log.d(TAG,"NO Internet");
                         Toast.makeText(getApplicationContext(),getResources().getString(R.string.noConnectionMessage),Toast.LENGTH_SHORT).show();
                         switchOnDrive.setChecked(false);
-                        switchOnDrive.setClickable(true);
                         disableGoogleDriveInSetting();
                     }
                     else {
@@ -654,7 +660,6 @@ public class SettingsActivity extends AppCompatActivity{
                     if(cloud == 0) {
                         switchOnDrive.setChecked(false);
                         signedInDrive = false;
-                        switchOnDrive.setClickable(true);
                         disableGoogleDriveInSetting();
                     }
                 }
@@ -732,6 +737,7 @@ public class SettingsActivity extends AppCompatActivity{
                                                 .setTitle(folderNameText.getText().toString())
                                                 .setMimeType(DriveFolder.MIME_TYPE)
                                                 .build();
+                                        Log.d(TAG,"Creating folder in Drive");
                                         return mDriveResourceClient.createFolder(parentFolder, changeSet);
                                     }
                                 })
@@ -744,7 +750,6 @@ public class SettingsActivity extends AppCompatActivity{
                                                         Toast.LENGTH_SHORT).show();
                                                 Log.d(TAG, "SAVE Driveid = " + driveFolder.getDriveId().encodeToString());
                                                 updateGoogleDriveInSetting(folderNameText.getText().toString(), true, driveFolder.getDriveId().encodeToString());
-                                                switchOnDrive.setClickable(true);
                                             }
                                         })
                                 .addOnFailureListener(this, new OnFailureListener() {
@@ -757,7 +762,6 @@ public class SettingsActivity extends AppCompatActivity{
                                         switchOnDrive.setChecked(false);
                                         signedInDrive = false;
                                         updateGoogleDriveInSetting("", false, "");
-                                        switchOnDrive.setClickable(true);
                                         googleSignInClient.signOut();
                                     }
                                 });
@@ -768,13 +772,12 @@ public class SettingsActivity extends AppCompatActivity{
                 break;
             case R.id.cancelFolder:
                 cloudUpload.dismiss();
-                Toast.makeText(getApplicationContext(),getResources().getString(R.string.uploadCancelled),Toast.LENGTH_SHORT).show();
                 if(cloud == 0) {
                     switchOnDrive.setChecked(false);
                     signedInDrive = false;
                     updateGoogleDriveInSetting("",false,"");
-                    switchOnDrive.setClickable(true);
                     googleSignInClient.signOut();
+                    Toast.makeText(getApplicationContext(),getResources().getString(R.string.signoutcloud, getResources().getString(R.string.googleDrive)),Toast.LENGTH_SHORT).show();
                 }
         }
     }

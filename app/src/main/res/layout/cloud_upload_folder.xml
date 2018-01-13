@@ -30,6 +30,7 @@
                 android:layout_weight="1"
                 android:paddingLeft="10dp"
                 android:text="@string/uploadFolderTitle"
+                android:textAlignment="center"
                 android:textColor="@color/mediaControlColor"
                 android:textStyle="bold" />
 
@@ -45,6 +46,7 @@
             android:layout_marginTop="20dp"
             android:layout_weight="0.00"
             android:text="@string/uploadFolder"
+            android:textAlignment="center"
             android:textColor="@color/turqoise" />
 
         <EditText
@@ -56,6 +58,7 @@
             android:layout_marginRight="20dp"
             android:ems="10"
             android:inputType="textPersonName"
+            android:textAlignment="textStart"
             android:textColor="@color/turqoise"
             android:textColorLink="@color/turqoise" />
 
