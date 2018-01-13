@@ -13,7 +13,6 @@ PhotoFragment.SwitchPhoto{
 
     private static final String TAG = "CameraActivity";
     private static final String VIDEO = "1";
-    private static final String PHOTO = "2";
     VideoFragment videoFragment = null;
     PhotoFragment photoFragment = null;
     @Override
@@ -32,6 +31,7 @@ PhotoFragment.SwitchPhoto{
     public void goToSettings(View view){
         Intent settingsIntent = new Intent(this, SettingsActivity.class);
         startActivity(settingsIntent);
+        overridePendingTransition(R.anim.slide_from_right,R.anim.slide_to_left);
     }
 
     @Override

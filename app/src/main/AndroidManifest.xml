@@ -93,7 +93,8 @@
             android:configChanges="orientation|screenSize">
             <action android:name="com.google.android.apps.drive.DRIVE" />
         </activity>
-        <activity android:name=".MemoryLimitActivity"></activity>
+        <activity android:name=".MemoryLimitActivity"
+            android:windowSoftInputMode="adjustResize"></activity>
     </application>
 
 </manifest>

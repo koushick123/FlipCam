@@ -9,6 +9,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.RadioButton;
@@ -30,9 +31,17 @@ public class MemoryLimitActivity extends AppCompatActivity {
     CheckBox disablethresholdCheck;
     boolean mbSelect = true;
     boolean disableCheck = false;
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        Log.d(TAG, "onPause");
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.d(TAG, "onCreate = "+savedInstanceState);
         setContentView(R.layout.activity_memory_limit);
         getSupportActionBar().setTitle(getResources().getString(R.string.phoneMemoryLimitHeading));
         memoryThresholdText = (EditText)findViewById(R.id.memoryThresholdText);
@@ -41,54 +50,69 @@ public class MemoryLimitActivity extends AppCompatActivity {
         disablethresholdCheck = (CheckBox)findViewById(R.id.disablethresholdCheck);
         settingsPref = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
         settingsEditor = settingsPref.edit();
-        if(settingsPref.contains(Constants.PHONE_MEMORY_DISABLE)) {
-            if(!settingsPref.getBoolean(Constants.PHONE_MEMORY_DISABLE, false)) {
-                enableThresholdElements();
-                disablethresholdCheck.setChecked(false);
-                if (settingsPref.contains(Constants.PHONE_MEMORY_LIMIT)) {
-                    switch (settingsPref.getString(Constants.PHONE_MEMORY_METRIC, "")) {
-                        case "MB":
-                            mbButton.setChecked(true);
-                            gbButton.setChecked(false);
-                            mbSelect = true;
-                            break;
-                        case "GB":
-                            mbButton.setChecked(false);
-                            gbButton.setChecked(true);
-                            mbSelect = false;
-                            break;
+        if(savedInstanceState == null) {
+            if (settingsPref.contains(Constants.PHONE_MEMORY_DISABLE)) {
+                if (!settingsPref.getBoolean(Constants.PHONE_MEMORY_DISABLE, false)) {
+                    enableThresholdElements();
+                    disablethresholdCheck.setChecked(false);
+                    if (settingsPref.contains(Constants.PHONE_MEMORY_LIMIT)) {
+                        switch (settingsPref.getString(Constants.PHONE_MEMORY_METRIC, "")) {
+                            case "MB":
+                                mbButton.setChecked(true);
+                                gbButton.setChecked(false);
+                                mbSelect = true;
+                                break;
+                            case "GB":
+                                mbButton.setChecked(false);
+                                gbButton.setChecked(true);
+                                mbSelect = false;
+                                break;
+                        }
+                        memoryThresholdText.setText(settingsPref.getString(Constants.PHONE_MEMORY_LIMIT, getResources().getInteger(R.integer.minimumMemoryWarning) + ""));
+                    } else {
+                        //Set to default values.
+                        mbButton.setChecked(true);
+                        gbButton.setChecked(false);
+                        mbSelect = true;
+                        memoryThresholdText.setText(getResources().getInteger(R.integer.minimumMemoryWarning) + "");
                     }
-                    memoryThresholdText.setText(settingsPref.getString(Constants.PHONE_MEMORY_LIMIT, getResources().getInteger(R.integer.minimumMemoryWarning) + ""));
                 } else {
-                    //Set to default values.
-                    mbButton.setChecked(true);
-                    gbButton.setChecked(false);
-                    mbSelect = true;
-                    memoryThresholdText.setText(getResources().getInteger(R.integer.minimumMemoryWarning) + "");
+                    disableThresholdElements();
+                    disablethresholdCheck.setChecked(true);
                 }
-            }
-            else{
-                disableThresholdElements();
-                disablethresholdCheck.setChecked(true);
+            } else {
+                //Set to default values.
+                mbButton.setChecked(true);
+                gbButton.setChecked(false);
+                mbSelect = true;
+                disablethresholdCheck.setChecked(false);
+                memoryThresholdText.setText(getResources().getInteger(R.integer.minimumMemoryWarning) + "");
+                disableCheck = false;
             }
         }
         else{
-            //Set to default values.
-            mbButton.setChecked(true);
-            gbButton.setChecked(false);
-            mbSelect = true;
-            disablethresholdCheck.setChecked(false);
-            memoryThresholdText.setText(getResources().getInteger(R.integer.minimumMemoryWarning) + "");
-            disableCheck = false;
-        }
-        memoryThresholdText.setOnFocusChangeListener(new View.OnFocusChangeListener() {
-            @Override
-            public void onFocusChange(View view, boolean hasFocus) {
-                if(hasFocus){
-                    getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
-                }
+            //Fetch saved values and populate
+            Log.d(TAG, "Memory = "+savedInstanceState.getString("memory"));
+            Log.d(TAG, "Metric = "+savedInstanceState.getBoolean("memoryMetric"));
+            Log.d(TAG, "Disable check = "+savedInstanceState.getBoolean("memoryThresholdCheck"));
+            memoryThresholdText.setText(savedInstanceState.getString("memory"));
+            if(savedInstanceState.getBoolean("memoryMetric")){
+                mbButton.setChecked(true);
+                gbButton.setChecked(false);
             }
-        });
+            else{
+                mbButton.setChecked(false);
+                gbButton.setChecked(true);
+            }
+            disablethresholdCheck.setChecked(savedInstanceState.getBoolean("memoryThresholdCheck"));
+            if(!disablethresholdCheck.isChecked()){
+                getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
+                enableThresholdElements();
+            }
+            else{
+                disableThresholdElements();
+            }
+        }
     }
 
     public void enableThresholdElements(){
@@ -96,6 +120,9 @@ public class MemoryLimitActivity extends AppCompatActivity {
         gbButton.setEnabled(true);
         mbButton.setEnabled(true);
         disableCheck = false;
+        memoryThresholdText.requestFocus();
+        InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.showSoftInput(memoryThresholdText, InputMethodManager.SHOW_IMPLICIT);
     }
 
     public void disableThresholdElements(){
@@ -104,12 +131,22 @@ public class MemoryLimitActivity extends AppCompatActivity {
         gbButton.setEnabled(false);
         mbButton.setEnabled(false);
         disableCheck = true;
+        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
     }
 
     public void selectMB(View view){
         mbButton.setChecked(true);
         gbButton.setChecked(false);
         mbSelect = true;
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.d(TAG,"onResume");
+        if(!disablethresholdCheck.isChecked()){
+            enableThresholdElements();
+        }
     }
 
     public void selectGB(View view){
@@ -183,13 +220,26 @@ public class MemoryLimitActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        Log.d(TAG, "onRestoreInstanceState = "+savedInstanceState);
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        Log.d(TAG, "onSaveInstanceState");
+        outState.putBoolean("memoryMetric",mbSelect);
+        outState.putString("memory",memoryThresholdText.getText().toString());
+        outState.putBoolean("memoryThresholdCheck",disablethresholdCheck.isChecked());
+    }
+
+    @Override
     public void onBackPressed() {
         if (disableCheck) {
-            super.onBackPressed();
             settingsEditor.remove(Constants.PHONE_MEMORY_LIMIT);
             settingsEditor.remove(Constants.PHONE_MEMORY_METRIC);
             settingsEditor.putBoolean(Constants.PHONE_MEMORY_DISABLE, true);
             settingsEditor.commit();
+            super.onBackPressed();
         } else {
             if (validateThreshold()) {
                 if (calculateIfThresholdIsWithinInternalMemory()) {

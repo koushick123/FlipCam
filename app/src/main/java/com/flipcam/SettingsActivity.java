@@ -333,6 +333,12 @@ public class SettingsActivity extends AppCompatActivity{
         overridePendingTransition(R.anim.slide_from_right,R.anim.slide_to_left);
     }
 
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        overridePendingTransition(R.anim.slide_from_left, R.anim.slide_to_right);
+    }
+
     public void saveToCloudDrive(View view) {
         if (switchOnDrive.isChecked()) {
             cloud = 0;
@@ -340,19 +346,12 @@ public class SettingsActivity extends AppCompatActivity{
             savetocloudtitle.setText(getResources().getString(R.string.saveToCloudTitle, getResources().getString(R.string.googleDrive)));
             savetocloudmsg = (TextView)saveToCloudRoot.findViewById(R.id.savetocloudmsg);
             savetocloudmsg.setText(getResources().getString(R.string.signinmsg, getResources().getString(R.string.googleDrive)));
-            LinearLayout saveToHeader = (LinearLayout)saveToCloudRoot.findViewById(R.id.saveToHeader);
-            ImageView driveIcon = new ImageView(this);
-            ImageView fcIcon = (ImageView)saveToCloudRoot.findViewById(R.id.flipCamIcon);
-            TextView savetoCloudTitle = (TextView)saveToCloudRoot.findViewById(R.id.savetocloudtitle);
-            driveIcon.setImageDrawable(getResources().getDrawable(R.drawable.google_drive));
+            ImageView placeHolderIcon = (ImageView)saveToCloudRoot.findViewById(R.id.placeHolderIconSavetoCloud);
+            placeHolderIcon.setImageDrawable(getResources().getDrawable(R.drawable.google_drive));
             LinearLayout.LayoutParams imageParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-            imageParams.height = (int)getResources().getDimension(R.dimen.googleDriveIconHeight);
             imageParams.width = (int)getResources().getDimension(R.dimen.googleDriveIconWidth);
-            driveIcon.setLayoutParams(imageParams);
-            saveToHeader.removeAllViews();
-            saveToHeader.addView(fcIcon);
-            saveToHeader.addView(savetoCloudTitle);
-            saveToHeader.addView(driveIcon);
+            imageParams.height = (int)getResources().getDimension(R.dimen.googleDriveIconHeight);
+            placeHolderIcon.setLayoutParams(imageParams);
             saveToCloud.setContentView(saveToCloudRoot);
             saveToCloud.setCancelable(false);
             saveToCloud.show();
@@ -493,10 +492,12 @@ public class SettingsActivity extends AppCompatActivity{
             signInProgress = true;
             TextView signInText = (TextView)signInProgressRoot.findViewById(R.id.signInText);
             TextView signInprogressTitle = (TextView)signInProgressRoot.findViewById(R.id.savetocloudtitle);
-            signInprogressTitle.setText(getResources().getString(R.string.signInProgressTitle, getResources().getString(R.string.googleDrive)));
-            signInText.setText(getResources().getString(R.string.signInProgress, getResources().getString(R.string.googleDrive)));
-            ImageView signInImage = (ImageView)signInProgressRoot.findViewById(R.id.signInImage);
-            signInImage.setImageDrawable(getResources().getDrawable(R.drawable.google_drive));
+            if(cloud == 0) {
+                signInprogressTitle.setText(getResources().getString(R.string.signInProgressTitle, getResources().getString(R.string.googleDrive)));
+                signInText.setText(getResources().getString(R.string.signInProgress, getResources().getString(R.string.googleDrive)));
+                ImageView signInImage = (ImageView) signInProgressRoot.findViewById(R.id.signInImage);
+                signInImage.setImageDrawable(getResources().getDrawable(R.drawable.google_drive));
+            }
             signInProgressDialog.setContentView(signInProgressRoot);
             signInProgressDialog.setCancelable(false);
             signInProgressDialog.show();
