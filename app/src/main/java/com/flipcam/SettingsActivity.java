@@ -528,6 +528,7 @@ public class SettingsActivity extends AppCompatActivity{
                             switchOnDrive.setChecked(false);
                             switchOnDrive.setClickable(true);
                             disableGoogleDriveInSetting();
+                            googleSignInClient.signOut();
                         }
                     }
                 })
