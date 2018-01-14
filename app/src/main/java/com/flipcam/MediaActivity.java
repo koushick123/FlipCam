@@ -544,7 +544,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             meReq.executeAsync();
         }
         else{
-            //mNotificationManager.cancel(Integer.parseInt(startUploadId));
             Intent mediaUploadIntent = new Intent(getApplicationContext(),MediaUploadService.class);
             mediaUploadIntent.putExtra("uploadFile",medias[selectedPosition].getPath());
             mediaUploadIntent.putExtra("userId",userId);
@@ -569,7 +568,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 JSONObject jsonObject = response.getJSONObject();
                 try {
                     userId = (String) jsonObject.get("id");
-                    //mNotificationManager.cancel(Integer.parseInt(startId));
                     Intent mediaUploadIntent = new Intent(getApplicationContext(), MediaUploadService.class);
                     mediaUploadIntent.putExtra("uploadFile", medias[selectedPosition].getPath());
                     mediaUploadIntent.putExtra("userId", userId);

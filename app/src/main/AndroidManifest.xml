@@ -88,11 +88,17 @@
             android:description="@string/mediaService"
             android:exported="false" />
 
+        <service
+            android:name=".service.GoogleDriveUploadService"
+            android:description="@string/googleDriveService"
+            android:exported="false" />
+
         <activity
             android:name=".SettingsActivity"
             android:configChanges="orientation|screenSize">
             <action android:name="com.google.android.apps.drive.DRIVE" />
         </activity>
+
         <activity android:name=".MemoryLimitActivity"
             android:windowSoftInputMode="adjustResize"></activity>
     </application>

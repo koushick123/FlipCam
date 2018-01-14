@@ -28,12 +28,14 @@ import android.widget.Toast;
 
 import com.flipcam.constants.Constants;
 import com.flipcam.media.FileMedia;
+import com.flipcam.service.GoogleDriveUploadService;
 import com.flipcam.util.MediaUtil;
 import com.flipcam.view.CameraView;
 
 import java.io.File;
 
 import static android.widget.Toast.makeText;
+import static com.facebook.FacebookSdk.getApplicationContext;
 import static com.flipcam.PermissionActivity.FC_SHARED_PREFERENCE;
 import static com.flipcam.R.id.modeInfo;
 
@@ -56,6 +58,7 @@ public class VideoFragment extends android.app.Fragment{
     TextView memoryConsumed;
     PermissionInterface permissionInterface;
     SwitchInterface switchInterface;
+    StartUploadService startUploadService;
     ImageButton stopRecord;
     ImageView imagePreview;
     TextView modeText;
@@ -81,6 +84,9 @@ public class VideoFragment extends android.app.Fragment{
         void switchToPhoto();
     }
 
+    public interface StartUploadService{
+        void startAutoUpload(String filename);
+    }
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
@@ -104,6 +110,7 @@ public class VideoFragment extends android.app.Fragment{
         mode = (TextView)getActivity().findViewById(R.id.mode);
         permissionInterface = (PermissionInterface)getActivity();
         switchInterface = (SwitchInterface)getActivity();
+        startUploadService = (StartUploadService)getActivity();
     }
 
     @Override
@@ -233,6 +240,16 @@ public class VideoFragment extends android.app.Fragment{
                 cameraView.record();
                 showRecordAndThumbnail();
                 showRecordSaved();
+                SharedPreferences sharedPreferences = getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
+                if(sharedPreferences.getBoolean(Constants.SAVE_TO_GOOGLE_DRIVE, false)) {
+                    Log.d(TAG, "Auto uploading to Google Drive");
+                    //Auto upload to Google Drive enabled.
+                    //startUploadService.startAutoUpload(cameraView.getMediaPath());
+                    Intent googleDriveUploadIntent = new Intent(getApplicationContext(), GoogleDriveUploadService.class);
+                    googleDriveUploadIntent.putExtra("uploadFile", cameraView.getMediaPath());
+                    Log.d(TAG, "Uploading file = "+cameraView.getMediaPath());
+                    getActivity().startService(googleDriveUploadIntent);
+                }
             }
         });
         switchCamera.setBackgroundColor(getResources().getColor(R.color.transparentBar));
@@ -298,7 +315,7 @@ public class VideoFragment extends android.app.Fragment{
             @Override
             public void run() {
                 try {
-                    Thread.sleep(1700);
+                    Thread.sleep(2000);
                     showCompleted.cancel();
                 }catch (InterruptedException ie){
                     ie.printStackTrace();
