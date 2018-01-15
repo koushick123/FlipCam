@@ -37,6 +37,7 @@ import com.google.android.gms.drive.DriveFolder;
 import com.google.android.gms.drive.DriveId;
 import com.google.android.gms.drive.DriveResourceClient;
 import com.google.android.gms.drive.DriveStatusCodes;
+import com.google.android.gms.drive.Metadata;
 import com.google.android.gms.drive.MetadataChangeSet;
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.OnFailureListener;
@@ -62,7 +63,8 @@ public class GoogleDriveUploadService extends Service {
 
     public static final String TAG = "DriveUploadService";
     int NO_OF_REQUESTS = 0;
-    Boolean success = null;
+    boolean validFolder = false;
+    Boolean success;
     String uploadFile;
     String filename;
     GoogleDriveUploadService.GoogleUploadHandler googleUploadHandler;
@@ -81,6 +83,8 @@ public class GoogleDriveUploadService extends Service {
     Account[] googleAccount;
     MetadataChangeSet changeSet;
     DriveContents contents;
+    String folderName;
+    DriveId folderId;
     DriveFolder uploadToFolder;
 
     class GoogleUploadHandler extends Handler {
@@ -94,9 +98,9 @@ public class GoogleDriveUploadService extends Service {
         public void handleMessage(Message msg) {
             switch(msg.what){
                 case Constants.UPLOAD_PROGRESS:
-                    Log.d(TAG,"upload id = "+uploadId);
+                    Log.i(TAG,"upload id = "+uploadId);
                     if(!isImage(uploadFile)) {
-                        mBuilder.setContentTitle(getResources().getString(R.string.uploadInProgressTitle));
+                        mBuilder.setContentTitle(getResources().getString(R.string.autoUploadInProgressTitle));
                         mBuilder.setColor(getResources().getColor(R.color.uploadColor));
                         mBuilder.setContentText(getResources().getString(R.string.uploadInProgress, "Video"));
                         mNotificationManager.notify(Integer.parseInt(uploadId), mBuilder.build());
@@ -106,7 +110,7 @@ public class GoogleDriveUploadService extends Service {
                         mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.uploadInProgress, "Photo")
                                 + "\n" + "File "+filename));
                         mBuilder.setColor(getResources().getColor(R.color.uploadColor));
-                        mBuilder.setContentTitle(getResources().getString(R.string.uploadInProgressTitle));
+                        mBuilder.setContentTitle(getResources().getString(R.string.autoUploadInProgressTitle));
                         mBuilder.setContentText(getResources().getString(R.string.uploadInProgress, "Photo"));
                         mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
                     }
@@ -132,14 +136,14 @@ public class GoogleDriveUploadService extends Service {
 
     @Override
     public void onCreate() {
-        Log.d(TAG, "onCreate");
+        Log.i(TAG, "onCreate");
         notifyIcon = BitmapFactory.decodeResource(getApplicationContext().getResources(),R.drawable.ic_launcher);
         mNotificationManager = (NotificationManager) getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
         mBuilder = new NotificationCompat.Builder(getApplicationContext())
                 .setLargeIcon(notifyIcon)
                 .setSmallIcon(R.drawable.ic_file_upload)
-                .setContentTitle(getResources().getString(R.string.uploadInProgressTitle))
-                .setContentText("Auto Upload in Progress");
+                .setContentTitle(getResources().getString(R.string.autoUploadInProgressTitle))
+                .setContentText(getResources().getString(R.string.autoUploadInProgress));
         uploadNotification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
         mBuilder.setPriority(NotificationCompat.PRIORITY_HIGH);
         initializeGoogleSignIn();
@@ -151,14 +155,17 @@ public class GoogleDriveUploadService extends Service {
         googleAccount = accountManager.getAccountsByType("com.google");
         if (googleAccount != null && googleAccount.length > 0) {
             for (int i = 0; i < googleAccount.length; i++) {
-                Log.d(TAG, "Acc name = " + googleAccount[i].name);
+                Log.i(TAG, "Acc name = " + googleAccount[i].name);
             }
         } else {
-            Log.d(TAG, "No google account");
+            Log.i(TAG, "No google account");
         }
-        uploadToFolder = DriveId.decodeFromString(
-                getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE).getString(Constants.GOOGLE_DRIVE_FOLDER_ID, "")).asDriveFolder();
-        Log.d(TAG, "Upload folder name = "+getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE).getString(Constants.GOOGLE_DRIVE_FOLDER,""));
+
+        folderId = DriveId.decodeFromString(
+                getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE).getString(Constants.GOOGLE_DRIVE_FOLDER_ID, ""));
+        uploadToFolder = folderId.asDriveFolder();
+        Log.i(TAG, "Upload folder name = "+getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE).getString(Constants.GOOGLE_DRIVE_FOLDER,""));
+        folderName = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE).getString(Constants.GOOGLE_DRIVE_FOLDER,"");
         googleUploadHandler = new GoogleUploadHandler(this);
     }
 
@@ -176,9 +183,9 @@ public class GoogleDriveUploadService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         SimpleDateFormat sdf = new SimpleDateFormat(getResources().getString(R.string.DATE_FORMAT_FOR_UPLOAD_PROCESS));
         String startID = sdf.format(new Date());
-        Log.d(TAG,"onStartCommand = "+startID);
+        Log.i(TAG,"onStartCommand = "+startID);
         final String uploadfilepath = (String)intent.getExtras().get("uploadFile");
-        Log.d(TAG,"Upload file = "+uploadfilepath);
+        Log.i(TAG,"Upload file = "+uploadfilepath);
         googleUploadHandler = new GoogleDriveUploadService.GoogleUploadHandler(this);
         new GoogleDriveUploadTask().execute(uploadfilepath, startID);
         return Service.START_NOT_STICKY;
@@ -187,19 +194,29 @@ public class GoogleDriveUploadService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        Log.d(TAG, "onDestroy");
+        Log.i(TAG, "onDestroy");
+    }
+
+    public void showFolderErrorNotification(){
+        mBuilder.setColor(getResources().getColor(R.color.uploadError));
+        mBuilder.setContentText(getResources().getString(R.string.fileErrorMessage, filename));
+        mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.fileErrorMessage, filename)));
+        mBuilder.setContentTitle(getResources().getString(R.string.errorTitle));
+        mBuilder.setSound(uploadNotification);
+        mBuilder.setPriority(NotificationCompat.PRIORITY_HIGH);
+        mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
     }
 
     class GoogleDriveUploadTask extends AsyncTask<String,Void,Boolean>{
         @Override
         protected void onPreExecute() {
-            Log.d(TAG,"onPreExecute");
+            Log.i(TAG,"onPreExecute");
             NO_OF_REQUESTS++;
         }
 
         @Override
         protected void onPostExecute(Boolean aBoolean) {
-            Log.d(TAG,"onPostExecute = "+uploadId+", success = "+success);
+            Log.i(TAG,"onPostExecute = "+uploadId+", success = "+success);
             uploadedSize = 0;
             if(success){
                 mBuilder.setColor(getResources().getColor(R.color.uploadColor));
@@ -208,13 +225,9 @@ public class GoogleDriveUploadService extends Service {
                 mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.uploadSuccessMessage, filename)));
                 mBuilder.setSound(uploadNotification);
                 mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
-                //Reduce priority so this is pushed down in notification drawer.
-                mBuilder.setPriority(NotificationCompat.PRIORITY_DEFAULT);
-                mBuilder.setSound(null);
-                mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
             }
             NO_OF_REQUESTS--;
-            Log.d(TAG,"No of requests = "+NO_OF_REQUESTS);
+            Log.i(TAG,"No of requests = "+NO_OF_REQUESTS);
             if(NO_OF_REQUESTS > 0) {
                 stopSelf(Integer.parseInt(uploadId));
             }
@@ -225,23 +238,26 @@ public class GoogleDriveUploadService extends Service {
 
         @Override
         protected Boolean doInBackground(String... params) {
+            Log.i(TAG, "doInBackground = "+params[1]);
             uploadFile = params[0];
             uploadId = params[1];
             filename = uploadFile.substring(uploadFile.lastIndexOf("/") + 1,uploadFile.length());
-            startUpload(uploadId);
+            googleUploadHandler.sendEmptyMessage(Constants.UPLOAD_PROGRESS);
+            success = null;
+            fetchDriveFolderMetadata(folderId);
             while(success == null){
 
             }
-            Log.d(TAG,"EXIT Thread");
+            Log.i(TAG,"EXIT Thread");
             return success;
         }
     }
 
     private void getDriveClient(GoogleSignInAccount signInAccount) {
-        Log.d(TAG,"getDriveClient");
+        Log.i(TAG,"getDriveClient");
         mDriveClient = Drive.getDriveClient(getApplicationContext(), signInAccount);
         mDriveResourceClient = Drive.getDriveResourceClient(getApplicationContext(), signInAccount);
-        Log.d(TAG, "Sign-in SUCCESS.");
+        Log.i(TAG, "Sign-in SUCCESS.");
     }
 
     public boolean isImage(String path)
@@ -252,10 +268,65 @@ public class GoogleDriveUploadService extends Service {
         return false;
     }
 
-    public void startUpload(String uploadId){
+    public void showUploadErrorNotification(){
+        mBuilder.setColor(getResources().getColor(R.color.uploadError));
+        mBuilder.setContentText(getResources().getString(R.string.uploadErrorMessage));
+        mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.uploadErrorMessage)));
+        mBuilder.setContentTitle("Auto Upload Interrupted");
+        mBuilder.setSound(uploadNotification);
+        mBuilder.setPriority(NotificationCompat.PRIORITY_HIGH);
+        mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
+    }
+
+    public void showFolderNotExistErrorNotification(){
+        mBuilder.setColor(getResources().getColor(R.color.uploadError));
+        mBuilder.setContentText("Folder "+folderName+" is either deleted or does not exist in Google Drive.");
+        mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.uploadErrorMessage)));
+        mBuilder.setContentTitle("Auto Upload Interrupted");
+        mBuilder.setSound(uploadNotification);
+        mBuilder.setPriority(NotificationCompat.PRIORITY_HIGH);
+        mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
+    }
+
+    public void fetchDriveFolderMetadata(DriveId folderId){
+        Task<Metadata> metadata = mDriveResourceClient.getMetadata(folderId.asDriveFolder());
+        metadata.addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Log.i(TAG, "Message = "+e.getMessage());
+                if(e.getMessage().contains(String.valueOf(DriveStatusCodes.DRIVE_RESOURCE_NOT_AVAILABLE))) {
+                    showFolderNotExistErrorNotification();
+                }
+                else{
+                    if(!isConnectedToInternet()) {
+                        showUploadErrorNotification();
+                    }
+                }
+                success = false;
+            }
+        });
+        metadata.addOnSuccessListener(new OnSuccessListener<Metadata>() {
+            @Override
+            public void onSuccess(Metadata metadata) {
+                Log.i(TAG,"metadata isTrashed = "+metadata.isTrashed());
+                Log.i(TAG, "Drive id is = " + metadata.getDriveId());
+                Log.i(TAG, "created date = "+metadata.getCreatedDate());
+                Log.i(TAG, "Title = "+metadata.getTitle());
+                if(!metadata.isTrashed()) {
+                    validFolder = true;
+                    startUpload(uploadId);
+                }
+                else{
+                    success = false;
+                    showFolderNotExistErrorNotification();
+                }
+            }
+        });
+    }
+
+    public void startUpload(final String uploadId){
         getDriveClient(signInAccount);
-        Log.d(TAG, "startUpload");
-        googleUploadHandler.sendEmptyMessage(Constants.UPLOAD_PROGRESS);
+        Log.i(TAG, "startUpload");
         mDriveResourceClient.createContents()
                 .continueWithTask(new Continuation<DriveContents, Task<DriveFile>>() {
                     @Override
@@ -274,9 +345,9 @@ public class GoogleDriveUploadService extends Service {
                                     outputStream.write(cache, 0, data);
                                     writeLength += data;
                                 }
-                                Log.d(TAG, "Data size = " + writeLength);
+                                Log.i(TAG, "Data size = " + writeLength);
                             } catch (IOException e1) {
-                                Log.d(TAG, "Unable to write video file contents.");
+                                Log.i(TAG, "Unable to write video file contents.");
                             } finally {
                                 outputStream.close();
                             }
@@ -287,14 +358,16 @@ public class GoogleDriveUploadService extends Service {
                                     .build();
                         }
                         else{
+                            Log.i(TAG, "Send IMAGE file");
                             Bitmap image = BitmapFactory.decodeFile(uploadFile);
                             ByteArrayOutputStream bitmapStream = new ByteArrayOutputStream();
-                            image.compress(Bitmap.CompressFormat.PNG, 100, bitmapStream);
+                            image.compress(Bitmap.CompressFormat.JPEG, 100, bitmapStream);
                             try {
+                                Log.i(TAG, "Writing image to contents");
                                 outputStream.write(bitmapStream.toByteArray());
                             }
                             catch (IOException e1) {
-                                Log.d(TAG, "Unable to write image file contents.");
+                                Log.i(TAG, "Unable to write image file contents.");
                             } finally {
                                 outputStream.close();
                             }
@@ -331,7 +404,7 @@ public class GoogleDriveUploadService extends Service {
                             Toast.makeText(getApplicationContext(),"User needs to Sign in to upload to Google Drive.",Toast.LENGTH_SHORT).show();
                         }
                         else if(e.getMessage().contains(String.valueOf(DriveStatusCodes.DRIVE_RESOURCE_NOT_AVAILABLE))){
-
+                            Toast.makeText(getApplicationContext(),"Folder not available in Google Drive.",Toast.LENGTH_SHORT).show();
                         }
                     }
                 });

@@ -64,6 +64,8 @@
     <string name="uploadFinish">Finishing Upload.</string>
     <string name="errorTitle">Upload Interrupted</string>
     <string name="uploadInProgressTitle">Upload in Progress</string>
+    <string name="autoUploadInProgressTitle">Auto Upload in Progress</string>
+    <string name="autoUploadInProgress">Auto Upload in Progress</string>
     <string name="uploadCompleted">Upload Completed</string>
     <string name="connectionRetry">Possible Connection Loss.\nRetry for %1$d secs (%2$d)....</string>
     <string name="connectionRetryLess">Possible Connection Loss. Retrying...</string>
