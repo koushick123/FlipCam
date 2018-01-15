@@ -62,7 +62,7 @@ public class GoogleDriveUploadService extends Service {
 
     public static final String TAG = "DriveUploadService";
     int NO_OF_REQUESTS = 0;
-    Boolean success = false;
+    Boolean success = null;
     String uploadFile;
     String filename;
     GoogleDriveUploadService.GoogleUploadHandler googleUploadHandler;
@@ -229,6 +229,9 @@ public class GoogleDriveUploadService extends Service {
             uploadId = params[1];
             filename = uploadFile.substring(uploadFile.lastIndexOf("/") + 1,uploadFile.length());
             startUpload(uploadId);
+            while(success == null){
+
+            }
             Log.d(TAG,"EXIT Thread");
             return success;
         }

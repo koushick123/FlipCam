@@ -58,7 +58,6 @@ public class VideoFragment extends android.app.Fragment{
     TextView memoryConsumed;
     PermissionInterface permissionInterface;
     SwitchInterface switchInterface;
-    StartUploadService startUploadService;
     ImageButton stopRecord;
     ImageView imagePreview;
     TextView modeText;
@@ -110,7 +109,6 @@ public class VideoFragment extends android.app.Fragment{
         mode = (TextView)getActivity().findViewById(R.id.mode);
         permissionInterface = (PermissionInterface)getActivity();
         switchInterface = (SwitchInterface)getActivity();
-        startUploadService = (StartUploadService)getActivity();
     }
 
     @Override
@@ -244,7 +242,6 @@ public class VideoFragment extends android.app.Fragment{
                 if(sharedPreferences.getBoolean(Constants.SAVE_TO_GOOGLE_DRIVE, false)) {
                     Log.d(TAG, "Auto uploading to Google Drive");
                     //Auto upload to Google Drive enabled.
-                    //startUploadService.startAutoUpload(cameraView.getMediaPath());
                     Intent googleDriveUploadIntent = new Intent(getApplicationContext(), GoogleDriveUploadService.class);
                     googleDriveUploadIntent.putExtra("uploadFile", cameraView.getMediaPath());
                     Log.d(TAG, "Uploading file = "+cameraView.getMediaPath());

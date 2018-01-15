@@ -27,9 +27,11 @@ import android.widget.Toast;
 
 import com.flipcam.constants.Constants;
 import com.flipcam.media.FileMedia;
+import com.flipcam.service.GoogleDriveUploadService;
 import com.flipcam.util.MediaUtil;
 import com.flipcam.view.CameraView;
 
+import static com.facebook.FacebookSdk.getApplicationContext;
 import static com.flipcam.PermissionActivity.FC_SHARED_PREFERENCE;
 
 /**
@@ -281,6 +283,15 @@ public class PhotoFragment extends Fragment {
     public void hideImagePreview()
     {
         imagePreview.setVisibility(View.INVISIBLE);
+        SharedPreferences sharedPreferences = getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
+        if(sharedPreferences.getBoolean(Constants.SAVE_TO_GOOGLE_DRIVE, false)) {
+            Log.d(TAG, "Auto uploading to Google Drive");
+            //Auto upload to Google Drive enabled.
+            Intent googleDriveUploadIntent = new Intent(getApplicationContext(), GoogleDriveUploadService.class);
+            googleDriveUploadIntent.putExtra("uploadFile", cameraView.getPhotoMediaPath());
+            Log.d(TAG, "Uploading file = "+cameraView.getPhotoMediaPath());
+            getActivity().startService(googleDriveUploadIntent);
+        }
     }
 
     boolean flashOn=false;

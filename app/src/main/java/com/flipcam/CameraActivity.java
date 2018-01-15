@@ -8,10 +8,8 @@ import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 
-import com.flipcam.service.GoogleDriveUploadService;
-
 public class CameraActivity extends AppCompatActivity implements VideoFragment.PermissionInterface, PhotoFragment.PhotoPermission,VideoFragment.SwitchInterface,
-PhotoFragment.SwitchPhoto, VideoFragment.StartUploadService{
+PhotoFragment.SwitchPhoto{
 
     private static final String TAG = "CameraActivity";
     private static final String VIDEO = "1";
@@ -120,13 +118,5 @@ PhotoFragment.SwitchPhoto, VideoFragment.StartUploadService{
         permission.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(permission);
         finish();
-    }
-
-    @Override
-    public void startAutoUpload(String filename) {
-        Intent googleDriveUploadIntent = new Intent(getApplicationContext(), GoogleDriveUploadService.class);
-        googleDriveUploadIntent.putExtra("uploadFile", filename);
-        Log.d(TAG, "Uploading file = "+filename);
-        startService(googleDriveUploadIntent);
     }
 }
