@@ -20,7 +20,6 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.app.NotificationCompat;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.flipcam.R;
 import com.flipcam.constants.Constants;
@@ -111,7 +110,7 @@ public class GoogleDriveUploadService extends Service {
                                 + "\n" + "File "+filename));
                         mBuilder.setColor(getResources().getColor(R.color.uploadColor));
                         mBuilder.setContentTitle(getResources().getString(R.string.autoUploadInProgressTitle));
-                        mBuilder.setContentText(getResources().getString(R.string.uploadInProgress, "Photo"));
+                        //mBuilder.setContentText(getResources().getString(R.string.uploadInProgress, "Photo")+ "\n" + "File "+filename);
                         mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
                     }
                     break;
@@ -142,8 +141,8 @@ public class GoogleDriveUploadService extends Service {
         mBuilder = new NotificationCompat.Builder(getApplicationContext())
                 .setLargeIcon(notifyIcon)
                 .setSmallIcon(R.drawable.ic_file_upload)
-                .setContentTitle(getResources().getString(R.string.autoUploadInProgressTitle))
-                .setContentText(getResources().getString(R.string.autoUploadInProgress));
+                .setContentTitle("")
+                .setContentText("");
         uploadNotification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
         mBuilder.setPriority(NotificationCompat.PRIORITY_HIGH);
         initializeGoogleSignIn();
@@ -167,6 +166,7 @@ public class GoogleDriveUploadService extends Service {
         Log.i(TAG, "Upload folder name = "+getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE).getString(Constants.GOOGLE_DRIVE_FOLDER,""));
         folderName = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE).getString(Constants.GOOGLE_DRIVE_FOLDER,"");
         googleUploadHandler = new GoogleUploadHandler(this);
+        getDriveClient(signInAccount);
     }
 
     public boolean isConnectedToInternet(){
@@ -197,16 +197,6 @@ public class GoogleDriveUploadService extends Service {
         Log.i(TAG, "onDestroy");
     }
 
-    public void showFolderErrorNotification(){
-        mBuilder.setColor(getResources().getColor(R.color.uploadError));
-        mBuilder.setContentText(getResources().getString(R.string.fileErrorMessage, filename));
-        mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.fileErrorMessage, filename)));
-        mBuilder.setContentTitle(getResources().getString(R.string.errorTitle));
-        mBuilder.setSound(uploadNotification);
-        mBuilder.setPriority(NotificationCompat.PRIORITY_HIGH);
-        mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
-    }
-
     class GoogleDriveUploadTask extends AsyncTask<String,Void,Boolean>{
         @Override
         protected void onPreExecute() {
@@ -219,7 +209,8 @@ public class GoogleDriveUploadService extends Service {
             Log.i(TAG,"onPostExecute = "+uploadId+", success = "+success);
             uploadedSize = 0;
             if(success){
-                mBuilder.setColor(getResources().getColor(R.color.uploadColor));
+                mNotificationManager.cancel(Integer.parseInt(uploadId));
+                mBuilder.setColor(getResources().getColor(R.color.turqoise));
                 mBuilder.setContentText(getResources().getString(R.string.uploadSuccessMessageLess, filename));
                 mBuilder.setContentTitle(getResources().getString(R.string.uploadCompleted));
                 mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.uploadSuccessMessage, filename)));
@@ -270,8 +261,8 @@ public class GoogleDriveUploadService extends Service {
 
     public void showUploadErrorNotification(){
         mBuilder.setColor(getResources().getColor(R.color.uploadError));
-        mBuilder.setContentText(getResources().getString(R.string.uploadErrorMessage));
         mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.uploadErrorMessage)));
+        mBuilder.setContentText(getResources().getString(R.string.uploadErrorMessage));
         mBuilder.setContentTitle("Auto Upload Interrupted");
         mBuilder.setSound(uploadNotification);
         mBuilder.setPriority(NotificationCompat.PRIORITY_HIGH);
@@ -280,8 +271,18 @@ public class GoogleDriveUploadService extends Service {
 
     public void showFolderNotExistErrorNotification(){
         mBuilder.setColor(getResources().getColor(R.color.uploadError));
-        mBuilder.setContentText("Folder "+folderName+" is either deleted or does not exist in Google Drive.");
-        mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.uploadErrorMessage)));
+        mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText("Folder "+folderName+" is deleted or does not exist in Google Drive.\nPlease re-enable auto upload in Settings."));
+        mBuilder.setContentText("Upload Folder error");
+        mBuilder.setContentTitle("Auto Upload Interrupted");
+        mBuilder.setSound(uploadNotification);
+        mBuilder.setPriority(NotificationCompat.PRIORITY_HIGH);
+        mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
+    }
+
+    public void showSignInNeededNotification(){
+        mBuilder.setColor(getResources().getColor(R.color.uploadError));
+        mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText("User needs to Sign in to upload to Google Drive.\nPlease re-enable auto upload in Settings."));
+        mBuilder.setContentText("Google Drive SignIn Error");
         mBuilder.setContentTitle("Auto Upload Interrupted");
         mBuilder.setSound(uploadNotification);
         mBuilder.setPriority(NotificationCompat.PRIORITY_HIGH);
@@ -296,6 +297,9 @@ public class GoogleDriveUploadService extends Service {
                 Log.i(TAG, "Message = "+e.getMessage());
                 if(e.getMessage().contains(String.valueOf(DriveStatusCodes.DRIVE_RESOURCE_NOT_AVAILABLE))) {
                     showFolderNotExistErrorNotification();
+                }
+                else if(e.getMessage().contains("13: Authorization has been revoked")){
+                    showSignInNeededNotification();
                 }
                 else{
                     if(!isConnectedToInternet()) {
@@ -313,7 +317,6 @@ public class GoogleDriveUploadService extends Service {
                 Log.i(TAG, "created date = "+metadata.getCreatedDate());
                 Log.i(TAG, "Title = "+metadata.getTitle());
                 if(!metadata.isTrashed()) {
-                    validFolder = true;
                     startUpload(uploadId);
                 }
                 else{
@@ -325,7 +328,6 @@ public class GoogleDriveUploadService extends Service {
     }
 
     public void startUpload(final String uploadId){
-        getDriveClient(signInAccount);
         Log.i(TAG, "startUpload");
         mDriveResourceClient.createContents()
                 .continueWithTask(new Continuation<DriveContents, Task<DriveFile>>() {
@@ -390,7 +392,6 @@ public class GoogleDriveUploadService extends Service {
                 .addOnSuccessListener(new OnSuccessListener<DriveFile>() {
                             @Override
                             public void onSuccess(DriveFile driveFile) {
-                                Toast.makeText(getApplicationContext(),"File "+filename+" Uploaded.",Toast.LENGTH_SHORT).show();
                                 success = true;
                             }
                         })
@@ -401,10 +402,7 @@ public class GoogleDriveUploadService extends Service {
                         e.printStackTrace();
                         success = false;
                         if(e.getMessage().contains("The user must be signed in to make this API call")) {
-                            Toast.makeText(getApplicationContext(),"User needs to Sign in to upload to Google Drive.",Toast.LENGTH_SHORT).show();
-                        }
-                        else if(e.getMessage().contains(String.valueOf(DriveStatusCodes.DRIVE_RESOURCE_NOT_AVAILABLE))){
-                            Toast.makeText(getApplicationContext(),"Folder not available in Google Drive.",Toast.LENGTH_SHORT).show();
+                            showSignInNeededNotification();
                         }
                     }
                 });

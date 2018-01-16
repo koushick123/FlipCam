@@ -92,6 +92,7 @@ public class SettingsActivity extends AppCompatActivity{
     Dialog permissionAccount;
     Dialog signInProgressDialog;
     boolean signInProgress = false;
+    ImageView uploadDestIcon;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -685,9 +686,11 @@ public class SettingsActivity extends AppCompatActivity{
     public void createUploadFolder(){
         uploadFolderMsg = (TextView)cloudUploadRoot.findViewById(R.id.uploadFolderMsg);
         uploadFolderTitle = (TextView)cloudUploadRoot.findViewById(R.id.uploadFolderTitle);
+        uploadDestIcon = (ImageView) cloudUploadRoot.findViewById(R.id.uploadDestIcon);
         if(cloud == 0) {
             uploadFolderMsg.setText(getResources().getString(R.string.uploadFolder, getResources().getString(R.string.googleDrive)));
             uploadFolderTitle.setText(getResources().getString(R.string.uploadFolderTitle, getResources().getString(R.string.googleDrive)));
+            uploadDestIcon.setImageDrawable(getResources().getDrawable(R.drawable.google_drive));
         }
         Log.d(TAG,"Open cloud upload dialog");
         cloudUpload.setContentView(cloudUploadRoot);

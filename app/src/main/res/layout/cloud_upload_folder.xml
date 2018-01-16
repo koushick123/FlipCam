@@ -37,7 +37,7 @@
                 android:textStyle="bold" />
 
             <ImageView
-                android:id="@+id/imageView7"
+                android:id="@+id/uploadDestIcon"
                 android:layout_width="64dp"
                 android:layout_height="50dp"
                 android:layout_weight=".05"
