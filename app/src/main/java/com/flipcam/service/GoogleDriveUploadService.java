@@ -27,6 +27,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.common.api.CommonStatusCodes;
 import com.google.android.gms.common.api.Scope;
 import com.google.android.gms.drive.Drive;
 import com.google.android.gms.drive.DriveClient;
@@ -235,7 +236,7 @@ public class GoogleDriveUploadService extends Service {
             filename = uploadFile.substring(uploadFile.lastIndexOf("/") + 1,uploadFile.length());
             googleUploadHandler.sendEmptyMessage(Constants.UPLOAD_PROGRESS);
             success = null;
-            fetchDriveFolderMetadata(folderId);
+            syncWithDrive();
             while(success == null){
 
             }
@@ -257,6 +258,16 @@ public class GoogleDriveUploadService extends Service {
             return true;
         }
         return false;
+    }
+
+    public void showTimeoutErrorNotification(){
+        mBuilder.setColor(getResources().getColor(R.color.uploadError));
+        mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText("Timed out attempting to upload the file. Please try again later."));
+        mBuilder.setContentText("Timed out error");
+        mBuilder.setContentTitle("Auto Upload Interrupted");
+        mBuilder.setSound(uploadNotification);
+        mBuilder.setPriority(NotificationCompat.PRIORITY_HIGH);
+        mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
     }
 
     public void showUploadErrorNotification(){
@@ -281,7 +292,7 @@ public class GoogleDriveUploadService extends Service {
 
     public void showSignInNeededNotification(){
         mBuilder.setColor(getResources().getColor(R.color.uploadError));
-        mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText("User needs to Sign in to upload to Google Drive.\nPlease re-enable auto upload in Settings."));
+        mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText("User needs to Sign in to upload to Google Drive.\nPlease Sign in to Google Account under Android Settings."));
         mBuilder.setContentText("Google Drive SignIn Error");
         mBuilder.setContentTitle("Auto Upload Interrupted");
         mBuilder.setSound(uploadNotification);
@@ -289,6 +300,41 @@ public class GoogleDriveUploadService extends Service {
         mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
     }
 
+    public void syncWithDrive(){
+        mDriveClient.requestSync()
+                .addOnFailureListener(new OnFailureListener(){
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.i(TAG,"Unable to sync = ");
+                        Log.i(TAG,"Message = "+e.getMessage());
+                        if(e.getMessage().contains(String.valueOf(DriveStatusCodes.DRIVE_RATE_LIMIT_EXCEEDED))){
+                            //Continue as is, since already synced.
+                            fetchDriveFolderMetadata(folderId);
+                        }
+                        else if(e.getMessage().contains(String.valueOf(CommonStatusCodes.TIMEOUT))){
+                            success = false;
+                            showTimeoutErrorNotification();
+                        }
+                        else if(e.getMessage().contains(String.valueOf(CommonStatusCodes.SIGN_IN_REQUIRED))){
+                            success = false;
+                            showSignInNeededNotification();
+                        }
+                        else{
+                            success = false;
+                            if(!isConnectedToInternet()) {
+                                showUploadErrorNotification();
+                            }
+                        }
+                    }
+                })
+                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        Log.i(TAG,"Metadata upto date");
+                        fetchDriveFolderMetadata(folderId);
+                    }
+                });
+    }
     public void fetchDriveFolderMetadata(DriveId folderId){
         Task<Metadata> metadata = mDriveResourceClient.getMetadata(folderId.asDriveFolder());
         metadata.addOnFailureListener(new OnFailureListener() {
@@ -300,6 +346,10 @@ public class GoogleDriveUploadService extends Service {
                 }
                 else if(e.getMessage().contains("13: Authorization has been revoked")){
                     showSignInNeededNotification();
+                }
+                else if(e.getMessage().contains(String.valueOf(CommonStatusCodes.TIMEOUT))){
+                    success = false;
+                    showTimeoutErrorNotification();
                 }
                 else{
                     if(!isConnectedToInternet()) {
@@ -403,6 +453,9 @@ public class GoogleDriveUploadService extends Service {
                         success = false;
                         if(e.getMessage().contains("The user must be signed in to make this API call")) {
                             showSignInNeededNotification();
+                        }
+                        else if(e.getMessage().contains(String.valueOf(CommonStatusCodes.TIMEOUT))){
+                            showTimeoutErrorNotification();
                         }
                     }
                 });
