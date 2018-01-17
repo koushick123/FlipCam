@@ -254,7 +254,7 @@ public class PhotoFragment extends Fragment {
             @Override
             public void run() {
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(700);
                     showCompleted.cancel();
                 }catch (InterruptedException ie){
                     ie.printStackTrace();

@@ -281,6 +281,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
             picture = new FileOutputStream(photoPath);
             picture.write(data);
             picture.close();
+            photoFrag.showImageSaved();
             SharedPreferences.Editor editor = photoFrag.getActivity().getSharedPreferences(PermissionActivity.FC_SHARED_PREFERENCE, Context.MODE_PRIVATE).edit();
             editor.putBoolean("videoCapture",false);
             editor.commit();
@@ -296,7 +297,6 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
             //Start the preview no matter if photo is saved or not.
             Log.d(TAG, "photo is ready");
             camera.startPreview();
-            photoFrag.showImageSaved();
             photoFrag.getCapturePic().setClickable(true);
             photoFrag.hideImagePreview();
         }

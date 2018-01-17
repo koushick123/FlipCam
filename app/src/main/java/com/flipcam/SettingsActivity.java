@@ -42,6 +42,7 @@ import com.google.android.gms.drive.DriveResourceClient;
 import com.google.android.gms.drive.DriveStatusCodes;
 import com.google.android.gms.drive.Metadata;
 import com.google.android.gms.drive.MetadataChangeSet;
+import com.google.android.gms.drive.metadata.CustomPropertyKey;
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -465,6 +466,7 @@ public class SettingsActivity extends AppCompatActivity{
         }
     }
 
+    String accName;
     public void continueToGoogleDrive(){
         if(!isConnectedToInternet()){
             Toast.makeText(getApplicationContext(),getResources().getString(R.string.noConnectionMessage),Toast.LENGTH_SHORT).show();
@@ -480,6 +482,7 @@ public class SettingsActivity extends AppCompatActivity{
         if (googleAccount != null && googleAccount.length > 0) {
             for (int i = 0; i < googleAccount.length; i++) {
                 Log.d(TAG, "Acc name = " + googleAccount[i].name);
+                accName = googleAccount[i].name;
             }
         } else {
             Log.d(TAG, "No google account");
@@ -737,9 +740,11 @@ public class SettingsActivity extends AppCompatActivity{
                                     public Task<DriveFolder> then(@NonNull Task<DriveFolder> task)
                                             throws Exception {
                                         DriveFolder parentFolder = task.getResult();
+                                        CustomPropertyKey ownerKey = new CustomPropertyKey("owner", CustomPropertyKey.PUBLIC);
                                         MetadataChangeSet changeSet = new MetadataChangeSet.Builder()
                                                 .setTitle(folderNameText.getText().toString())
                                                 .setMimeType(DriveFolder.MIME_TYPE)
+                                                .setCustomProperty(ownerKey, accName)
                                                 .build();
                                         Log.d(TAG,"Creating folder in Drive");
                                         return mDriveResourceClient.createFolder(parentFolder, changeSet);

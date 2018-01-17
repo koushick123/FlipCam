@@ -38,7 +38,12 @@ import com.google.android.gms.drive.DriveId;
 import com.google.android.gms.drive.DriveResourceClient;
 import com.google.android.gms.drive.DriveStatusCodes;
 import com.google.android.gms.drive.Metadata;
+import com.google.android.gms.drive.MetadataBuffer;
 import com.google.android.gms.drive.MetadataChangeSet;
+import com.google.android.gms.drive.metadata.CustomPropertyKey;
+import com.google.android.gms.drive.query.Filters;
+import com.google.android.gms.drive.query.Query;
+import com.google.android.gms.drive.query.SearchableField;
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -53,6 +58,7 @@ import java.lang.ref.WeakReference;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 
 /**
@@ -282,7 +288,7 @@ public class GoogleDriveUploadService extends Service {
 
     public void showFolderNotExistErrorNotification(){
         mBuilder.setColor(getResources().getColor(R.color.uploadError));
-        mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText("Folder "+folderName+" is deleted or does not exist in Google Drive.\nPlease re-enable auto upload in Settings."));
+        mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText("Folder "+folderName+" may have been trashed. Please restore it.\nIf permanently removed, please re-enable auto upload in Settings."));
         mBuilder.setContentText("Upload Folder error");
         mBuilder.setContentTitle("Auto Upload Interrupted");
         mBuilder.setSound(uploadNotification);
@@ -300,6 +306,66 @@ public class GoogleDriveUploadService extends Service {
         mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
     }
 
+    public void queryForFolder(){
+        CustomPropertyKey customPropertyKey = new CustomPropertyKey("owner", CustomPropertyKey.PUBLIC);
+        Query query = new Query.Builder()
+                .addFilter(Filters.eq(SearchableField.TITLE, folderName))
+                .addFilter(Filters.eq(SearchableField.MIME_TYPE, "application/vnd.google-apps.folder"))
+                .addFilter(Filters.eq(SearchableField.TRASHED , false))
+                .addFilter(Filters.eq(customPropertyKey, "skoushicksuri@gmail.com"))
+                .build();
+        mDriveResourceClient.query(query)
+            .addOnSuccessListener(new OnSuccessListener<MetadataBuffer>() {
+                @Override
+                public void onSuccess(MetadataBuffer metadatas) {
+                    Log.i(TAG, "result metadata = "+metadatas);
+                    Iterator<Metadata> iterator = metadatas.iterator();
+                    if(metadatas.getCount() > 0) {
+                        while (iterator.hasNext()) {
+                            Metadata temp = iterator.next();
+                            Log.i(TAG, "MD title = " + temp.getTitle());
+                            Log.i(TAG, "MD created date = " + temp.getCreatedDate());
+                            Log.i(TAG, "MD drive id = " + temp.getDriveId());
+                            Log.i(TAG, "MD resource id = " + temp.getDriveId().getResourceId());
+                            mDriveClient.getDriveId(temp.getDriveId().getResourceId())
+                                    .addOnSuccessListener(new OnSuccessListener<DriveId>() {
+                                        @Override
+                                        public void onSuccess(DriveId driveId) {
+                                            uploadToFolder = driveId.asDriveFolder();
+                                            Log.i(TAG, "New Drive id = " + uploadToFolder.getDriveId());
+                                            startUpload(uploadId);
+                                        }
+                                    })
+                                    .addOnFailureListener(new OnFailureListener() {
+                                        @Override
+                                        public void onFailure(@NonNull Exception e) {
+                                            Log.i(TAG, "unable to get driveid = " + e.getMessage());
+                                            success = false;
+                                            showFolderNotExistErrorNotification();
+                                        }
+                                    });
+                        }
+                    }
+                    else{
+                        success = false;
+                        showFolderNotExistErrorNotification();
+                        Log.i(TAG, "No folder exists with name = "+folderName);
+                    }
+                    metadatas.release();
+                }
+            })
+            .addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(@NonNull Exception e) {
+                    Log.i(TAG, "Failure = "+e.getMessage());
+                    success = false;
+                    if(!isConnectedToInternet()) {
+                        showUploadErrorNotification();
+                    }
+                }
+            });
+    }
+
     public void syncWithDrive(){
         mDriveClient.requestSync()
                 .addOnFailureListener(new OnFailureListener(){
@@ -309,7 +375,7 @@ public class GoogleDriveUploadService extends Service {
                         Log.i(TAG,"Message = "+e.getMessage());
                         if(e.getMessage().contains(String.valueOf(DriveStatusCodes.DRIVE_RATE_LIMIT_EXCEEDED))){
                             //Continue as is, since already synced.
-                            fetchDriveFolderMetadata(folderId);
+                            queryForFolder();
                         }
                         else if(e.getMessage().contains(String.valueOf(CommonStatusCodes.TIMEOUT))){
                             success = false;
@@ -331,7 +397,8 @@ public class GoogleDriveUploadService extends Service {
                     @Override
                     public void onSuccess(Void aVoid) {
                         Log.i(TAG,"Metadata upto date");
-                        fetchDriveFolderMetadata(folderId);
+                        //fetchDriveFolderMetadata(folderId);
+                        queryForFolder();
                     }
                 });
     }

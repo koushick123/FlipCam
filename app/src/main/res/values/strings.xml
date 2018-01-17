@@ -136,5 +136,6 @@
     <string name="totalPhoneMemory">Total Phone Memory</string>
     <string name="totalFreeMemory">Free Memory</string>
     <string name="memoryStatus">Phone Memory Status</string>
+    <string name="creationUnsuccessful">Folder not created in Google Drive. Please try again.</string>
 </resources>
 
