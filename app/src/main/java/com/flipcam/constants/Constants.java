@@ -42,7 +42,7 @@ public class Constants
     //Save to cloud
     public static final String SAVE_TO_GOOGLE_DRIVE = "SaveToDrive";
     public static final String GOOGLE_DRIVE_FOLDER = "GoogleDriveFolder";
-    public static final String GOOGLE_DRIVE_FOLDER_ID = "DriveId";
+    public static final String GOOGLE_DRIVE_ACC_NAME = "AccName";
     public static final String SAVE_TO_DROPBOX = "SaveToDropBox";
     public static final String DROPBOX_FOLDER = "DropboxFolder";
     //Show memory consumed msg

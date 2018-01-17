@@ -69,7 +69,6 @@ public class GoogleDriveUploadService extends Service {
 
     public static final String TAG = "DriveUploadService";
     int NO_OF_REQUESTS = 0;
-    boolean validFolder = false;
     Boolean success;
     String uploadFile;
     String filename;
@@ -90,7 +89,7 @@ public class GoogleDriveUploadService extends Service {
     MetadataChangeSet changeSet;
     DriveContents contents;
     String folderName;
-    DriveId folderId;
+    String accountName;
     DriveFolder uploadToFolder;
 
     class GoogleUploadHandler extends Handler {
@@ -167,11 +166,9 @@ public class GoogleDriveUploadService extends Service {
             Log.i(TAG, "No google account");
         }
 
-        folderId = DriveId.decodeFromString(
-                getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE).getString(Constants.GOOGLE_DRIVE_FOLDER_ID, ""));
-        uploadToFolder = folderId.asDriveFolder();
         Log.i(TAG, "Upload folder name = "+getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE).getString(Constants.GOOGLE_DRIVE_FOLDER,""));
         folderName = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE).getString(Constants.GOOGLE_DRIVE_FOLDER,"");
+        accountName = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE).getString(Constants.GOOGLE_DRIVE_ACC_NAME,"");
         googleUploadHandler = new GoogleUploadHandler(this);
         getDriveClient(signInAccount);
     }
@@ -268,9 +265,9 @@ public class GoogleDriveUploadService extends Service {
 
     public void showTimeoutErrorNotification(){
         mBuilder.setColor(getResources().getColor(R.color.uploadError));
-        mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText("Timed out attempting to upload the file. Please try again later."));
-        mBuilder.setContentText("Timed out error");
-        mBuilder.setContentTitle("Auto Upload Interrupted");
+        mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.timeoutError)));
+        mBuilder.setContentText(getResources().getString(R.string.timeoutErrorLess));
+        mBuilder.setContentTitle(getResources().getString(R.string.autoUploadInterrupt));
         mBuilder.setSound(uploadNotification);
         mBuilder.setPriority(NotificationCompat.PRIORITY_HIGH);
         mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
@@ -280,7 +277,7 @@ public class GoogleDriveUploadService extends Service {
         mBuilder.setColor(getResources().getColor(R.color.uploadError));
         mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.uploadErrorMessage)));
         mBuilder.setContentText(getResources().getString(R.string.uploadErrorMessage));
-        mBuilder.setContentTitle("Auto Upload Interrupted");
+        mBuilder.setContentTitle(getResources().getString(R.string.autoUploadInterrupt));
         mBuilder.setSound(uploadNotification);
         mBuilder.setPriority(NotificationCompat.PRIORITY_HIGH);
         mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
@@ -288,9 +285,9 @@ public class GoogleDriveUploadService extends Service {
 
     public void showFolderNotExistErrorNotification(){
         mBuilder.setColor(getResources().getColor(R.color.uploadError));
-        mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText("Folder "+folderName+" may have been trashed. Please restore it.\nIf permanently removed, please re-enable auto upload in Settings."));
-        mBuilder.setContentText("Upload Folder error");
-        mBuilder.setContentTitle("Auto Upload Interrupted");
+        mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.folderNotExistError)));
+        mBuilder.setContentText(getResources().getString(R.string.folderNotExistErrorLess));
+        mBuilder.setContentTitle(getResources().getString(R.string.autoUploadInterrupt));
         mBuilder.setSound(uploadNotification);
         mBuilder.setPriority(NotificationCompat.PRIORITY_HIGH);
         mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
@@ -298,9 +295,9 @@ public class GoogleDriveUploadService extends Service {
 
     public void showSignInNeededNotification(){
         mBuilder.setColor(getResources().getColor(R.color.uploadError));
-        mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText("User needs to Sign in to upload to Google Drive.\nPlease Sign in to Google Account under Android Settings."));
-        mBuilder.setContentText("Google Drive SignIn Error");
-        mBuilder.setContentTitle("Auto Upload Interrupted");
+        mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.signInError)));
+        mBuilder.setContentText(getResources().getString(R.string.signInErrorLess));
+        mBuilder.setContentTitle(getResources().getString(R.string.autoUploadInterrupt));
         mBuilder.setSound(uploadNotification);
         mBuilder.setPriority(NotificationCompat.PRIORITY_HIGH);
         mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
@@ -312,7 +309,7 @@ public class GoogleDriveUploadService extends Service {
                 .addFilter(Filters.eq(SearchableField.TITLE, folderName))
                 .addFilter(Filters.eq(SearchableField.MIME_TYPE, "application/vnd.google-apps.folder"))
                 .addFilter(Filters.eq(SearchableField.TRASHED , false))
-                .addFilter(Filters.eq(customPropertyKey, "skoushicksuri@gmail.com"))
+                .addFilter(Filters.eq(customPropertyKey, accountName))
                 .build();
         mDriveResourceClient.query(query)
             .addOnSuccessListener(new OnSuccessListener<MetadataBuffer>() {
@@ -402,47 +399,6 @@ public class GoogleDriveUploadService extends Service {
                     }
                 });
     }
-    public void fetchDriveFolderMetadata(DriveId folderId){
-        Task<Metadata> metadata = mDriveResourceClient.getMetadata(folderId.asDriveFolder());
-        metadata.addOnFailureListener(new OnFailureListener() {
-            @Override
-            public void onFailure(@NonNull Exception e) {
-                Log.i(TAG, "Message = "+e.getMessage());
-                if(e.getMessage().contains(String.valueOf(DriveStatusCodes.DRIVE_RESOURCE_NOT_AVAILABLE))) {
-                    showFolderNotExistErrorNotification();
-                }
-                else if(e.getMessage().contains("13: Authorization has been revoked")){
-                    showSignInNeededNotification();
-                }
-                else if(e.getMessage().contains(String.valueOf(CommonStatusCodes.TIMEOUT))){
-                    success = false;
-                    showTimeoutErrorNotification();
-                }
-                else{
-                    if(!isConnectedToInternet()) {
-                        showUploadErrorNotification();
-                    }
-                }
-                success = false;
-            }
-        });
-        metadata.addOnSuccessListener(new OnSuccessListener<Metadata>() {
-            @Override
-            public void onSuccess(Metadata metadata) {
-                Log.i(TAG,"metadata isTrashed = "+metadata.isTrashed());
-                Log.i(TAG, "Drive id is = " + metadata.getDriveId());
-                Log.i(TAG, "created date = "+metadata.getCreatedDate());
-                Log.i(TAG, "Title = "+metadata.getTitle());
-                if(!metadata.isTrashed()) {
-                    startUpload(uploadId);
-                }
-                else{
-                    success = false;
-                    showFolderNotExistErrorNotification();
-                }
-            }
-        });
-    }
 
     public void startUpload(final String uploadId){
         Log.i(TAG, "startUpload");
@@ -473,7 +429,6 @@ public class GoogleDriveUploadService extends Service {
                             changeSet = new MetadataChangeSet.Builder()
                                     .setTitle(filename)
                                     .setMimeType("video/mp4")
-                                    .setStarred(true)
                                     .build();
                         }
                         else{
@@ -500,7 +455,6 @@ public class GoogleDriveUploadService extends Service {
                             changeSet = new MetadataChangeSet.Builder()
                                     .setTitle(filename)
                                     .setMimeType(mimeType.toString())
-                                    .setStarred(true)
                                     .build();
                         }
                         return mDriveResourceClient.createFile(uploadToFolder, changeSet, contents);

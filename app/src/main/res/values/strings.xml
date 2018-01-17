@@ -137,5 +137,13 @@
     <string name="totalFreeMemory">Free Memory</string>
     <string name="memoryStatus">Phone Memory Status</string>
     <string name="creationUnsuccessful">Folder not created in Google Drive. Please try again.</string>
+    <string name="folderNotExistError">Folder %1$s may have been trashed. Please restore it.\nIf permanently removed, please re-enable auto upload in Settings.</string>
+    <string name="folderNotExistErrorLess">Upload Folder error</string>
+    <string name="signInError">User needs to Sign in to upload to Google Drive.\nPlease Sign in to Google Account under Android Settings.</string>
+    <string name="signInErrorLess">Google Drive SignIn Error</string>
+    <string name="timeoutError">Timed out attempting to upload the file. Please try again later.</string>
+    <string name="timeoutErrorLess">Timed out error</string>
+    <string name="timeoutErrorSync">Timed out attempting to retrieve folder info. Please try again later.</string>
+    <string name="autoUploadInterrupt">Auto Upload Interrupted</string>
 </resources>
 
