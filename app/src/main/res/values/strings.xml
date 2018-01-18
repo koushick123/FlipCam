@@ -113,16 +113,16 @@
     <string name="saveToCloudTitle">Auto Save to %1$s</string>
     <string name="continuesignin">CONTINUE</string>
     <string name="notnowsignin">NOT NOW</string>
-    <string name="signinmsg">This option will automatically save your photo/video from now on onto %1$s.\n\nYou will need to sign in.</string>
+    <string name="signinmsg">By enabling this option, any photo/video created from now, will automatically be uploaded by FlipCam onto %1$s.\n\nYou will need to sign in to %2$s.</string>
     <string name="signinfail">Sign In failed either due to Internet connection issue or cancellation by user.</string>
-    <string name="signoutcloud">Signed out of %1$s. Auto upload disabled.</string>
+    <string name="signoutcloud">Signed out of %1$s. Auto upload has been disabled.</string>
     <string name="uploadFolder">Give a name for the folder which will be used to keep all FlipCam photos/videos in %1$s.</string>
     <string name="uploadFolderTitle">Upload Folder in %1$s</string>
     <string name="createUploadFolder">CREATE</string>
     <string name="cancelUploadFolder">CANCEL</string>
     <string name="uploadFolderIncorrectDropbox">Incorrect characters in folder name. Please try again.</string>
     <string name="uploadFolderEmpty">Folder Name is empty. Please give a folder name.</string>
-    <string name="foldercreateSuccessGoogleDrive">Folder %1$s Created Successfully.\nFlipCam will now auto upload your media onto this folder in Google Drive.</string>
+    <string name="folderCreatedSuccess">Folder %1$s Created Successfully.</string>
     <string name="foldercreateErrorGoogleDrive">Error in creating folder %1$s. Please check your internet connection and try again.</string>
     <string name="permissionRationale">We need the google accounts info to check if you have already signed in. </string>
     <string name="permissionForAccounts">FlipCam would like to read your contacts, only to check if you have already signed in to your Google Account.
@@ -130,7 +130,8 @@
     <string name="permissionHeader">Account Check Permission</string>
     <string name="yesPermission">YES</string>
     <string name="noPermission">LATER</string>
-    <string name="googleDriveFolderCreated">FlipCam will now auto upload your media onto <u>%1$s</u> folder in Google Drive.</string>
+    <string name="autouploadFolderCreated">FlipCam will now auto upload your photo/video onto this folder in %1$s.\n\nPlease check your notifications for upload progress.</string>
+    <string name="autouploadFolderUpdated">FlipCam will now auto upload your photo/video onto <u>%1$s</u> folder in %2$s.\n\nPlease check your notifications for upload progress.</string>
     <string name="signInProgress">Fetching Google Account information in your phone for signing into %1$s.\n\nPlease Wait...</string>
     <string name="signInProgressTitle">Sign In to %1$s</string>
     <string name="totalPhoneMemory">Total Phone Memory</string>
@@ -145,5 +146,7 @@
     <string name="timeoutErrorLess">Timed out error</string>
     <string name="timeoutErrorSync">Timed out attempting to retrieve folder info. Please try again later.</string>
     <string name="autoUploadInterrupt">Auto Upload Interrupted</string>
+    <string name="autoUploadEnabled">Auto Upload Enabled</string>
+    <string name="autoUploadDisabled">Auto Upload Disabled</string>
 </resources>
 

@@ -212,7 +212,7 @@
         android:orientation="horizontal"
         android:weightSum="1">
 
-        <Switch
+        <CheckBox
             android:id="@+id/switchOnDrive"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -222,13 +222,13 @@
             android:autoText="false"
             android:buttonTint="@color/turqoise"
             android:checked="false"
+            android:onClick="saveToCloudDrive"
+            android:paddingLeft="@dimen/headTextLeftMargin"
             android:singleLine="true"
             android:text="@string/googleDrive"
             android:textColor="@color/turqoise"
             android:textColorLink="@color/turqoise"
-            android:thumbTint="@color/turqoise"
-            android:onClick="saveToCloudDrive"
-            />
+            android:thumbTint="@color/turqoise" />
     </LinearLayout>
 
     <LinearLayout
@@ -237,7 +237,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal">
 
-        <Switch
+        <CheckBox
             android:id="@+id/switchOnDropbox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -246,6 +246,7 @@
             android:layout_marginRight="@dimen/switchRightMargin"
             android:buttonTint="@color/turqoise"
             android:checked="false"
+            android:paddingLeft="@dimen/headTextLeftMargin"
             android:text="@string/dropbox"
             android:textColor="@color/turqoise"
             android:thumbTint="@color/turqoise" />
@@ -295,12 +296,12 @@
             android:layout_marginLeft="@dimen/headTextLeftMargin"
             android:layout_marginTop="@dimen/checkboxMarginTopBottom"
             android:layout_weight="0.68"
+            android:buttonTint="@color/turqoise"
             android:checked="true"
             android:paddingLeft="@dimen/headTextLeftMargin"
             android:text="@string/showMemConsumedMsg"
             android:textColor="@color/turqoise"
-            android:textSize="@dimen/settingsSubText"
-            android:buttonTint="@color/turqoise" />
+            android:textSize="@dimen/settingsSubText" />
 
     </LinearLayout>
 
