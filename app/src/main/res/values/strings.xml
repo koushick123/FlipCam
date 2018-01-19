@@ -35,7 +35,7 @@
     <string name="shareMessage">How would you like to share?</string>
     <string name="shareFacebookMessage">The media will be uploaded to Facebook</string>
     <string name="continuetoFB">CONTINUE</string>
-    <string name="queuedForUpload">Media queued for upload. Please check notification bar for progress.</string>
+    <string name="queuedForUpload">Media queued for upload. Please check notification bar for status.</string>
     <string name="logoutFBMessage">YOU HAVE BEEN LOGGED OUT OF FACEBOOK</string>
     <string name="logoutFB">LOGOUT OF FACEBOOK</string>
     <string name="permissionTitleFacebook">Permission for Facebook</string>
@@ -75,10 +75,11 @@
     <string name="saveMedia">Save Media in</string>
     <string name="phoneMemory">Phone Memory</string>
     <string name="sdCard">SD Card</string>
-    <string name="phoneMemoryLimit"><font size="18">Phone Memory Limit Warning (%1$d %2$s)</font></string>
-    <string name="phoneMemoryLimitDisabled"><font size="14">Phone Memory Limit Warning Disabled.\nClick here to enable.</font></string>
+    <string name="phoneMemoryLimit">Phone Memory Limit</string>
+    <string name="memoryThresholdLimit">Warning Threshold : %1$s</string>
+    <string name="phoneMemoryLimitDisabled">Disabled</string>
     <string name="phoneMemoryLimitMsg">The amount of phone memory below which you would like a warning.</string>
-    <string name="saveToCloud">Auto Save To Cloud</string>
+    <string name="saveToCloud">Auto Upload To Cloud</string>
     <string name="googleDrive">Google Drive</string>
     <string name="dropbox">Dropbox</string>
     <string name="showMemConsumed">Show Memory Consumed For Video</string>
@@ -110,13 +111,13 @@
     <string name="thresholdSaved">Phone memory threshold set to %1$s %2$s.</string>
     <string name="disableThreshold">Disable Threshold Check</string>
     <string name="thresholdExceeds">The threshold entered is the same or more than the internal storage (%1$s %2$s) of your phone. Please enter a lower value.</string>
-    <string name="saveToCloudTitle">Auto Save to %1$s</string>
+    <string name="saveToCloudTitle">Auto Upload to %1$s</string>
     <string name="continuesignin">CONTINUE</string>
     <string name="notnowsignin">NOT NOW</string>
-    <string name="signinmsg">By enabling this option, any photo/video created from now, will automatically be uploaded by FlipCam onto %1$s.\n\nYou will need to sign in to %2$s.</string>
+    <string name="uploadmsg">This option enables you to automatically upload any photo/video created from now, onto the cloud.\n\nUser Sign in required for the cloud service, to which the user is opting to upload.</string>
     <string name="signinfail">Sign In failed either due to Internet connection issue or cancellation by user.</string>
     <string name="signoutcloud">Signed out of %1$s. Auto upload has been disabled.</string>
-    <string name="uploadFolder">Give a name for the folder which will be used to keep all FlipCam photos/videos in %1$s.</string>
+    <string name="uploadFolder">Name of the upload folder in %1$s.</string>
     <string name="uploadFolderTitle">Upload Folder in %1$s</string>
     <string name="createUploadFolder">CREATE</string>
     <string name="cancelUploadFolder">CANCEL</string>
@@ -130,15 +131,15 @@
     <string name="permissionHeader">Account Check Permission</string>
     <string name="yesPermission">YES</string>
     <string name="noPermission">LATER</string>
-    <string name="autouploadFolderCreated">FlipCam will now auto upload your photo/video onto this folder in %1$s.\n\nPlease check your notifications for upload progress.</string>
-    <string name="autouploadFolderUpdated">FlipCam will now auto upload your photo/video onto <u>%1$s</u> folder in %2$s.\n\nPlease check your notifications for upload progress.</string>
+    <string name="autouploadFolderCreated">FlipCam will now auto upload your photo/video onto this folder in %1$s.\n\nPlease check your notifications for upload status.</string>
+    <string name="autouploadFolderUpdated">FlipCam will now auto upload your photos/videos onto <u>%1$s</u> folder in %2$s.\n\nPlease check your notifications for upload status.</string>
     <string name="signInProgress">Fetching Google Account information in your phone for signing into %1$s.\n\nPlease Wait...</string>
     <string name="signInProgressTitle">Sign In to %1$s</string>
     <string name="totalPhoneMemory">Total Phone Memory</string>
     <string name="totalFreeMemory">Free Memory</string>
     <string name="memoryStatus">Phone Memory Status</string>
     <string name="creationUnsuccessful">Folder not created in Google Drive. Please try again.</string>
-    <string name="folderNotExistError">Folder %1$s may have been trashed. Please restore it.\nIf permanently removed, please re-enable auto upload in Settings.</string>
+    <string name="folderNotExistError">Folder %1$s may have been trashed or moved. Please restore it.\nIf permanently removed, please re-enable auto upload in Settings.</string>
     <string name="folderNotExistErrorLess">Upload Folder error</string>
     <string name="signInError">User needs to Sign in to upload to Google Drive.\nPlease Sign in to Google Account under Android Settings.</string>
     <string name="signInErrorLess">Google Drive SignIn Error</string>
@@ -148,5 +149,9 @@
     <string name="autoUploadInterrupt">Auto Upload Interrupted</string>
     <string name="autoUploadEnabled">Auto Upload Enabled</string>
     <string name="autoUploadDisabled">Auto Upload Disabled</string>
+    <string name="continueToCloud">Do you want to continue?</string>
+    <string name="uploadCheckHeader">Upload Folder</string>
+    <string name="uploadFolderFound">The below folder was found to be earlier created using FlipCam:</string>
+    <string name="uploadCheckMessage">Checking if a folder was earlier created in %1$s using FlipCam. If not, one will be created now.</string>
 </resources>
 

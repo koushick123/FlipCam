@@ -61,7 +61,7 @@ public class SettingsActivity extends AppCompatActivity{
 
     public static final String TAG = "SettingsActivity";
     LinearLayout phoneMemParentVert;
-    TextView phoneMemText;
+    TextView thresholdText;
     TextView phoneMemTextMsg;
     ImageView greenArrow;
     SharedPreferences settingsPref;
@@ -113,7 +113,7 @@ public class SettingsActivity extends AppCompatActivity{
         setContentView(R.layout.activity_settings);
         phoneMemParentVert = (LinearLayout)findViewById(R.id.phoneMemParentVert);
         phoneMemTextMsg = (TextView)findViewById(R.id.phoneMemTextMsg);
-        phoneMemText = (TextView)findViewById(R.id.phoneMemText);
+        thresholdText = (TextView)findViewById(R.id.thresholdText);
         greenArrow = (ImageView)findViewById(R.id.greenArrow);
         phoneMemBtn = (RadioButton)findViewById(R.id.phoneMemButton);
         sdCardBtn = (RadioButton)findViewById(R.id.sdCardbutton);
@@ -122,7 +122,7 @@ public class SettingsActivity extends AppCompatActivity{
         switchOnDropbox = (CheckBox) findViewById(R.id.switchOnDropbox);
         switchOnDrive = (CheckBox) findViewById(R.id.switchOnDrive);
         sdcardlayout = (LinearLayout)findViewById(R.id.sdcardlayout);
-        phoneMemText.setText(getResources().getString(R.string.phoneMemoryLimit, getResources().getInteger(R.integer.minimumMemoryWarning), "MB"));
+        thresholdText.setText(getResources().getString(R.string.memoryThresholdLimit, getResources().getInteger(R.integer.minimumMemoryWarning) + "MB"));
         getSupportActionBar().setTitle(getResources().getString(R.string.settingTitle));
         settingsPref = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
         settingsEditor = settingsPref.edit();
@@ -171,30 +171,26 @@ public class SettingsActivity extends AppCompatActivity{
         autoUploadEnabled = new Dialog(this);
         autoUploadDisabled = new Dialog(this);
         accountManager = (AccountManager)getSystemService(Context.ACCOUNT_SERVICE);
-        Log.d(TAG,"saveToCloud = "+saveToCloud );
-        updatePhoneMemoryText();
-        updateSaveToCloud();
     }
 
-    public void updatePhoneMemoryText(){
+    public void updateSettingsValues(){
+        //Update Phone memory
         if(settingsPref.contains(Constants.PHONE_MEMORY_DISABLE)){
             if(!settingsPref.getBoolean(Constants.PHONE_MEMORY_DISABLE, false)){
                 String memoryLimit = settingsPref.getString(Constants.PHONE_MEMORY_LIMIT, getResources().getInteger(R.integer.minimumMemoryWarning) + "");
                 String memoryMetric = settingsPref.getString(Constants.PHONE_MEMORY_METRIC, "MB");
-                phoneMemText.setText(getResources().getString(R.string.phoneMemoryLimit, Integer.parseInt(memoryLimit), memoryMetric));
+                thresholdText.setText(getResources().getString(R.string.memoryThresholdLimit, Integer.parseInt(memoryLimit) + " " + memoryMetric));
             }
             else{
-                phoneMemText.setText(getResources().getString(R.string.phoneMemoryLimitDisabled));
+                thresholdText.setText(getResources().getString(R.string.memoryThresholdLimit, getResources().getString(R.string.phoneMemoryLimitDisabled)));
             }
         }
         else{
             String memoryLimit = settingsPref.getString(Constants.PHONE_MEMORY_LIMIT, getResources().getInteger(R.integer.minimumMemoryWarning) + "");
             String memoryMetric = settingsPref.getString(Constants.PHONE_MEMORY_METRIC, "MB");
-            phoneMemText.setText(getResources().getString(R.string.phoneMemoryLimit, Integer.parseInt(memoryLimit), memoryMetric));
+            thresholdText.setText(getResources().getString(R.string.memoryThresholdLimit, Integer.parseInt(memoryLimit) + " " + memoryMetric));
         }
-    }
-
-    public void updateSaveToCloud(){
+        //Update Auto upload
         if(settingsPref.contains(Constants.SAVE_TO_GOOGLE_DRIVE)){
             if(settingsPref.getBoolean(Constants.SAVE_TO_GOOGLE_DRIVE, false)){
                 switchOnDrive.setChecked(true);
@@ -353,8 +349,6 @@ public class SettingsActivity extends AppCompatActivity{
             cloud = 0;
             savetocloudtitle = (TextView)saveToCloudRoot.findViewById(R.id.savetocloudtitle);
             savetocloudtitle.setText(getResources().getString(R.string.saveToCloudTitle, getResources().getString(R.string.googleDrive)));
-            savetocloudmsg = (TextView)saveToCloudRoot.findViewById(R.id.savetocloudmsg);
-            savetocloudmsg.setText(getResources().getString(R.string.signinmsg, getResources().getString(R.string.googleDrive), getResources().getString(R.string.googleDrive)));
             ImageView placeHolderIcon = (ImageView)saveToCloudRoot.findViewById(R.id.placeHolderIconSavetoCloud);
             placeHolderIcon.setImageDrawable(getResources().getDrawable(R.drawable.google_drive));
             LinearLayout.LayoutParams imageParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -447,7 +441,7 @@ public class SettingsActivity extends AppCompatActivity{
     protected void onResume() {
         super.onResume();
         Log.d(TAG,"onResume");
-        updatePhoneMemoryText();
+        updateSettingsValues();
         if(signInProgress){
             signInProgressDialog.dismiss();
             Log.d(TAG,"Reset signinprogess");

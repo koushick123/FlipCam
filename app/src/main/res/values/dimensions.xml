@@ -76,7 +76,7 @@
     //Size of top bar for media (Landscape)
     <dimen name="topMediaBarLandscape">40dp</dimen>
     //Text size for settings
-    <dimen name="settingsMainText">18sp</dimen>
+    <dimen name="settingsMainText">17sp</dimen>
     //Text size for subtext
     <dimen name="settingsSubText">14sp</dimen>
     <dimen name="headTextLeftMargin">20dp</dimen>
@@ -87,6 +87,8 @@
     <dimen name="switchRightMargin">60dp</dimen>
     <dimen name="separatorHeight">3dp</dimen>
     <dimen name="checkboxTextMsgHeight">54dp</dimen>
+    <dimen name="checkboxTextMsgRightMargin">20dp</dimen>
+    <dimen name="resetAllTextMsgRightMargin">20dp</dimen>
     <dimen name="phoneMemRightMargin">100dp</dimen>
     <dimen name="checkboxMarginTopBottom">5dp</dimen>
     <dimen name="googleDriveIconHeight">50dp</dimen>
@@ -96,4 +98,6 @@
     <dimen name="memoryStatusTopMargin">15dp</dimen>
     <dimen name="phoneMemoryThresholdHeader">16sp</dimen>
     <dimen name="totalphoneMemoryImageTopMargin">6dp</dimen>
+    //Text size for memory limit message
+    <dimen name="memoryThresholdMsg">14sp</dimen>
 </resources>

@@ -158,6 +158,15 @@
                 android:textColor="@color/turqoise"
                 android:textSize="@dimen/settingsSubText" />
 
+            <TextView
+                android:id="@+id/thresholdText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="@dimen/headTextLeftMargin"
+                android:layout_marginTop="@dimen/headTextTopMargin"
+                android:text="@string/memoryThresholdLimit"
+                android:textColor="@color/turqoise" />
+
         </LinearLayout>
 
         <LinearLayout
@@ -203,9 +212,21 @@
             android:text="@string/saveToCloud"
             android:textColor="@color/turqoise"
             android:textSize="@dimen/settingsMainText" />
+
     </LinearLayout>
 
-    <LinearLayout
+        <TextView
+            android:id="@+id/textView17"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/headTextTopMargin"
+            android:layout_marginLeft="@dimen/headTextLeftMargin"
+            android:layout_marginRight="@dimen/headTextLeftMargin"
+            android:layout_marginTop="@dimen/headTextTopMargin"
+            android:text="@string/uploadmsg"
+            android:textColor="@color/turqoise" />
+
+        <LinearLayout
         android:id="@+id/googleDrive"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -294,6 +315,7 @@
             android:layout_height="@dimen/checkboxTextMsgHeight"
             android:layout_marginBottom="@dimen/checkboxMarginTopBottom"
             android:layout_marginLeft="@dimen/headTextLeftMargin"
+            android:layout_marginRight="@dimen/checkboxTextMsgRightMargin"
             android:layout_marginTop="@dimen/checkboxMarginTopBottom"
             android:layout_weight="0.68"
             android:buttonTint="@color/turqoise"
@@ -325,14 +347,15 @@
         android:textColor="@color/turqoise"
         android:textSize="@dimen/settingsMainText" />
 
-    <TextView
-        android:id="@+id/resetAllMsgLayout"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginLeft="@dimen/headTextLeftMargin"
-        android:layout_marginTop="@dimen/headTextTopMargin"
-        android:text="@string/resetAllMsg"
-        android:textColor="@color/turqoise"
-        android:textSize="@dimen/settingsSubText" />
+        <TextView
+            android:id="@+id/resetAllMsgLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="@dimen/headTextLeftMargin"
+            android:layout_marginRight="@dimen/resetAllTextMsgRightMargin"
+            android:layout_marginTop="@dimen/headTextTopMargin"
+            android:text="@string/resetAllMsg"
+            android:textColor="@color/turqoise"
+            android:textSize="@dimen/settingsSubText" />
 </LinearLayout>
 </ScrollView>

@@ -285,7 +285,7 @@ public class GoogleDriveUploadService extends Service {
 
     public void showFolderNotExistErrorNotification(){
         mBuilder.setColor(getResources().getColor(R.color.uploadError));
-        mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.folderNotExistError)));
+        mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.folderNotExistError, folderName)));
         mBuilder.setContentText(getResources().getString(R.string.folderNotExistErrorLess));
         mBuilder.setContentTitle(getResources().getString(R.string.autoUploadInterrupt));
         mBuilder.setSound(uploadNotification);

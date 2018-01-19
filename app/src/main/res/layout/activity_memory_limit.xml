@@ -35,7 +35,7 @@
             android:layout_marginRight="@dimen/headTextLeftMargin"
             android:text="@string/memoryThreshold"
             android:textColor="@color/turqoise"
-            android:textSize="13sp" />
+            android:textSize="@dimen/memoryThresholdMsg" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -144,7 +144,7 @@
                 android:layout_weight=".3"
                 android:text="@string/totalPhoneMemory"
                 android:textColor="@color/turqoise"
-                android:textSize="13sp" />
+                android:textSize="@dimen/memoryThresholdMsg" />
 
             <TextView
                 android:id="@+id/totalMemory"
@@ -175,7 +175,7 @@
                 android:paddingRight="45dp"
                 android:text="@string/totalFreeMemory"
                 android:textColor="@color/turqoise"
-                android:textSize="13sp" />
+                android:textSize="@dimen/memoryThresholdMsg" />
 
             <TextView
                 android:id="@+id/freeMemory"
