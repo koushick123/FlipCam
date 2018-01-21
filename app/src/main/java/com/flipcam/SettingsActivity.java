@@ -93,6 +93,7 @@ public class SettingsActivity extends AppCompatActivity{
     View autoUploadEnabledWithFolderRoot;
     View autoUploadEnabledRoot;
     View autoUploadDisabledRoot;
+    View uploadFolderCheckRoot;
     TextView uploadFolderTitle;
     TextView uploadFolderMsg;
     int cloud = 0; //Default to Google Drive. 1 for Dropbox.
@@ -105,6 +106,7 @@ public class SettingsActivity extends AppCompatActivity{
     Dialog autoUploadEnabledWithFolder;
     Dialog autoUploadEnabled;
     Dialog autoUploadDisabled;
+    Dialog uploadFolderCheck;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -162,6 +164,7 @@ public class SettingsActivity extends AppCompatActivity{
         autoUploadEnabledWithFolderRoot = layoutInflater.inflate(R.layout.auto_upload_enabled_with_folder, null);
         autoUploadEnabledRoot = layoutInflater.inflate(R.layout.auto_upload_enabled, null);
         autoUploadDisabledRoot = layoutInflater.inflate(R.layout.auto_upload_disabled, null);
+        uploadFolderCheckRoot = layoutInflater.inflate(R.layout.upload_folder_check, null);
         sdCardDialog = new Dialog(this);
         saveToCloud = new Dialog(this);
         cloudUpload = new Dialog(this);
@@ -170,6 +173,7 @@ public class SettingsActivity extends AppCompatActivity{
         autoUploadEnabledWithFolder = new Dialog(this);
         autoUploadEnabled = new Dialog(this);
         autoUploadDisabled = new Dialog(this);
+        uploadFolderCheck = new Dialog(this);
         accountManager = (AccountManager)getSystemService(Context.ACCOUNT_SERVICE);
     }
 
@@ -520,6 +524,11 @@ public class SettingsActivity extends AppCompatActivity{
     }
 
     public void checkIfFolderCreatedInDrive(){
+        TextView uploadFolderMsg = (TextView)uploadFolderCheckRoot.findViewById(R.id.uploadFolderMsg);
+        uploadFolderMsg.setText(getResources().getString(R.string.uploadCheckMessage, getResources().getString(R.string.googleDrive)));
+        uploadFolderCheck.setContentView(uploadFolderCheckRoot);
+        uploadFolderCheck.setCancelable(false);
+        uploadFolderCheck.show();
         final String folderName = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE).getString(Constants.GOOGLE_DRIVE_FOLDER, "");
         Log.d(TAG, "saved folderName = "+folderName);
         if (folderName != null && !folderName.equals("")) {
@@ -536,6 +545,7 @@ public class SettingsActivity extends AppCompatActivity{
                         public void onFailure(@NonNull Exception e) {
                             if(!isConnectedToInternet()) {
                                 Toast.makeText(getApplicationContext(),getResources().getString(R.string.noConnectionMessage),Toast.LENGTH_SHORT).show();
+                                uploadFolderCheck.dismiss();
                                 switchOnDrive.setChecked(false);
                                 disableGoogleDriveInSetting();
                                 googleSignInClient.signOut();
@@ -547,6 +557,7 @@ public class SettingsActivity extends AppCompatActivity{
                             }
                             else if(e.getMessage().contains(String.valueOf(CommonStatusCodes.TIMEOUT))){
                                 Toast.makeText(getApplicationContext(),getResources().getString(R.string.timeoutErrorSync),Toast.LENGTH_SHORT).show();
+                                uploadFolderCheck.dismiss();
                                 switchOnDrive.setChecked(false);
                                 disableGoogleDriveInSetting();
                                 googleSignInClient.signOut();
@@ -555,6 +566,7 @@ public class SettingsActivity extends AppCompatActivity{
                     });
         }
         else{
+            uploadFolderCheck.dismiss();
             createUploadFolder();
         }
     }
@@ -587,10 +599,13 @@ public class SettingsActivity extends AppCompatActivity{
                                     .addOnSuccessListener(new OnSuccessListener<DriveId>() {
                                         @Override
                                         public void onSuccess(DriveId driveId) {
+                                            uploadFolderCheck.dismiss();
                                             ImageView placeholdericon = (ImageView) autoUploadEnabledRoot.findViewById(R.id.placeHolderIconAutoUpload);
                                             placeholdericon.setImageDrawable(getResources().getDrawable(R.drawable.google_drive));
                                             TextView autoUploadMsg = (TextView) autoUploadEnabledRoot.findViewById(R.id.autoUploadMsg);
                                             autoUploadMsg.setText(getResources().getString(R.string.autouploadFolderUpdated, driveFolderName, getResources().getString(R.string.googleDrive)));
+                                            TextView folderName = (TextView) autoUploadEnabledRoot.findViewById(R.id.folderName);
+                                            folderName.setText(driveFolderName);
                                             autoUploadEnabled.setContentView(autoUploadEnabledRoot);
                                             autoUploadEnabled.setCancelable(false);
                                             autoUploadEnabled.show();
@@ -607,6 +622,7 @@ public class SettingsActivity extends AppCompatActivity{
                                             else if(e.getMessage().contains(String.valueOf(CommonStatusCodes.TIMEOUT))){
                                                 Toast.makeText(getApplicationContext(),getResources().getString(R.string.timeoutErrorSync),Toast.LENGTH_SHORT).show();
                                             }
+                                            uploadFolderCheck.dismiss();
                                             switchOnDrive.setChecked(false);
                                             disableGoogleDriveInSetting();
                                             googleSignInClient.signOut();
@@ -614,6 +630,7 @@ public class SettingsActivity extends AppCompatActivity{
                                     });
                         } else {
                             Log.d(TAG, "No folder exists with name = " + folder);
+                            uploadFolderCheck.dismiss();
                             createUploadFolder();
                         }
                         metadatas.release();
@@ -629,49 +646,12 @@ public class SettingsActivity extends AppCompatActivity{
                         else if(e.getMessage().contains(String.valueOf(CommonStatusCodes.TIMEOUT))){
                             Toast.makeText(getApplicationContext(),getResources().getString(R.string.timeoutErrorSync),Toast.LENGTH_SHORT).show();
                         }
+                        uploadFolderCheck.dismiss();
                         switchOnDrive.setChecked(false);
                         disableGoogleDriveInSetting();
                         googleSignInClient.signOut();
                     }
                 });
-    }
-
-    public void fetchDriveFolderMetadata(DriveId folderId){
-        Task<Metadata> metadata = mDriveResourceClient.getMetadata(folderId.asDriveFolder());
-        metadata.addOnFailureListener(this, new OnFailureListener() {
-            @Override
-            public void onFailure(@NonNull Exception e) {
-                Log.d(TAG, "Message = "+e.getMessage());
-                if(e.getMessage().contains(String.valueOf(DriveStatusCodes.DRIVE_RESOURCE_NOT_AVAILABLE))) {
-                    createUploadFolder();
-                }
-                else{
-                    if(!isConnectedToInternet()) {
-                        Toast.makeText(getApplicationContext(),getResources().getString(R.string.noConnectionMessage),Toast.LENGTH_SHORT).show();
-                    }
-                    switchOnDrive.setChecked(false);
-                    disableGoogleDriveInSetting();
-                    googleSignInClient.signOut();
-                }
-            }
-        });
-        metadata.addOnSuccessListener(this, new OnSuccessListener<Metadata>() {
-            @Override
-            public void onSuccess(Metadata metadata) {
-                Log.d(TAG,"metadata isTrashed = "+metadata.isTrashed());
-                Log.d(TAG, "Drive id is = " + metadata.getDriveId());
-                Log.d(TAG, "created datte = "+metadata.getCreatedDate());
-                Log.d(TAG, "Title = "+metadata.getTitle());
-                if(!metadata.isTrashed()) {
-                    //Toast.makeText(getApplicationContext(), getResources().getString(R.string.googleDriveFolderCreated, metadata.getTitle()), Toast.LENGTH_SHORT).show();
-                    switchOnDrive.setChecked(true);
-                    updateGoogleDriveInSetting(metadata.getTitle(),true,metadata.getDriveId().encodeToString());
-                }
-                else{
-                    createUploadFolder();
-                }
-            }
-        });
     }
 
     @Override
@@ -834,6 +814,7 @@ public class SettingsActivity extends AppCompatActivity{
                                                 autoUploadEnabledWithFolder.setContentView(autoUploadEnabledWithFolderRoot);
                                                 autoUploadEnabledWithFolder.setCancelable(false);
                                                 autoUploadEnabledWithFolder.show();
+                                                switchOnDrive.setChecked(true);
                                                 updateGoogleDriveInSetting(folderNameText.getText().toString(), true, accName);
                                             }
                                         })

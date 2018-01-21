@@ -114,7 +114,7 @@
     <string name="saveToCloudTitle">Auto Upload to %1$s</string>
     <string name="continuesignin">CONTINUE</string>
     <string name="notnowsignin">NOT NOW</string>
-    <string name="uploadmsg">This option enables you to automatically upload any photo/video created from now, onto the cloud.\n\nUser Sign in required for the cloud service, to which the user is opting to upload.</string>
+    <string name="uploadmsg">This option enables you to automatically upload any photos/videos created from now, onto the cloud.\n\nUser Sign in required for the cloud service, to which the user is opting to upload.</string>
     <string name="signinfail">Sign In failed either due to Internet connection issue or cancellation by user.</string>
     <string name="signoutcloud">Signed out of %1$s. Auto upload has been disabled.</string>
     <string name="uploadFolder">Name of the upload folder in %1$s.</string>
@@ -131,7 +131,7 @@
     <string name="permissionHeader">Account Check Permission</string>
     <string name="yesPermission">YES</string>
     <string name="noPermission">LATER</string>
-    <string name="autouploadFolderCreated">FlipCam will now auto upload your photo/video onto this folder in %1$s.\n\nPlease check your notifications for upload status.</string>
+    <string name="autouploadFolderCreated">FlipCam will now auto upload your photos/videos onto this folder in %1$s.\n\nPlease check your notifications for upload status.</string>
     <string name="autouploadFolderUpdated">FlipCam will now auto upload your photos/videos onto <u>%1$s</u> folder in %2$s.\n\nPlease check your notifications for upload status.</string>
     <string name="signInProgress">Fetching Google Account information in your phone for signing into %1$s.\n\nPlease Wait...</string>
     <string name="signInProgressTitle">Sign In to %1$s</string>
@@ -152,6 +152,6 @@
     <string name="continueToCloud">Do you want to continue?</string>
     <string name="uploadCheckHeader">Upload Folder</string>
     <string name="uploadFolderFound">The below folder was found to be earlier created using FlipCam:</string>
-    <string name="uploadCheckMessage">Checking if a folder was earlier created in %1$s using FlipCam. If not, one will be created now.</string>
+    <string name="uploadCheckMessage">Checking if a folder was earlier created in %1$s using FlipCam.\n\nIf not, one will be created now.</string>
 </resources>
 
