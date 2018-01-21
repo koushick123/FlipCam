@@ -213,17 +213,28 @@ public class SettingsActivity extends AppCompatActivity{
             ((EditText) sdCardRoot.findViewById(R.id.sdCardPathText)).setText(settingsPref.getString(Constants.SD_CARD_PATH,""));
         }
         Configuration config = getResources().getConfiguration();
+        TextView sdcardText;
         if(config.orientation == Configuration.ORIENTATION_PORTRAIT) {
-            TextView sdcardText = (TextView)sdCardRoot.findViewById(R.id.sdCardMsg);
+            sdcardText = (TextView)sdCardRoot.findViewById(R.id.sdCardMsg);
             sdcardText.setText(getResources().getString(R.string.sdCardPathPortrait));
         }
         else{
-            TextView sdcardText = (TextView)sdCardRoot.findViewById(R.id.sdCardMsg);
+            sdcardText = (TextView)sdCardRoot.findViewById(R.id.sdCardMsg);
             sdcardText.setText(getResources().getString(R.string.sdCardPathLandscape));
         }
         sdCardDialog.setContentView(sdCardRoot);
         sdCardDialog.setCancelable(false);
         sdCardDialog.show();
+        TextView sdCardPathText = (TextView)sdCardRoot.findViewById(R.id.sdCardPathText);
+        sdCardPathText.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View view, boolean hasFocus) {
+                Log.d(TAG,"hasFocus = "+hasFocus);
+                if(hasFocus){
+                    sdCardDialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
+                }
+            }
+        });
     }
 
     public void selectSaveMedia(View view){
