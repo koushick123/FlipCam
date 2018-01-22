@@ -246,19 +246,19 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         photo=null;
         int zoomedVal = photoFrag.getZoomBar().getProgress();
         //Focus only if no focus and zoomed out. AF zooms out completely.
-        if(isFocusModeSupported(Camera.Parameters.FOCUS_MODE_AUTO) && !isAutoFocus() && zoomedVal == 0){
+        /*if(isFocusModeSupported(Camera.Parameters.FOCUS_MODE_AUTO) && !isAutoFocus() && zoomedVal == 0){
             Log.d(TAG,"AF and take pic");
             takePic=true;
             setAutoFocus();
-        }
-        else {
+        }*/
+        //else {
             Log.d(TAG,"take pic");
             capture=true;
             Camera.Parameters parameters = mCamera.getParameters();
             parameters.setZoom(zoomedVal);
             mCamera.takePicture(this, null, null, this);
             mCamera.setParameters(parameters);
-        }
+        //}
     }
 
     public void setPhotoFragmentInstance(PhotoFragment photoFragment){

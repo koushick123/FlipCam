@@ -286,7 +286,7 @@ public class PhotoFragment extends Fragment {
         SharedPreferences sharedPreferences = getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
         if(sharedPreferences.getBoolean(Constants.SAVE_TO_GOOGLE_DRIVE, false)) {
             Log.d(TAG, "Auto uploading to Google Drive");
-            //Auto upload to Google Drive enabled.
+            //Auto upload to Google Drive enabled
             Intent googleDriveUploadIntent = new Intent(getApplicationContext(), GoogleDriveUploadService.class);
             googleDriveUploadIntent.putExtra("uploadFile", cameraView.getPhotoMediaPath());
             Log.d(TAG, "Uploading file = "+cameraView.getPhotoMediaPath());

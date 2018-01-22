@@ -59,6 +59,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.Set;
 
 /**
@@ -69,7 +71,6 @@ public class GoogleDriveUploadService extends Service {
 
     public static final String TAG = "DriveUploadService";
     int NO_OF_REQUESTS = 0;
-    Boolean success;
     String uploadFile;
     String filename;
     GoogleDriveUploadService.GoogleUploadHandler googleUploadHandler;
@@ -91,6 +92,7 @@ public class GoogleDriveUploadService extends Service {
     String folderName;
     String accountName;
     DriveFolder uploadToFolder;
+    Queue<String> uploadReqs;
 
     class GoogleUploadHandler extends Handler {
         WeakReference<GoogleDriveUploadService> serviceWeakReference;
@@ -141,6 +143,7 @@ public class GoogleDriveUploadService extends Service {
 
     @Override
     public void onCreate() {
+        super.onCreate();
         Log.i(TAG, "onCreate");
         notifyIcon = BitmapFactory.decodeResource(getApplicationContext().getResources(),R.drawable.ic_launcher);
         mNotificationManager = (NotificationManager) getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
@@ -170,6 +173,7 @@ public class GoogleDriveUploadService extends Service {
         folderName = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE).getString(Constants.GOOGLE_DRIVE_FOLDER,"");
         accountName = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE).getString(Constants.GOOGLE_DRIVE_ACC_NAME,"");
         googleUploadHandler = new GoogleUploadHandler(this);
+        uploadReqs = new LinkedList<>();
         getDriveClient(signInAccount);
     }
 
@@ -185,12 +189,11 @@ public class GoogleDriveUploadService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        SimpleDateFormat sdf = new SimpleDateFormat(getResources().getString(R.string.DATE_FORMAT_FOR_UPLOAD_PROCESS));
+    SimpleDateFormat sdf = new SimpleDateFormat(getResources().getString(R.string.DATE_FORMAT_FOR_UPLOAD_PROCESS));
         String startID = sdf.format(new Date());
         Log.i(TAG,"onStartCommand = "+startID);
         final String uploadfilepath = (String)intent.getExtras().get("uploadFile");
         Log.i(TAG,"Upload file = "+uploadfilepath);
-        googleUploadHandler = new GoogleDriveUploadService.GoogleUploadHandler(this);
         new GoogleDriveUploadTask().execute(uploadfilepath, startID);
         return Service.START_NOT_STICKY;
     }
@@ -202,6 +205,7 @@ public class GoogleDriveUploadService extends Service {
     }
 
     class GoogleDriveUploadTask extends AsyncTask<String,Void,Boolean>{
+        Boolean success = null;
         @Override
         protected void onPreExecute() {
             Log.i(TAG,"onPreExecute");
@@ -222,11 +226,16 @@ public class GoogleDriveUploadService extends Service {
                 mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
             }
             NO_OF_REQUESTS--;
+            if(uploadReqs.remove(uploadId)){
+                Log.d(TAG, "Removed == "+uploadId);
+            }
             Log.i(TAG,"No of requests = "+NO_OF_REQUESTS);
             if(NO_OF_REQUESTS > 0) {
+                uploadReqs.poll();
                 stopSelf(Integer.parseInt(uploadId));
             }
             else if(NO_OF_REQUESTS == 0){
+                uploadReqs.clear();
                 stopSelf();
             }
         }
@@ -238,8 +247,307 @@ public class GoogleDriveUploadService extends Service {
             uploadId = params[1];
             filename = uploadFile.substring(uploadFile.lastIndexOf("/") + 1,uploadFile.length());
             googleUploadHandler.sendEmptyMessage(Constants.UPLOAD_PROGRESS);
-            success = null;
-            syncWithDrive();
+            mDriveClient.requestSync()
+                    .addOnFailureListener(new OnFailureListener(){
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            Log.i(TAG,"Unable to sync = ");
+                            Log.i(TAG,"Message = "+e.getMessage());
+                            if(e.getMessage().contains(String.valueOf(DriveStatusCodes.DRIVE_RATE_LIMIT_EXCEEDED))){
+                                //Continue as is, since already synced.
+                                CustomPropertyKey customPropertyKey = new CustomPropertyKey("owner", CustomPropertyKey.PUBLIC);
+                                Query query = new Query.Builder()
+                                        .addFilter(Filters.eq(SearchableField.TITLE, folderName))
+                                        .addFilter(Filters.eq(SearchableField.MIME_TYPE, "application/vnd.google-apps.folder"))
+                                        .addFilter(Filters.eq(SearchableField.TRASHED , false))
+                                        .addFilter(Filters.eq(customPropertyKey, accountName))
+                                        .build();
+                                mDriveResourceClient.query(query)
+                                        .addOnSuccessListener(new OnSuccessListener<MetadataBuffer>() {
+                                            @Override
+                                            public void onSuccess(MetadataBuffer metadatas) {
+                                                Log.i(TAG, "result metadata = "+metadatas);
+                                                Iterator<Metadata> iterator = metadatas.iterator();
+                                                if(metadatas.getCount() > 0) {
+                                                    while (iterator.hasNext()) {
+                                                        Metadata temp = iterator.next();
+                                                        Log.i(TAG, "MD title = " + temp.getTitle());
+                                                        Log.i(TAG, "MD created date = " + temp.getCreatedDate());
+                                                        Log.i(TAG, "MD drive id = " + temp.getDriveId());
+                                                        Log.i(TAG, "MD resource id = " + temp.getDriveId().getResourceId());
+                                                        mDriveClient.getDriveId(temp.getDriveId().getResourceId())
+                                                                .addOnSuccessListener(new OnSuccessListener<DriveId>() {
+                                                                    @Override
+                                                                    public void onSuccess(DriveId driveId) {
+                                                                        uploadToFolder = driveId.asDriveFolder();
+                                                                        Log.i(TAG, "New Drive id = " + uploadToFolder.getDriveId());
+                                                                        Log.i(TAG, "startUpload");
+                                                                        mDriveResourceClient.createContents()
+                                                                                .continueWithTask(new Continuation<DriveContents, Task<DriveFile>>() {
+                                                                                    @Override
+                                                                                    public Task<DriveFile> then(@NonNull Task<DriveContents> task)
+                                                                                            throws Exception {
+                                                                                        contents = task.getResult();
+                                                                                        OutputStream outputStream = contents.getOutputStream();
+                                                                                        FileInputStream fileInputStream = new FileInputStream(uploadFile);
+                                                                                        if(!isImage(uploadFile)) {
+                                                                                            BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
+                                                                                            int data;
+                                                                                            byte[] cache = new byte[102400];
+                                                                                            int writeLength = 0;
+                                                                                            try {
+                                                                                                while ((data = bufferedInputStream.read(cache, 0, cache.length)) != -1) {
+                                                                                                    outputStream.write(cache, 0, data);
+                                                                                                    writeLength += data;
+                                                                                                }
+                                                                                                Log.i(TAG, "Data size = " + writeLength);
+                                                                                            } catch (IOException e1) {
+                                                                                                Log.i(TAG, "Unable to write video file contents.");
+                                                                                            } finally {
+                                                                                                outputStream.close();
+                                                                                            }
+                                                                                            changeSet = new MetadataChangeSet.Builder()
+                                                                                                    .setTitle(filename)
+                                                                                                    .setMimeType("video/mp4")
+                                                                                                    .build();
+                                                                                        }
+                                                                                        else{
+                                                                                            Log.i(TAG, "Send IMAGE file");
+                                                                                            Bitmap image = BitmapFactory.decodeFile(uploadFile);
+                                                                                            ByteArrayOutputStream bitmapStream = new ByteArrayOutputStream();
+                                                                                            image.compress(Bitmap.CompressFormat.JPEG, 100, bitmapStream);
+                                                                                            try {
+                                                                                                Log.i(TAG, "Writing image to contents");
+                                                                                                outputStream.write(bitmapStream.toByteArray());
+                                                                                            }
+                                                                                            catch (IOException e1) {
+                                                                                                Log.i(TAG, "Unable to write image file contents.");
+                                                                                            } finally {
+                                                                                                outputStream.close();
+                                                                                            }
+                                                                                            StringBuffer mimeType = new StringBuffer("image/");
+                                                                                            if(filename.endsWith(getResources().getString(R.string.IMG_EXT))) {
+                                                                                                mimeType.append("jpeg");
+                                                                                            }
+                                                                                            else{
+                                                                                                mimeType.append("jpg");
+                                                                                            }
+                                                                                            changeSet = new MetadataChangeSet.Builder()
+                                                                                                    .setTitle(filename)
+                                                                                                    .setMimeType(mimeType.toString())
+                                                                                                    .build();
+                                                                                        }
+                                                                                        return mDriveResourceClient.createFile(uploadToFolder, changeSet, contents);
+                                                                                    }
+                                                                                })
+                                                                                .addOnSuccessListener(new OnSuccessListener<DriveFile>() {
+                                                                                    @Override
+                                                                                    public void onSuccess(DriveFile driveFile) {
+                                                                                        success = true;
+                                                                                    }
+                                                                                })
+                                                                                .addOnFailureListener( new OnFailureListener() {
+                                                                                    @Override
+                                                                                    public void onFailure(@NonNull Exception e) {
+                                                                                        Log.e(TAG, "Unable to upload file"+e.getMessage());
+                                                                                        e.printStackTrace();
+                                                                                        success = false;
+                                                                                        if(e.getMessage().contains("The user must be signed in to make this API call")) {
+                                                                                            showSignInNeededNotification();
+                                                                                        }
+                                                                                        else if(e.getMessage().contains(String.valueOf(CommonStatusCodes.TIMEOUT))){
+                                                                                            showTimeoutErrorNotification();
+                                                                                        }
+                                                                                    }
+                                                                                });
+                                                                    }
+                                                                })
+                                                                .addOnFailureListener(new OnFailureListener() {
+                                                                    @Override
+                                                                    public void onFailure(@NonNull Exception e) {
+                                                                        Log.i(TAG, "unable to get driveid = " + e.getMessage());
+                                                                        success = false;
+                                                                        showFolderNotExistErrorNotification();
+                                                                    }
+                                                                });
+                                                    }
+                                                }
+                                                else{
+                                                    success = false;
+                                                    showFolderNotExistErrorNotification();
+                                                    Log.i(TAG, "No folder exists with name = "+folderName);
+                                                }
+                                                metadatas.release();
+                                            }
+                                        })
+                                        .addOnFailureListener(new OnFailureListener() {
+                                            @Override
+                                            public void onFailure(@NonNull Exception e) {
+                                                Log.i(TAG, "Failure = "+e.getMessage());
+                                                success = false;
+                                                if(!isConnectedToInternet()) {
+                                                    showUploadErrorNotification();
+                                                }
+                                            }
+                                        });
+                            }
+                            else if(e.getMessage().contains(String.valueOf(CommonStatusCodes.TIMEOUT))){
+                                success = false;
+                                showTimeoutErrorNotification();
+                            }
+                            else if(e.getMessage().contains(String.valueOf(CommonStatusCodes.SIGN_IN_REQUIRED))) {
+                                success = false;
+                                showSignInNeededNotification();
+                            }
+                            else{
+                                success = false;
+                                if(e.getMessage().contains(String.valueOf(CommonStatusCodes.INTERNAL_ERROR)) || !isConnectedToInternet()){
+                                    showUploadErrorNotification();
+                                }
+                            }
+                        }
+                    })
+                    .addOnSuccessListener(new OnSuccessListener<Void>() {
+                        @Override
+                        public void onSuccess(Void aVoid) {
+                            Log.i(TAG,"Metadata upto date");
+                            CustomPropertyKey customPropertyKey = new CustomPropertyKey("owner", CustomPropertyKey.PUBLIC);
+                            Query query = new Query.Builder()
+                                    .addFilter(Filters.eq(SearchableField.TITLE, folderName))
+                                    .addFilter(Filters.eq(SearchableField.MIME_TYPE, "application/vnd.google-apps.folder"))
+                                    .addFilter(Filters.eq(SearchableField.TRASHED , false))
+                                    .addFilter(Filters.eq(customPropertyKey, accountName))
+                                    .build();
+                            mDriveResourceClient.query(query)
+                                    .addOnSuccessListener(new OnSuccessListener<MetadataBuffer>() {
+                                        @Override
+                                        public void onSuccess(MetadataBuffer metadatas) {
+                                            Log.i(TAG, "result metadata = "+metadatas);
+                                            Iterator<Metadata> iterator = metadatas.iterator();
+                                            if(metadatas.getCount() > 0) {
+                                                while (iterator.hasNext()) {
+                                                    Metadata temp = iterator.next();
+                                                    Log.i(TAG, "MD title = " + temp.getTitle());
+                                                    Log.i(TAG, "MD created date = " + temp.getCreatedDate());
+                                                    Log.i(TAG, "MD drive id = " + temp.getDriveId());
+                                                    Log.i(TAG, "MD resource id = " + temp.getDriveId().getResourceId());
+                                                    mDriveClient.getDriveId(temp.getDriveId().getResourceId())
+                                                            .addOnSuccessListener(new OnSuccessListener<DriveId>() {
+                                                                @Override
+                                                                public void onSuccess(DriveId driveId) {
+                                                                    uploadToFolder = driveId.asDriveFolder();
+                                                                    Log.i(TAG, "New Drive id = " + uploadToFolder.getDriveId());
+                                                                    Log.i(TAG, "startUpload");
+                                                                    mDriveResourceClient.createContents()
+                                                                            .continueWithTask(new Continuation<DriveContents, Task<DriveFile>>() {
+                                                                                @Override
+                                                                                public Task<DriveFile> then(@NonNull Task<DriveContents> task)
+                                                                                        throws Exception {
+                                                                                    contents = task.getResult();
+                                                                                    OutputStream outputStream = contents.getOutputStream();
+                                                                                    FileInputStream fileInputStream = new FileInputStream(uploadFile);
+                                                                                    if(!isImage(uploadFile)) {
+                                                                                        BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
+                                                                                        int data;
+                                                                                        byte[] cache = new byte[102400];
+                                                                                        int writeLength = 0;
+                                                                                        try {
+                                                                                            while ((data = bufferedInputStream.read(cache, 0, cache.length)) != -1) {
+                                                                                                outputStream.write(cache, 0, data);
+                                                                                                writeLength += data;
+                                                                                            }
+                                                                                            Log.i(TAG, "Data size = " + writeLength);
+                                                                                        } catch (IOException e1) {
+                                                                                            Log.i(TAG, "Unable to write video file contents.");
+                                                                                        } finally {
+                                                                                            outputStream.close();
+                                                                                        }
+                                                                                        changeSet = new MetadataChangeSet.Builder()
+                                                                                                .setTitle(filename)
+                                                                                                .setMimeType("video/mp4")
+                                                                                                .build();
+                                                                                    }
+                                                                                    else{
+                                                                                        Log.i(TAG, "Send IMAGE file");
+                                                                                        Bitmap image = BitmapFactory.decodeFile(uploadFile);
+                                                                                        ByteArrayOutputStream bitmapStream = new ByteArrayOutputStream();
+                                                                                        image.compress(Bitmap.CompressFormat.JPEG, 100, bitmapStream);
+                                                                                        try {
+                                                                                            Log.i(TAG, "Writing image to contents");
+                                                                                            outputStream.write(bitmapStream.toByteArray());
+                                                                                        }
+                                                                                        catch (IOException e1) {
+                                                                                            Log.i(TAG, "Unable to write image file contents.");
+                                                                                        } finally {
+                                                                                            outputStream.close();
+                                                                                        }
+                                                                                        StringBuffer mimeType = new StringBuffer("image/");
+                                                                                        if(filename.endsWith(getResources().getString(R.string.IMG_EXT))) {
+                                                                                            mimeType.append("jpeg");
+                                                                                        }
+                                                                                        else{
+                                                                                            mimeType.append("jpg");
+                                                                                        }
+                                                                                        changeSet = new MetadataChangeSet.Builder()
+                                                                                                .setTitle(filename)
+                                                                                                .setMimeType(mimeType.toString())
+                                                                                                .build();
+                                                                                    }
+                                                                                    return mDriveResourceClient.createFile(uploadToFolder, changeSet, contents);
+                                                                                }
+                                                                            })
+                                                                            .addOnSuccessListener(new OnSuccessListener<DriveFile>() {
+                                                                                @Override
+                                                                                public void onSuccess(DriveFile driveFile) {
+                                                                                    success = true;
+                                                                                }
+                                                                            })
+                                                                            .addOnFailureListener( new OnFailureListener() {
+                                                                                @Override
+                                                                                public void onFailure(@NonNull Exception e) {
+                                                                                    Log.e(TAG, "Unable to upload file"+e.getMessage());
+                                                                                    e.printStackTrace();
+                                                                                    success = false;
+                                                                                    if(e.getMessage().contains("The user must be signed in to make this API call")) {
+                                                                                        showSignInNeededNotification();
+                                                                                    }
+                                                                                    else if(e.getMessage().contains(String.valueOf(CommonStatusCodes.TIMEOUT))){
+                                                                                        showTimeoutErrorNotification();
+                                                                                    }
+                                                                                }
+                                                                            });
+                                                                }
+                                                            })
+                                                            .addOnFailureListener(new OnFailureListener() {
+                                                                @Override
+                                                                public void onFailure(@NonNull Exception e) {
+                                                                    Log.i(TAG, "unable to get driveid = " + e.getMessage());
+                                                                    success = false;
+                                                                    showFolderNotExistErrorNotification();
+                                                                }
+                                                            });
+                                                }
+                                            }
+                                            else{
+                                                success = false;
+                                                showFolderNotExistErrorNotification();
+                                                Log.i(TAG, "No folder exists with name = "+folderName);
+                                            }
+                                            metadatas.release();
+                                        }
+                                    })
+                                    .addOnFailureListener(new OnFailureListener() {
+                                        @Override
+                                        public void onFailure(@NonNull Exception e) {
+                                            Log.i(TAG, "Failure = "+e.getMessage());
+                                            success = false;
+                                            if(!isConnectedToInternet()) {
+                                                showUploadErrorNotification();
+                                            }
+                                        }
+                                    });
+                        }
+                    });
             while(success == null){
 
             }
@@ -302,183 +610,4 @@ public class GoogleDriveUploadService extends Service {
         mBuilder.setPriority(NotificationCompat.PRIORITY_HIGH);
         mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
     }
-
-    public void queryForFolder(){
-        CustomPropertyKey customPropertyKey = new CustomPropertyKey("owner", CustomPropertyKey.PUBLIC);
-        Query query = new Query.Builder()
-                .addFilter(Filters.eq(SearchableField.TITLE, folderName))
-                .addFilter(Filters.eq(SearchableField.MIME_TYPE, "application/vnd.google-apps.folder"))
-                .addFilter(Filters.eq(SearchableField.TRASHED , false))
-                .addFilter(Filters.eq(customPropertyKey, accountName))
-                .build();
-        mDriveResourceClient.query(query)
-            .addOnSuccessListener(new OnSuccessListener<MetadataBuffer>() {
-                @Override
-                public void onSuccess(MetadataBuffer metadatas) {
-                    Log.i(TAG, "result metadata = "+metadatas);
-                    Iterator<Metadata> iterator = metadatas.iterator();
-                    if(metadatas.getCount() > 0) {
-                        while (iterator.hasNext()) {
-                            Metadata temp = iterator.next();
-                            Log.i(TAG, "MD title = " + temp.getTitle());
-                            Log.i(TAG, "MD created date = " + temp.getCreatedDate());
-                            Log.i(TAG, "MD drive id = " + temp.getDriveId());
-                            Log.i(TAG, "MD resource id = " + temp.getDriveId().getResourceId());
-                            mDriveClient.getDriveId(temp.getDriveId().getResourceId())
-                                    .addOnSuccessListener(new OnSuccessListener<DriveId>() {
-                                        @Override
-                                        public void onSuccess(DriveId driveId) {
-                                            uploadToFolder = driveId.asDriveFolder();
-                                            Log.i(TAG, "New Drive id = " + uploadToFolder.getDriveId());
-                                            startUpload(uploadId);
-                                        }
-                                    })
-                                    .addOnFailureListener(new OnFailureListener() {
-                                        @Override
-                                        public void onFailure(@NonNull Exception e) {
-                                            Log.i(TAG, "unable to get driveid = " + e.getMessage());
-                                            success = false;
-                                            showFolderNotExistErrorNotification();
-                                        }
-                                    });
-                        }
-                    }
-                    else{
-                        success = false;
-                        showFolderNotExistErrorNotification();
-                        Log.i(TAG, "No folder exists with name = "+folderName);
-                    }
-                    metadatas.release();
-                }
-            })
-            .addOnFailureListener(new OnFailureListener() {
-                @Override
-                public void onFailure(@NonNull Exception e) {
-                    Log.i(TAG, "Failure = "+e.getMessage());
-                    success = false;
-                    if(!isConnectedToInternet()) {
-                        showUploadErrorNotification();
-                    }
-                }
-            });
-    }
-
-    public void syncWithDrive(){
-        mDriveClient.requestSync()
-                .addOnFailureListener(new OnFailureListener(){
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Log.i(TAG,"Unable to sync = ");
-                        Log.i(TAG,"Message = "+e.getMessage());
-                        if(e.getMessage().contains(String.valueOf(DriveStatusCodes.DRIVE_RATE_LIMIT_EXCEEDED))){
-                            //Continue as is, since already synced.
-                            queryForFolder();
-                        }
-                        else if(e.getMessage().contains(String.valueOf(CommonStatusCodes.TIMEOUT))){
-                            success = false;
-                            showTimeoutErrorNotification();
-                        }
-                        else if(e.getMessage().contains(String.valueOf(CommonStatusCodes.SIGN_IN_REQUIRED))){
-                            success = false;
-                            showSignInNeededNotification();
-                        }
-                        else{
-                            success = false;
-                            if(!isConnectedToInternet()) {
-                                showUploadErrorNotification();
-                            }
-                        }
-                    }
-                })
-                .addOnSuccessListener(new OnSuccessListener<Void>() {
-                    @Override
-                    public void onSuccess(Void aVoid) {
-                        Log.i(TAG,"Metadata upto date");
-                        //fetchDriveFolderMetadata(folderId);
-                        queryForFolder();
-                    }
-                });
-    }
-
-    public void startUpload(final String uploadId){
-        Log.i(TAG, "startUpload");
-        mDriveResourceClient.createContents()
-                .continueWithTask(new Continuation<DriveContents, Task<DriveFile>>() {
-                    @Override
-                    public Task<DriveFile> then(@NonNull Task<DriveContents> task)
-                            throws Exception {
-                        contents = task.getResult();
-                        OutputStream outputStream = contents.getOutputStream();
-                        FileInputStream fileInputStream = new FileInputStream(uploadFile);
-                        if(!isImage(uploadFile)) {
-                            BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
-                            int data;
-                            byte[] cache = new byte[102400];
-                            int writeLength = 0;
-                            try {
-                                while ((data = bufferedInputStream.read(cache, 0, cache.length)) != -1) {
-                                    outputStream.write(cache, 0, data);
-                                    writeLength += data;
-                                }
-                                Log.i(TAG, "Data size = " + writeLength);
-                            } catch (IOException e1) {
-                                Log.i(TAG, "Unable to write video file contents.");
-                            } finally {
-                                outputStream.close();
-                            }
-                            changeSet = new MetadataChangeSet.Builder()
-                                    .setTitle(filename)
-                                    .setMimeType("video/mp4")
-                                    .build();
-                        }
-                        else{
-                            Log.i(TAG, "Send IMAGE file");
-                            Bitmap image = BitmapFactory.decodeFile(uploadFile);
-                            ByteArrayOutputStream bitmapStream = new ByteArrayOutputStream();
-                            image.compress(Bitmap.CompressFormat.JPEG, 100, bitmapStream);
-                            try {
-                                Log.i(TAG, "Writing image to contents");
-                                outputStream.write(bitmapStream.toByteArray());
-                            }
-                            catch (IOException e1) {
-                                Log.i(TAG, "Unable to write image file contents.");
-                            } finally {
-                                outputStream.close();
-                            }
-                            StringBuffer mimeType = new StringBuffer("image/");
-                            if(filename.endsWith(getResources().getString(R.string.IMG_EXT))) {
-                                mimeType.append("jpeg");
-                            }
-                            else{
-                                mimeType.append("jpg");
-                            }
-                            changeSet = new MetadataChangeSet.Builder()
-                                    .setTitle(filename)
-                                    .setMimeType(mimeType.toString())
-                                    .build();
-                        }
-                        return mDriveResourceClient.createFile(uploadToFolder, changeSet, contents);
-                    }
-                })
-                .addOnSuccessListener(new OnSuccessListener<DriveFile>() {
-                            @Override
-                            public void onSuccess(DriveFile driveFile) {
-                                success = true;
-                            }
-                        })
-                .addOnFailureListener( new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Log.e(TAG, "Unable to upload file"+e.getMessage());
-                        e.printStackTrace();
-                        success = false;
-                        if(e.getMessage().contains("The user must be signed in to make this API call")) {
-                            showSignInNeededNotification();
-                        }
-                        else if(e.getMessage().contains(String.valueOf(CommonStatusCodes.TIMEOUT))){
-                            showTimeoutErrorNotification();
-                        }
-                    }
-                });
-        }
 }
