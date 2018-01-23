@@ -107,8 +107,10 @@ public class GoogleDriveUploadService extends Service {
                 case Constants.UPLOAD_PROGRESS:
                     Log.i(TAG,"upload id = "+uploadId);
                     if(!isImage(uploadFile)) {
-                        mBuilder.setContentTitle(getResources().getString(R.string.autoUploadInProgressTitle));
+                        mBuilder.setContentTitle(getResources().getString(R.string.autoUploadInProgressTitle, getResources().getString(R.string.googleDrive)));
                         mBuilder.setColor(getResources().getColor(R.color.uploadColor));
+                        mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.uploadInProgress, "Video")
+                                + "\n" + "File "+filename));
                         mBuilder.setContentText(getResources().getString(R.string.uploadInProgress, "Video"));
                         mNotificationManager.notify(Integer.parseInt(uploadId), mBuilder.build());
                     }
@@ -117,7 +119,7 @@ public class GoogleDriveUploadService extends Service {
                         mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.uploadInProgress, "Photo")
                                 + "\n" + "File "+filename));
                         mBuilder.setColor(getResources().getColor(R.color.uploadColor));
-                        mBuilder.setContentTitle(getResources().getString(R.string.autoUploadInProgressTitle));
+                        mBuilder.setContentTitle(getResources().getString(R.string.autoUploadInProgressTitle, getResources().getString(R.string.googleDrive)));
                         //mBuilder.setContentText(getResources().getString(R.string.uploadInProgress, "Photo")+ "\n" + "File "+filename);
                         mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
                     }
@@ -153,7 +155,6 @@ public class GoogleDriveUploadService extends Service {
                 .setContentTitle("")
                 .setContentText("");
         uploadNotification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-        mBuilder.setPriority(NotificationCompat.PRIORITY_HIGH);
         initializeGoogleSignIn();
         Set<Scope> requiredScopes = new HashSet<>(2);
         requiredScopes.add(Drive.SCOPE_FILE);
@@ -220,8 +221,9 @@ public class GoogleDriveUploadService extends Service {
                 mNotificationManager.cancel(Integer.parseInt(uploadId));
                 mBuilder.setColor(getResources().getColor(R.color.turqoise));
                 mBuilder.setContentText(getResources().getString(R.string.uploadSuccessMessageLess, filename));
-                mBuilder.setContentTitle(getResources().getString(R.string.uploadCompleted));
-                mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.uploadSuccessMessage, filename)));
+                mBuilder.setContentTitle(getResources().getString(R.string.uploadCompleted, getResources().getString(R.string.googleDrive)));
+                mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.uploadSuccessMessage, getResources().getString(R.string.googleDrive),
+                        filename)));
                 mBuilder.setSound(uploadNotification);
                 mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
             }
@@ -575,7 +577,7 @@ public class GoogleDriveUploadService extends Service {
         mBuilder.setColor(getResources().getColor(R.color.uploadError));
         mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.timeoutError)));
         mBuilder.setContentText(getResources().getString(R.string.timeoutErrorLess));
-        mBuilder.setContentTitle(getResources().getString(R.string.autoUploadInterrupt));
+        mBuilder.setContentTitle(getResources().getString(R.string.autoUploadInterrupt, getResources().getString(R.string.googleDrive)));
         mBuilder.setSound(uploadNotification);
         mBuilder.setPriority(NotificationCompat.PRIORITY_HIGH);
         mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
@@ -585,7 +587,7 @@ public class GoogleDriveUploadService extends Service {
         mBuilder.setColor(getResources().getColor(R.color.uploadError));
         mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.uploadErrorMessage)));
         mBuilder.setContentText(getResources().getString(R.string.uploadErrorMessage));
-        mBuilder.setContentTitle(getResources().getString(R.string.autoUploadInterrupt));
+        mBuilder.setContentTitle(getResources().getString(R.string.autoUploadInterrupt, getResources().getString(R.string.googleDrive)));
         mBuilder.setSound(uploadNotification);
         mBuilder.setPriority(NotificationCompat.PRIORITY_HIGH);
         mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
@@ -593,9 +595,10 @@ public class GoogleDriveUploadService extends Service {
 
     public void showFolderNotExistErrorNotification(){
         mBuilder.setColor(getResources().getColor(R.color.uploadError));
-        mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.folderNotExistError, folderName)));
+        mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.folderNotExistError, folderName,
+                getResources().getString(R.string.googleDrive))));
         mBuilder.setContentText(getResources().getString(R.string.folderNotExistErrorLess));
-        mBuilder.setContentTitle(getResources().getString(R.string.autoUploadInterrupt));
+        mBuilder.setContentTitle(getResources().getString(R.string.autoUploadInterrupt, getResources().getString(R.string.googleDrive)));
         mBuilder.setSound(uploadNotification);
         mBuilder.setPriority(NotificationCompat.PRIORITY_HIGH);
         mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
@@ -605,7 +608,7 @@ public class GoogleDriveUploadService extends Service {
         mBuilder.setColor(getResources().getColor(R.color.uploadError));
         mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.signInError)));
         mBuilder.setContentText(getResources().getString(R.string.signInErrorLess));
-        mBuilder.setContentTitle(getResources().getString(R.string.autoUploadInterrupt));
+        mBuilder.setContentTitle(getResources().getString(R.string.autoUploadInterrupt, getResources().getString(R.string.googleDrive)));
         mBuilder.setSound(uploadNotification);
         mBuilder.setPriority(NotificationCompat.PRIORITY_HIGH);
         mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());

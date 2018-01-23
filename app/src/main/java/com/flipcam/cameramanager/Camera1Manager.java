@@ -351,12 +351,12 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
             if(success) {
                 Log.d(TAG,"auto focus set successfully");
                 focused = success;
-                if(takePic)
+                /*if(takePic)
                 {
                     capture=true;
                     takePic=false;
                     camera.takePicture(camera1Manager, null, null, camera1Manager);
-                }
+                }*/
             }
         }
     };
