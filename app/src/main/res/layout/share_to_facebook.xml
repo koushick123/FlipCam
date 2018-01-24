@@ -27,6 +27,7 @@
             android:layout_weight="1"
             android:paddingLeft="10dp"
             android:text="@string/shareFacebook"
+            android:textAlignment="center"
             android:textColor="@color/backColorDialog"
             android:textStyle="bold" />
 
@@ -35,6 +36,7 @@
             android:layout_width="64dp"
             android:layout_height="50dp"
             android:layout_weight=".05"
+            android:paddingLeft="10dp"
             app:srcCompat="@drawable/share_to_facebook" />
 
     </LinearLayout>
@@ -49,6 +51,7 @@
         android:paddingBottom="25dp"
         android:paddingTop="25dp"
         android:text="@string/shareFacebookMessage"
+        android:textAlignment="center"
         android:textAppearance="?android:textAppearanceLarge"
         android:textColor="@color/turqoise"
         android:textSize="17sp"

@@ -10,6 +10,8 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        // Enabling multidex support.
+        multiDexEnabled true
     }
     buildTypes {
         release {
@@ -34,7 +36,7 @@ dependencies {
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
-    compile files('libs/dropbox-android-sdk-1.6.3.jar')
+    //compile files('libs/dropbox-android-sdk-1.6.3.jar')
     compile files('libs/json_simple-1.1.jar')
     compile 'com.android.support:appcompat-v7:25.3.1'
     compile 'com.google.android.gms:play-services-auth:11.6.0'
@@ -44,6 +46,7 @@ dependencies {
     compile 'com.github.bumptech.glide:glide:4.3.1'
     compile 'com.facebook.android:facebook-share:4.28.0'
     compile 'com.facebook.android:facebook-login:4.28.0'
+    compile 'com.dropbox.core:dropbox-core-sdk:3.0.6'
     testCompile 'junit:junit:4.12'
     annotationProcessor 'com.github.bumptech.glide:compiler:4.3.1'
 }

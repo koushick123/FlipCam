@@ -27,6 +27,7 @@ import android.widget.RadioButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.dropbox.core.android.Auth;
 import com.flipcam.constants.Constants;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
@@ -389,6 +390,23 @@ public class SettingsActivity extends AppCompatActivity{
         }
     }
 
+    public void saveToDropBox(View view){
+        if(switchOnDropbox.isChecked()){
+            cloud = 1;
+            savetocloudtitle = (TextView)saveToCloudRoot.findViewById(R.id.savetocloudtitle);
+            savetocloudtitle.setText(getResources().getString(R.string.saveToCloudTitle, getResources().getString(R.string.dropbox)));
+            ImageView placeHolderIcon = (ImageView)saveToCloudRoot.findViewById(R.id.placeHolderIconSavetoCloud);
+            placeHolderIcon.setImageDrawable(getResources().getDrawable(R.drawable.dropbox));
+            LinearLayout.LayoutParams imageParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            imageParams.width = (int)getResources().getDimension(R.dimen.dropBoxIconWidth);
+            imageParams.height = (int)getResources().getDimension(R.dimen.dropBoxIconHeight);
+            placeHolderIcon.setLayoutParams(imageParams);
+            saveToCloud.setContentView(saveToCloudRoot);
+            saveToCloud.setCancelable(false);
+            saveToCloud.show();
+        }
+    }
+
     public void signInToCloud(View view){
         switch (view.getId()){
             case R.id.continueSignIn:
@@ -407,6 +425,7 @@ public class SettingsActivity extends AppCompatActivity{
                 }
                 else{
                     //Sign in to Dropbox
+                    Auth.startOAuth2Authentication(getApplicationContext(), getString(R.string.dropBoxAppKey));
                 }
                 break;
             case R.id.cancelSignIn:

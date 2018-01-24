@@ -13,7 +13,7 @@
     <LinearLayout
         android:id="@+id/shareFB"
         android:layout_width="match_parent"
-        android:layout_height="45dp"
+        android:layout_height="wrap_content"
         android:background="@color/colorPrimary"
         android:orientation="horizontal"
         android:weightSum="1">
@@ -31,6 +31,7 @@
             android:layout_marginTop="15dp"
             android:gravity="center"
             android:text="@string/uploadFB"
+            android:textAlignment="center"
             android:textColor="@color/saveText"
             android:textStyle="bold" />
 

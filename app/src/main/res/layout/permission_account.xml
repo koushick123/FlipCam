@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/uploadColor"
@@ -26,8 +27,17 @@
             android:layout_weight="1"
             android:paddingLeft="10dp"
             android:text="@string/permissionHeader"
+            android:textAlignment="center"
             android:textColor="@color/mediaControlColor"
             android:textStyle="bold" />
+
+        <ImageView
+            android:id="@+id/imageView9"
+            android:layout_width="60dp"
+            android:layout_height="50dp"
+            android:layout_weight=".05"
+            android:paddingLeft="10dp"
+            app:srcCompat="@drawable/google_drive" />
 
     </LinearLayout>
 

@@ -161,13 +161,10 @@ public class MediaUploadService extends Service {
             if(success){
                 mBuilder.setColor(getResources().getColor(R.color.uploadColor));
                 mBuilder.setContentText(getResources().getString(R.string.uploadSuccessMessageLess, filename));
-                mBuilder.setContentTitle(getResources().getString(R.string.uploadCompleted));
-                mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.uploadSuccessMessage, filename)));
+                mBuilder.setContentTitle(getResources().getString(R.string.uploadCompleted, getResources().getString(R.string.facebook)));
+                mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.uploadSuccessMessage, getResources().getString(R.string.facebook),
+                        filename)));
                 mBuilder.setSound(uploadNotification);
-                mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
-                //Reduce priority so this is pushed down in notification drawer.
-                mBuilder.setPriority(NotificationCompat.PRIORITY_DEFAULT);
-                mBuilder.setSound(null);
                 mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
             }
             NO_OF_REQUESTS--;

@@ -60,7 +60,7 @@
     <string name="uploadInProgress">%1$s upload in progress</string>
     <string name="uploadQueuedFile">%1$s queued for upload. \n File %2$s</string>
     <string name="uploadQueued">%1$s queued for upload.</string>
-    <string name="uploadQueuedAlert">%1$s queued for upload.\nCheck status bar notification for progress.</string>
+    <string name="uploadQueuedAlert">%1$s queued for upload.\nCheck status bar notification for status.</string>
     <string name="uploadFinish">Finishing Upload.</string>
     <string name="errorTitle">Upload Interrupted</string>
     <string name="uploadInProgressTitle">Upload in Progress</string>
@@ -153,5 +153,6 @@
     <string name="uploadCheckHeader">Upload Folder</string>
     <string name="uploadFolderFound">The below folder was found to be earlier created using FlipCam:</string>
     <string name="uploadCheckMessage">Checking if a folder was earlier created in %1$s using FlipCam.\n\nIf not, one will be created now.</string>
+    <string name="dropBoxAppKey">nyu3fsj3uaaewuc</string>
 </resources>
 

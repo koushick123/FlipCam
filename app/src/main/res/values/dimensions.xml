@@ -93,6 +93,8 @@
     <dimen name="checkboxMarginTopBottom">5dp</dimen>
     <dimen name="googleDriveIconHeight">50dp</dimen>
     <dimen name="googleDriveIconWidth">64dp</dimen>
+    <dimen name="dropBoxIconHeight">50dp</dimen>
+    <dimen name="dropBoxIconWidth">64dp</dimen>
     <dimen name="totalphoneMemoryTopMargin">10dp</dimen>
     <dimen name="freeMemoryTopMargin">10dp</dimen>
     <dimen name="memoryStatusTopMargin">15dp</dimen>
