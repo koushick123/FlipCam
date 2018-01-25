@@ -233,46 +233,24 @@
         android:orientation="horizontal"
         android:weightSum="1">
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
+            <CheckBox
+                android:id="@+id/switchOnDrive"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/headTextTopMargin"
+                android:layout_marginLeft="@dimen/headTextLeftMargin"
+                android:layout_marginTop="10dp"
                 android:layout_weight=".5"
-                android:orientation="horizontal">
-
-                <CheckBox
-                    android:id="@+id/switchOnDrive"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="@dimen/headTextTopMargin"
-                    android:layout_marginLeft="@dimen/headTextLeftMargin"
-                    android:layout_marginTop="10dp"
-                    android:layout_weight="1"
-                    android:autoText="false"
-                    android:buttonTint="@color/turqoise"
-                    android:checked="false"
-                    android:onClick="saveToCloudDrive"
-                    android:paddingLeft="@dimen/headTextLeftMargin"
-                    android:singleLine="true"
-                    android:text="@string/googleDrive"
-                    android:textColor="@color/turqoise"
-                    android:textColorLink="@color/turqoise"
-                    android:thumbTint="@color/turqoise" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_weight=".5"
-                android:orientation="horizontal">
-
-                <ImageView
-                    android:id="@+id/imageView12"
-                    android:layout_width="64dp"
-                    android:layout_height="50dp"
-                    android:layout_marginRight="@dimen/switchRightMargin"
-                    android:layout_weight="1"
-                    app:srcCompat="@drawable/google_drive" />
-            </LinearLayout>
+                android:autoText="false"
+                android:buttonTint="@color/turqoise"
+                android:checked="false"
+                android:onClick="saveToCloudDrive"
+                android:paddingLeft="@dimen/headTextLeftMargin"
+                android:singleLine="true"
+                android:text="@string/googleDrive"
+                android:textColor="@color/turqoise"
+                android:textColorLink="@color/turqoise"
+                android:thumbTint="@color/turqoise" />
 
         </LinearLayout>
 
@@ -283,41 +261,20 @@
             android:orientation="horizontal"
             android:weightSum="1">
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_weight=".5"
-                android:orientation="horizontal">
-
-                <CheckBox
-                    android:id="@+id/switchOnDropbox"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="@dimen/headTextTopMargin"
-                    android:layout_marginLeft="@dimen/headTextLeftMargin"
-                    android:layout_marginTop="@dimen/headTextTopMargin"
-                    android:buttonTint="@color/turqoise"
-                    android:checked="false"
-                    android:onClick="saveToDropBox"
-                    android:paddingLeft="@dimen/headTextLeftMargin"
-                    android:text="@string/dropbox"
-                    android:textColor="@color/turqoise"
-                    android:thumbTint="@color/turqoise" />
-            </LinearLayout>
-
-            <LinearLayout
+            <CheckBox
+                android:id="@+id/switchOnDropbox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/headTextTopMargin"
+                android:layout_marginLeft="@dimen/headTextLeftMargin"
                 android:layout_weight=".5"
-                android:orientation="horizontal">
-
-                <ImageView
-                    android:id="@+id/imageView13"
-                    android:layout_width="64dp"
-                    android:layout_height="44dp"
-                    android:layout_marginLeft="@dimen/headTextLeftMargin"
-                    app:srcCompat="@drawable/dropbox" />
-            </LinearLayout>
+                android:buttonTint="@color/turqoise"
+                android:checked="false"
+                android:onClick="saveToDropBox"
+                android:paddingLeft="@dimen/headTextLeftMargin"
+                android:text="@string/dropbox"
+                android:textColor="@color/turqoise"
+                android:thumbTint="@color/turqoise" />
 
         </LinearLayout>
 

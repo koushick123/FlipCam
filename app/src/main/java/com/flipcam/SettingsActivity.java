@@ -27,7 +27,12 @@ import android.widget.RadioButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.dropbox.core.DbxException;
+import com.dropbox.core.DbxRequestConfig;
 import com.dropbox.core.android.Auth;
+import com.dropbox.core.v2.DbxClientV2;
+import com.dropbox.core.v2.files.CreateFolderResult;
+import com.dropbox.core.v2.files.DbxUserFilesRequests;
 import com.flipcam.constants.Constants;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
@@ -95,6 +100,7 @@ public class SettingsActivity extends AppCompatActivity{
     View autoUploadEnabledRoot;
     View autoUploadDisabledRoot;
     View uploadFolderCheckRoot;
+    View accessGrantedDropboxRoot;
     TextView uploadFolderTitle;
     TextView uploadFolderMsg;
     int cloud = 0; //Default to Google Drive. 1 for Dropbox.
@@ -108,6 +114,10 @@ public class SettingsActivity extends AppCompatActivity{
     Dialog autoUploadEnabled;
     Dialog autoUploadDisabled;
     Dialog uploadFolderCheck;
+    Dialog accesGrantedDropbox;
+    DbxClientV2 dbxClientV2;
+    DbxRequestConfig dbxRequestConfig;
+    boolean goToDropbox = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -166,6 +176,7 @@ public class SettingsActivity extends AppCompatActivity{
         autoUploadEnabledRoot = layoutInflater.inflate(R.layout.auto_upload_enabled, null);
         autoUploadDisabledRoot = layoutInflater.inflate(R.layout.auto_upload_disabled, null);
         uploadFolderCheckRoot = layoutInflater.inflate(R.layout.upload_folder_check, null);
+        accessGrantedDropboxRoot = layoutInflater.inflate(R.layout.access_granted_dropbox, null);
         sdCardDialog = new Dialog(this);
         saveToCloud = new Dialog(this);
         cloudUpload = new Dialog(this);
@@ -175,6 +186,7 @@ public class SettingsActivity extends AppCompatActivity{
         autoUploadEnabled = new Dialog(this);
         autoUploadDisabled = new Dialog(this);
         uploadFolderCheck = new Dialog(this);
+        accesGrantedDropbox = new Dialog(this);
         accountManager = (AccountManager)getSystemService(Context.ACCOUNT_SERVICE);
     }
 
@@ -362,7 +374,7 @@ public class SettingsActivity extends AppCompatActivity{
 
     public void saveToCloudDrive(View view) {
         if (switchOnDrive.isChecked()) {
-            cloud = 0;
+            cloud = Constants.GOOGLE_DRIVE_CLOUD;
             savetocloudtitle = (TextView)saveToCloudRoot.findViewById(R.id.savetocloudtitle);
             savetocloudtitle.setText(getResources().getString(R.string.saveToCloudTitle, getResources().getString(R.string.googleDrive)));
             ImageView placeHolderIcon = (ImageView)saveToCloudRoot.findViewById(R.id.placeHolderIconSavetoCloud);
@@ -376,7 +388,7 @@ public class SettingsActivity extends AppCompatActivity{
             saveToCloud.show();
         }
         else{
-            boolean saveToDrive = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE).getBoolean(Constants.SAVE_TO_GOOGLE_DRIVE, false);
+            boolean saveToDrive = settingsPref.getBoolean(Constants.SAVE_TO_GOOGLE_DRIVE, false);
             if(saveToDrive) {
                 if(googleSignInClient == null){
                     initializeGoogleSignIn();
@@ -392,7 +404,7 @@ public class SettingsActivity extends AppCompatActivity{
 
     public void saveToDropBox(View view){
         if(switchOnDropbox.isChecked()){
-            cloud = 1;
+            cloud = Constants.DROPBOX_CLOUD;
             savetocloudtitle = (TextView)saveToCloudRoot.findViewById(R.id.savetocloudtitle);
             savetocloudtitle.setText(getResources().getString(R.string.saveToCloudTitle, getResources().getString(R.string.dropbox)));
             ImageView placeHolderIcon = (ImageView)saveToCloudRoot.findViewById(R.id.placeHolderIconSavetoCloud);
@@ -405,13 +417,22 @@ public class SettingsActivity extends AppCompatActivity{
             saveToCloud.setCancelable(false);
             saveToCloud.show();
         }
+        else{
+            signOutDropbox();
+            disableDropboxInSetting();
+        }
+    }
+
+    public void createDropboxFolder(View view){
+        accesGrantedDropbox.dismiss();
+        createUploadFolder();
     }
 
     public void signInToCloud(View view){
         switch (view.getId()){
             case R.id.continueSignIn:
                 saveToCloud.dismiss();
-                if(cloud == 0){
+                if(cloud == Constants.GOOGLE_DRIVE_CLOUD){
                     //Sign in to Google Drive
                     int permissionCheck = ActivityCompat.checkSelfPermission(this, Manifest.permission.GET_ACCOUNTS);
                     if(permissionCheck == PackageManager.PERMISSION_GRANTED) {
@@ -425,16 +446,24 @@ public class SettingsActivity extends AppCompatActivity{
                 }
                 else{
                     //Sign in to Dropbox
+                    goToDropbox = true;
                     Auth.startOAuth2Authentication(getApplicationContext(), getString(R.string.dropBoxAppKey));
                 }
                 break;
             case R.id.cancelSignIn:
                 saveToCloud.dismiss();
-                if(cloud == 0) {
-                    settingsEditor.putBoolean(Constants.SAVE_TO_GOOGLE_DRIVE , false);
-                    settingsEditor.commit();
-                    switchOnDrive.setChecked(false);
-                }
+                switch(cloud) {
+                    case Constants.GOOGLE_DRIVE_CLOUD:
+                        settingsEditor.putBoolean(Constants.SAVE_TO_GOOGLE_DRIVE, false);
+                        settingsEditor.commit();
+                        switchOnDrive.setChecked(false);
+                        break;
+                    case Constants.DROPBOX_CLOUD:
+                        settingsEditor.putBoolean(Constants.SAVE_TO_DROPBOX, false);
+                        settingsEditor.commit();
+                        switchOnDropbox.setChecked(false);
+                        break;
+                    }
                 break;
             }
     }
@@ -448,7 +477,7 @@ public class SettingsActivity extends AppCompatActivity{
                 break;
             case R.id.noPermission:
                 Log.d(TAG,"noPermission");
-                if(cloud == 0) {
+                if(cloud == Constants.GOOGLE_DRIVE_CLOUD) {
                     switchOnDrive.setChecked(false);
                 }
                 permissionAccount.dismiss();
@@ -474,13 +503,40 @@ public class SettingsActivity extends AppCompatActivity{
     @Override
     protected void onResume() {
         super.onResume();
-        Log.d(TAG,"onResume");
+        Log.d(TAG,"onResume goToDropbox = "+goToDropbox);
         updateSettingsValues();
-        if(signInProgress){
+        if (signInProgress) {
             signInProgressDialog.dismiss();
-            Log.d(TAG,"Reset signinprogess");
+            Log.d(TAG, "Reset signinprogess");
             signInProgress = false;
         }
+        if(goToDropbox) {
+            goToDropbox = false;
+            Log.d(TAG, "Access token = " + Auth.getOAuth2Token());
+            if(Auth.getOAuth2Token() == null){
+                Toast.makeText(getApplicationContext(),getResources().getString(R.string.signinfail),Toast.LENGTH_LONG).show();
+                if(cloud == Constants.DROPBOX_CLOUD) {
+                    switchOnDropbox.setChecked(false);
+                    disableDropboxInSetting();
+                }
+            }
+            else{
+                settingsEditor.putString(Constants.DROPBOX_ACCESS_TOKEN, Auth.getOAuth2Token());
+                settingsEditor.commit();
+                dbxRequestConfig = new DbxRequestConfig("dropbox/flipCam");
+                dbxClientV2 = new DbxClientV2(dbxRequestConfig,Auth.getOAuth2Token());
+                TextView dropBoxfolderCreated = (TextView)accessGrantedDropboxRoot.findViewById(R.id.dropBoxFolderCreated);
+                dropBoxfolderCreated.setText(getResources().getString(R.string.autouploadFolderUpdated, getResources().getString(R.string.flipCamAppFolder),
+                        getResources().getString(R.string.dropbox)));
+                accesGrantedDropbox.setContentView(accessGrantedDropboxRoot);
+                accesGrantedDropbox.setCancelable(false);
+                accesGrantedDropbox.show();
+            }
+        }
+    }
+
+    public void accessGrantedDropbox(View view){
+        accesGrantedDropbox.dismiss();
     }
 
     @Override
@@ -530,7 +586,7 @@ public class SettingsActivity extends AppCompatActivity{
             signInProgress = true;
             TextView signInText = (TextView)signInProgressRoot.findViewById(R.id.signInText);
             TextView signInprogressTitle = (TextView)signInProgressRoot.findViewById(R.id.savetocloudtitle);
-            if(cloud == 0) {
+            if(cloud == Constants.GOOGLE_DRIVE_CLOUD) {
                 signInprogressTitle.setText(getResources().getString(R.string.signInProgressTitle, getResources().getString(R.string.googleDrive)));
                 signInText.setText(getResources().getString(R.string.signInProgress, getResources().getString(R.string.googleDrive)));
                 ImageView signInImage = (ImageView) signInProgressRoot.findViewById(R.id.signInImage);
@@ -553,13 +609,34 @@ public class SettingsActivity extends AppCompatActivity{
         return isConnected;
     }
 
-    public void checkIfFolderCreatedInDrive(){
+    public void checkIfFolderCreatedInDropbox(){
         TextView uploadFolderMsg = (TextView)uploadFolderCheckRoot.findViewById(R.id.uploadFolderMsg);
-        uploadFolderMsg.setText(getResources().getString(R.string.uploadCheckMessage, getResources().getString(R.string.googleDrive)));
+        uploadFolderMsg.setText(getResources().getString(R.string.uploadCheckMessage, getResources().getString(R.string.dropbox)));
+        ImageView signinImage = (ImageView)uploadFolderCheckRoot.findViewById(R.id.signInImage);
+        signinImage.setImageDrawable(getResources().getDrawable(R.drawable.dropbox));
         uploadFolderCheck.setContentView(uploadFolderCheckRoot);
         uploadFolderCheck.setCancelable(false);
         uploadFolderCheck.show();
-        final String folderName = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE).getString(Constants.GOOGLE_DRIVE_FOLDER, "");
+        final String folderName = settingsPref.getString(Constants.DROPBOX_FOLDER, "");
+        Log.d(TAG, "saved folderName = "+folderName);
+        if (folderName != null && !folderName.equals("")) {
+
+        }
+        else{
+            uploadFolderCheck.dismiss();
+            createUploadFolder();
+        }
+    }
+
+    public void checkIfFolderCreatedInDrive(){
+        TextView uploadFolderMsg = (TextView)uploadFolderCheckRoot.findViewById(R.id.uploadFolderMsg);
+        uploadFolderMsg.setText(getResources().getString(R.string.uploadCheckMessage, getResources().getString(R.string.googleDrive)));
+        ImageView signinImage = (ImageView)uploadFolderCheckRoot.findViewById(R.id.signInImage);
+        signinImage.setImageDrawable(getResources().getDrawable(R.drawable.google_drive));
+        uploadFolderCheck.setContentView(uploadFolderCheckRoot);
+        uploadFolderCheck.setCancelable(false);
+        uploadFolderCheck.show();
+        final String folderName = settingsPref.getString(Constants.GOOGLE_DRIVE_FOLDER, "");
         Log.d(TAG, "saved folderName = "+folderName);
         if (folderName != null && !folderName.equals("")) {
             mDriveClient.requestSync()
@@ -691,13 +768,13 @@ public class SettingsActivity extends AppCompatActivity{
                 if(permissions != null && permissions.length > 0) {
                     if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                         Log.d(TAG,"permission given");
-                        if(cloud == 0) {
+                        if(cloud == Constants.GOOGLE_DRIVE_CLOUD) {
                             continueToGoogleDrive();
                         }
                     } else {
                         Log.d(TAG,"permission rational");
                         saveToCloud.dismiss();
-                        if(cloud == 0) {
+                        if(cloud == Constants.GOOGLE_DRIVE_CLOUD) {
                             switchOnDrive.setChecked(false);
                         }
                     }
@@ -718,7 +795,7 @@ public class SettingsActivity extends AppCompatActivity{
                     //Sign in failed due to connection problem or user cancelled it.
                     Log.d(TAG, "Sign-in failed.");
                     Toast.makeText(getApplicationContext(),getResources().getString(R.string.signinfail),Toast.LENGTH_LONG).show();
-                    if(cloud == 0) {
+                    if(cloud == Constants.GOOGLE_DRIVE_CLOUD) {
                         switchOnDrive.setChecked(false);
                         signedInDrive = false;
                         disableGoogleDriveInSetting();
@@ -743,7 +820,7 @@ public class SettingsActivity extends AppCompatActivity{
                 } else {
                     Log.e(TAG, "Sign-in failed 222.");
                     Toast.makeText(getApplicationContext(),getResources().getString(R.string.signinfail),Toast.LENGTH_LONG).show();
-                    if(cloud == 0) {
+                    if(cloud == Constants.GOOGLE_DRIVE_CLOUD) {
                         switchOnDrive.setChecked(false);
                         signedInDrive = false;
                         disableGoogleDriveInSetting();
@@ -759,6 +836,11 @@ public class SettingsActivity extends AppCompatActivity{
         settingsEditor.commit();
     }
 
+    public void disableDropboxInSetting(){
+        settingsEditor.putBoolean(Constants.SAVE_TO_DROPBOX, false);
+        settingsEditor.commit();
+    }
+
     private void getDriveClient(GoogleSignInAccount signInAccount) {
         Log.d(TAG,"getDriveClient");
         mDriveClient = Drive.getDriveClient(getApplicationContext(), signInAccount);
@@ -771,10 +853,15 @@ public class SettingsActivity extends AppCompatActivity{
         uploadFolderMsg = (TextView)cloudUploadRoot.findViewById(R.id.uploadFolderMsg);
         uploadFolderTitle = (TextView)cloudUploadRoot.findViewById(R.id.uploadFolderTitle);
         uploadDestIcon = (ImageView) cloudUploadRoot.findViewById(R.id.uploadDestIcon);
-        if(cloud == 0) {
+        if(cloud == Constants.GOOGLE_DRIVE_CLOUD) {
             uploadFolderMsg.setText(getResources().getString(R.string.uploadFolder, getResources().getString(R.string.googleDrive)));
             uploadFolderTitle.setText(getResources().getString(R.string.uploadFolderTitle, getResources().getString(R.string.googleDrive)));
             uploadDestIcon.setImageDrawable(getResources().getDrawable(R.drawable.google_drive));
+        }
+        else if(cloud == Constants.DROPBOX_CLOUD){
+            uploadFolderMsg.setText(getResources().getString(R.string.uploadFolder, getResources().getString(R.string.dropbox)));
+            uploadFolderTitle.setText(getResources().getString(R.string.uploadFolderTitle, getResources().getString(R.string.dropbox)));
+            uploadDestIcon.setImageDrawable(getResources().getDrawable(R.drawable.dropbox));
         }
         Log.d(TAG,"Open cloud upload dialog");
         cloudUpload.setContentView(cloudUploadRoot);
@@ -811,7 +898,7 @@ public class SettingsActivity extends AppCompatActivity{
     public void uploadFolder(View view) {
         switch (view.getId()) {
             case R.id.createFolder:
-                if(cloud == 0) {
+                if(cloud == Constants.GOOGLE_DRIVE_CLOUD) {
                     if (validateFolderNameIsNotEmpty()) {
                         cloudUpload.dismiss();
                         mDriveResourceClient
@@ -865,10 +952,45 @@ public class SettingsActivity extends AppCompatActivity{
                         Toast.makeText(getApplicationContext(), getResources().getString(R.string.uploadFolderEmpty), Toast.LENGTH_SHORT).show();
                     }
                 }
+                else if(cloud == Constants.DROPBOX_CLOUD){
+                    if(validateFolderNameDropBox()) {
+                        cloudUpload.dismiss();
+                        DbxUserFilesRequests dbxUserFilesRequests = dbxClientV2.files();
+                        try {
+                            CreateFolderResult createFolderResult = dbxUserFilesRequests.createFolderV2(folderNameText.getText().toString());
+                            String folderId = createFolderResult.getMetadata().getId();
+                            if(folderId != null && !folderId.equals("")){
+                                ImageView placeholdericon = (ImageView) autoUploadEnabledWithFolderRoot.findViewById(R.id.placeHolderIconAutoUpload);
+                                placeholdericon.setImageDrawable(getResources().getDrawable(R.drawable.dropbox));
+                                TextView folderCreated = (TextView) autoUploadEnabledWithFolderRoot.findViewById(R.id.folderCreatedMsg);
+                                folderCreated.setText(getResources().getString(R.string.folderCreatedSuccess, folderNameText.getText().toString()));
+                                TextView autoUploadMsg = (TextView) autoUploadEnabledWithFolderRoot.findViewById(R.id.autoUploadMsg);
+                                autoUploadMsg.setText(getResources().getString(R.string.autouploadFolderCreated, getResources().getString(R.string.dropbox)));
+                                autoUploadEnabledWithFolder.setContentView(autoUploadEnabledWithFolderRoot);
+                                autoUploadEnabledWithFolder.setCancelable(false);
+                                autoUploadEnabledWithFolder.show();
+                                switchOnDropbox.setChecked(true);
+                                Log.d(TAG, "getParentSharedFolderId = "+createFolderResult.getMetadata().getPathDisplay());
+                                updateDropboxInSetting(createFolderResult.getMetadata().getParentSharedFolderId(), true);
+                            }
+                            else{
+                                Log.d(TAG, "Unable to create folder");
+                                Toast.makeText(getApplicationContext(),
+                                        getResources().getString(R.string.foldercreateErrorGoogleDrive, folderNameText.getText().toString()),
+                                        Toast.LENGTH_SHORT).show();
+                                switchOnDropbox.setChecked(false);
+                                signOutDropbox();
+                                updateDropboxInSetting("", false);
+                            }
+                        } catch (DbxException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
                 break;
             case R.id.cancelFolder:
                 cloudUpload.dismiss();
-                if(cloud == 0) {
+                if(cloud == Constants.GOOGLE_DRIVE_CLOUD) {
                     switchOnDrive.setChecked(false);
                     signedInDrive = false;
                     //updateGoogleDriveInSetting("",false,"");
@@ -876,7 +998,23 @@ public class SettingsActivity extends AppCompatActivity{
                     googleSignInClient.signOut();
                     showUploadDisabled();
                 }
+                else if(cloud == Constants.DROPBOX_CLOUD){
+                    switchOnDropbox.setChecked(false);
+                    disableDropboxInSetting();
+                    signOutDropbox();
+                }
         }
+    }
+
+    public void signOutDropbox(){
+        try {
+            dbxClientV2.auth().tokenRevoke();
+            Log.d(TAG, "Token revoked");
+        } catch (DbxException e) {
+            e.printStackTrace();
+        }
+        settingsEditor.remove(Constants.DROPBOX_ACCESS_TOKEN);
+        settingsEditor.commit();
     }
 
     public void showUploadDisabled(){
@@ -906,6 +1044,13 @@ public class SettingsActivity extends AppCompatActivity{
         settingsEditor.putString(Constants.GOOGLE_DRIVE_FOLDER,folderName);
         settingsEditor.putBoolean(Constants.SAVE_TO_GOOGLE_DRIVE, saveTo);
         settingsEditor.putString(Constants.GOOGLE_DRIVE_ACC_NAME, accname);
+        settingsEditor.commit();
+    }
+
+    public void updateDropboxInSetting(String folderName, boolean saveTo){
+        Log.d(TAG, "Saving DB folder = "+folderName);
+        settingsEditor.putString(Constants.DROPBOX_FOLDER,folderName);
+        settingsEditor.putBoolean(Constants.SAVE_TO_DROPBOX, saveTo);
         settingsEditor.commit();
     }
 

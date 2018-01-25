@@ -111,7 +111,7 @@
     <string name="thresholdSaved">Phone memory threshold set to %1$s %2$s.</string>
     <string name="disableThreshold">Disable Threshold Check</string>
     <string name="thresholdExceeds">The threshold entered is the same or more than the internal storage (%1$s %2$s) of your phone. Please enter a lower value.</string>
-    <string name="saveToCloudTitle">Auto Upload to %1$s</string>
+    <string name="saveToCloudTitle">Sign in to %1$s</string>
     <string name="continuesignin">CONTINUE</string>
     <string name="notnowsignin">NOT NOW</string>
     <string name="uploadmsg">This option enables you to automatically upload any photos/videos created from now, onto the cloud.\n\nUser Sign in required for the cloud service, to which the user is opting to upload.</string>
@@ -153,6 +153,9 @@
     <string name="uploadCheckHeader">Upload Folder</string>
     <string name="uploadFolderFound">The below folder was found to be earlier created using FlipCam:</string>
     <string name="uploadCheckMessage">Checking if a folder was earlier created in %1$s using FlipCam.\n\nIf not, one will be created now.</string>
-    <string name="dropBoxAppKey">nyu3fsj3uaaewuc</string>
+    <string name="dropBoxAppKey">169uf2hzn1n0iov</string>
+    <string name="dropBoxUploadFolder">Dropbox Upload Folder</string>
+    <string name="flipCamAppFolder">FlipCam</string>
+    <string name="createUploadFolderDropbox">Create a subfolder inside FlipCam for my uploads.</string>
 </resources>
 

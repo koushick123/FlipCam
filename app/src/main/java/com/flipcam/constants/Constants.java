@@ -45,6 +45,9 @@ public class Constants
     public static final String GOOGLE_DRIVE_ACC_NAME = "AccName";
     public static final String SAVE_TO_DROPBOX = "SaveToDropBox";
     public static final String DROPBOX_FOLDER = "DropboxFolder";
+    public static final int GOOGLE_DRIVE_CLOUD = 0;
+    public static final int DROPBOX_CLOUD = 1;
+    public static final String DROPBOX_ACCESS_TOKEN = "DropBoxAccessToken";
     //Show memory consumed msg
     public static final String SHOW_MEMORY_CONSUMED_MSG = "ShowMemoryConsumedText";
 }
