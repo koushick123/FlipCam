@@ -59,8 +59,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.Queue;
 import java.util.Set;
 
 /**
@@ -92,7 +90,6 @@ public class GoogleDriveUploadService extends Service {
     String folderName;
     String accountName;
     DriveFolder uploadToFolder;
-    Queue<String> uploadReqs;
 
     class GoogleUploadHandler extends Handler {
         WeakReference<GoogleDriveUploadService> serviceWeakReference;
@@ -174,7 +171,6 @@ public class GoogleDriveUploadService extends Service {
         folderName = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE).getString(Constants.GOOGLE_DRIVE_FOLDER,"");
         accountName = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE).getString(Constants.GOOGLE_DRIVE_ACC_NAME,"");
         googleUploadHandler = new GoogleUploadHandler(this);
-        uploadReqs = new LinkedList<>();
         getDriveClient(signInAccount);
     }
 
@@ -190,7 +186,7 @@ public class GoogleDriveUploadService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-    SimpleDateFormat sdf = new SimpleDateFormat(getResources().getString(R.string.DATE_FORMAT_FOR_UPLOAD_PROCESS));
+        SimpleDateFormat sdf = new SimpleDateFormat(getResources().getString(R.string.DATE_FORMAT_FOR_UPLOAD_PROCESS));
         String startID = sdf.format(new Date());
         Log.i(TAG,"onStartCommand = "+startID);
         final String uploadfilepath = (String)intent.getExtras().get("uploadFile");
@@ -228,16 +224,11 @@ public class GoogleDriveUploadService extends Service {
                 mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
             }
             NO_OF_REQUESTS--;
-            if(uploadReqs.remove(uploadId)){
-                Log.d(TAG, "Removed == "+uploadId);
-            }
             Log.i(TAG,"No of requests = "+NO_OF_REQUESTS);
             if(NO_OF_REQUESTS > 0) {
-                uploadReqs.poll();
                 stopSelf(Integer.parseInt(uploadId));
             }
             else if(NO_OF_REQUESTS == 0){
-                uploadReqs.clear();
                 stopSelf();
             }
         }

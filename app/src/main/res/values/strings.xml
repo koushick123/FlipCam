@@ -157,5 +157,6 @@
     <string name="dropBoxUploadFolder">Dropbox Upload Folder</string>
     <string name="flipCamAppFolder">FlipCam</string>
     <string name="createUploadFolderDropbox">Create a subfolder inside FlipCam for my uploads.</string>
+    <string name="uploadFolderDropbox">Folder name has invalid special characters. Please try again.</string>
 </resources>
 

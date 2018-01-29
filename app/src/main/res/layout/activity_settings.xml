@@ -263,7 +263,7 @@
 
             <CheckBox
                 android:id="@+id/switchOnDropbox"
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="@dimen/headTextTopMargin"
                 android:layout_marginLeft="@dimen/headTextLeftMargin"

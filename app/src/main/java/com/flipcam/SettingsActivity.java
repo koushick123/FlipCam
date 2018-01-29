@@ -446,8 +446,15 @@ public class SettingsActivity extends AppCompatActivity{
                 }
                 else{
                     //Sign in to Dropbox
-                    goToDropbox = true;
-                    Auth.startOAuth2Authentication(getApplicationContext(), getString(R.string.dropBoxAppKey));
+                    if(settingsPref.contains(Constants.DROPBOX_ACCESS_TOKEN) && !settingsPref.getString(Constants.DROPBOX_ACCESS_TOKEN, "").equals("")){
+                        dbxRequestConfig = new DbxRequestConfig("dropbox/flipCam");
+                        dbxClientV2 = new DbxClientV2(dbxRequestConfig, settingsPref.getString(Constants.DROPBOX_ACCESS_TOKEN, ""));
+                        checkIfFolderCreatedInDropbox();
+                    }
+                    else {
+                        goToDropbox = true;
+                        Auth.startOAuth2Authentication(getApplicationContext(), getString(R.string.dropBoxAppKey));
+                    }
                 }
                 break;
             case R.id.cancelSignIn:
@@ -515,14 +522,14 @@ public class SettingsActivity extends AppCompatActivity{
             Log.d(TAG, "Access token = " + Auth.getOAuth2Token());
             if(Auth.getOAuth2Token() == null){
                 Toast.makeText(getApplicationContext(),getResources().getString(R.string.signinfail),Toast.LENGTH_LONG).show();
-                if(cloud == Constants.DROPBOX_CLOUD) {
-                    switchOnDropbox.setChecked(false);
-                    disableDropboxInSetting();
-                }
+                switchOnDropbox.setChecked(false);
+                disableDropboxInSetting();
             }
             else{
                 settingsEditor.putString(Constants.DROPBOX_ACCESS_TOKEN, Auth.getOAuth2Token());
                 settingsEditor.commit();
+                //Folder name is same as app name
+                updateDropboxInSetting(getResources().getString(R.string.app_name),true);
                 dbxRequestConfig = new DbxRequestConfig("dropbox/flipCam");
                 dbxClientV2 = new DbxClientV2(dbxRequestConfig,Auth.getOAuth2Token());
                 TextView dropBoxfolderCreated = (TextView)accessGrantedDropboxRoot.findViewById(R.id.dropBoxFolderCreated);
@@ -620,7 +627,13 @@ public class SettingsActivity extends AppCompatActivity{
         final String folderName = settingsPref.getString(Constants.DROPBOX_FOLDER, "");
         Log.d(TAG, "saved folderName = "+folderName);
         if (folderName != null && !folderName.equals("")) {
-
+            try {
+                com.dropbox.core.v2.files.Metadata metadata = dbxClientV2.files().getMetadata(folderName);
+                Log.d(TAG, "dropbox name = "+metadata.getName());
+                Log.d(TAG, "multiline = "+metadata.toStringMultiline());
+            } catch (DbxException e) {
+                e.printStackTrace();
+            }
         }
         else{
             uploadFolderCheck.dismiss();
@@ -986,6 +999,9 @@ public class SettingsActivity extends AppCompatActivity{
                             e.printStackTrace();
                         }
                     }
+                    else{
+                        Toast.makeText(getApplicationContext(), getResources().getString(R.string.uploadFolderDropbox), Toast.LENGTH_SHORT).show();
+                    }
                 }
                 break;
             case R.id.cancelFolder:
@@ -1007,12 +1023,17 @@ public class SettingsActivity extends AppCompatActivity{
     }
 
     public void signOutDropbox(){
-        try {
-            dbxClientV2.auth().tokenRevoke();
-            Log.d(TAG, "Token revoked");
-        } catch (DbxException e) {
-            e.printStackTrace();
-        }
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    dbxClientV2.auth().tokenRevoke();
+                    Log.d(TAG, "Token revoked");
+                } catch (DbxException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
         settingsEditor.remove(Constants.DROPBOX_ACCESS_TOKEN);
         settingsEditor.commit();
     }
