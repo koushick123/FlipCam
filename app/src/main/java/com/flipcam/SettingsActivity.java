@@ -654,7 +654,7 @@ public class SettingsActivity extends AppCompatActivity{
                 public void run() {
                     try {
                         com.dropbox.core.v2.files.Metadata metadata = dbxClientV2.files().getMetadata("/"+folderName);
-                        Log.d(TAG, "dropbox name = "+metadata.getName());
+                        Log.d(TAG, "dropbox path display = "+metadata.getPathDisplay());
                         Log.d(TAG, "multiline = "+metadata.toStringMultiline());
                         runOnUiThread(new Runnable() {
                             @Override
@@ -676,9 +676,9 @@ public class SettingsActivity extends AppCompatActivity{
                                 @Override
                                 public void run() {
                                     autoUploadEnabled.show();
+                                    switchOnDropbox.setChecked(true);
                                 }
                             });
-                            switchOnDropbox.setChecked(true);
                             updateDropboxInSetting(metadata.getName(), true);
                         }
                         else{
@@ -1134,7 +1134,8 @@ public class SettingsActivity extends AppCompatActivity{
                 break;
             case Constants.DROPBOX_CLOUD:
                 placeholderIcon.setImageDrawable(getResources().getDrawable(R.drawable.dropbox));
-                disabledMsg.setText(getResources().getString(R.string.üploadDisabledDropbox, getResources().getString(R.string.app_name)));
+                String savedFolder = settingsPref.getString(Constants.DROPBOX_FOLDER, "");
+                disabledMsg.setText(getResources().getString(R.string.üploadDisabledDropbox, savedFolder));
                 break;
         }
         autoUploadDisabled.setContentView(autoUploadDisabledRoot);

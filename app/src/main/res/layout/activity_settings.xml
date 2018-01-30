@@ -255,9 +255,19 @@
         </LinearLayout>
 
         <LinearLayout
+            android:id="@+id/internalseparator2"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_weight="1"
+            android:background="@color/turqoise"
+            android:checked="false"
+            android:orientation="horizontal"></LinearLayout>
+
+        <LinearLayout
             android:id="@+id/dropBox"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:layout_marginTop="@dimen/dropboxCheckboxTopMargin"
             android:orientation="horizontal"
             android:weightSum="1">
 

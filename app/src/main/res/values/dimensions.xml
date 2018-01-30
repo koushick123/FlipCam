@@ -102,4 +102,5 @@
     <dimen name="totalphoneMemoryImageTopMargin">6dp</dimen>
     //Text size for memory limit message
     <dimen name="memoryThresholdMsg">14sp</dimen>
+    <dimen name="dropboxCheckboxTopMargin">10dp</dimen>
 </resources>
