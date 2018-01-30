@@ -70,7 +70,7 @@
             android:onClick="createDropboxFolder"
             android:text="@string/createUploadFolderDropbox"
             android:textColor="@color/turqoise"
-            android:textSize="11sp"
+            android:textSize="12sp"
             app:buttonTint="@color/turqoise" />
 
         <LinearLayout

@@ -140,26 +140,6 @@ public class SettingsActivity extends AppCompatActivity{
         getSupportActionBar().setTitle(getResources().getString(R.string.settingTitle));
         settingsPref = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
         settingsEditor = settingsPref.edit();
-        if(settingsPref.contains(Constants.SAVE_MEDIA_PHONE_MEM)){
-            Log.d(TAG,"Phone memory exists");
-            if(settingsPref.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM,true)){
-                Log.d(TAG,"Phone memory is true");
-                phoneMemBtn.setChecked(true);
-                sdCardBtn.setChecked(false);
-                editSdCardPath.setClickable(false);
-            }
-            else{
-                Log.d(TAG,"Phone memory is false");
-                phoneMemBtn.setChecked(false);
-                sdCardBtn.setChecked(true);
-                editSdCardPath.setClickable(true);
-            }
-        }
-        else{
-            Log.d(TAG,"Phone memory NOT exists");
-            phoneMemBtn.setChecked(true);
-            sdCardBtn.setChecked(false);
-        }
         Log.d(TAG,"SD Card Path onCreate = "+settingsPref.getString(Constants.SD_CARD_PATH,""));
         if(settingsPref.contains(Constants.SD_CARD_PATH) && !settingsPref.getString(Constants.SD_CARD_PATH,"").equals("")) {
             String sdcardpath = settingsPref.getString(Constants.SD_CARD_PATH, "");
@@ -192,6 +172,28 @@ public class SettingsActivity extends AppCompatActivity{
     }
 
     public void updateSettingsValues(){
+        //Update Save Media in
+        if(settingsPref.contains(Constants.SAVE_MEDIA_PHONE_MEM)){
+            Log.d(TAG,"Phone memory exists");
+            if(settingsPref.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM,true)){
+                Log.d(TAG,"Phone memory is true");
+                phoneMemBtn.setChecked(true);
+                sdCardBtn.setChecked(false);
+                editSdCardPath.setClickable(false);
+            }
+            else{
+                Log.d(TAG,"Phone memory is false");
+                phoneMemBtn.setChecked(false);
+                sdCardBtn.setChecked(true);
+                editSdCardPath.setClickable(true);
+            }
+        }
+        else{
+            Log.d(TAG,"Phone memory NOT exists");
+            phoneMemBtn.setChecked(true);
+            sdCardBtn.setChecked(false);
+            editSdCardPath.setClickable(false);
+        }
         //Update Phone memory
         if(settingsPref.contains(Constants.PHONE_MEMORY_DISABLE)){
             if(!settingsPref.getBoolean(Constants.PHONE_MEMORY_DISABLE, false)){
@@ -209,6 +211,7 @@ public class SettingsActivity extends AppCompatActivity{
             thresholdText.setText(getResources().getString(R.string.memoryThresholdLimit, Integer.parseInt(memoryLimit) + " " + memoryMetric));
         }
         //Update Auto upload
+        //Google Drive
         if(settingsPref.contains(Constants.SAVE_TO_GOOGLE_DRIVE)){
             if(settingsPref.getBoolean(Constants.SAVE_TO_GOOGLE_DRIVE, false)){
                 switchOnDrive.setChecked(true);
@@ -219,6 +222,18 @@ public class SettingsActivity extends AppCompatActivity{
         }
         else{
             switchOnDrive.setChecked(false);
+        }
+        //Dropbox
+        if(settingsPref.contains(Constants.SAVE_TO_DROPBOX)){
+            if(settingsPref.getBoolean(Constants.SAVE_TO_DROPBOX, false)){
+                switchOnDropbox.setChecked(true);
+            }
+            else{
+                switchOnDropbox.setChecked(false);
+            }
+        }
+        else{
+            switchOnDropbox.setChecked(false);
         }
     }
 
@@ -414,11 +429,17 @@ public class SettingsActivity extends AppCompatActivity{
             imageParams.width = (int)getResources().getDimension(R.dimen.dropBoxIconWidth);
             imageParams.height = (int)getResources().getDimension(R.dimen.dropBoxIconHeight);
             placeHolderIcon.setLayoutParams(imageParams);
+            TextView savetoCloudMsg = (TextView)saveToCloudRoot.findViewById(R.id.savetocloudmsg);
+            savetoCloudMsg.setText(getResources().getString(R.string.saveToCloudDropbox));
             saveToCloud.setContentView(saveToCloudRoot);
             saveToCloud.setCancelable(false);
             saveToCloud.show();
         }
         else{
+            if(dbxClientV2 == null){
+                dbxRequestConfig = new DbxRequestConfig("dropbox/flipCam");
+                dbxClientV2 = new DbxClientV2(dbxRequestConfig, settingsPref.getString(Constants.DROPBOX_ACCESS_TOKEN,""));
+            }
             revokeAccessFromDropbox();
             disableDropboxInSetting();
             showUploadDisabled();
@@ -632,7 +653,7 @@ public class SettingsActivity extends AppCompatActivity{
                 @Override
                 public void run() {
                     try {
-                        com.dropbox.core.v2.files.Metadata metadata = dbxClientV2.files().getMetadata(folderName);
+                        com.dropbox.core.v2.files.Metadata metadata = dbxClientV2.files().getMetadata("/"+folderName);
                         Log.d(TAG, "dropbox name = "+metadata.getName());
                         Log.d(TAG, "multiline = "+metadata.toStringMultiline());
                         runOnUiThread(new Runnable() {
@@ -657,7 +678,7 @@ public class SettingsActivity extends AppCompatActivity{
                                     autoUploadEnabled.show();
                                 }
                             });
-                            switchOnDrive.setChecked(true);
+                            switchOnDropbox.setChecked(true);
                             updateDropboxInSetting(metadata.getName(), true);
                         }
                         else{
@@ -1113,8 +1134,7 @@ public class SettingsActivity extends AppCompatActivity{
                 break;
             case Constants.DROPBOX_CLOUD:
                 placeholderIcon.setImageDrawable(getResources().getDrawable(R.drawable.dropbox));
-                String savedFolder = settingsPref.getString(Constants.DROPBOX_FOLDER, "");
-                disabledMsg.setText(getResources().getString(R.string.üploadDisabledDropbox, savedFolder));
+                disabledMsg.setText(getResources().getString(R.string.üploadDisabledDropbox, getResources().getString(R.string.app_name)));
                 break;
         }
         autoUploadDisabled.setContentView(autoUploadDisabledRoot);
