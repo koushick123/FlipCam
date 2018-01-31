@@ -40,6 +40,7 @@
                 android:id="@+id/placeHolderIconSavetoCloud"
                 android:layout_width="64dp"
                 android:layout_height="wrap_content"
+                android:paddingLeft="10dp"
                 app:srcCompat="@drawable/placeholder" />
 
         </LinearLayout>

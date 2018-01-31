@@ -468,6 +468,11 @@ public class SettingsActivity extends AppCompatActivity{
                     }
                 }
                 else if(cloud == Constants.DROPBOX_CLOUD){
+                    if(!isConnectedToInternet()){
+                        Toast.makeText(getApplicationContext(),getResources().getString(R.string.noConnectionMessage),Toast.LENGTH_SHORT).show();
+                        switchOnDropbox.setChecked(false);
+                        return;
+                    }
                     //Sign in to Dropbox
                     goToDropbox = true;
                     Auth.startOAuth2Authentication(getApplicationContext(), getString(R.string.dropBoxAppKey));
@@ -652,6 +657,11 @@ public class SettingsActivity extends AppCompatActivity{
     }
 
     public void checkIfFolderCreatedInDropbox(){
+        if(!isConnectedToInternet()){
+            Toast.makeText(getApplicationContext(),getResources().getString(R.string.noConnectionMessage),Toast.LENGTH_SHORT).show();
+            switchOnDropbox.setChecked(false);
+            return;
+        }
         TextView uploadFolderMsg = (TextView)uploadFolderCheckRoot.findViewById(R.id.uploadFolderMsg);
         uploadFolderMsg.setText(getResources().getString(R.string.uploadCheckDropboxMsg, getResources().getString(R.string.dropbox)));
         ImageView signinImage = (ImageView)uploadFolderCheckRoot.findViewById(R.id.signInImage);
@@ -711,6 +721,7 @@ public class SettingsActivity extends AppCompatActivity{
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
+                                uploadFolderCheck.dismiss();
                                 signInProgressDialog.show();
                             }
                         });
@@ -730,7 +741,7 @@ public class SettingsActivity extends AppCompatActivity{
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                uploadFolderCheck.dismiss();
+                                signInProgressDialog.dismiss();
                                 dropBoxFolderCreateEnable.setChecked(false);
                                 accesGrantedDropbox.show();
                             }
@@ -975,12 +986,12 @@ public class SettingsActivity extends AppCompatActivity{
         uploadDestIcon = (ImageView) cloudUploadRoot.findViewById(R.id.uploadDestIcon);
         if(cloud == Constants.GOOGLE_DRIVE_CLOUD) {
             uploadFolderMsg.setText(getResources().getString(R.string.uploadFolder, getResources().getString(R.string.googleDrive)));
-            uploadFolderTitle.setText(getResources().getString(R.string.uploadFolderTitle, getResources().getString(R.string.googleDrive)));
+            uploadFolderTitle.setText(getResources().getString(R.string.uploadFolderTitle));
             uploadDestIcon.setImageDrawable(getResources().getDrawable(R.drawable.google_drive));
         }
         else if(cloud == Constants.DROPBOX_CLOUD){
             uploadFolderMsg.setText(getResources().getString(R.string.uploadFolder, getResources().getString(R.string.dropbox)));
-            uploadFolderTitle.setText(getResources().getString(R.string.uploadFolderTitle, getResources().getString(R.string.dropbox)));
+            uploadFolderTitle.setText(getResources().getString(R.string.uploadFolderTitle));
             uploadDestIcon.setImageDrawable(getResources().getDrawable(R.drawable.dropbox));
         }
         Log.d(TAG,"Open cloud upload dialog");
@@ -1021,6 +1032,13 @@ public class SettingsActivity extends AppCompatActivity{
                 if(cloud == Constants.GOOGLE_DRIVE_CLOUD) {
                     if (validateFolderNameIsNotEmpty()) {
                         cloudUpload.dismiss();
+                        if(!isConnectedToInternet()){
+                            Toast.makeText(getApplicationContext(),getResources().getString(R.string.noConnectionMessage),Toast.LENGTH_SHORT).show();
+                            switchOnDrive.setChecked(false);
+                            disableDropboxInSetting();
+                            return;
+                        }
+                        showSignInProgress();
                         mDriveResourceClient
                                 .getRootFolder()
                                 .continueWithTask(new Continuation<DriveFolder, Task<DriveFolder>>() {
@@ -1042,6 +1060,7 @@ public class SettingsActivity extends AppCompatActivity{
                                         new OnSuccessListener<DriveFolder>() {
                                             @Override
                                             public void onSuccess(DriveFolder driveFolder) {
+                                                signInProgressDialog.dismiss();
                                                 ImageView placeholdericon = (ImageView) autoUploadEnabledWithFolderRoot.findViewById(R.id.placeHolderIconAutoUpload);
                                                 placeholdericon.setImageDrawable(getResources().getDrawable(R.drawable.google_drive));
                                                 TextView folderCreated = (TextView) autoUploadEnabledWithFolderRoot.findViewById(R.id.folderCreatedMsg);
@@ -1058,9 +1077,10 @@ public class SettingsActivity extends AppCompatActivity{
                                 .addOnFailureListener(this, new OnFailureListener() {
                                     @Override
                                     public void onFailure(@NonNull Exception e) {
+                                        signInProgressDialog.dismiss();
                                         Log.d(TAG, "Unable to create folder", e);
                                         Toast.makeText(getApplicationContext(),
-                                                getResources().getString(R.string.foldercreateErrorGoogleDrive, folderNameText.getText().toString()),
+                                                getResources().getString(R.string.foldercreateErrorGoogleDrive, getResources().getString(R.string.googleDrive)),
                                                 Toast.LENGTH_SHORT).show();
                                         switchOnDrive.setChecked(false);
                                         signedInDrive = false;
@@ -1075,15 +1095,13 @@ public class SettingsActivity extends AppCompatActivity{
                 else if(cloud == Constants.DROPBOX_CLOUD){
                     if(validateFolderNameIsNotEmpty() && validateFolderNameDropBox()) {
                         cloudUpload.dismiss();
-                        TextView signInText = (TextView)signInProgressRoot.findViewById(R.id.signInText);
-                        TextView signInprogressTitle = (TextView)signInProgressRoot.findViewById(R.id.savetocloudtitle);
-                        signInprogressTitle.setText(getResources().getString(R.string.signInProgressTitle, getResources().getString(R.string.dropbox)));
-                        signInText.setText(getResources().getString(R.string.createFolder, getResources().getString(R.string.dropbox)));
-                        ImageView signInImage = (ImageView) signInProgressRoot.findViewById(R.id.signInImage);
-                        signInImage.setImageDrawable(getResources().getDrawable(R.drawable.dropbox));
-                        signInProgressDialog.setContentView(signInProgressRoot);
-                        signInProgressDialog.setCancelable(false);
-                        signInProgressDialog.show();
+                        if(!isConnectedToInternet()){
+                            Toast.makeText(getApplicationContext(),getResources().getString(R.string.noConnectionMessage),Toast.LENGTH_SHORT).show();
+                            switchOnDropbox.setChecked(false);
+                            disableDropboxInSetting();
+                            return;
+                        }
+                        showSignInProgress();
                         final DbxUserFilesRequests dbxUserFilesRequests = dbxClientV2.files();
                             new Thread(new Runnable() {
                                 @Override
@@ -1117,16 +1135,29 @@ public class SettingsActivity extends AppCompatActivity{
                                                 public void run() {
                                                     signInProgressDialog.dismiss();
                                                     Toast.makeText(getApplicationContext(),
-                                                            getResources().getString(R.string.foldercreateErrorGoogleDrive, folderNameText.getText().toString()),
+                                                            getResources().getString(R.string.foldercreateErrorGoogleDrive, getResources().getString(R.string.dropbox)),
                                                             Toast.LENGTH_SHORT).show();
-                                                    switchOnDropbox.setChecked(true);
+                                                    switchOnDropbox.setChecked(false);
                                                 }
                                             });
                                             revokeAccessFromDropbox();
                                             updateDropboxInSetting("", false);
                                         }
                                     } catch (DbxException e) {
+                                        Log.d(TAG, "Error in creating folder = "+e.getMessage());
                                         e.printStackTrace();
+                                        runOnUiThread(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                signInProgressDialog.dismiss();
+                                                Toast.makeText(getApplicationContext(),
+                                                        getResources().getString(R.string.foldercreateErrorGoogleDrive, getResources().getString(R.string.dropbox)),
+                                                        Toast.LENGTH_SHORT).show();
+                                                switchOnDropbox.setChecked(false);
+                                            }
+                                        });
+                                        revokeAccessFromDropbox();
+                                        updateDropboxInSetting("", false);
                                     }
                                 }
                             }).start();
@@ -1155,6 +1186,26 @@ public class SettingsActivity extends AppCompatActivity{
         }
     }
 
+    public void showSignInProgress(){
+        TextView signInText = (TextView)signInProgressRoot.findViewById(R.id.signInText);
+        TextView signInprogressTitle = (TextView)signInProgressRoot.findViewById(R.id.savetocloudtitle);
+        ImageView signInImage = (ImageView) signInProgressRoot.findViewById(R.id.signInImage);
+        switch (cloud){
+            case Constants.DROPBOX_CLOUD:
+            signInprogressTitle.setText(getResources().getString(R.string.signInProgressTitle, getResources().getString(R.string.dropbox)));
+            signInText.setText(getResources().getString(R.string.createFolder, getResources().getString(R.string.dropbox)));
+            signInImage.setImageDrawable(getResources().getDrawable(R.drawable.dropbox));
+                break;
+            case Constants.GOOGLE_DRIVE_CLOUD:
+            signInprogressTitle.setText(getResources().getString(R.string.signInProgressTitle, getResources().getString(R.string.googleDrive)));
+            signInText.setText(getResources().getString(R.string.createFolder, getResources().getString(R.string.googleDrive)));
+            signInImage.setImageDrawable(getResources().getDrawable(R.drawable.google_drive));
+                break;
+        }
+        signInProgressDialog.setContentView(signInProgressRoot);
+        signInProgressDialog.setCancelable(false);
+        signInProgressDialog.show();
+    }
     public void revokeAccessFromDropbox(){
         new Thread(new Runnable() {
             @Override

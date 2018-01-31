@@ -116,15 +116,15 @@
     <string name="notnowsignin">NOT NOW</string>
     <string name="uploadmsg">This option enables you to automatically upload any photos/videos created from now, onto the cloud.\n\nUser Sign in required for the cloud service, to which the user is opting to upload.</string>
     <string name="signinfail">Sign In failed either due to Internet connection issue or cancellation by user.</string>
-    <string name="signoutcloud">Signed out of %1$s. Auto upload has been disabled.</string>
+    <string name="signoutcloud">Signed out of %1$s.\n\nAuto upload has been disabled.</string>
     <string name="uploadFolder">Name of the upload folder in %1$s.</string>
-    <string name="uploadFolderTitle">Upload Folder in %1$s</string>
+    <string name="uploadFolderTitle">Create Upload Folder</string>
     <string name="createUploadFolder">CREATE</string>
     <string name="cancelUploadFolder">CANCEL</string>
     <string name="uploadFolderIncorrectDropbox">Incorrect characters in folder name. Please try again.</string>
     <string name="uploadFolderEmpty">Folder Name is empty. Please give a folder name.</string>
     <string name="folderCreatedSuccess">Folder %1$s Created Successfully.</string>
-    <string name="foldercreateErrorGoogleDrive">Error in creating folder %1$s. Please check your internet connection and try again.</string>
+    <string name="foldercreateErrorGoogleDrive">Error creating folder in %1$s. Please check your internet connection and try again.</string>
     <string name="permissionRationale">We need the google accounts info to check if you have already signed in. </string>
     <string name="permissionForAccounts">FlipCam would like to read your contacts, only to check if you have already signed in to your Google Account.
         \n\nThis is necessary to be able to auto upload to Google Drive.\n\nClick Yes to give permission.</string>

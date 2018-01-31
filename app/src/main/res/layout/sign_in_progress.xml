@@ -36,6 +36,7 @@
             android:id="@+id/signInImage"
             android:layout_width="64dp"
             android:layout_height="50dp"
+            android:paddingLeft="10dp"
             app:srcCompat="@drawable/placeholder" />
 
     </LinearLayout>
