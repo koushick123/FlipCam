@@ -676,6 +676,7 @@ public class SettingsActivity extends AppCompatActivity{
                 @Override
                 public void run() {
                     try {
+                        Thread.sleep(3000);
                         com.dropbox.core.v2.files.Metadata metadata = dbxClientV2.files().getMetadata("/"+folderName);
                         Log.d(TAG, "dropbox path display = "+metadata.getPathDisplay());
                         Log.d(TAG, "multiline = "+metadata.toStringMultiline());
@@ -726,7 +727,7 @@ public class SettingsActivity extends AppCompatActivity{
                             }
                         });
                         try {
-                            Thread.sleep(2500);
+                            Thread.sleep(3500);
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
@@ -744,10 +745,13 @@ public class SettingsActivity extends AppCompatActivity{
                                 signInProgressDialog.dismiss();
                                 dropBoxFolderCreateEnable.setChecked(false);
                                 accesGrantedDropbox.show();
+                                switchOnDropbox.setChecked(true);
                             }
                         });
                     }
                     catch (DbxException e) {
+                        e.printStackTrace();
+                    } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
                 }
@@ -775,6 +779,11 @@ public class SettingsActivity extends AppCompatActivity{
                         @Override
                         public void onSuccess(Void aVoid) {
                             Log.d(TAG, "sync success");
+                            try {
+                                Thread.sleep(1100);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
                             queryForFolder(folderName);
                         }
                     })
@@ -791,6 +800,11 @@ public class SettingsActivity extends AppCompatActivity{
                             else if(e.getMessage().contains(String.valueOf(DriveStatusCodes.DRIVE_RATE_LIMIT_EXCEEDED))){
                                 Log.d(TAG, "sync already done");
                                 //Continue as is, since already synced.
+                                try {
+                                    Thread.sleep(1100);
+                                } catch (InterruptedException e1) {
+                                    e.printStackTrace();
+                                }
                                 queryForFolder(folderName);
                             }
                             else if(e.getMessage().contains(String.valueOf(CommonStatusCodes.TIMEOUT))){
@@ -1038,7 +1052,7 @@ public class SettingsActivity extends AppCompatActivity{
                             disableDropboxInSetting();
                             return;
                         }
-                        showSignInProgress();
+                        showCreateProgress();
                         mDriveResourceClient
                                 .getRootFolder()
                                 .continueWithTask(new Continuation<DriveFolder, Task<DriveFolder>>() {
@@ -1101,7 +1115,7 @@ public class SettingsActivity extends AppCompatActivity{
                             disableDropboxInSetting();
                             return;
                         }
-                        showSignInProgress();
+                        showCreateProgress();
                         final DbxUserFilesRequests dbxUserFilesRequests = dbxClientV2.files();
                             new Thread(new Runnable() {
                                 @Override
@@ -1186,18 +1200,17 @@ public class SettingsActivity extends AppCompatActivity{
         }
     }
 
-    public void showSignInProgress(){
+    public void showCreateProgress(){
         TextView signInText = (TextView)signInProgressRoot.findViewById(R.id.signInText);
         TextView signInprogressTitle = (TextView)signInProgressRoot.findViewById(R.id.savetocloudtitle);
+        signInprogressTitle.setText(getResources().getString(R.string.uploadCheckHeader));
         ImageView signInImage = (ImageView) signInProgressRoot.findViewById(R.id.signInImage);
         switch (cloud){
             case Constants.DROPBOX_CLOUD:
-            signInprogressTitle.setText(getResources().getString(R.string.signInProgressTitle, getResources().getString(R.string.dropbox)));
             signInText.setText(getResources().getString(R.string.createFolder, getResources().getString(R.string.dropbox)));
             signInImage.setImageDrawable(getResources().getDrawable(R.drawable.dropbox));
                 break;
             case Constants.GOOGLE_DRIVE_CLOUD:
-            signInprogressTitle.setText(getResources().getString(R.string.signInProgressTitle, getResources().getString(R.string.googleDrive)));
             signInText.setText(getResources().getString(R.string.createFolder, getResources().getString(R.string.googleDrive)));
             signInImage.setImageDrawable(getResources().getDrawable(R.drawable.google_drive));
                 break;

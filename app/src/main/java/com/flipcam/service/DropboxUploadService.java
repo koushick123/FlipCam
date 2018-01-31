@@ -149,7 +149,6 @@ public class DropboxUploadService extends Service {
             uploadId = params[1];
             filename = uploadFile.substring(uploadFile.lastIndexOf("/") + 1,uploadFile.length());
             dropboxUploadHandler.sendEmptyMessage(Constants.UPLOAD_PROGRESS);
-
             return success;
         }
     }

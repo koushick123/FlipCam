@@ -155,7 +155,7 @@
     <string name="uploadCheckHeader">Upload Folder</string>
     <string name="uploadFolderFound">The below folder was found to be earlier created using FlipCam:</string>
     <string name="uploadCheckMessage">Checking if a folder was earlier created in %1$s using FlipCam.\n\nIf not, one will be created now.</string>
-    <string name="uploadCheckDropboxMsg">Checking if a subfolder was earlier created inside FlipCam folder in user\'s %1$s account.</string>
+    <string name="uploadCheckDropboxMsg">Checking for earlier created subfolder inside FlipCam folder in user\'s %1$s account.</string>
     <string name="uploadFolderNotExist">Upload Folder Moved/Deleted</string>
     <string name="uploadFolderMovedDeleted">The earlier created folder %1$s in Dropbox has been moved/deleted.\n\nSetting upload folder as FlipCam...</string>
     <string name="dropBoxAppKey">169uf2hzn1n0iov</string>
