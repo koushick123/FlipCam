@@ -134,6 +134,8 @@
     <string name="autouploadFolderCreated">FlipCam will now auto upload your photos/videos onto this folder in %1$s.\n\nPlease check your notifications for upload status.</string>
     <string name="autouploadFolderUpdated">FlipCam will now auto upload your photos/videos onto <u>%1$s</u> folder in %2$s.\n\nPlease check your notifications for upload status.</string>
     <string name="signInProgress">Fetching Google Account information in your phone for signing into %1$s.\n\nPlease Wait...</string>
+    <string name="signInProgressDropbox">Redirecting to Dropbox Website...</string>
+    <string name="createFolder">Creating folder in %1$s...</string>
     <string name="signInProgressTitle">Sign In to %1$s</string>
     <string name="totalPhoneMemory">Total Phone Memory</string>
     <string name="totalFreeMemory">Free Memory</string>
@@ -153,14 +155,16 @@
     <string name="uploadCheckHeader">Upload Folder</string>
     <string name="uploadFolderFound">The below folder was found to be earlier created using FlipCam:</string>
     <string name="uploadCheckMessage">Checking if a folder was earlier created in %1$s using FlipCam.\n\nIf not, one will be created now.</string>
-    <string name="uploadCheckDropboxMsg">Checking if a folder was earlier created inside FlipCam folder in %1$s.\n\nIf not, one will be created now.</string>
+    <string name="uploadCheckDropboxMsg">Checking if a subfolder was earlier created inside FlipCam folder in user\'s %1$s account.</string>
+    <string name="uploadFolderNotExist">Upload Folder Moved/Deleted</string>
+    <string name="uploadFolderMovedDeleted">The earlier created folder %1$s in Dropbox has been moved/deleted.\n\nSetting upload folder as FlipCam...</string>
     <string name="dropBoxAppKey">169uf2hzn1n0iov</string>
     <string name="dropBoxUploadFolder">Dropbox Upload Folder</string>
     <string name="flipCamAppFolder">FlipCam</string>
     <string name="createUploadFolderDropbox">Create a subfolder inside FlipCam for my uploads.</string>
     <string name="uploadFolderDropbox">Folder name has invalid special characters. Please try again.</string>
     <string name="signInDropboxFail">User is not signed in, or, FlipCam does not have access to its own folder. Please try again later.</string>
-    <string name="üploadDisabledDropbox">Access revoked for folder %1$s in Dropbox. Auto upload has been disabled.</string>
+    <string name="üploadDisabledDropbox">Access revoked for main folder FlipCam and its subfolders in Dropbox.\n\nAuto upload has been disabled.</string>
     <string name="saveToCloudDropbox">FlipCam requires access to its own folder Apps -> FlipCam, in your DropBox account.\n\nYou will need to Sign in if not done so earlier.
         \n\nDo you want to continue?</string>
 </resources>

@@ -467,10 +467,20 @@ public class SettingsActivity extends AppCompatActivity{
                         permissionAccount.show();
                     }
                 }
-                else{
+                else if(cloud == Constants.DROPBOX_CLOUD){
                     //Sign in to Dropbox
                     goToDropbox = true;
                     Auth.startOAuth2Authentication(getApplicationContext(), getString(R.string.dropBoxAppKey));
+                    signInProgress = true;
+                    TextView signInText = (TextView)signInProgressRoot.findViewById(R.id.signInText);
+                    TextView signInprogressTitle = (TextView)signInProgressRoot.findViewById(R.id.savetocloudtitle);
+                    signInprogressTitle.setText(getResources().getString(R.string.signInProgressTitle, getResources().getString(R.string.dropbox)));
+                    signInText.setText(getResources().getString(R.string.signInProgressDropbox));
+                    ImageView signInImage = (ImageView) signInProgressRoot.findViewById(R.id.signInImage);
+                    signInImage.setImageDrawable(getResources().getDrawable(R.drawable.dropbox));
+                    signInProgressDialog.setContentView(signInProgressRoot);
+                    signInProgressDialog.setCancelable(false);
+                    signInProgressDialog.show();
                 }
                 break;
             case R.id.cancelSignIn:
@@ -556,9 +566,12 @@ public class SettingsActivity extends AppCompatActivity{
                     TextView dropBoxfolderCreated = (TextView) accessGrantedDropboxRoot.findViewById(R.id.dropBoxFolderCreated);
                     dropBoxfolderCreated.setText(getResources().getString(R.string.autouploadFolderUpdated, getResources().getString(R.string.flipCamAppFolder),
                             getResources().getString(R.string.dropbox)));
+                    CheckBox dropBoxFolderCreateEnable = (CheckBox) accessGrantedDropboxRoot.findViewById(R.id.dropBoxFolderCreateEnable);
+                    dropBoxFolderCreateEnable.setChecked(false);
                     accesGrantedDropbox.setContentView(accessGrantedDropboxRoot);
                     accesGrantedDropbox.setCancelable(false);
                     accesGrantedDropbox.show();
+                    switchOnDropbox.setChecked(true);
                 }
             }
         }
@@ -656,12 +669,6 @@ public class SettingsActivity extends AppCompatActivity{
                         com.dropbox.core.v2.files.Metadata metadata = dbxClientV2.files().getMetadata("/"+folderName);
                         Log.d(TAG, "dropbox path display = "+metadata.getPathDisplay());
                         Log.d(TAG, "multiline = "+metadata.toStringMultiline());
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                uploadFolderCheck.dismiss();
-                            }
-                        });
                         if(!metadata.getName().equals("")) {
                             Log.d(TAG, "Save folder name in setting");
                             ImageView placeholdericon = (ImageView) autoUploadEnabledRoot.findViewById(R.id.placeHolderIconAutoUpload);
@@ -675,6 +682,7 @@ public class SettingsActivity extends AppCompatActivity{
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
+                                    uploadFolderCheck.dismiss();
                                     autoUploadEnabled.show();
                                     switchOnDropbox.setChecked(true);
                                 }
@@ -692,11 +700,39 @@ public class SettingsActivity extends AppCompatActivity{
                     }
                     catch(GetMetadataErrorException metadataerror){
                         Log.d(TAG, "Folder not present = "+metadataerror.getMessage());
+                        TextView signInText = (TextView)signInProgressRoot.findViewById(R.id.signInText);
+                        TextView signInprogressTitle = (TextView)signInProgressRoot.findViewById(R.id.savetocloudtitle);
+                        signInprogressTitle.setText(getResources().getString(R.string.uploadFolderNotExist));
+                        signInText.setText(getResources().getString(R.string.uploadFolderMovedDeleted, folderName));
+                        ImageView signInImage = (ImageView) signInProgressRoot.findViewById(R.id.signInImage);
+                        signInImage.setImageDrawable(getResources().getDrawable(R.drawable.dropbox));
+                        signInProgressDialog.setContentView(signInProgressRoot);
+                        signInProgressDialog.setCancelable(false);
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                signInProgressDialog.show();
+                            }
+                        });
+                        try {
+                            Thread.sleep(2500);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        //Reset folder to FlipCam and give option to user to recreate a subfolder.
+                        updateDropboxInSetting(getResources().getString(R.string.app_name), true);
+                        TextView dropBoxfolderCreated = (TextView) accessGrantedDropboxRoot.findViewById(R.id.dropBoxFolderCreated);
+                        dropBoxfolderCreated.setText(getResources().getString(R.string.autouploadFolderUpdated, getResources().getString(R.string.flipCamAppFolder),
+                                getResources().getString(R.string.dropbox)));
+                        final CheckBox dropBoxFolderCreateEnable = (CheckBox) accessGrantedDropboxRoot.findViewById(R.id.dropBoxFolderCreateEnable);
+                        accesGrantedDropbox.setContentView(accessGrantedDropboxRoot);
+                        accesGrantedDropbox.setCancelable(false);
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
                                 uploadFolderCheck.dismiss();
-                                createUploadFolder();
+                                dropBoxFolderCreateEnable.setChecked(false);
+                                accesGrantedDropbox.show();
                             }
                         });
                     }
@@ -1037,8 +1073,17 @@ public class SettingsActivity extends AppCompatActivity{
                     }
                 }
                 else if(cloud == Constants.DROPBOX_CLOUD){
-                    if(validateFolderNameDropBox()) {
+                    if(validateFolderNameIsNotEmpty() && validateFolderNameDropBox()) {
                         cloudUpload.dismiss();
+                        TextView signInText = (TextView)signInProgressRoot.findViewById(R.id.signInText);
+                        TextView signInprogressTitle = (TextView)signInProgressRoot.findViewById(R.id.savetocloudtitle);
+                        signInprogressTitle.setText(getResources().getString(R.string.signInProgressTitle, getResources().getString(R.string.dropbox)));
+                        signInText.setText(getResources().getString(R.string.createFolder, getResources().getString(R.string.dropbox)));
+                        ImageView signInImage = (ImageView) signInProgressRoot.findViewById(R.id.signInImage);
+                        signInImage.setImageDrawable(getResources().getDrawable(R.drawable.dropbox));
+                        signInProgressDialog.setContentView(signInProgressRoot);
+                        signInProgressDialog.setCancelable(false);
+                        signInProgressDialog.show();
                         final DbxUserFilesRequests dbxUserFilesRequests = dbxClientV2.files();
                             new Thread(new Runnable() {
                                 @Override
@@ -1058,10 +1103,11 @@ public class SettingsActivity extends AppCompatActivity{
                                             runOnUiThread(new Runnable() {
                                                 @Override
                                                 public void run() {
+                                                    signInProgressDialog.dismiss();
                                                     autoUploadEnabledWithFolder.show();
+                                                    switchOnDropbox.setChecked(true);
                                                 }
                                             });
-                                            switchOnDropbox.setChecked(true);
                                             Log.d(TAG, "getPathDisplay = " + createFolderResult.getMetadata().getPathDisplay());
                                             updateDropboxInSetting(createFolderResult.getMetadata().getName(), true);
                                         } else {
@@ -1069,12 +1115,13 @@ public class SettingsActivity extends AppCompatActivity{
                                             runOnUiThread(new Runnable() {
                                                 @Override
                                                 public void run() {
+                                                    signInProgressDialog.dismiss();
                                                     Toast.makeText(getApplicationContext(),
                                                             getResources().getString(R.string.foldercreateErrorGoogleDrive, folderNameText.getText().toString()),
                                                             Toast.LENGTH_SHORT).show();
+                                                    switchOnDropbox.setChecked(true);
                                                 }
                                             });
-                                            switchOnDropbox.setChecked(false);
                                             revokeAccessFromDropbox();
                                             updateDropboxInSetting("", false);
                                         }
@@ -1134,8 +1181,7 @@ public class SettingsActivity extends AppCompatActivity{
                 break;
             case Constants.DROPBOX_CLOUD:
                 placeholderIcon.setImageDrawable(getResources().getDrawable(R.drawable.dropbox));
-                String savedFolder = settingsPref.getString(Constants.DROPBOX_FOLDER, "");
-                disabledMsg.setText(getResources().getString(R.string.üploadDisabledDropbox, savedFolder));
+                disabledMsg.setText(getResources().getString(R.string.üploadDisabledDropbox));
                 break;
         }
         autoUploadDisabled.setContentView(autoUploadDisabledRoot);
