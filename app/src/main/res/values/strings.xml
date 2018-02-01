@@ -53,6 +53,7 @@
     <string name="fb_login_protocol_scheme">fb308890512940081</string>
     <string name="mediaService">FlipCam Media Upload Service</string>
     <string name="googleDriveService">Google Drive Upload Service</string>
+    <string name="dropboxService">Dropbox Upload Service</string>
     <string name="uploadErrorMessage">No internet connection. Upload Canceled.</string>
     <string name="fileErrorMessage">File %1$s has been deleted or moved.</string>
     <string name="uploadSuccessMessageLess">%1$s Uploaded.</string>

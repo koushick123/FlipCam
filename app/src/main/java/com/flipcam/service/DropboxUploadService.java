@@ -18,8 +18,8 @@ import android.util.Log;
 
 import com.dropbox.core.DbxException;
 import com.dropbox.core.DbxRequestConfig;
-import com.dropbox.core.android.Auth;
 import com.dropbox.core.v2.DbxClientV2;
+import com.dropbox.core.v2.files.CommitInfo;
 import com.dropbox.core.v2.files.DbxUserFilesRequests;
 import com.dropbox.core.v2.files.UploadSessionAppendV2Uploader;
 import com.dropbox.core.v2.files.UploadSessionCursor;
@@ -28,11 +28,11 @@ import com.dropbox.core.v2.files.UploadSessionStartUploader;
 import com.flipcam.R;
 import com.flipcam.constants.Constants;
 
-import java.io.File;
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.lang.ref.WeakReference;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -91,22 +91,6 @@ public class DropboxUploadService extends Service {
         }
     }
 
-    @Nullable
-    @Override
-    public IBinder onBind(Intent intent) {
-        return null;
-    }
-
-    @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        SimpleDateFormat sdf = new SimpleDateFormat(getResources().getString(R.string.DATE_FORMAT_FOR_UPLOAD_PROCESS));
-        String startID = sdf.format(new Date());
-        Log.i(TAG,"onStartCommand = "+startID);
-        final String uploadfilepath = (String)intent.getExtras().get("uploadFile");
-        Log.i(TAG,"Upload file = "+uploadfilepath);
-        return Service.START_NOT_STICKY;
-    }
-
     @Override
     public void onCreate() {
         Log.i(TAG, "onCreate");
@@ -121,8 +105,27 @@ public class DropboxUploadService extends Service {
         String accessToken = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE).getString(Constants.DROPBOX_ACCESS_TOKEN,"");
         if(accessToken !=null && !accessToken.equals("")) {
             dbxRequestConfig = new DbxRequestConfig("dropbox/flipCam");
-            dbxClientV2 = new DbxClientV2(dbxRequestConfig, Auth.getOAuth2Token());
+            dbxClientV2 = new DbxClientV2(dbxRequestConfig, accessToken);
         }
+        folderName = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE).getString(Constants.DROPBOX_FOLDER,"");
+        Log.i(TAG, "folder name = "+folderName);
+    }
+
+    @Nullable
+    @Override
+    public IBinder onBind(Intent intent) {
+        return null;
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        SimpleDateFormat sdf = new SimpleDateFormat(getResources().getString(R.string.DATE_FORMAT_FOR_UPLOAD_PROCESS));
+        String startID = sdf.format(new Date());
+        Log.i(TAG,"onStartCommand = "+startID);
+        final String uploadfilepath = (String)intent.getExtras().get("uploadFile");
+        Log.i(TAG,"Upload file = "+uploadfilepath);
+        new DropboxUploadTask().execute(uploadfilepath,startID);
+        return Service.START_NOT_STICKY;
     }
 
     @Override
@@ -147,8 +150,8 @@ public class DropboxUploadService extends Service {
                 mNotificationManager.cancel(Integer.parseInt(uploadId));
                 mBuilder.setColor(getResources().getColor(R.color.turqoise));
                 mBuilder.setContentText(getResources().getString(R.string.uploadSuccessMessageLess, filename));
-                mBuilder.setContentTitle(getResources().getString(R.string.uploadCompleted, getResources().getString(R.string.googleDrive)));
-                mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.uploadSuccessMessage, getResources().getString(R.string.googleDrive),
+                mBuilder.setContentTitle(getResources().getString(R.string.uploadCompleted, getResources().getString(R.string.dropbox)));
+                mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.uploadSuccessMessage, getResources().getString(R.string.dropbox),
                         filename)));
                 mBuilder.setSound(uploadNotification);
                 mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
@@ -169,38 +172,57 @@ public class DropboxUploadService extends Service {
             uploadFile = params[0];
             uploadId = params[1];
             filename = uploadFile.substring(uploadFile.lastIndexOf("/") + 1,uploadFile.length());
-            dropboxUploadHandler.sendEmptyMessage(Constants.UPLOAD_PROGRESS);
+            //dropboxUploadHandler.sendEmptyMessage(Constants.UPLOAD_PROGRESS);
             DbxUserFilesRequests dbxUserFilesRequests = dbxClientV2.files();
             UploadSessionStartUploader uploadSessionStartUploader = null;
             FileInputStream fileToUpload;
-            RandomAccessFile randomAccessFile;
+            //RandomAccessFile randomAccessFile;
             UploadSessionStartResult uploadSessionStartResult;
-            UploadSessionAppendV2Uploader uploadSessionAppendV2Uploader;
-            long uploadSize;
+            BufferedInputStream bufferedInputStream;
+            UploadSessionAppendV2Uploader uploadSessionAppendV2Uploader = null;
+            //long uploadSize;
             try {
                 fileToUpload = new FileInputStream(uploadFile);
-                randomAccessFile = new RandomAccessFile(new File(uploadFile),"r");
-                uploadSize = randomAccessFile.length();
-                String sessionId=null;
-                while(true) {
+                bufferedInputStream = new BufferedInputStream(fileToUpload);
+                //randomAccessFile = new RandomAccessFile(new File(uploadFile),"r");
+                //uploadSize = randomAccessFile.length();
+                String sessionId = null;
+                int readSize;
+                byte[] cache = new byte[1024000];
+                while ((readSize = bufferedInputStream.read(cache, 0, cache.length)) != -1) {
+                    Log.i(TAG, "Read "+readSize +" bytes");
                     if(sessionId == null){
                         uploadSessionStartUploader = dbxUserFilesRequests.uploadSessionStart(false);
-                        uploadSessionStartResult = uploadSessionStartUploader.uploadAndFinish(fileToUpload,1024000);
+                        uploadSessionStartResult = uploadSessionStartUploader.uploadAndFinish(new ByteArrayInputStream(cache),readSize);
                         sessionId = uploadSessionStartResult.getSessionId();
+                        Log.i(TAG, "Obtained session id = "+sessionId);
                     }
                     else {
-                        uploadSessionAppendV2Uploader = dbxUserFilesRequests.uploadSessionAppendV2(new UploadSessionCursor(sessionId, 1024000), false);
+                        uploadSessionAppendV2Uploader = dbxUserFilesRequests.uploadSessionAppendV2(new UploadSessionCursor(sessionId, readSize), false);
+                        uploadSessionAppendV2Uploader.uploadAndFinish(new ByteArrayInputStream(cache),readSize);
+                        Log.i(TAG, "Uploaded "+readSize+" bytes");
                     }
+                }
+                if(sessionId != null){
+                    dbxUserFilesRequests.uploadSessionFinish(new UploadSessionCursor(sessionId, readSize), new CommitInfo("/"+folderName));
+                    Log.i(TAG, "Upload finished");
+                    success = true;
                 }
             } catch (DbxException e) {
                 Log.i(TAG, "DbxException = "+e.getMessage());
+                success = false;
             } catch (FileNotFoundException e) {
                 Log.i(TAG ,"FileNotFoundException = "+e.getMessage());
+                success = false;
             } catch (IOException e) {
                 Log.i(TAG, "IOException = "+e.getMessage());
+                success = false;
             } finally {
                 if(uploadSessionStartUploader != null) {
                     uploadSessionStartUploader.close();
+                }
+                if(uploadSessionAppendV2Uploader != null){
+                    uploadSessionAppendV2Uploader.close();
                 }
             }
             return success;

@@ -93,6 +93,10 @@
             android:description="@string/googleDriveService"
             android:exported="false" />
 
+        <service android:name=".service.DropboxUploadService"
+            android:description="@string/dropboxService"
+            android:exported="false" />
+
         <activity
             android:name=".SettingsActivity"
             android:configChanges="orientation|screenSize">
