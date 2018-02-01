@@ -16,9 +16,23 @@ import android.support.annotation.Nullable;
 import android.support.v7.app.NotificationCompat;
 import android.util.Log;
 
+import com.dropbox.core.DbxException;
+import com.dropbox.core.DbxRequestConfig;
+import com.dropbox.core.android.Auth;
+import com.dropbox.core.v2.DbxClientV2;
+import com.dropbox.core.v2.files.DbxUserFilesRequests;
+import com.dropbox.core.v2.files.UploadSessionAppendV2Uploader;
+import com.dropbox.core.v2.files.UploadSessionCursor;
+import com.dropbox.core.v2.files.UploadSessionStartResult;
+import com.dropbox.core.v2.files.UploadSessionStartUploader;
 import com.flipcam.R;
 import com.flipcam.constants.Constants;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.lang.ref.WeakReference;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -40,6 +54,8 @@ public class DropboxUploadService extends Service {
     double uploadedSize = 0;
     Bitmap notifyIcon;
     Uri uploadNotification;
+    DbxRequestConfig dbxRequestConfig;
+    DbxClientV2 dbxClientV2;
     String folderName;
 
     class DropboxUploadHandler extends Handler {
@@ -102,6 +118,11 @@ public class DropboxUploadService extends Service {
                 .setContentTitle("")
                 .setContentText("");
         uploadNotification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+        String accessToken = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE).getString(Constants.DROPBOX_ACCESS_TOKEN,"");
+        if(accessToken !=null && !accessToken.equals("")) {
+            dbxRequestConfig = new DbxRequestConfig("dropbox/flipCam");
+            dbxClientV2 = new DbxClientV2(dbxRequestConfig, Auth.getOAuth2Token());
+        }
     }
 
     @Override
@@ -149,6 +170,39 @@ public class DropboxUploadService extends Service {
             uploadId = params[1];
             filename = uploadFile.substring(uploadFile.lastIndexOf("/") + 1,uploadFile.length());
             dropboxUploadHandler.sendEmptyMessage(Constants.UPLOAD_PROGRESS);
+            DbxUserFilesRequests dbxUserFilesRequests = dbxClientV2.files();
+            UploadSessionStartUploader uploadSessionStartUploader = null;
+            FileInputStream fileToUpload;
+            RandomAccessFile randomAccessFile;
+            UploadSessionStartResult uploadSessionStartResult;
+            UploadSessionAppendV2Uploader uploadSessionAppendV2Uploader;
+            long uploadSize;
+            try {
+                fileToUpload = new FileInputStream(uploadFile);
+                randomAccessFile = new RandomAccessFile(new File(uploadFile),"r");
+                uploadSize = randomAccessFile.length();
+                String sessionId=null;
+                while(true) {
+                    if(sessionId == null){
+                        uploadSessionStartUploader = dbxUserFilesRequests.uploadSessionStart(false);
+                        uploadSessionStartResult = uploadSessionStartUploader.uploadAndFinish(fileToUpload,1024000);
+                        sessionId = uploadSessionStartResult.getSessionId();
+                    }
+                    else {
+                        uploadSessionAppendV2Uploader = dbxUserFilesRequests.uploadSessionAppendV2(new UploadSessionCursor(sessionId, 1024000), false);
+                    }
+                }
+            } catch (DbxException e) {
+                Log.i(TAG, "DbxException = "+e.getMessage());
+            } catch (FileNotFoundException e) {
+                Log.i(TAG ,"FileNotFoundException = "+e.getMessage());
+            } catch (IOException e) {
+                Log.i(TAG, "IOException = "+e.getMessage());
+            } finally {
+                if(uploadSessionStartUploader != null) {
+                    uploadSessionStartUploader.close();
+                }
+            }
             return success;
         }
     }
