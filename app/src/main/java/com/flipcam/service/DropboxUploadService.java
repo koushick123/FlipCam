@@ -21,6 +21,7 @@ import com.dropbox.core.DbxRequestConfig;
 import com.dropbox.core.v2.DbxClientV2;
 import com.dropbox.core.v2.files.CommitInfo;
 import com.dropbox.core.v2.files.DbxUserFilesRequests;
+import com.dropbox.core.v2.files.FileMetadata;
 import com.dropbox.core.v2.files.UploadSessionAppendV2Uploader;
 import com.dropbox.core.v2.files.UploadSessionCursor;
 import com.dropbox.core.v2.files.UploadSessionStartResult;
@@ -212,16 +213,33 @@ public class DropboxUploadService extends Service {
                         uploadSessionCursor = new UploadSessionCursor(sessionId, bytesUploaded);
                     }
                     if (sessionId != null) {
-                        CommitInfo.Builder commitInfo = CommitInfo.newBuilder("/Apps/"+folderName+"/"+filename);
-                        commitInfo.withClientModified(new Date());
-                        commitInfo.withMode(WriteMode.ADD);
-                        dbxUserFilesRequests.uploadSessionFinish(uploadSessionCursor, commitInfo.build());
+                        String path;
+                        if(!folderName.toUpperCase().equals(getResources().getString(R.string.app_name).toUpperCase())) {
+                            path = "/" + folderName + "/" + filename;
+                        }
+                        else{
+                            path = "/" + filename;
+                        }
+                        Log.d(TAG, "Path = "+path);
+                        CommitInfo.Builder builder = CommitInfo.newBuilder(path);
+                        builder.withAutorename(true);
+                        builder.withMode(WriteMode.ADD);
+                        builder.withMute(false);
+                        FileMetadata fileMetadata =
+                                dbxUserFilesRequests.uploadSessionFinish(uploadSessionCursor, builder.build()).uploadAndFinish(fileToUpload, bytesUploaded);
+                        Log.i(TAG, "Uploaded file MD getPathDisplay = "+fileMetadata.getPathDisplay());
+                        Log.i(TAG, "Uploaded file MD getId = "+fileMetadata.getId());
+                        Log.i(TAG, "Uploaded file MD getName = "+fileMetadata.getName());
+                        Log.i(TAG, "Uploaded file MD getSize = "+fileMetadata.getSize());
                         Log.i(TAG, "Upload finished");
                         success = true;
                     }
                 }
             } catch (DbxException e) {
                 Log.i(TAG, "DbxException = "+e.getMessage());
+                if(e.getMessage().contains("Unable to resolve host")) {
+                    showUploadErrorNotification();
+                }
                 success = false;
             } catch (FileNotFoundException e) {
                 Log.i(TAG ,"FileNotFoundException = "+e.getMessage());
@@ -247,5 +265,15 @@ public class DropboxUploadService extends Service {
             return true;
         }
         return false;
+    }
+
+    public void showUploadErrorNotification(){
+        mBuilder.setColor(getResources().getColor(R.color.uploadError));
+        mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.uploadErrorMessage)));
+        mBuilder.setContentText(getResources().getString(R.string.uploadErrorMessage));
+        mBuilder.setContentTitle(getResources().getString(R.string.autoUploadInterrupt, getResources().getString(R.string.googleDrive)));
+        mBuilder.setSound(uploadNotification);
+        mBuilder.setPriority(NotificationCompat.PRIORITY_HIGH);
+        mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
     }
 }
