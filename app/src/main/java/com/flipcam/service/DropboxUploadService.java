@@ -25,6 +25,7 @@ import com.dropbox.core.v2.files.UploadSessionAppendV2Uploader;
 import com.dropbox.core.v2.files.UploadSessionCursor;
 import com.dropbox.core.v2.files.UploadSessionStartResult;
 import com.dropbox.core.v2.files.UploadSessionStartUploader;
+import com.dropbox.core.v2.files.WriteMode;
 import com.flipcam.R;
 import com.flipcam.constants.Constants;
 
@@ -188,25 +189,36 @@ public class DropboxUploadService extends Service {
                 //uploadSize = randomAccessFile.length();
                 String sessionId = null;
                 int readSize;
-                byte[] cache = new byte[1024000];
-                while ((readSize = bufferedInputStream.read(cache, 0, cache.length)) != -1) {
-                    Log.i(TAG, "Read "+readSize +" bytes");
-                    if(sessionId == null){
-                        uploadSessionStartUploader = dbxUserFilesRequests.uploadSessionStart(false);
-                        uploadSessionStartResult = uploadSessionStartUploader.uploadAndFinish(new ByteArrayInputStream(cache),readSize);
-                        sessionId = uploadSessionStartResult.getSessionId();
-                        Log.i(TAG, "Obtained session id = "+sessionId);
+                if(isImage(uploadFile)) {
+                    byte[] cache = new byte[500 * 1024];
+                    long bytesUploaded = 0;
+                    UploadSessionCursor uploadSessionCursor = null;
+                    while ((readSize = bufferedInputStream.read(cache, 0, cache.length)) != -1) {
+                        Log.i(TAG, "Read " + readSize + " bytes");
+                        if (sessionId == null) {
+                            uploadSessionStartUploader = dbxUserFilesRequests.uploadSessionStart(false);
+                            uploadSessionStartResult = uploadSessionStartUploader.uploadAndFinish(new ByteArrayInputStream(cache), readSize);
+                            sessionId = uploadSessionStartResult.getSessionId();
+                            Log.i(TAG, "Obtained session id = " + sessionId);
+                            bytesUploaded = readSize;
+                           Log.i(TAG, "Uploaded " + readSize + " bytes");
+                        } else {
+                            uploadSessionAppendV2Uploader = dbxUserFilesRequests.uploadSessionAppendV2(uploadSessionCursor, false);
+                            Log.i(TAG, "Appended session");
+                            uploadSessionAppendV2Uploader.uploadAndFinish(new ByteArrayInputStream(cache), readSize);
+                            bytesUploaded += readSize;
+                            Log.i(TAG, "Uploaded " + bytesUploaded + " bytes");
+                        }
+                        uploadSessionCursor = new UploadSessionCursor(sessionId, bytesUploaded);
                     }
-                    else {
-                        uploadSessionAppendV2Uploader = dbxUserFilesRequests.uploadSessionAppendV2(new UploadSessionCursor(sessionId, readSize), false);
-                        uploadSessionAppendV2Uploader.uploadAndFinish(new ByteArrayInputStream(cache),readSize);
-                        Log.i(TAG, "Uploaded "+readSize+" bytes");
+                    if (sessionId != null) {
+                        CommitInfo.Builder commitInfo = CommitInfo.newBuilder("/Apps/"+folderName+"/"+filename);
+                        commitInfo.withClientModified(new Date());
+                        commitInfo.withMode(WriteMode.ADD);
+                        dbxUserFilesRequests.uploadSessionFinish(uploadSessionCursor, commitInfo.build());
+                        Log.i(TAG, "Upload finished");
+                        success = true;
                     }
-                }
-                if(sessionId != null){
-                    dbxUserFilesRequests.uploadSessionFinish(new UploadSessionCursor(sessionId, readSize), new CommitInfo("/"+folderName));
-                    Log.i(TAG, "Upload finished");
-                    success = true;
                 }
             } catch (DbxException e) {
                 Log.i(TAG, "DbxException = "+e.getMessage());
