@@ -583,27 +583,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
     }
 
-    @Override
-    protected void onRestoreInstanceState(Bundle savedInstanceState) {
-        Log.d(TAG,"onRestoreInstanceState");
-        if(savedInstanceState!=null){
-            previousSelectedFragment = savedInstanceState.getInt("previousSelectedFragment");
-            Log.d(TAG,"previousSelectedFragment was = "+previousSelectedFragment);
-            hashMapFrags = (HashMap)savedInstanceState.getSerializable("availableFragments");
-            selectedPosition = savedInstanceState.getInt("selectedPosition");
-            Log.d(TAG,"select position = "+selectedPosition);
-        }
-        super.onRestoreInstanceState(savedInstanceState);
-    }
-
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        outState.putInt("previousSelectedFragment",previousSelectedFragment);
-        outState.putInt("selectedPosition",selectedPosition);
-        outState.putSerializable("availableFragments",hashMapFrags);
-        super.onSaveInstanceState(outState);
-    }
-
     public void clearPreferences(){
         SharedPreferences mediaValues = getSharedPreferences(FC_MEDIA_PREFERENCE,Context.MODE_PRIVATE);
         SharedPreferences.Editor mediaState = null;
@@ -640,14 +619,14 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         //Display controls based on image/video
         if(isImage(medias[position].getPath())){
             Log.d(TAG,"HIDE VIDEO");
-            if(controlVisbilityPreference.isHideControl()) {
+            /*if(controlVisbilityPreference.isHideControl()) {
                 Log.d(TAG,"show controls");
                 videoControls.setVisibility(View.VISIBLE);
             }
             else{
                 Log.d(TAG,"hide controls");
                 videoControls.setVisibility(View.GONE);
-            }
+            }*/
             hidePlayForVideo();
             removeVideoControls();
         }
@@ -836,6 +815,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
 
     public void hideNoImagePlaceholder(){
         topMediaControls.setVisibility(View.VISIBLE);
+        parentMedia.setVisibility(View.VISIBLE);
         mPager.setVisibility(View.VISIBLE);
         noImage.setVisibility(View.GONE);
         noImageText.setVisibility(View.GONE);
@@ -881,10 +861,14 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 surfaceViewVideoFragment = SurfaceViewVideoFragment.newInstance(position, true);
                 if(surfaceViewVideoFragment.getUserVisibleHint()) {
                     if (isImage(medias[position].getPath())) {
+                        Log.d(TAG, "IS image");
                         hideControls();
+                        hidePlayForVideo();
                     } else {
+                        Log.d(TAG, "IS video");
                         showControls();
                         setupVideoControls(position);
+                        showPlayForVideo(position);
                     }
                 }
             }

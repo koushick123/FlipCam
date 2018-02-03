@@ -32,6 +32,7 @@ import com.flipcam.constants.Constants;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -213,6 +214,12 @@ public class DropboxUploadService extends Service {
                         Log.i(TAG, "Uploaded " + bytesUploaded + " bytes");
                     }
                     uploadSessionCursor = new UploadSessionCursor(sessionId, bytesUploaded);
+                    if(!doesFileExist()){
+                        success = false;
+                        sessionId = null;
+                        showFileErrorNotification();
+                        break;
+                    }
                 }
                 if (sessionId != null) {
                     String path;
@@ -245,6 +252,7 @@ public class DropboxUploadService extends Service {
             } catch (FileNotFoundException e) {
                 Log.i(TAG ,"FileNotFoundException = "+e.getMessage());
                 success = false;
+                showFileErrorNotification();
             } catch (IOException e) {
                 Log.i(TAG, "IOException = "+e.getMessage());
                 success = false;
@@ -268,10 +276,25 @@ public class DropboxUploadService extends Service {
         return false;
     }
 
+    public boolean doesFileExist(){
+        File uploadfile = new File(uploadFile);
+        return !uploadfile.isDirectory() && uploadfile.exists();
+    }
+
     public void showUploadErrorNotification(){
         mBuilder.setColor(getResources().getColor(R.color.uploadError));
         mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.uploadErrorMessage)));
         mBuilder.setContentText(getResources().getString(R.string.uploadErrorMessage));
+        mBuilder.setContentTitle(getResources().getString(R.string.autoUploadInterrupt, getResources().getString(R.string.dropbox)));
+        mBuilder.setSound(uploadNotification);
+        mBuilder.setPriority(NotificationCompat.PRIORITY_HIGH);
+        mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
+    }
+
+    public void showFileErrorNotification(){
+        mBuilder.setColor(getResources().getColor(R.color.uploadError));
+        mBuilder.setContentText(getResources().getString(R.string.fileErrorMessage, filename));
+        mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.fileErrorMessage, filename)));
         mBuilder.setContentTitle(getResources().getString(R.string.autoUploadInterrupt, getResources().getString(R.string.dropbox)));
         mBuilder.setSound(uploadNotification);
         mBuilder.setPriority(NotificationCompat.PRIORITY_HIGH);

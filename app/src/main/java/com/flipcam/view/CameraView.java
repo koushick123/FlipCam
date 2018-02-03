@@ -484,9 +484,13 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         focusMode = camera1.getFocusMode();
         camera1.stopPreview();
         camera1.releaseCamera();
+        unregisterAccelSensor();
         isSwitch = true;
         isFocusModeSupported = false;
         openCameraAndStartPreview();
+        if(this.photoFragment!=null && !this.photoFragment.isContinuousAF()) {
+            registerAccelSensor();
+        }
     }
 
     public void flashOnOff(boolean flashOn)
@@ -552,6 +556,15 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         if (this.videoFragment!=null && camera1.isFocusModeSupported(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO)) {
             Log.d(TAG, "Continuous AF");
             camera1.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
+        }
+        else if(this.photoFragment!=null && camera1.isFocusModeSupported(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)){
+            Log.d(TAG, "Continuous AF Picture");
+            camera1.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
+            this.photoFragment.setContinuousAF(true);
+        }
+        else if(this.photoFragment!=null && !camera1.isFocusModeSupported(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)){
+            Log.d(TAG, "Use Auto AF instead");
+            this.photoFragment.setContinuousAF(false);
         }
         LinearLayout.LayoutParams flashParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,LinearLayout.LayoutParams.WRAP_CONTENT);
         flashParams.weight=0.5f;
@@ -869,7 +882,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             frameCount=0;
             camera1.setTakePic(false);
             openCameraAndStartPreview();
-            if(this.photoFragment!=null) {
+            if(this.photoFragment!=null && !this.photoFragment.isContinuousAF()) {
                 registerAccelSensor();
             }
         }
@@ -883,7 +896,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         Log.d(TAG,"surfaceDestroyed = "+surfaceHolder);
         Log.d(TAG,"cameraHandler = "+cameraHandler);
         orientationEventListener.disable();
-        if(this.photoFragment!=null){
+        if(this.photoFragment!=null && !this.photoFragment.isContinuousAF()) {
             unregisterAccelSensor();
         }
         mSensorManager.unregisterListener(this);

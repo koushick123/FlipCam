@@ -335,7 +335,7 @@ MediaPlayer.OnErrorListener, Serializable{
         double imageAR = (double)imageWidth / (double)imageHeight;
         Log.d(TAG,"imageAR = "+imageAR);
         Log.d(TAG,"screenAR = "+screenAR);
-        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.FILL_PARENT, ViewGroup.LayoutParams.FILL_PARENT);
+        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
         if (display.getRotation() == Surface.ROTATION_0) {
             if(Math.abs(screenAR - imageAR) < 0.1) {
                 Log.d(TAG,"Portrait");
@@ -421,7 +421,9 @@ MediaPlayer.OnErrorListener, Serializable{
                 media.setMediaPosition(mediaPositionForMinimize);
                 media.setMediaControlsHide(controlVisbilityPreference.isHideControl());
                 media.setMediaActualDuration(duration);
-                media.setSeekDuration(videoSeek.getMax());
+                if(videoSeek != null) {
+                    media.setSeekDuration(videoSeek.getMax());
+                }
                 media.setMediaCompleted(isCompleted);
                 media.setMediaPreviousPos(previousPos);
                 outState.putParcelable("currentVideo",media);
@@ -453,6 +455,7 @@ MediaPlayer.OnErrorListener, Serializable{
     {
         if(isImage()) {
             Log.d(TAG,"hide = "+controlVisbilityPreference.isHideControl());
+            Log.d(TAG, "videoControls = "+videoControls.getVisibility());
             if (controlVisbilityPreference.isHideControl()) {
                 controlVisbilityPreference.setHideControl(false);
                 topBar.setVisibility(View.GONE);
@@ -578,6 +581,7 @@ MediaPlayer.OnErrorListener, Serializable{
     public void onCompletion(MediaPlayer mediaPlayer) {
         Log.d(TAG,"Video Completed == "+path);
         showAllControls();
+        controlVisbilityPreference.setHideControl(true);
         playCircle.setVisibility(View.VISIBLE);
         isCompleted = true;
         pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow));
@@ -634,9 +638,11 @@ MediaPlayer.OnErrorListener, Serializable{
         if(getUserVisibleHint()){
             if(isImage()) {
                 if(controlVisbilityPreference.isHideControl()) {
-                    Log.d(TAG,"show controls onResume");
+                    Log.d(TAG, "show controls onResume");
                     topBar.setVisibility(View.VISIBLE);
                     videoControls.setVisibility(View.VISIBLE);
+                    videoControls.removeAllViews();
+                    videoControls.addView(parentMedia);
                 }
                 else{
                     Log.d(TAG,"hide controls onResume");

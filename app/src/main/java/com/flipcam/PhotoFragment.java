@@ -57,6 +57,7 @@ public class PhotoFragment extends Fragment {
     ImageButton capturePic;
     ImageView imagePreview;
     TextView modeText;
+    boolean continuousAF = true;
     OrientationEventListener orientationEventListener;
     int orientation = -1;
 
@@ -117,11 +118,12 @@ public class PhotoFragment extends Fragment {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 //Log.d(TAG, "progress = " + progress);
-                if(progress > 0){
-                    cameraView.unregisterAccelSensor();
-                }
-                else if(progress == 0){
-                    cameraView.registerAccelSensor();
+                if(!isContinuousAF()) {
+                    if (progress > 0) {
+                        cameraView.unregisterAccelSensor();
+                    } else if (progress == 0) {
+                        cameraView.registerAccelSensor();
+                    }
                 }
                 if(cameraView.isCameraReady()) {
                     if (cameraView.isSmoothZoomSupported()) {
@@ -262,6 +264,14 @@ public class PhotoFragment extends Fragment {
                 }
             }
         }).start();
+    }
+
+    public boolean isContinuousAF() {
+        return continuousAF;
+    }
+
+    public void setContinuousAF(boolean continuousAF) {
+        this.continuousAF = continuousAF;
     }
 
     public SeekBar getZoomBar()

@@ -152,7 +152,7 @@ public class SettingsActivity extends AppCompatActivity{
         sdCardRoot = layoutInflater.inflate(R.layout.sd_card_location,null);
         saveToCloudRoot = layoutInflater.inflate(R.layout.save_to_cloud,null);
         cloudUploadRoot = layoutInflater.inflate(R.layout.cloud_upload_folder,null);
-        signInProgressRoot = layoutInflater.inflate(R.layout.sign_in_progress,null);
+        signInProgressRoot = layoutInflater.inflate(R.layout.task_in_progress,null);
         autoUploadEnabledWithFolderRoot = layoutInflater.inflate(R.layout.auto_upload_enabled_with_folder, null);
         autoUploadEnabledRoot = layoutInflater.inflate(R.layout.auto_upload_enabled, null);
         autoUploadDisabledRoot = layoutInflater.inflate(R.layout.auto_upload_disabled, null);
