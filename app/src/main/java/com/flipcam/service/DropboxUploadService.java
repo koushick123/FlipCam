@@ -72,7 +72,7 @@ public class DropboxUploadService extends Service {
             switch(msg.what){
                 case Constants.UPLOAD_PROGRESS:
                     if(!isImage(uploadFile)) {
-                        mBuilder.setContentTitle(getResources().getString(R.string.autoUploadInProgressTitle, getResources().getString(R.string.googleDrive)));
+                        mBuilder.setContentTitle(getResources().getString(R.string.autoUploadInProgressTitle, getResources().getString(R.string.dropbox)));
                         mBuilder.setColor(getResources().getColor(R.color.uploadColor));
                         mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.uploadInProgress, "Video")
                                 + "\n" + "File "+filename));
@@ -84,7 +84,7 @@ public class DropboxUploadService extends Service {
                         mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.uploadInProgress, "Photo")
                                 + "\n" + "File "+filename));
                         mBuilder.setColor(getResources().getColor(R.color.uploadColor));
-                        mBuilder.setContentTitle(getResources().getString(R.string.autoUploadInProgressTitle, getResources().getString(R.string.googleDrive)));
+                        mBuilder.setContentTitle(getResources().getString(R.string.autoUploadInProgressTitle, getResources().getString(R.string.dropbox)));
                         //mBuilder.setContentText(getResources().getString(R.string.uploadInProgress, "Photo")+ "\n" + "File "+filename);
                         mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
                     }
@@ -190,50 +190,51 @@ public class DropboxUploadService extends Service {
                 //uploadSize = randomAccessFile.length();
                 String sessionId = null;
                 int readSize;
-                if(isImage(uploadFile)) {
-                    byte[] cache = new byte[500 * 1024];
-                    long bytesUploaded = 0;
-                    UploadSessionCursor uploadSessionCursor = null;
-                    while ((readSize = bufferedInputStream.read(cache, 0, cache.length)) != -1) {
-                        Log.i(TAG, "Read " + readSize + " bytes");
-                        if (sessionId == null) {
-                            uploadSessionStartUploader = dbxUserFilesRequests.uploadSessionStart(false);
-                            uploadSessionStartResult = uploadSessionStartUploader.uploadAndFinish(new ByteArrayInputStream(cache), readSize);
-                            sessionId = uploadSessionStartResult.getSessionId();
-                            Log.i(TAG, "Obtained session id = " + sessionId);
-                            bytesUploaded = readSize;
-                           Log.i(TAG, "Uploaded " + readSize + " bytes");
-                        } else {
-                            uploadSessionAppendV2Uploader = dbxUserFilesRequests.uploadSessionAppendV2(uploadSessionCursor, false);
-                            Log.i(TAG, "Appended session");
-                            uploadSessionAppendV2Uploader.uploadAndFinish(new ByteArrayInputStream(cache), readSize);
-                            bytesUploaded += readSize;
-                            Log.i(TAG, "Uploaded " + bytesUploaded + " bytes");
-                        }
-                        uploadSessionCursor = new UploadSessionCursor(sessionId, bytesUploaded);
+                byte[] cache = new byte[500 * 1024];
+                if(!isImage(uploadFile)) {
+                    cache = new byte[2000 * 1024];
+                }
+                long bytesUploaded = 0;
+                UploadSessionCursor uploadSessionCursor = null;
+                while ((readSize = bufferedInputStream.read(cache, 0, cache.length)) != -1) {
+                    Log.i(TAG, "Read " + readSize + " bytes");
+                    if (sessionId == null) {
+                        uploadSessionStartUploader = dbxUserFilesRequests.uploadSessionStart(false);
+                        uploadSessionStartResult = uploadSessionStartUploader.uploadAndFinish(new ByteArrayInputStream(cache), readSize);
+                        sessionId = uploadSessionStartResult.getSessionId();
+                        Log.i(TAG, "Obtained session id = " + sessionId);
+                        bytesUploaded = readSize;
+                       Log.i(TAG, "Uploaded " + readSize + " bytes");
+                    } else {
+                        uploadSessionAppendV2Uploader = dbxUserFilesRequests.uploadSessionAppendV2(uploadSessionCursor, false);
+                        Log.i(TAG, "Appended session");
+                        uploadSessionAppendV2Uploader.uploadAndFinish(new ByteArrayInputStream(cache), readSize);
+                        bytesUploaded += readSize;
+                        Log.i(TAG, "Uploaded " + bytesUploaded + " bytes");
                     }
-                    if (sessionId != null) {
-                        String path;
-                        if(!folderName.toUpperCase().equals(getResources().getString(R.string.app_name).toUpperCase())) {
-                            path = "/" + folderName + "/" + filename;
-                        }
-                        else{
-                            path = "/" + filename;
-                        }
-                        Log.d(TAG, "Path = "+path);
-                        CommitInfo.Builder builder = CommitInfo.newBuilder(path);
-                        builder.withAutorename(true);
-                        builder.withMode(WriteMode.ADD);
-                        builder.withMute(false);
-                        FileMetadata fileMetadata =
-                                dbxUserFilesRequests.uploadSessionFinish(uploadSessionCursor, builder.build()).uploadAndFinish(fileToUpload, bytesUploaded);
-                        Log.i(TAG, "Uploaded file MD getPathDisplay = "+fileMetadata.getPathDisplay());
-                        Log.i(TAG, "Uploaded file MD getId = "+fileMetadata.getId());
-                        Log.i(TAG, "Uploaded file MD getName = "+fileMetadata.getName());
-                        Log.i(TAG, "Uploaded file MD getSize = "+fileMetadata.getSize());
-                        Log.i(TAG, "Upload finished");
-                        success = true;
+                    uploadSessionCursor = new UploadSessionCursor(sessionId, bytesUploaded);
+                }
+                if (sessionId != null) {
+                    String path;
+                    if(!folderName.toUpperCase().equals(getResources().getString(R.string.app_name).toUpperCase())) {
+                        path = "/" + folderName + "/" + filename;
                     }
+                    else{
+                        path = "/" + filename;
+                    }
+                    Log.d(TAG, "Path = "+path);
+                    CommitInfo.Builder builder = CommitInfo.newBuilder(path);
+                    builder.withAutorename(true);
+                    builder.withMode(WriteMode.ADD);
+                    builder.withMute(false);
+                    FileMetadata fileMetadata =
+                            dbxUserFilesRequests.uploadSessionFinish(uploadSessionCursor, builder.build()).uploadAndFinish(fileToUpload, bytesUploaded);
+                    Log.i(TAG, "Uploaded file MD getPathDisplay = "+fileMetadata.getPathDisplay());
+                    Log.i(TAG, "Uploaded file MD getId = "+fileMetadata.getId());
+                    Log.i(TAG, "Uploaded file MD getName = "+fileMetadata.getName());
+                    Log.i(TAG, "Uploaded file MD getSize = "+fileMetadata.getSize());
+                    Log.i(TAG, "Upload finished");
+                    success = true;
                 }
             } catch (DbxException e) {
                 Log.i(TAG, "DbxException = "+e.getMessage());
@@ -271,7 +272,7 @@ public class DropboxUploadService extends Service {
         mBuilder.setColor(getResources().getColor(R.color.uploadError));
         mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.uploadErrorMessage)));
         mBuilder.setContentText(getResources().getString(R.string.uploadErrorMessage));
-        mBuilder.setContentTitle(getResources().getString(R.string.autoUploadInterrupt, getResources().getString(R.string.googleDrive)));
+        mBuilder.setContentTitle(getResources().getString(R.string.autoUploadInterrupt, getResources().getString(R.string.dropbox)));
         mBuilder.setSound(uploadNotification);
         mBuilder.setPriority(NotificationCompat.PRIORITY_HIGH);
         mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());

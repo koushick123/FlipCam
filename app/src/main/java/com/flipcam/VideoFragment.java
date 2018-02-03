@@ -28,6 +28,7 @@ import android.widget.Toast;
 
 import com.flipcam.constants.Constants;
 import com.flipcam.media.FileMedia;
+import com.flipcam.service.DropboxUploadService;
 import com.flipcam.service.GoogleDriveUploadService;
 import com.flipcam.util.MediaUtil;
 import com.flipcam.view.CameraView;
@@ -246,6 +247,14 @@ public class VideoFragment extends android.app.Fragment{
                     googleDriveUploadIntent.putExtra("uploadFile", cameraView.getMediaPath());
                     Log.d(TAG, "Uploading file = "+cameraView.getMediaPath());
                     getActivity().startService(googleDriveUploadIntent);
+                }
+                if(sharedPreferences.getBoolean(Constants.SAVE_TO_DROPBOX, false)){
+                    Log.d(TAG, "Auto upload to Dropbox");
+                    //Auto upload to Dropbox enabled
+                    Intent dropboxUploadIntent = new Intent(getApplicationContext(), DropboxUploadService.class);
+                    dropboxUploadIntent.putExtra("uploadFile", cameraView.getMediaPath());
+                    Log.d(TAG, "Uploading file = "+cameraView.getMediaPath());
+                    getActivity().startService(dropboxUploadIntent);
                 }
             }
         });
