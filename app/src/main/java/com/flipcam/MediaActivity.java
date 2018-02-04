@@ -257,22 +257,40 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         noImage = (ImageView)findViewById(R.id.noImage);
         noImageText = (TextView)findViewById(R.id.noImageText);
         playCircle = (ImageView)findViewById(R.id.playVideo);
-        if(isImage(medias[0].getPath())) {
-            removeVideoControls();
-            hidePlayForVideo();
-        }
-        else{
-            showPlayForVideo(0);
-        }
+        Log.d(TAG, "savedInstanceState = "+savedInstanceState);
         if(savedInstanceState == null){
             clearPreferences();
             controlVisbilityPreference.setHideControl(true);
             reDrawPause();
             reDrawTopMediaControls();
+            if(isImage(medias[0].getPath())) {
+                removeVideoControls();
+                hidePlayForVideo();
+            }
+            else{
+                showPlayForVideo(0);
+            }
+        }
+        else{
+            int position = savedInstanceState.getInt("selectedPosition");
+            if(isImage(medias[position].getPath())) {
+                removeVideoControls();
+                hidePlayForVideo();
+            }
+            else{
+                showPlayForVideo(0);
+            }
         }
         notifyIcon = BitmapFactory.decodeResource(getApplicationContext().getResources(),R.drawable.ic_launcher);
         mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         queueNotification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        Log.d(TAG, "onSaveInstanceState");
+        outState.putInt("selectedPosition",selectedPosition);
     }
 
     public void showPlayForVideo(final int videoPos){
@@ -619,14 +637,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         //Display controls based on image/video
         if(isImage(medias[position].getPath())){
             Log.d(TAG,"HIDE VIDEO");
-            /*if(controlVisbilityPreference.isHideControl()) {
-                Log.d(TAG,"show controls");
-                videoControls.setVisibility(View.VISIBLE);
-            }
-            else{
-                Log.d(TAG,"hide controls");
-                videoControls.setVisibility(View.GONE);
-            }*/
             hidePlayForVideo();
             removeVideoControls();
         }
@@ -637,7 +647,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             }
             else{
                 Log.d(TAG,"hide controls");
-                hideControls();
+                removeVideoControls();
             }
             setupVideo(currentFrag,position);
             currentFrag.previousPos = 0;
@@ -647,13 +657,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             }
         }
         previousSelectedFragment = position;
-    }
-
-    public void hideControls(){
-        pause.setVisibility(View.GONE);
-        startTime.setVisibility(View.GONE);
-        endTime.setVisibility(View.GONE);
-        videoSeek.setVisibility(View.GONE);
     }
 
     public void showControls(){
@@ -862,7 +865,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 if(surfaceViewVideoFragment.getUserVisibleHint()) {
                     if (isImage(medias[position].getPath())) {
                         Log.d(TAG, "IS image");
-                        hideControls();
+                        removeVideoControls();
                         hidePlayForVideo();
                     } else {
                         Log.d(TAG, "IS video");

@@ -58,11 +58,11 @@ MediaPlayer.OnErrorListener, Serializable{
     transient ImageButton pause;
     volatile boolean startTracker=false;
     transient SurfaceViewVideoFragment.MainHandler mediaHandler;
-    transient SeekBar videoSeek;
+    SeekBar videoSeek;
     volatile boolean isCompleted=false;
     String duration;
-    transient TextView startTime;
-    transient TextView endTime;
+    TextView startTime;
+    TextView endTime;
     public boolean playInProgress=false;
     volatile int seconds = 0;
     volatile int minutes = 0;
@@ -98,8 +98,11 @@ MediaPlayer.OnErrorListener, Serializable{
         videoControls = (LinearLayout)getActivity().findViewById(R.id.videoControls);
         pause = (ImageButton) getActivity().findViewById(R.id.playButton);
         startTime = (TextView)getActivity().findViewById(R.id.startTime);
+        Log.d(TAG, "startTime = "+startTime);
         endTime = (TextView)getActivity().findViewById(R.id.endTime);
+        Log.d(TAG, "endTime = "+endTime);
         videoSeek = (SeekBar)getActivity().findViewById(R.id.videoSeek);
+        Log.d(TAG, "videoSeek = "+videoSeek);
         parentMedia = (LinearLayout)getActivity().findViewById(R.id.parentMedia);
         frameMedia = (FrameLayout)getActivity().findViewById(R.id.frameMedia);
         controlVisbilityPreference = (ControlVisbilityPreference) getActivity().getApplicationContext();
@@ -641,8 +644,6 @@ MediaPlayer.OnErrorListener, Serializable{
                     Log.d(TAG, "show controls onResume");
                     topBar.setVisibility(View.VISIBLE);
                     videoControls.setVisibility(View.VISIBLE);
-                    videoControls.removeAllViews();
-                    videoControls.addView(parentMedia);
                 }
                 else{
                     Log.d(TAG,"hide controls onResume");
