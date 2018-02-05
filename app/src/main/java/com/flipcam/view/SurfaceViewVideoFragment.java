@@ -488,6 +488,9 @@ MediaPlayer.OnErrorListener, Serializable{
         startTime.setVisibility(View.GONE);
         endTime.setVisibility(View.GONE);
         videoSeek.setVisibility(View.GONE);
+        if(!mediaPlayer.isPlaying()) {
+            playCircle.setVisibility(View.VISIBLE);
+        }
     }
 
     public void showAllControls(){
@@ -497,6 +500,7 @@ MediaPlayer.OnErrorListener, Serializable{
         startTime.setVisibility(View.VISIBLE);
         endTime.setVisibility(View.VISIBLE);
         videoSeek.setVisibility(View.VISIBLE);
+        playCircle.setVisibility(View.GONE);
     }
 
     public void resetMediaPlayer(){
@@ -585,7 +589,6 @@ MediaPlayer.OnErrorListener, Serializable{
         Log.d(TAG,"Video Completed == "+path);
         showAllControls();
         controlVisbilityPreference.setHideControl(true);
-        playCircle.setVisibility(View.VISIBLE);
         isCompleted = true;
         pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow));
         play = false;
@@ -649,6 +652,12 @@ MediaPlayer.OnErrorListener, Serializable{
                     Log.d(TAG,"hide controls onResume");
                     topBar.setVisibility(View.GONE);
                     videoControls.setVisibility(View.GONE);
+                }
+            }
+            else{
+                Log.d(TAG, "controlVisbilityPreference.isHideControl() = "+controlVisbilityPreference.isHideControl());
+                if(!controlVisbilityPreference.isHideControl() && !savedVideo.isMediaPlaying()) {
+                    playCircle.setVisibility(View.VISIBLE);
                 }
             }
         }

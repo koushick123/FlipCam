@@ -742,7 +742,12 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 }
             }
         });
-        showPlayForVideo(position);
+        if(!controlVisbilityPreference.isHideControl()) {
+            showPlayForVideo(position);
+        }
+        else{
+            hidePlayForVideo();
+        }
     }
 
     @Override
