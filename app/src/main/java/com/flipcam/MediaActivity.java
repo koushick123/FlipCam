@@ -127,6 +127,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         else{
             clearPreferences();
         }
+        hashMapFrags.get(selectedPosition).getMediaView().setVisibility(View.INVISIBLE);
     }
 
     @Override
@@ -268,7 +269,9 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 hidePlayForVideo();
             }
             else{
-                showPlayForVideo(0);
+                if(!controlVisbilityPreference.isHideControl()) {
+                    showPlayForVideo(0);
+                }
             }
         }
         else{
@@ -278,7 +281,9 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 hidePlayForVideo();
             }
             else{
-                showPlayForVideo(0);
+                if(!controlVisbilityPreference.isHideControl()) {
+                    showPlayForVideo(0);
+                }
             }
         }
         notifyIcon = BitmapFactory.decodeResource(getApplicationContext().getResources(),R.drawable.ic_launcher);
@@ -871,12 +876,10 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                     if (isImage(medias[position].getPath())) {
                         Log.d(TAG, "IS image");
                         removeVideoControls();
-                        hidePlayForVideo();
                     } else {
                         Log.d(TAG, "IS video");
                         showControls();
                         setupVideoControls(position);
-                        showPlayForVideo(position);
                     }
                 }
             }

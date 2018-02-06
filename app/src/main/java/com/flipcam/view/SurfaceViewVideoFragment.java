@@ -488,7 +488,7 @@ MediaPlayer.OnErrorListener, Serializable{
         startTime.setVisibility(View.GONE);
         endTime.setVisibility(View.GONE);
         videoSeek.setVisibility(View.GONE);
-        if(!mediaPlayer.isPlaying()) {
+        if(!play) {
             playCircle.setVisibility(View.VISIBLE);
         }
     }
@@ -568,6 +568,10 @@ MediaPlayer.OnErrorListener, Serializable{
             return true;
         }
         return false;
+    }
+
+    public MediaView getMediaView(){
+        return videoView;
     }
 
     public String getPath(){
@@ -655,10 +659,7 @@ MediaPlayer.OnErrorListener, Serializable{
                 }
             }
             else{
-                Log.d(TAG, "controlVisbilityPreference.isHideControl() = "+controlVisbilityPreference.isHideControl());
-                if(!controlVisbilityPreference.isHideControl() && !savedVideo.isMediaPlaying()) {
-                    playCircle.setVisibility(View.VISIBLE);
-                }
+                videoView.setVisibility(View.VISIBLE);
             }
         }
     }
