@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout android:id="@+id/mediaPlaceholder"
+<FrameLayout android:id="@+id/mediaPlaceholder"
     android:orientation="vertical"
-    android:gravity="center"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
     xmlns:android="http://schemas.android.com/apk/res/android"
@@ -9,14 +8,14 @@
     >
 
     <ImageView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
         android:id="@+id/recordedImage"
-        />
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
     <com.flipcam.view.MediaView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/recordedVideo"
         android:layout_centerInParent="true"
         />
-</RelativeLayout>
+</FrameLayout>

@@ -16,6 +16,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.Display;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Surface;
 import android.view.View;
@@ -25,7 +26,6 @@ import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
@@ -80,6 +80,9 @@ MediaPlayer.OnErrorListener, Serializable{
     transient public Media savedVideo = null;
     transient boolean recreate = false;
     transient ImageView playCircle;
+    transient int imageHeight;
+    transient int imageWidth;
+    transient FrameLayout mediaPlaceholder;
 
     public static SurfaceViewVideoFragment newInstance(int pos,boolean recreate){
         SurfaceViewVideoFragment surfaceViewVideoFragment = new SurfaceViewVideoFragment();
@@ -201,7 +204,7 @@ MediaPlayer.OnErrorListener, Serializable{
                     if (isCompleted) {
                         isCompleted = false;
                     }
-                    Log.d(TAG, "Set PLAY post rotate");
+                    Log.d(TAG, "Set PLAY Circle post rotate");
                     mediaPlayer.start();
                     playInProgress = true;
                     pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause));
@@ -275,17 +278,13 @@ MediaPlayer.OnErrorListener, Serializable{
         return framePosition;
     }
 
-    transient int imageHeight;
-    transient int imageWidth;
-    transient RelativeLayout mediaPlaceholder;
-
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_surfaceview_video, container, false);
         videoView = (MediaView) view.findViewById(R.id.recordedVideo);
         picture = (ImageView)view.findViewById(R.id.recordedImage);
-        mediaPlaceholder = (RelativeLayout)view.findViewById(R.id.mediaPlaceholder);
+        mediaPlaceholder = (FrameLayout)view.findViewById(R.id.mediaPlaceholder);
         mediaPlaceholder.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view) {
@@ -335,23 +334,22 @@ MediaPlayer.OnErrorListener, Serializable{
         Point screenSize=new Point();
         display.getRealSize(screenSize);
         double screenAR = (double)screenSize.x / (double)screenSize.y;
+        Log.d(TAG, "screenSize = "+screenSize.x+" X "+screenSize.y);
         double imageAR = (double)imageWidth / (double)imageHeight;
         Log.d(TAG,"imageAR = "+imageAR);
         Log.d(TAG,"screenAR = "+screenAR);
-        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+        FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
         if (display.getRotation() == Surface.ROTATION_0) {
             if(Math.abs(screenAR - imageAR) < 0.1) {
                 Log.d(TAG,"Portrait");
                 layoutParams.width = screenSize.x;
                 layoutParams.height = screenSize.y;
-                layoutParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
-                layoutParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
-                layoutParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
-                layoutParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
             }
             else{
                 layoutParams.width = screenSize.x;
                 layoutParams.height = (int)(screenSize.x / imageAR);
+                layoutParams.gravity = Gravity.CENTER;
+                Log.d(TAG,"1111 layoutParams.width = "+layoutParams.width);
                 Log.d(TAG,"layoutParams.height = "+layoutParams.height);
             }
         }
@@ -360,14 +358,12 @@ MediaPlayer.OnErrorListener, Serializable{
                 Log.d(TAG,"Landscape");
                 layoutParams.width = screenSize.x;
                 layoutParams.height = screenSize.y;
-                layoutParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
-                layoutParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
-                layoutParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
-                layoutParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
             } else {
                 layoutParams.width = (int) (imageAR * screenSize.y);
                 layoutParams.height = screenSize.y;
-                Log.d(TAG,"layoutParams.width = "+layoutParams.width);
+                layoutParams.gravity = Gravity.CENTER;
+                Log.d(TAG,"2222 layoutParams.width = "+layoutParams.width);
+                Log.d(TAG,"layoutParams.height = "+layoutParams.height);
             }
         }
         picture.setLayoutParams(layoutParams);
@@ -382,30 +378,29 @@ MediaPlayer.OnErrorListener, Serializable{
         String height = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT);
         double videoAR = Double.parseDouble(width) / Double.parseDouble(height);
         double screenAR = (double) screenSize.x / (double) screenSize.y;
+        FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
         if (display.getRotation() == Surface.ROTATION_0) {
             if (Math.abs(screenAR - videoAR) < 0.1) {
-                ViewGroup.LayoutParams layoutParams = videoView.getLayoutParams();
                 layoutParams.width = screenSize.x;
                 layoutParams.height = screenSize.y;
                 videoView.setLayoutParams(layoutParams);
             }
             else{
-                ViewGroup.LayoutParams layoutParams = videoView.getLayoutParams();
                 layoutParams.width = screenSize.x;
                 layoutParams.height = (int)(screenSize.x / videoAR);
+                layoutParams.gravity = Gravity.CENTER;
                 videoView.setLayoutParams(layoutParams);
             }
         } else if (display.getRotation() == Surface.ROTATION_90 || display.getRotation() == Surface.ROTATION_270) {
             if (Math.abs(screenAR - videoAR) < 0.1) {
-                ViewGroup.LayoutParams layoutParams = videoView.getLayoutParams();
                 layoutParams.width = screenSize.x;
                 layoutParams.height = screenSize.y;
                 videoView.setLayoutParams(layoutParams);
             }
             else{
-                ViewGroup.LayoutParams layoutParams = videoView.getLayoutParams();
                 layoutParams.width = (int)(videoAR * screenSize.y);
                 layoutParams.height = screenSize.y;
+                layoutParams.gravity = Gravity.CENTER;
                 videoView.setLayoutParams(layoutParams);
             }
         }

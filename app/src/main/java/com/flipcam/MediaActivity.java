@@ -270,7 +270,8 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             }
             else{
                 if(!controlVisbilityPreference.isHideControl()) {
-                    showPlayForVideo(0);
+                    setupPlayForVideo(0);
+                    showPlayForVideo();
                 }
             }
         }
@@ -282,7 +283,8 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             }
             else{
                 if(!controlVisbilityPreference.isHideControl()) {
-                    showPlayForVideo(0);
+                    setupPlayForVideo(0);
+                    showPlayForVideo();
                 }
             }
         }
@@ -298,8 +300,8 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         outState.putInt("selectedPosition",selectedPosition);
     }
 
-    public void showPlayForVideo(final int videoPos){
-        playCircle.setVisibility(View.VISIBLE);
+    public void setupPlayForVideo(final int videoPos){
+        Log.d(TAG, "setupPlayForVideo");
         playCircle.setClickable(true);
         playCircle.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -319,6 +321,10 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 playCircle.setVisibility(View.GONE);
             }
         });
+    }
+
+    public void showPlayForVideo(){
+        playCircle.setVisibility(View.VISIBLE);
     }
 
     public void hidePlayForVideo(){
@@ -747,8 +753,9 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 }
             }
         });
+        setupPlayForVideo(position);
         if(!controlVisbilityPreference.isHideControl()) {
-            showPlayForVideo(position);
+            showPlayForVideo();
         }
         else{
             hidePlayForVideo();

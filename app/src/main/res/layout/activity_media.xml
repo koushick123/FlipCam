@@ -44,8 +44,8 @@
         android:layout_width="match_parent"
         android:layout_height="@dimen/topMediaBarPortrait"
         android:layout_gravity="top"
-        android:gravity="center_vertical"
         android:background="@color/mediaControlColor"
+        android:gravity="center_vertical"
         android:orientation="horizontal">
 
         <ImageButton
@@ -64,7 +64,7 @@
             android:background="@color/mediaControlColor"
             android:src="@drawable/ic_share" />
 
-   </LinearLayout>
+    </LinearLayout>
 
     <LinearLayout
         android:id="@+id/videoControls"
