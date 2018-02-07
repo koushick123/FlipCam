@@ -30,6 +30,7 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Display;
 import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.Surface;
 import android.view.View;
 import android.view.ViewGroup;
@@ -112,6 +113,10 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     LoginManager loginManager = LoginManager.getInstance();
     ArrayList<String> publishPermissions;
     ImageView playCircle;
+    View deleteMediaRoot;
+    View taskInProgressRoot;
+    LayoutInflater layoutInflater;
+    Dialog taskAlert;
 
     @Override
     protected void onStop() {
@@ -187,17 +192,32 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             }
             medias = MediaUtil.getMediaList(getApplicationContext());
             if(medias != null) {
-                mPagerAdapter.notifyDataSetChanged();
-                deleteAlert.dismiss();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        mPagerAdapter.notifyDataSetChanged();
+                        taskAlert.dismiss();
+                    }
+                });
             }
             else{
-                deleteAlert.dismiss();
-                showNoImagePlaceholder();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        taskAlert.dismiss();
+                        showNoImagePlaceholder();
+                    }
+                });
             }
         }
         else{
-            deleteAlert.dismiss();
-            Toast.makeText(getApplicationContext(),"Unable to delete file",Toast.LENGTH_SHORT).show();
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    taskAlert.dismiss();
+                    Toast.makeText(getApplicationContext(),"Unable to delete file",Toast.LENGTH_SHORT).show();
+                }
+            });
         }
     }
 
@@ -225,7 +245,14 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             @Override
             public void onClick(View view) {
                 Log.d(TAG,"Delete position = "+selectedPosition);
-                deleteAlert.setContentView(R.layout.delete_media);
+                TextView deleteMsg = (TextView)deleteMediaRoot.findViewById(R.id.deleteMsg);
+                if(isImage(medias[selectedPosition].getPath())){
+                    deleteMsg.setText(getResources().getString(R.string.deleteMessage, getResources().getString(R.string.photo)));
+                }
+                else{
+                    deleteMsg.setText(getResources().getString(R.string.deleteMessage, getResources().getString(R.string.video)));
+                }
+                deleteAlert.setContentView(deleteMediaRoot);
                 deleteAlert.setCancelable(true);
                 deleteAlert.show();
             }
@@ -291,6 +318,10 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         notifyIcon = BitmapFactory.decodeResource(getApplicationContext().getResources(),R.drawable.ic_launcher);
         mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         queueNotification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+        layoutInflater = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        deleteMediaRoot = layoutInflater.inflate(R.layout.delete_media, null);
+        taskInProgressRoot = layoutInflater.inflate(R.layout.task_in_progress, null);
+        taskAlert = new Dialog(this);
     }
 
     @Override
@@ -398,8 +429,23 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
 
     public void delete(View view){
         Log.d(TAG,"DELETE");
-        view.setClickable(false);
-        deleteMedia(selectedPosition);
+        deleteAlert.dismiss();
+        TextView savetocloudtitle = (TextView)taskInProgressRoot.findViewById(R.id.savetocloudtitle);
+        TextView signInText = (TextView)taskInProgressRoot.findViewById(R.id.signInText);
+        ImageView signInImage = (ImageView)taskInProgressRoot.findViewById(R.id.signInImage);
+        signInImage.setVisibility(View.INVISIBLE);
+        signInText.setText(getResources().getString(R.string.deleteMediaMsg));
+        savetocloudtitle.setText(getResources().getString(R.string.deleteTitle));
+        taskInProgressRoot.setBackgroundColor(getResources().getColor(R.color.mediaControlColor));
+        taskAlert.setContentView(taskInProgressRoot);
+        taskAlert.setCancelable(false);
+        taskAlert.show();
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                deleteMedia(selectedPosition);
+            }
+        }).start();
     }
 
     public void cancel(View view){

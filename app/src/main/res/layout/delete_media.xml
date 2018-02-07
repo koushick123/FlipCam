@@ -42,6 +42,7 @@
     </LinearLayout>
 
     <TextView
+        android:id="@+id/deleteMsg"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
@@ -70,7 +71,7 @@
             android:layout_weight="0.5"
             android:background="@color/thumbnailPlaceholder"
             android:onClick="delete"
-            android:text="@string/okToDelete"
+            android:text="@string/delete"
             android:textColor="@color/turqoise" />
 
         <Button

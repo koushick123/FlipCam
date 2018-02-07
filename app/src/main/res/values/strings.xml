@@ -20,14 +20,17 @@
     <string name="START_MEMORY">0 MB</string>
     <string name="VIDEO_MODE">VIDEO</string>
     <string name="PHOTO_MODE">PHOTO</string>
+    <string name="photo">Photo</string>
+    <string name="video">Video</string>
     <string name="MODE">MODE</string>
     <string name="RECORD_SAVED">VIDEO SAVED</string>
     <string name="IMAGE_SAVED">IMAGE SAVED</string>
     <string name="NO_IMAGE">No Photos or Videos</string>
     <string name="deleteTitle">Delete Media</string>
-    <string name="deleteMessage">Do you want to delete the Photo/Video?</string>
+    <string name="deleteMessage">Do you want to delete the %1$s?</string>
     <string name="noConnectionMessage">There seems to be no Internet Connection. Please check your connection, or enable Wi-Fi and try again.</string>
     <string name="okToDelete">OK</string>
+    <string name="delete">DELETE</string>
     <string name="cancelToDelete">CANCEL</string>
     <string name="shareTitle">Share Media</string>
     <string name="shareFacebook">Upload to Facebook</string>
@@ -168,5 +171,7 @@
     <string name="üploadDisabledDropbox">Access revoked for main folder FlipCam and its subfolders in Dropbox.\n\nAuto upload has been disabled.</string>
     <string name="saveToCloudDropbox">FlipCam requires access to its own folder Apps -> FlipCam, in your DropBox account.\n\nYou will need to Sign in if not done so earlier.
         \n\nDo you want to continue?</string>
+    <string name="deleteMediaTitle">Remove Media</string>
+    <string name="deleteMediaMsg">Deleting File...</string>
 </resources>
 
