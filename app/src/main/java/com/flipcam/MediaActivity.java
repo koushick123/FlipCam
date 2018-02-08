@@ -730,11 +730,11 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         videoSeek.setVisibility(View.INVISIBLE);
     }
 
-    public void setupVideoControls(int position){
+    public void setupVideoControls(final int position){
         MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
         mediaMetadataRetriever.setDataSource(medias[position].getPath());
         duration = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
-        calculateAndDisplayEndTime();
+        calculateAndDisplayEndTime(Integer.parseInt(duration), true, position);
         Log.d(TAG,"Set MEDIA = "+medias[position].getPath());
         //Include tracker and reset position to start playing from start.
         videoControls.removeAllViews();
@@ -743,9 +743,37 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         videoControls.addView(parentMedia);
         videoSeek.setMax(Integer.parseInt(duration));
         videoSeek.setProgress(0);
-        videoSeek.setThumb(getResources().getDrawable(R.drawable.turqoise));
+        //videoSeek.setThumb(getResources().getDrawable(R.drawable.turqoise));
         videoSeek.setProgressTintList(ColorStateList.valueOf(getResources().getColor(R.color.turqoise)));
+        videoSeek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if(fromUser) {
+                    videoSeek.setProgress(progress);
+                    hashMapFrags.get(position).mediaPlayer.seekTo(progress);
+                    calculateAndDisplayEndTime(progress, false, position);
+                }
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+                if(hashMapFrags.get(position).mediaPlayer.isPlaying()){
+                    hashMapFrags.get(position).mediaPlayer.pause();
+                    wasPlaying = true;
+                }
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                if(wasPlaying){
+                    hashMapFrags.get(position).mediaPlayer.start();
+                    wasPlaying = false;
+                }
+            }
+        });
     }
+
+    boolean wasPlaying = false;
 
     public void setupVideo(final SurfaceViewVideoFragment currentFrag, int position){
         setupVideoControls(position);
@@ -812,16 +840,16 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     public void onPageScrollStateChanged(int state) {
     }
 
-    public void calculateAndDisplayEndTime()
+    public void calculateAndDisplayEndTime(int latestPos, boolean eTime, int videoPos)
     {
-        int videoLength = Integer.parseInt(duration);
+        int videoLength = latestPos;
         int secs = (videoLength / 1000);
         Log.d(TAG,"total no of secs = "+secs);
         int hour = 0;
         int mins = 0;
-        if(secs > 60){
+        if(secs >= 60){
             mins = secs / 60;
-            if(mins > 60){
+            if(mins >= 60){
                 hour = mins / 60;
                 mins = mins % 60;
             }
@@ -850,8 +878,19 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         else{
             showHr = hour+"";
         }
-        endTime.setText(showHr+" : "+showMin+" : "+showSec);
-        startTime.setText(getString(R.string.START_TIME));
+        if(eTime) {
+            Log.d(TAG, "getSecs = "+hashMapFrags.get(videoPos).getSeconds());
+            Log.d(TAG, "getMinutes = "+hashMapFrags.get(videoPos).getMinutes());
+            Log.d(TAG, "getHours = "+hashMapFrags.get(videoPos).getHours());
+            startTime.setText(getResources().getString(R.string.START_TIME));
+            endTime.setText(showHr + " : " + showMin + " : " + showSec);
+        }
+        else{
+            hashMapFrags.get(videoPos).setSeconds(secs);
+            hashMapFrags.get(videoPos).setMinutes(mins);
+            hashMapFrags.get(videoPos).setHours(hour);
+            startTime.setText(showHr + " : " + showMin + " : " + showSec);
+        }
     }
 
     @Override

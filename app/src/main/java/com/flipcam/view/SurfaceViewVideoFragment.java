@@ -146,16 +146,17 @@ MediaPlayer.OnErrorListener, Serializable{
                     newVideo.setMediaPreviousPos(0);
                     newVideo.setSeekDuration(Integer.parseInt(duration));
                 }
+                Log.d(TAG, "Set Seek BAR");
                 reConstructVideo(newVideo);
                 showTimeElapsed();
-                calculateAndDisplayEndTime();
+                calculateAndDisplayEndTime(Integer.parseInt(duration), true);
             }
         }
     }
 
     public void reConstructVideo(Media savedVideo){
         videoSeek.setMax(savedVideo.getSeekDuration());
-        videoSeek.setThumb(getResources().getDrawable(R.drawable.turqoise));
+        //videoSeek.setThumb(getResources().getDrawable(R.drawable.turqoise));
         videoSeek.setProgressTintList(ColorStateList.valueOf(getResources().getColor(R.color.turqoise)));
         Log.d(TAG, "Retrieve media completed == " + savedVideo.isMediaCompleted());
         if (savedVideo.isMediaCompleted()) {
@@ -260,7 +261,36 @@ MediaPlayer.OnErrorListener, Serializable{
             //Since we need to seekTo(100), we need to nullify savedVideo.
             this.savedVideo = null;
         }
+
+        videoSeek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (fromUser) {
+                    videoSeek.setProgress(progress);
+                    mediaPlayer.seekTo(progress);
+                    calculateAndDisplayEndTime(progress, false);
+                }
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+                if(mediaPlayer.isPlaying()){
+                    mediaPlayer.pause();
+                    wasPlaying = true;
+                }
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                if(wasPlaying){
+                    mediaPlayer.start();
+                    wasPlaying = false;
+                }
+            }
+        });
     }
+
+    boolean wasPlaying = false;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -503,16 +533,16 @@ MediaPlayer.OnErrorListener, Serializable{
             mediaPlayer.seekTo(100);
     }
 
-    public void calculateAndDisplayEndTime()
+    public void calculateAndDisplayEndTime(int latestPos, boolean eTime)
     {
-        int videoLength = Integer.parseInt(duration);
+        int videoLength = latestPos;
         int secs = (videoLength / 1000);
         Log.d(TAG,"total no of secs = "+secs);
         int hour = 0;
         int mins = 0;
-        if(secs > 60){
+        if(secs >= 60){
             mins = secs / 60;
-            if(mins > 60){
+            if(mins >= 60){
                 hour = mins / 60;
                 mins = mins % 60;
             }
@@ -541,7 +571,15 @@ MediaPlayer.OnErrorListener, Serializable{
         else{
             showHr = hour+"";
         }
-        endTime.setText(showHr+" : "+showMin+" : "+showSec);
+        if(eTime) {
+            endTime.setText(showHr + " : " + showMin + " : " + showSec);
+        }
+        else{
+            seconds = secs;
+            minutes = mins;
+            hours = hour;
+            startTime.setText(showHr + " : " + showMin + " : " + showSec);
+        }
     }
 
     public void resetVideoTime(){
@@ -571,6 +609,30 @@ MediaPlayer.OnErrorListener, Serializable{
 
     public String getPath(){
         return path;
+    }
+
+    public int getSeconds() {
+        return seconds;
+    }
+
+    public void setSeconds(int seconds) {
+        this.seconds = seconds;
+    }
+
+    public int getMinutes() {
+        return minutes;
+    }
+
+    public void setMinutes(int minutes) {
+        this.minutes = minutes;
+    }
+
+    public int getHours() {
+        return hours;
+    }
+
+    public void setHours(int hours) {
+        this.hours = hours;
     }
 
     @Override
