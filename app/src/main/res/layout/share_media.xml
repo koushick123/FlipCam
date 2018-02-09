@@ -80,10 +80,10 @@
 
             <ImageView
                 android:id="@+id/facebookIcon"
-                android:layout_width="50dp"
-                android:layout_height="47dp"
+                android:layout_width="51dp"
+                android:layout_height="43dp"
                 android:layout_gravity="center_horizontal"
-                android:layout_weight=".07"
+                android:layout_marginTop="3dp"
                 android:background="@drawable/ripple"
                 android:onClick="selectToShare"
                 app:srcCompat="@drawable/share_to_facebook" />
