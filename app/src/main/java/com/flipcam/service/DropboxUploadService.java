@@ -7,6 +7,8 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.RingtoneManager;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -25,6 +27,7 @@ import com.dropbox.core.v2.files.DbxUserFilesRequests;
 import com.dropbox.core.v2.files.FileMetadata;
 import com.dropbox.core.v2.files.UploadSessionAppendV2Uploader;
 import com.dropbox.core.v2.files.UploadSessionCursor;
+import com.dropbox.core.v2.files.UploadSessionFinishUploader;
 import com.dropbox.core.v2.files.UploadSessionStartResult;
 import com.dropbox.core.v2.files.UploadSessionStartUploader;
 import com.dropbox.core.v2.files.WriteMode;
@@ -62,6 +65,7 @@ public class DropboxUploadService extends Service {
     DbxRequestConfig dbxRequestConfig;
     DbxClientV2 dbxClientV2;
     String folderName;
+    int retryCount = Constants.RETRY_COUNT;
 
     class DropboxUploadHandler extends Handler {
         WeakReference<DropboxUploadService> serviceWeakReference;
@@ -81,7 +85,7 @@ public class DropboxUploadService extends Service {
                     uploadedSize += uploadSize.longValue();
                     Log.i(TAG, "Total uploaded size = "+uploadedSize);
                     mBuilder.setProgress((int) maxSize.longValue(), (int) uploadedSize, false);
-                    mBuilder.setContentTitle(getResources().getString(R.string.uploadInProgressTitle));
+                    mBuilder.setContentTitle(getResources().getString(R.string.autoUploadInProgressTitle, getResources().getString(R.string.dropbox)));
                     double roundOffPercent = (Math.floor((uploadedSize / maxSize.longValue()) * 100.0) * 100.0) / 100.0;
                     Log.i(TAG, "Percent done = " + roundOffPercent);
                     mBuilder.setColor(getResources().getColor(R.color.uploadColor));
@@ -154,6 +158,16 @@ public class DropboxUploadService extends Service {
         Log.i(TAG,"onDestroy");
     }
 
+    public boolean isConnectedToInternet(){
+        ConnectivityManager cm =
+                (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
+
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        boolean isConnected = activeNetwork != null &&
+                activeNetwork.isConnectedOrConnecting();
+        return isConnected;
+    }
+
     class DropboxUploadTask extends AsyncTask<String, Void, Boolean>{
         Boolean success = null;
         @Override
@@ -211,65 +225,128 @@ public class DropboxUploadService extends Service {
                     cache = new byte[2000 * 1024];
                 }
                 long bytesUploaded = 0;
+                boolean retryUpload;
+                boolean sessionAppend = false;
                 UploadSessionCursor uploadSessionCursor = null;
                 while ((readSize = bufferedInputStream.read(cache, 0, cache.length)) != -1) {
-                    Log.i(TAG, "Read " + readSize + " bytes");
-                    if (sessionId == null) {
-                        uploadSessionStartUploader = dbxUserFilesRequests.uploadSessionStart(false);
-                        uploadSessionStartResult = uploadSessionStartUploader.uploadAndFinish(new ByteArrayInputStream(cache), readSize);
-                        sessionId = uploadSessionStartResult.getSessionId();
-                        Log.i(TAG, "Obtained session id = " + sessionId);
-                        bytesUploaded = readSize;
-                       Log.i(TAG, "Uploaded " + readSize + " bytes");
-                    } else {
-                        uploadSessionAppendV2Uploader = dbxUserFilesRequests.uploadSessionAppendV2(uploadSessionCursor, false);
-                        Log.i(TAG, "Appended session");
-                        uploadSessionAppendV2Uploader.uploadAndFinish(new ByteArrayInputStream(cache), readSize);
-                        bytesUploaded += readSize;
-                        Log.i(TAG, "Uploaded " + bytesUploaded + " bytes");
-                    }
-                    uploadSessionCursor = new UploadSessionCursor(sessionId, bytesUploaded);
-                    if(!doesFileExist()){
+                    if (!doesFileExist()) {
                         success = false;
                         sessionId = null;
                         showFileErrorNotification();
                         break;
                     }
-                    Bundle bundle = new Bundle();
-                    Message message = new Message();
-                    bundle.putLong("uploadSize", readSize);
-                    bundle.putLong("maxSize", randomAccessFile.length());
-                    bundle.putString("filename", uploadFile);
-                    message.setData(bundle);
-                    message.what = Constants.UPLOAD_PROGRESS;
-                    dropboxUploadHandler.sendMessage(message);
+                    Log.i(TAG, "Read " + readSize + " bytes");
+                    do {
+                        retryUpload = false;
+                        try {
+                            if (sessionId == null) {
+                                uploadSessionStartUploader = dbxUserFilesRequests.uploadSessionStart(false);
+                                uploadSessionStartResult = uploadSessionStartUploader.uploadAndFinish(new ByteArrayInputStream(cache), readSize);
+                                sessionId = uploadSessionStartResult.getSessionId();
+                                Log.i(TAG, "Obtained session id = " + sessionId);
+                                bytesUploaded = readSize;
+                                Log.i(TAG, "Uploaded " + readSize + " bytes");
+                            } else {
+                                if(retryCount < Constants.RETRY_COUNT) {
+                                    Log.i(TAG, "sessionAppend? = "+sessionAppend);
+                                    if(!sessionAppend) {
+                                        uploadSessionAppendV2Uploader = dbxUserFilesRequests.uploadSessionAppendV2(uploadSessionCursor, false);
+                                        sessionAppend = true;
+                                    }
+                                }
+                                else{
+                                    uploadSessionAppendV2Uploader = dbxUserFilesRequests.uploadSessionAppendV2(uploadSessionCursor, false);
+                                    sessionAppend = true;
+                                    Log.i(TAG, "Appended session");
+                                }
+                                uploadSessionAppendV2Uploader.uploadAndFinish(new ByteArrayInputStream(cache), readSize);
+                                bytesUploaded += readSize;
+                                Log.i(TAG, "Uploaded " + bytesUploaded + " bytes");
+                            }
+                            uploadSessionCursor = new UploadSessionCursor(sessionId, bytesUploaded);
+                            Bundle bundle = new Bundle();
+                            Message message = new Message();
+                            bundle.putLong("uploadSize", readSize);
+                            bundle.putLong("maxSize", randomAccessFile.length());
+                            bundle.putString("filename", uploadFile);
+                            message.setData(bundle);
+                            message.what = Constants.UPLOAD_PROGRESS;
+                            dropboxUploadHandler.sendMessage(message);
+                            sessionAppend = false;
+                        } catch (DbxException e) {
+                            Log.i(TAG, "DbxException inside inner loop = " + e.getMessage());
+                            if (e.getMessage().contains("Unable to resolve host") || e.getMessage().contains("closed")) {
+                                if (retryCount > 0) {
+                                    Log.i(TAG, "Retrying...." + retryCount);
+                                    mBuilder.setColor(getResources().getColor(R.color.uploadError));
+                                    mBuilder.setContentText(getResources().getString(R.string.connectionRetryLess));
+                                    mBuilder.setContentTitle(getResources().getString(R.string.errorTitle));
+                                    mBuilder.setPriority(NotificationCompat.PRIORITY_DEFAULT);
+                                    mBuilder.setSound(null);
+                                    mBuilder.setStyle(
+                                            new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.connectionRetry, Constants.RETRY_COUNT, retryCount)));
+                                    mNotificationManager.notify(Integer.parseInt(uploadId), mBuilder.build());
+                                    retryCount--;
+                                    retryUpload = true;
+                                    try {
+                                        Thread.sleep(1000);
+                                    } catch (InterruptedException e1) {
+                                        e1.printStackTrace();
+                                    }
+                                } else if (retryCount == 0) {
+                                    retryCount = Constants.RETRY_COUNT;
+                                    sessionId = null;
+                                    retryUpload = false;
+                                    Log.i(TAG, "Show Media ERROR = " + uploadId);
+                                    showUploadErrorNotification();
+                                    break;
+                                }
+                            }
+                            else if(e.getMessage().contains("failed to connect")){
+                                sessionId = null;
+                                retryUpload = false;
+                                showTimeoutErrorNotification();
+                                break;
+                            }
+                            success = false;
+                        }
+                    }while(retryUpload);
+                    if(!retryUpload && sessionId == null){
+                        break;
+                    }
+                    if(retryCount < Constants.RETRY_COUNT){
+                        retryCount = Constants.RETRY_COUNT;
+                    }
                 }
                 if (sessionId != null) {
                     String path;
-                    if(!folderName.toUpperCase().equals(getResources().getString(R.string.app_name).toUpperCase())) {
+                    if (!folderName.toUpperCase().equals(getResources().getString(R.string.app_name).toUpperCase())) {
                         path = "/" + folderName + "/" + filename;
-                    }
-                    else{
+                    } else {
                         path = "/" + filename;
                     }
-                    Log.i(TAG, "Path = "+path);
+                    Log.i(TAG, "Path = " + path);
                     CommitInfo.Builder builder = CommitInfo.newBuilder(path);
                     builder.withAutorename(true);
                     builder.withMode(WriteMode.ADD);
                     builder.withMute(false);
-                    FileMetadata fileMetadata =
-                            dbxUserFilesRequests.uploadSessionFinish(uploadSessionCursor, builder.build()).uploadAndFinish(fileToUpload, bytesUploaded);
-                    Log.i(TAG, "Uploaded file MD getPathDisplay = "+fileMetadata.getPathDisplay());
-                    Log.i(TAG, "Uploaded file MD getId = "+fileMetadata.getId());
-                    Log.i(TAG, "Uploaded file MD getName = "+fileMetadata.getName());
-                    Log.i(TAG, "Uploaded file MD getSize = "+fileMetadata.getSize());
+                    UploadSessionFinishUploader uploadSessionFinishUploader = dbxUserFilesRequests.uploadSessionFinish(uploadSessionCursor, builder.build());
+                    Log.i(TAG, "Upload session finished");
+                    FileMetadata fileMetadata = uploadSessionFinishUploader.uploadAndFinish(fileToUpload, bytesUploaded);
+                    Log.i(TAG, "Uploaded file MD getPathDisplay = " + fileMetadata.getPathDisplay());
+                    Log.i(TAG, "Uploaded file MD getId = " + fileMetadata.getId());
+                    Log.i(TAG, "Uploaded file MD getName = " + fileMetadata.getName());
+                    Log.i(TAG, "Uploaded file MD getSize = " + fileMetadata.getSize());
                     Log.i(TAG, "Upload done");
                     success = true;
                 }
             } catch (DbxException e) {
-                Log.i(TAG, "DbxException = "+e.getMessage());
-                if(e.getMessage().contains("Unable to resolve host")) {
+                Log.i(TAG, "DbxException = " + e.getMessage());
+                if (e.getMessage().contains("Unable to resolve host")) {
                     showUploadErrorNotification();
+                }
+                else if(e.getMessage().contains("failed to connect")){
+                    showTimeoutErrorNotification();
                 }
                 success = false;
             } catch (FileNotFoundException e) {
@@ -277,7 +354,7 @@ public class DropboxUploadService extends Service {
                 success = false;
                 showFileErrorNotification();
             } catch (IOException e) {
-                Log.i(TAG, "IOException = "+e.getMessage());
+                Log.i(TAG, "IOException = " + e.getMessage());
                 success = false;
             } finally {
                 if(uploadSessionStartUploader != null) {
@@ -340,6 +417,16 @@ public class DropboxUploadService extends Service {
         mBuilder.setColor(getResources().getColor(R.color.uploadError));
         mBuilder.setContentText(getResources().getString(R.string.fileErrorMessage, filename));
         mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.fileErrorMessage, filename)));
+        mBuilder.setContentTitle(getResources().getString(R.string.autoUploadInterrupt, getResources().getString(R.string.dropbox)));
+        mBuilder.setSound(uploadNotification);
+        mBuilder.setPriority(NotificationCompat.PRIORITY_HIGH);
+        mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
+    }
+
+    public void showTimeoutErrorNotification(){
+        mBuilder.setColor(getResources().getColor(R.color.uploadError));
+        mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.timeoutError)));
+        mBuilder.setContentText(getResources().getString(R.string.timeoutErrorLess));
         mBuilder.setContentTitle(getResources().getString(R.string.autoUploadInterrupt, getResources().getString(R.string.dropbox)));
         mBuilder.setSound(uploadNotification);
         mBuilder.setPriority(NotificationCompat.PRIORITY_HIGH);
