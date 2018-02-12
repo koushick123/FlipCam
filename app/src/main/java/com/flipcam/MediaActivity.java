@@ -879,9 +879,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             showHr = hour+"";
         }
         if(eTime) {
-            Log.d(TAG, "getSecs = "+hashMapFrags.get(videoPos).getSeconds());
-            Log.d(TAG, "getMinutes = "+hashMapFrags.get(videoPos).getMinutes());
-            Log.d(TAG, "getHours = "+hashMapFrags.get(videoPos).getHours());
             startTime.setText(getResources().getString(R.string.START_TIME));
             endTime.setText(showHr + " : " + showMin + " : " + showSec);
         }

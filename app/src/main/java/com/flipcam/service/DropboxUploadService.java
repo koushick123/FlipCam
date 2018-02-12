@@ -225,8 +225,6 @@ public class DropboxUploadService extends Service {
                     cache = new byte[2000 * 1024];
                 }
                 long bytesUploaded = 0;
-                boolean retryUpload;
-                boolean sessionAppend = false;
                 UploadSessionCursor uploadSessionCursor = null;
                 while ((readSize = bufferedInputStream.read(cache, 0, cache.length)) != -1) {
                     if (!doesFileExist()) {
@@ -236,87 +234,29 @@ public class DropboxUploadService extends Service {
                         break;
                     }
                     Log.i(TAG, "Read " + readSize + " bytes");
-                    do {
-                        retryUpload = false;
-                        try {
-                            if (sessionId == null) {
-                                uploadSessionStartUploader = dbxUserFilesRequests.uploadSessionStart(false);
-                                uploadSessionStartResult = uploadSessionStartUploader.uploadAndFinish(new ByteArrayInputStream(cache), readSize);
-                                sessionId = uploadSessionStartResult.getSessionId();
-                                Log.i(TAG, "Obtained session id = " + sessionId);
-                                bytesUploaded = readSize;
-                                Log.i(TAG, "Uploaded " + readSize + " bytes");
-                            } else {
-                                if(retryCount < Constants.RETRY_COUNT) {
-                                    Log.i(TAG, "sessionAppend? = "+sessionAppend);
-                                    if(!sessionAppend) {
-                                        uploadSessionAppendV2Uploader = dbxUserFilesRequests.uploadSessionAppendV2(uploadSessionCursor, false);
-                                        sessionAppend = true;
-                                    }
-                                }
-                                else{
-                                    uploadSessionAppendV2Uploader = dbxUserFilesRequests.uploadSessionAppendV2(uploadSessionCursor, false);
-                                    sessionAppend = true;
-                                    Log.i(TAG, "Appended session");
-                                }
-                                uploadSessionAppendV2Uploader.uploadAndFinish(new ByteArrayInputStream(cache), readSize);
-                                bytesUploaded += readSize;
-                                Log.i(TAG, "Uploaded " + bytesUploaded + " bytes");
-                            }
-                            uploadSessionCursor = new UploadSessionCursor(sessionId, bytesUploaded);
-                            Bundle bundle = new Bundle();
-                            Message message = new Message();
-                            bundle.putLong("uploadSize", readSize);
-                            bundle.putLong("maxSize", randomAccessFile.length());
-                            bundle.putString("filename", uploadFile);
-                            message.setData(bundle);
-                            message.what = Constants.UPLOAD_PROGRESS;
-                            dropboxUploadHandler.sendMessage(message);
-                            sessionAppend = false;
-                        } catch (DbxException e) {
-                            Log.i(TAG, "DbxException inside inner loop = " + e.getMessage());
-                            if (e.getMessage().contains("Unable to resolve host") || e.getMessage().contains("closed")) {
-                                if (retryCount > 0) {
-                                    Log.i(TAG, "Retrying...." + retryCount);
-                                    mBuilder.setColor(getResources().getColor(R.color.uploadError));
-                                    mBuilder.setContentText(getResources().getString(R.string.connectionRetryLess));
-                                    mBuilder.setContentTitle(getResources().getString(R.string.errorTitle));
-                                    mBuilder.setPriority(NotificationCompat.PRIORITY_DEFAULT);
-                                    mBuilder.setSound(null);
-                                    mBuilder.setStyle(
-                                            new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.connectionRetry, Constants.RETRY_COUNT, retryCount)));
-                                    mNotificationManager.notify(Integer.parseInt(uploadId), mBuilder.build());
-                                    retryCount--;
-                                    retryUpload = true;
-                                    try {
-                                        Thread.sleep(1000);
-                                    } catch (InterruptedException e1) {
-                                        e1.printStackTrace();
-                                    }
-                                } else if (retryCount == 0) {
-                                    retryCount = Constants.RETRY_COUNT;
-                                    sessionId = null;
-                                    retryUpload = false;
-                                    Log.i(TAG, "Show Media ERROR = " + uploadId);
-                                    showUploadErrorNotification();
-                                    break;
-                                }
-                            }
-                            else if(e.getMessage().contains("failed to connect")){
-                                sessionId = null;
-                                retryUpload = false;
-                                showTimeoutErrorNotification();
-                                break;
-                            }
-                            success = false;
-                        }
-                    }while(retryUpload);
-                    if(!retryUpload && sessionId == null){
-                        break;
+                    if (sessionId == null) {
+                        uploadSessionStartUploader = dbxUserFilesRequests.uploadSessionStart(false);
+                        uploadSessionStartResult = uploadSessionStartUploader.uploadAndFinish(new ByteArrayInputStream(cache), readSize);
+                        sessionId = uploadSessionStartResult.getSessionId();
+                        Log.i(TAG, "Obtained session id = " + sessionId);
+                        bytesUploaded = readSize;
+                        Log.i(TAG, "Uploaded " + readSize + " bytes");
+                    } else {
+                        uploadSessionAppendV2Uploader = dbxUserFilesRequests.uploadSessionAppendV2(uploadSessionCursor, false);
+                        Log.i(TAG, "Appended session");
+                        uploadSessionAppendV2Uploader.uploadAndFinish(new ByteArrayInputStream(cache), readSize);
+                        bytesUploaded += readSize;
+                        Log.i(TAG, "Uploaded " + bytesUploaded + " bytes");
                     }
-                    if(retryCount < Constants.RETRY_COUNT){
-                        retryCount = Constants.RETRY_COUNT;
-                    }
+                    uploadSessionCursor = new UploadSessionCursor(sessionId, bytesUploaded);
+                    Bundle bundle = new Bundle();
+                    Message message = new Message();
+                    bundle.putLong("uploadSize", readSize);
+                    bundle.putLong("maxSize", randomAccessFile.length());
+                    bundle.putString("filename", uploadFile);
+                    message.setData(bundle);
+                    message.what = Constants.UPLOAD_PROGRESS;
+                    dropboxUploadHandler.sendMessage(message);
                 }
                 if (sessionId != null) {
                     String path;
