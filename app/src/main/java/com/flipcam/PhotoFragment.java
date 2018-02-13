@@ -7,7 +7,6 @@ import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.hardware.Camera;
 import android.hardware.SensorManager;
 import android.media.MediaMetadataRetriever;
 import android.os.Bundle;
@@ -319,12 +318,12 @@ public class PhotoFragment extends Fragment {
         if(!flashOn)
         {
             Log.d(TAG,"Flash on");
-            if(cameraView.isFlashModeSupported(Camera.Parameters.FLASH_MODE_TORCH)) {
+            if(cameraView.isFlashModeSupported(cameraView.getCameraImplementation().getFlashModeTorch())) {
                 flashOn = true;
                 flash.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_off));
             }
             else{
-                Toast.makeText(getActivity().getApplicationContext(),"Flash Mode " + Camera.Parameters.FLASH_MODE_TORCH + " not supported by this camera.",Toast.LENGTH_SHORT).show();
+                Toast.makeText(getActivity().getApplicationContext(),"Flash Mode " + cameraView.getCameraImplementation().getFlashModeTorch() + " not supported by this camera.",Toast.LENGTH_SHORT).show();
             }
         }
         else

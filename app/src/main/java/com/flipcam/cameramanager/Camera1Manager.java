@@ -485,4 +485,29 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
             }
         }
     }
+
+    @Override
+    public String getFocusModeAuto() {
+        return Camera.Parameters.FOCUS_MODE_AUTO;
+    }
+
+    @Override
+    public String getFlashModeOff() {
+        return Camera.Parameters.FLASH_MODE_OFF;
+    }
+
+    @Override
+    public String getFocusModeVideo() {
+        return Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO;
+    }
+
+    @Override
+    public String getFocusModePicture() {
+        return Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE;
+    }
+
+    @Override
+    public String getFlashModeTorch() {
+        return Camera.Parameters.FLASH_MODE_TORCH;
+    }
 }

@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Point;
 import android.graphics.SurfaceTexture;
-import android.hardware.Camera;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -131,8 +130,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     //Default display sizes in case windowManager is not able to return screen size.
     int measuredWidth = 800;
     int measuredHeight = 600;
-    String focusMode = Camera.Parameters.FOCUS_MODE_AUTO;
-    String flashMode = Camera.Parameters.FLASH_MODE_OFF;
+    String focusMode;
+    String flashMode;
     ImageButton flashBtn;
     VideoFragment videoFragment;
     PhotoFragment photoFragment;
@@ -156,6 +155,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         Log.d(TAG,"start cameraview");
         getHolder().addCallback(this);
         camera1 = Camera1Manager.getInstance();
+        focusMode = camera1.getFocusModeAuto();
+        flashMode = camera1.getFlashModeOff();
         mSensorManager = (SensorManager)getContext().getSystemService(SENSOR_SERVICE);
         mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
     }
@@ -340,6 +341,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         return camera1.zoomInOrOut(progress);
     }
 
+    public Camera1Manager getCameraImplementation(){
+        return camera1;
+    }
+
     public boolean isZoomSupported()
     {
         return camera1.isZoomSupported();
@@ -382,7 +387,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
 
     public boolean isFlashOn()
     {
-        if(camera1.getFlashMode() == null || camera1.getFlashMode().equalsIgnoreCase(Camera.Parameters.FLASH_MODE_OFF)){
+        if(camera1.getFlashMode() == null || camera1.getFlashMode().equalsIgnoreCase(camera1.getFlashModeOff())){
             return false;
         }
         else{
@@ -553,16 +558,16 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         this.seekBar.setMax(camera1.getMaxZoom());
         Log.d(TAG,"Setting max zoom = "+camera1.getMaxZoom());
         //Set the focus mode to continuous focus if recording in progress
-        if (this.videoFragment!=null && camera1.isFocusModeSupported(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO)) {
+        if (this.videoFragment!=null && camera1.isFocusModeSupported(camera1.getFocusModeVideo())) {
             Log.d(TAG, "Continuous AF");
-            camera1.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
+            camera1.setFocusMode(camera1.getFocusModeVideo());
         }
-        else if(this.photoFragment!=null && camera1.isFocusModeSupported(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)){
+        else if(this.photoFragment!=null && camera1.isFocusModeSupported(camera1.getFocusModePicture())){
             Log.d(TAG, "Continuous AF Picture");
-            camera1.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
+            camera1.setFocusMode(camera1.getFocusModePicture());
             this.photoFragment.setContinuousAF(true);
         }
-        else if(this.photoFragment!=null && !camera1.isFocusModeSupported(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)){
+        else if(this.photoFragment!=null && !camera1.isFocusModeSupported(camera1.getFocusModePicture())){
             Log.d(TAG, "Use Auto AF instead");
             this.photoFragment.setContinuousAF(false);
         }
@@ -579,22 +584,22 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             if(isSwitch){
                 isSwitch = false;
                 if(this.photoFragment.isFlashOn()){
-                    flashMode = Camera.Parameters.FLASH_MODE_TORCH;
+                    flashMode = camera1.getFlashModeTorch();
                 }
                 else{
-                    flashMode = Camera.Parameters.FLASH_MODE_OFF;
+                    flashMode = camera1.getFlashModeOff();
                 }
                 //Set the flash mode of previous camera
                 Log.d(TAG,"flashmode = "+flashMode);
                 if (camera1.isFlashModeSupported(flashMode)) {
-                    if (flashMode.equalsIgnoreCase(Camera.Parameters.FLASH_MODE_OFF)) {
+                    if (flashMode.equalsIgnoreCase(camera1.getFlashModeOff())) {
                         flashOnOff(false);
                         flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_on));
-                    } else if (flashMode.equalsIgnoreCase(Camera.Parameters.FLASH_MODE_TORCH)) {
+                    } else if (flashMode.equalsIgnoreCase(camera1.getFlashModeTorch())) {
                         flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_off));
                     }
                 } else {
-                    if (flashMode != null && !flashMode.equalsIgnoreCase(Camera.Parameters.FLASH_MODE_OFF)) {
+                    if (flashMode != null && !flashMode.equalsIgnoreCase(camera1.getFlashModeOff())) {
                         Toast.makeText(getContext(), "Flash Mode " + flashMode + " not supported by this camera.", Toast.LENGTH_SHORT).show();
                     }
                     flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_on));
@@ -602,7 +607,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             }
             else {
                 //If you are going out of app and coming back, or switching between phone and video modes, switch off flash.
-                flashMode = Camera.Parameters.FLASH_MODE_OFF;
+                flashMode = camera1.getFlashModeOff();
                 flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_on));
                 flashOnOff(false);
                 this.photoFragment.setFlashOn(false);
@@ -613,22 +618,22 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             if(isSwitch){
                 isSwitch = false;
                 if(this.videoFragment.isFlashOn()){
-                    flashMode = Camera.Parameters.FLASH_MODE_TORCH;
+                    flashMode = camera1.getFlashModeTorch();
                 }
                 else{
-                    flashMode = Camera.Parameters.FLASH_MODE_OFF;
+                    flashMode = camera1.getFlashModeOff();
                 }
                 //Set the flash mode of previous camera
                 if (camera1.isFlashModeSupported(flashMode)) {
-                    if (flashMode.equalsIgnoreCase(Camera.Parameters.FLASH_MODE_OFF)) {
+                    if (flashMode.equalsIgnoreCase(camera1.getFlashModeOff())) {
                         flashOnOff(false);
                         flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_on));
-                    } else if (flashMode.equalsIgnoreCase(Camera.Parameters.FLASH_MODE_TORCH)) {
+                    } else if (flashMode.equalsIgnoreCase(camera1.getFlashModeTorch())) {
                         flashOnOff(true);
                         flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_off));
                     }
                 } else {
-                    if (flashMode != null && !flashMode.equalsIgnoreCase(Camera.Parameters.FLASH_MODE_OFF)) {
+                    if (flashMode != null && !flashMode.equalsIgnoreCase(camera1.getFlashModeOff())) {
                         Toast.makeText(getContext(), "Flash Mode " + flashMode + " not supported by this camera.", Toast.LENGTH_SHORT).show();
                     }
                     flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_on));
@@ -636,7 +641,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             }
             else {
                 //If you are going out of app and coming back, or switching between phone and video modes, switch off flash.
-                flashMode = Camera.Parameters.FLASH_MODE_OFF;
+                flashMode = camera1.getFlashModeOff();
                 flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_on));
                 flashOnOff(false);
                 this.videoFragment.setFlashOn(false);
