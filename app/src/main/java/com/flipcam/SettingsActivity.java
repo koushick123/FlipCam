@@ -84,14 +84,12 @@ public class SettingsActivity extends AppCompatActivity{
     CheckBox switchOnDropbox;
     Dialog saveToCloud;
     TextView savetocloudtitle;
-    TextView savetocloudmsg;
     DriveClient mDriveClient;
     DriveResourceClient mDriveResourceClient;
     static final int REQUEST_CODE_SIGN_IN = 0;
     GoogleSignInOptions signInOptions;
     GoogleSignInClient googleSignInClient = null;
     boolean signedInDrive = false;
-    boolean signInDropbox = false;
     Dialog cloudUpload;
     View cloudUploadRoot;
     View signInProgressRoot;
@@ -119,6 +117,7 @@ public class SettingsActivity extends AppCompatActivity{
     DbxClientV2 dbxClientV2;
     DbxRequestConfig dbxRequestConfig;
     boolean goToDropbox = false;
+    CheckBox showMemoryConsumed;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -136,6 +135,7 @@ public class SettingsActivity extends AppCompatActivity{
         switchOnDropbox = (CheckBox) findViewById(R.id.switchOnDropbox);
         switchOnDrive = (CheckBox) findViewById(R.id.switchOnDrive);
         sdcardlayout = (LinearLayout)findViewById(R.id.sdcardlayout);
+        showMemoryConsumed = (CheckBox)findViewById(R.id.showMemoryConsumed);
         thresholdText.setText(getResources().getString(R.string.memoryThresholdLimit, getResources().getInteger(R.integer.minimumMemoryWarning) + "MB"));
         getSupportActionBar().setTitle(getResources().getString(R.string.settingTitle));
         settingsPref = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
@@ -235,6 +235,28 @@ public class SettingsActivity extends AppCompatActivity{
         else{
             switchOnDropbox.setChecked(false);
         }
+        //Show Memory Consumed
+        if(settingsPref.contains(Constants.SHOW_MEMORY_CONSUMED_MSG)){
+            if(settingsPref.getBoolean(Constants.SHOW_MEMORY_CONSUMED_MSG, false)){
+                showMemoryConsumed.setChecked(true);
+            }
+            else{
+                showMemoryConsumed.setChecked(false);
+            }
+        }
+        else{
+            showMemoryConsumed.setChecked(false);
+        }
+    }
+
+    public void checkShowMemoryConsumed(View view){
+        if(showMemoryConsumed.isChecked()){
+            settingsEditor.putBoolean(Constants.SHOW_MEMORY_CONSUMED_MSG, true);
+        }
+        else{
+            settingsEditor.putBoolean(Constants.SHOW_MEMORY_CONSUMED_MSG, false);
+        }
+        settingsEditor.commit();
     }
 
     public void openSdCardPath(View view){

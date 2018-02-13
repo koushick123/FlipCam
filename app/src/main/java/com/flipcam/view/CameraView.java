@@ -1207,7 +1207,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                     else if(previousTime == 0){
                         previousTime = System.currentTimeMillis();
                     }
-                    mainHandler.sendEmptyMessage(Constants.SHOW_MEMORY_CONSUMED);
+                    if(videoFragment.getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE).getBoolean(Constants.SHOW_MEMORY_CONSUMED_MSG, false)) {
+                        mainHandler.sendEmptyMessage(Constants.SHOW_MEMORY_CONSUMED);
+                    }
                     if (recordStop == -1) {
                         mediaRecorder.start();
                         recordStop = 1;

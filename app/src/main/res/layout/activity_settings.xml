@@ -307,7 +307,7 @@
         android:weightSum="1">
 
         <CheckBox
-            android:id="@+id/checkBox"
+            android:id="@+id/showMemoryConsumed"
             android:layout_width="match_parent"
             android:layout_height="@dimen/checkboxTextMsgHeight"
             android:layout_marginBottom="@dimen/checkboxMarginTopBottom"
@@ -317,6 +317,7 @@
             android:layout_weight="0.68"
             android:buttonTint="@color/turqoise"
             android:checked="true"
+            android:onClick="checkShowMemoryConsumed"
             android:paddingLeft="@dimen/headTextLeftMargin"
             android:text="@string/showMemConsumedMsg"
             android:textColor="@color/turqoise"

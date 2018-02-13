@@ -173,5 +173,7 @@
         \n\nDo you want to continue?</string>
     <string name="deleteMediaTitle">Remove Media</string>
     <string name="deleteMediaMsg">Deleting File...</string>
+    <string name="chooserTitleImage">Share Photo with</string>
+    <string name="chooserTitleVideo">Share Video with</string>
 </resources>
 

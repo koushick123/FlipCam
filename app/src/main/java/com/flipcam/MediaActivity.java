@@ -183,10 +183,10 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                     Log.d(TAG, "Apps exists");
                     Intent chooser;
                     if(isImage(medias[selectedPosition].getPath())){
-                        chooser = Intent.createChooser(shareIntent, "Share Photo with");
+                        chooser = Intent.createChooser(shareIntent, getResources().getString(R.string.chooserTitleImage));
                     }
                     else{
-                        chooser = Intent.createChooser(shareIntent, "Share Video with");
+                        chooser = Intent.createChooser(shareIntent, getResources().getString(R.string.chooserTitleVideo));
                     }
                     if (shareIntent.resolveActivity(getPackageManager()) != null) {
                         Log.d(TAG, "Start activity to choose");

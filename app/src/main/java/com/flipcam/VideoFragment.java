@@ -420,11 +420,17 @@ public class VideoFragment extends android.app.Fragment{
         memoryConsumed.setBackgroundColor(getResources().getColor(R.color.transparentBar));
         memoryConsumed.setText(getResources().getString(R.string.START_MEMORY));
         LinearLayout.LayoutParams memConsumed = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        memConsumed.setMargins(0,(int)getResources().getDimension(R.dimen.timeAndMemTopMargin),0,0);
-        memConsumed.weight=0.3f;
+        memConsumed.setMargins(0, (int) getResources().getDimension(R.dimen.timeAndMemTopMargin), 0, 0);
+        memConsumed.weight = 0.3f;
         memoryConsumed.setLayoutParams(memConsumed);
         settingsBar.addView(memoryConsumed);
         cameraView.setMemoryConsumedText(memoryConsumed);
+        if(getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE).getBoolean(Constants.SHOW_MEMORY_CONSUMED_MSG, false)) {
+            memoryConsumed.setVisibility(View.VISIBLE);
+        }
+        else{
+            memoryConsumed.setVisibility(View.INVISIBLE);
+        }
     }
 
     boolean flashOn=false;
