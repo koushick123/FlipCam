@@ -64,6 +64,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Set;
 
 import static com.flipcam.PermissionActivity.FC_MEDIA_PREFERENCE;
@@ -115,8 +116,147 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     ImageView playCircle;
     View deleteMediaRoot;
     View taskInProgressRoot;
+    View shareMediaRoot;
     LayoutInflater layoutInflater;
     Dialog taskAlert;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        Log.d(TAG,"onCreate");
+        setContentView(R.layout.activity_media);
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        WindowManager windowManager = (WindowManager)getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
+        display = windowManager.getDefaultDisplay();
+        screenSize=new Point();
+        display.getRealSize(screenSize);
+        getSupportActionBar().hide();
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        medias = MediaUtil.getMediaList(getApplicationContext());
+        mPager = (ViewPager) findViewById(R.id.mediaPager);
+        mPager.setOffscreenPageLimit(1);
+        mPagerAdapter = new MediaSlidePager(getSupportFragmentManager());
+        mPager.setAdapter(mPagerAdapter);
+        deleteMedia = (ImageButton)findViewById(R.id.deleteMedia);
+        deleteAlert = new Dialog(this);
+        deleteMedia.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view) {
+                Log.d(TAG,"Delete position = "+selectedPosition);
+                TextView deleteMsg = (TextView)deleteMediaRoot.findViewById(R.id.deleteMsg);
+                if(isImage(medias[selectedPosition].getPath())){
+                    deleteMsg.setText(getResources().getString(R.string.deleteMessage, getResources().getString(R.string.photo)));
+                }
+                else{
+                    deleteMsg.setText(getResources().getString(R.string.deleteMessage, getResources().getString(R.string.video)));
+                }
+                deleteAlert.setContentView(deleteMediaRoot);
+                deleteAlert.setCancelable(true);
+                deleteAlert.show();
+            }
+        });
+        noConnAlert = new Dialog(this);
+        videoControls = (LinearLayout)findViewById(R.id.videoControls);
+        pause = (ImageButton) findViewById(R.id.playButton);
+        shareMedia = (ImageButton)findViewById(R.id.shareMedia);
+        shareToFBAlert = new Dialog(this);
+        shareAlert = new Dialog(this);
+        logoutFB = new Dialog(this);
+        permissionFB = new Dialog(this);
+        appNotExist = new Dialog(this);
+        shareMedia.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Log.d(TAG,"Share position = "+selectedPosition);
+                Uri mediaUri = Uri.fromFile(new File(medias[selectedPosition].getPath()));
+                Intent shareIntent = new Intent();
+                shareIntent.setAction(Intent.ACTION_SEND);
+                shareIntent.putExtra(Intent.EXTRA_STREAM, mediaUri);
+                if(isImage(medias[selectedPosition].getPath())){
+                    shareIntent.setType("image/jpeg");
+                }
+                else{
+                    shareIntent.setType("video/mp4");
+                }
+                if(doesAppExistForIntent(shareIntent)){
+                    Log.d(TAG, "Apps exists");
+                    Intent chooser;
+                    if(isImage(medias[selectedPosition].getPath())){
+                        chooser = Intent.createChooser(shareIntent, "Share Photo with");
+                    }
+                    else{
+                        chooser = Intent.createChooser(shareIntent, "Share Video with");
+                    }
+                    if (shareIntent.resolveActivity(getPackageManager()) != null) {
+                        Log.d(TAG, "Start activity to choose");
+                        startActivity(chooser);
+                    }
+                }
+                else{
+                    TextView shareText = (TextView)shareMediaRoot.findViewById(R.id.shareText);
+                    if(isImage(medias[selectedPosition].getPath())) {
+                        shareText.setText(getResources().getString(R.string.shareMessage, getResources().getString(R.string.photo)));
+                    }
+                    else{
+                        shareText.setText(getResources().getString(R.string.shareMessage, getResources().getString(R.string.video)));
+                    }
+                    shareAlert.setContentView(shareMediaRoot);
+                    shareAlert.setCancelable(true);
+                    shareAlert.show();
+                }
+            }
+        });
+        startTime = (TextView)findViewById(R.id.startTime);
+        endTime = (TextView)findViewById(R.id.endTime);
+        videoSeek = (SeekBar)findViewById(R.id.videoSeek);
+        topMediaControls = (LinearLayout)findViewById(R.id.topMediaControls);
+        timeControls = (LinearLayout)findViewById(R.id.timeControls);
+        parentMedia = (LinearLayout)findViewById(R.id.parentMedia);
+        controlVisbilityPreference = (ControlVisbilityPreference)getApplicationContext();
+        noImage = (ImageView)findViewById(R.id.noImage);
+        noImageText = (TextView)findViewById(R.id.noImageText);
+        playCircle = (ImageView)findViewById(R.id.playVideo);
+        Log.d(TAG, "savedInstanceState = "+savedInstanceState);
+        if(savedInstanceState == null){
+            clearPreferences();
+            controlVisbilityPreference.setHideControl(true);
+            reDrawPause();
+            reDrawTopMediaControls();
+            if(isImage(medias[0].getPath())) {
+                removeVideoControls();
+                hidePlayForVideo();
+            }
+            else{
+                if(!controlVisbilityPreference.isHideControl()) {
+                    setupPlayForVideo(0);
+                    showPlayForVideo();
+                }
+            }
+        }
+        else{
+            selectedPosition = savedInstanceState.getInt("selectedPosition");
+            Log.d(TAG, "get selectedPosition = "+selectedPosition);
+            if(isImage(medias[selectedPosition].getPath())) {
+                removeVideoControls();
+                hidePlayForVideo();
+            }
+            else{
+                if(!controlVisbilityPreference.isHideControl()) {
+                    setupPlayForVideo(0);
+                    showPlayForVideo();
+                }
+            }
+        }
+        notifyIcon = BitmapFactory.decodeResource(getApplicationContext().getResources(),R.drawable.ic_launcher);
+        mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        queueNotification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+        layoutInflater = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        deleteMediaRoot = layoutInflater.inflate(R.layout.delete_media, null);
+        taskInProgressRoot = layoutInflater.inflate(R.layout.task_in_progress, null);
+        shareMediaRoot = layoutInflater.inflate(R.layout.share_media, null);
+        taskAlert = new Dialog(this);
+    }
 
     @Override
     protected void onStop() {
@@ -132,6 +272,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         else{
             clearPreferences();
         }
+        Log.d(TAG ,"selectedPosition = "+selectedPosition);
         hashMapFrags.get(selectedPosition).getMediaView().setVisibility(View.INVISIBLE);
     }
 
@@ -154,6 +295,15 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         pauseParams.gravity = Gravity.CENTER;
         pause.setScaleType(ImageView.ScaleType.CENTER_CROP);
         pause.setLayoutParams(pauseParams);
+    }
+
+    public void okToShare(View view){
+        shareAlert.dismiss();
+        shareToFacebook();
+    }
+
+    public void cancelShare(View view){
+        shareAlert.dismiss();
     }
 
     public void reDrawTopMediaControls(){
@@ -222,112 +372,9 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     }
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        Log.d(TAG,"onCreate");
-        setContentView(R.layout.activity_media);
-        DisplayMetrics displayMetrics = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-        WindowManager windowManager = (WindowManager)getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
-        display = windowManager.getDefaultDisplay();
-        screenSize=new Point();
-        display.getRealSize(screenSize);
-        getSupportActionBar().hide();
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        medias = MediaUtil.getMediaList(getApplicationContext());
-        mPager = (ViewPager) findViewById(R.id.mediaPager);
-        mPager.setOffscreenPageLimit(1);
-        mPagerAdapter = new MediaSlidePager(getSupportFragmentManager());
-        mPager.setAdapter(mPagerAdapter);
-        deleteMedia = (ImageButton)findViewById(R.id.deleteMedia);
-        deleteAlert = new Dialog(this);
-        deleteMedia.setOnClickListener(new View.OnClickListener(){
-            @Override
-            public void onClick(View view) {
-                Log.d(TAG,"Delete position = "+selectedPosition);
-                TextView deleteMsg = (TextView)deleteMediaRoot.findViewById(R.id.deleteMsg);
-                if(isImage(medias[selectedPosition].getPath())){
-                    deleteMsg.setText(getResources().getString(R.string.deleteMessage, getResources().getString(R.string.photo)));
-                }
-                else{
-                    deleteMsg.setText(getResources().getString(R.string.deleteMessage, getResources().getString(R.string.video)));
-                }
-                deleteAlert.setContentView(deleteMediaRoot);
-                deleteAlert.setCancelable(true);
-                deleteAlert.show();
-            }
-        });
-        noConnAlert = new Dialog(this);
-        videoControls = (LinearLayout)findViewById(R.id.videoControls);
-        pause = (ImageButton) findViewById(R.id.playButton);
-        shareMedia = (ImageButton)findViewById(R.id.shareMedia);
-        shareToFBAlert = new Dialog(this);
-        shareAlert = new Dialog(this);
-        logoutFB = new Dialog(this);
-        permissionFB = new Dialog(this);
-        appNotExist = new Dialog(this);
-        shareMedia.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Log.d(TAG,"Share position = "+selectedPosition);
-                shareAlert.setContentView(R.layout.share_media);
-                shareAlert.setCancelable(true);
-                shareAlert.show();
-            }
-        });
-        startTime = (TextView)findViewById(R.id.startTime);
-        endTime = (TextView)findViewById(R.id.endTime);
-        videoSeek = (SeekBar)findViewById(R.id.videoSeek);
-        topMediaControls = (LinearLayout)findViewById(R.id.topMediaControls);
-        timeControls = (LinearLayout)findViewById(R.id.timeControls);
-        parentMedia = (LinearLayout)findViewById(R.id.parentMedia);
-        controlVisbilityPreference = (ControlVisbilityPreference)getApplicationContext();
-        noImage = (ImageView)findViewById(R.id.noImage);
-        noImageText = (TextView)findViewById(R.id.noImageText);
-        playCircle = (ImageView)findViewById(R.id.playVideo);
-        Log.d(TAG, "savedInstanceState = "+savedInstanceState);
-        if(savedInstanceState == null){
-            clearPreferences();
-            controlVisbilityPreference.setHideControl(true);
-            reDrawPause();
-            reDrawTopMediaControls();
-            if(isImage(medias[0].getPath())) {
-                removeVideoControls();
-                hidePlayForVideo();
-            }
-            else{
-                if(!controlVisbilityPreference.isHideControl()) {
-                    setupPlayForVideo(0);
-                    showPlayForVideo();
-                }
-            }
-        }
-        else{
-            int position = savedInstanceState.getInt("selectedPosition");
-            if(isImage(medias[position].getPath())) {
-                removeVideoControls();
-                hidePlayForVideo();
-            }
-            else{
-                if(!controlVisbilityPreference.isHideControl()) {
-                    setupPlayForVideo(0);
-                    showPlayForVideo();
-                }
-            }
-        }
-        notifyIcon = BitmapFactory.decodeResource(getApplicationContext().getResources(),R.drawable.ic_launcher);
-        mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        queueNotification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-        layoutInflater = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        deleteMediaRoot = layoutInflater.inflate(R.layout.delete_media, null);
-        taskInProgressRoot = layoutInflater.inflate(R.layout.task_in_progress, null);
-        taskAlert = new Dialog(this);
-    }
-
-    @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        Log.d(TAG, "onSaveInstanceState");
+        Log.d(TAG, "onSaveInstanceState = "+selectedPosition);
         outState.putInt("selectedPosition",selectedPosition);
     }
 
@@ -362,7 +409,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         playCircle.setVisibility(View.GONE);
     }
 
-    public boolean isPackageExisted(Context c, String targetPackage) {
+    public boolean doesPackageExist(Context c, String targetPackage) {
         PackageManager pm = c.getPackageManager();
         try {
             PackageInfo info = pm.getPackageInfo(targetPackage, PackageManager.GET_META_DATA);
@@ -376,51 +423,12 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         return true;
     }
 
-    public void selectToShare(View view){
-        switch(view.getId()){
-            case R.id.facebookIcon:
-                Log.d(TAG,"Share to FACEBOOK");
-                if(!isPackageExisted(getApplicationContext(), getResources().getString(R.string.facebookPackage))){
-                    shareToFacebook();
-                }
-                else{
-                    Uri mediaUri = Uri.fromFile(new File(medias[selectedPosition].getPath()));
-                    Intent shareIntent = new Intent();
-                    shareIntent.setAction(Intent.ACTION_SEND);
-                    shareIntent.putExtra(Intent.EXTRA_STREAM, mediaUri);
-                    if(isImage(medias[selectedPosition].getPath())){
-                        shareIntent.setType("image/jpeg");
-                    }
-                    else{
-                        shareIntent.setType("video/mp4");
-                    }
-                    shareIntent.setPackage(getResources().getString(R.string.facebookPackage));
-                    startActivity(shareIntent);
-                }
-                break;
-            case R.id.whatsappIcon:
-                Log.d(TAG,"Share to WHATSAPP");
-                if(!isPackageExisted(getApplicationContext(), getResources().getString(R.string.whatsappPackage))){
-                    appNotExist.setContentView(R.layout.app_not_exist);
-                    appNotExist.setCancelable(true);
-                    appNotExist.show();
-                }
-                else {
-                    Uri mediaUri = Uri.fromFile(new File(medias[selectedPosition].getPath()));
-                    Intent shareIntent = new Intent();
-                    shareIntent.setAction(Intent.ACTION_SEND);
-                    shareIntent.putExtra(Intent.EXTRA_STREAM, mediaUri);
-                    if (isImage(medias[selectedPosition].getPath())) {
-                        shareIntent.setType("image/jpeg");
-                    } else {
-                        shareIntent.setType("video/mp4");
-                    }
-                    shareIntent.setPackage(getResources().getString(R.string.whatsappPackage));
-                    startActivity(shareIntent);
-                }
-                break;
-        }
-        shareAlert.dismiss();
+    public boolean doesAppExistForIntent(Intent shareIntent){
+        PackageManager packageManager = getPackageManager();
+        List activities = packageManager.queryIntentActivities(shareIntent, PackageManager.MATCH_DEFAULT_ONLY);
+        Log.d(TAG, "No of activities that can share = "+activities.size());
+        boolean isIntentSafe = activities.size() > 0;
+        return isIntentSafe;
     }
 
     public void okToClose(View view){
