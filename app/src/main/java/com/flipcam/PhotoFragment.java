@@ -452,6 +452,7 @@ public class PhotoFragment extends Fragment {
     public void onDetach() {
         super.onDetach();
         Log.d(TAG,"Detached");
+        settingsBar.removeAllViews();
     }
 
     @Override

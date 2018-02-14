@@ -353,7 +353,7 @@ public class VideoFragment extends android.app.Fragment{
             }
         }
         LinearLayout.LayoutParams flashParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        flashParams.weight=0.5f;
+        flashParams.weight=1f;
         flashParams.height = (int)getResources().getDimension(R.dimen.flashOnHeight);
         flashParams.width = (int)getResources().getDimension(R.dimen.flashOnWidth);
         flashParams.setMargins((int)getResources().getDimension(R.dimen.flashOnLeftMargin),0,0,0);
@@ -368,7 +368,7 @@ public class VideoFragment extends android.app.Fragment{
             }
         });
         cameraView.setFlashButton(flash);
-        flashParentLayout.removeAllViews();
+        flashParentLayout.removeView(flash);
         timeElapsedParentLayout.removeAllViews();
         memoryConsumedParentLayout.removeAllViews();
         flashParentLayout.setLayoutParams(parentLayoutParams);
@@ -376,7 +376,7 @@ public class VideoFragment extends android.app.Fragment{
         memoryConsumedParentLayout.setLayoutParams(parentLayoutParams);
         flashParentLayout.addView(flash);
         settingsBar.addView(flashParentLayout);
-        timeElapsedParentLayout.setBackgroundColor(getResources().getColor(R.color.colorAccent));
+        //timeElapsedParentLayout.setBackgroundColor(getResources().getColor(R.color.colorAccent));
         timeElapsedParentLayout.setGravity(Gravity.CENTER);
         timeElapsedParentLayout.addView(modeLayout);
         settingsBar.addView(timeElapsedParentLayout);
@@ -393,6 +393,9 @@ public class VideoFragment extends android.app.Fragment{
         /*settingsBar.removeView(settings);
         settingsBar.removeView(modeLayout);*/
         settingsBar.removeAllViews();
+        flashParentLayout.removeAllViews();
+        timeElapsedParentLayout.removeAllViews();
+        memoryConsumedParentLayout.removeAllViews();
         settingsBar.setWeightSum(3);
         flashParentLayout.setLayoutParams(parentLayoutParams);
         if(cameraView.isFlashOn()) {
@@ -409,7 +412,7 @@ public class VideoFragment extends android.app.Fragment{
             }
         });
         LinearLayout.LayoutParams flashParam = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        flashParam.weight=0.3f;
+        flashParam.weight=1f;
         flashParam.setMargins(0,(int)getResources().getDimension(R.dimen.flashOnTopMargin),0,0);
         flashParam.width = (int)getResources().getDimension(R.dimen.flashOnWidth);
         flashParam.height = (int)getResources().getDimension(R.dimen.flashOnHeight);
