@@ -65,6 +65,10 @@ public class VideoFragment extends android.app.Fragment{
     TextView mode;
     OrientationEventListener orientationEventListener;
     int orientation = -1;
+    LinearLayout flashParentLayout;
+    LinearLayout timeElapsedParentLayout;
+    LinearLayout memoryConsumedParentLayout;
+    LinearLayout.LayoutParams parentLayoutParams;
 
     public VideoFragment() {
         // Required empty public constructor
@@ -83,9 +87,6 @@ public class VideoFragment extends android.app.Fragment{
         void switchToPhoto();
     }
 
-    public interface StartUploadService{
-        void startAutoUpload(String filename);
-    }
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
@@ -206,6 +207,11 @@ public class VideoFragment extends android.app.Fragment{
                 }
             }
         };
+        flashParentLayout = new LinearLayout(getActivity());
+        timeElapsedParentLayout = new LinearLayout(getActivity());
+        memoryConsumedParentLayout = new LinearLayout(getActivity());
+        parentLayoutParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+        parentLayoutParams.weight = 1;
         return view;
     }
 
@@ -236,8 +242,8 @@ public class VideoFragment extends android.app.Fragment{
             @Override
             public void onClick(View view) {
                 cameraView.record();
-                showRecordAndThumbnail();
                 showRecordSaved();
+                showRecordAndThumbnail();
                 SharedPreferences sharedPreferences = getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
                 if(sharedPreferences.getBoolean(Constants.SAVE_TO_GOOGLE_DRIVE, false)) {
                     Log.d(TAG, "Auto uploading to Google Drive");
@@ -362,9 +368,20 @@ public class VideoFragment extends android.app.Fragment{
             }
         });
         cameraView.setFlashButton(flash);
-        settingsBar.addView(flash);
-        settingsBar.addView(modeLayout);
-        settingsBar.addView(settings);
+        flashParentLayout.removeAllViews();
+        timeElapsedParentLayout.removeAllViews();
+        memoryConsumedParentLayout.removeAllViews();
+        flashParentLayout.setLayoutParams(parentLayoutParams);
+        timeElapsedParentLayout.setLayoutParams(parentLayoutParams);
+        memoryConsumedParentLayout.setLayoutParams(parentLayoutParams);
+        flashParentLayout.addView(flash);
+        settingsBar.addView(flashParentLayout);
+        timeElapsedParentLayout.setBackgroundColor(getResources().getColor(R.color.colorAccent));
+        timeElapsedParentLayout.setGravity(Gravity.CENTER);
+        timeElapsedParentLayout.addView(modeLayout);
+        settingsBar.addView(timeElapsedParentLayout);
+        memoryConsumedParentLayout.addView(settings);
+        settingsBar.addView(memoryConsumedParentLayout);
         modeText.setText(getResources().getString(R.string.VIDEO_MODE));
         settingsBar.setBackgroundColor(getResources().getColor(R.color.settingsBarColor));
         flash.setBackgroundColor(getResources().getColor(R.color.settingsBarColor));
@@ -373,8 +390,11 @@ public class VideoFragment extends android.app.Fragment{
     public void hideSettingsBarAndIcon()
     {
         settingsBar.setBackgroundColor(getResources().getColor(R.color.transparentBar));
-        settingsBar.removeView(settings);
-        settingsBar.removeView(modeLayout);
+        /*settingsBar.removeView(settings);
+        settingsBar.removeView(modeLayout);*/
+        settingsBar.removeAllViews();
+        settingsBar.setWeightSum(3);
+        flashParentLayout.setLayoutParams(parentLayoutParams);
         if(cameraView.isFlashOn()) {
             flash.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_off));
         }
@@ -397,6 +417,8 @@ public class VideoFragment extends android.app.Fragment{
         flash.setLayoutParams(flashParam);
         flash.setBackgroundColor(getResources().getColor(R.color.transparentBar));
         cameraView.setFlashButton(flash);
+        flashParentLayout.addView(flash);
+        settingsBar.addView(flashParentLayout);
 
         //Add time elapsed text
         timeElapsed = new TextView(getActivity());
@@ -409,8 +431,11 @@ public class VideoFragment extends android.app.Fragment{
         timeElapParam.setMargins(0,(int)getResources().getDimension(R.dimen.timeAndMemTopMargin),0,0);
         timeElapParam.weight=0.3f;
         timeElapsed.setLayoutParams(timeElapParam);
-        settingsBar.addView(timeElapsed);
+        //settingsBar.addView(timeElapsed);
         cameraView.setTimeElapsedText(timeElapsed);
+        timeElapsedParentLayout.setLayoutParams(parentLayoutParams);
+        timeElapsedParentLayout.addView(timeElapsed);
+        settingsBar.addView(timeElapsedParentLayout);
 
         //Add memory consumed text
         memoryConsumed = new TextView(getActivity());
@@ -423,7 +448,10 @@ public class VideoFragment extends android.app.Fragment{
         memConsumed.setMargins(0, (int) getResources().getDimension(R.dimen.timeAndMemTopMargin), 0, 0);
         memConsumed.weight = 0.3f;
         memoryConsumed.setLayoutParams(memConsumed);
-        settingsBar.addView(memoryConsumed);
+        //settingsBar.addView(memoryConsumed);
+        memoryConsumedParentLayout.setLayoutParams(parentLayoutParams);
+        memoryConsumedParentLayout.addView(memoryConsumed);
+        settingsBar.addView(memoryConsumedParentLayout);
         cameraView.setMemoryConsumedText(memoryConsumed);
         if(getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE).getBoolean(Constants.SHOW_MEMORY_CONSUMED_MSG, false)) {
             memoryConsumed.setVisibility(View.VISIBLE);

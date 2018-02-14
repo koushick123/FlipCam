@@ -572,11 +572,17 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             this.photoFragment.setContinuousAF(false);
         }
         LinearLayout.LayoutParams flashParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,LinearLayout.LayoutParams.WRAP_CONTENT);
-        flashParams.weight=0.5f;
-        flashParams.height = (int)getResources().getDimension(R.dimen.flashOnHeight);
-        flashParams.width = (int)getResources().getDimension(R.dimen.flashOnWidth);
-        flashParams.setMargins((int)getResources().getDimension(R.dimen.flashOnLeftMargin),0,0,0);
-        flashParams.gravity= Gravity.CENTER;
+        if(isRecord){
+            flashParams.setMargins(0,(int)getResources().getDimension(R.dimen.flashOnLeftMargin),0,0);
+            flashParams.weight=0.3f;
+        }
+        else{
+            flashParams.setMargins((int)getResources().getDimension(R.dimen.flashOnLeftMargin),0,0,0);
+            flashParams.weight=0.5f;
+            flashParams.gravity= Gravity.CENTER;
+        }
+        flashParams.height = (int) getResources().getDimension(R.dimen.flashOnHeight);
+        flashParams.width = (int) getResources().getDimension(R.dimen.flashOnWidth);
         flashBtn.setScaleType(ImageView.ScaleType.FIT_CENTER);
         flashBtn.setLayoutParams(flashParams);
         if(this.photoFragment!=null){
