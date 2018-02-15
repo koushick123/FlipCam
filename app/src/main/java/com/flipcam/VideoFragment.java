@@ -37,7 +37,6 @@ import java.io.File;
 import static android.widget.Toast.makeText;
 import static com.facebook.FacebookSdk.getApplicationContext;
 import static com.flipcam.PermissionActivity.FC_SHARED_PREFERENCE;
-import static com.flipcam.R.id.modeInfo;
 
 
 public class VideoFragment extends android.app.Fragment{
@@ -104,7 +103,7 @@ public class VideoFragment extends android.app.Fragment{
             }
         });
         cameraView.setFlashButton(flash);
-        modeText = (TextView)getActivity().findViewById(modeInfo);
+        modeText = (TextView)getActivity().findViewById(R.id.modeInfo);
         modeLayout = (LinearLayout)getActivity().findViewById(R.id.modeLayout);
         permissionInterface = (PermissionInterface)getActivity();
         switchInterface = (SwitchInterface)getActivity();
@@ -343,6 +342,9 @@ public class VideoFragment extends android.app.Fragment{
         videoBar.addView(photoMode);
         videoBar.addView(thumbnail);
         settingsBar.removeAllViews();
+        flashParentLayout.removeAllViews();
+        timeElapsedParentLayout.removeAllViews();
+        memoryConsumedParentLayout.removeAllViews();
         if(cameraView.isCameraReady()) {
             if (cameraView.isFlashOn()) {
                 flash.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_off));
@@ -366,20 +368,9 @@ public class VideoFragment extends android.app.Fragment{
             }
         });
         cameraView.setFlashButton(flash);
-        flashParentLayout.removeAllViews();
-        timeElapsedParentLayout.removeAllViews();
-        memoryConsumedParentLayout.removeAllViews();
-        flashParentLayout.setLayoutParams(parentLayoutParams);
-        timeElapsedParentLayout.setLayoutParams(parentLayoutParams);
-        memoryConsumedParentLayout.setLayoutParams(parentLayoutParams);
-        flashParentLayout.addView(flash);
-        settingsBar.addView(flashParentLayout);
-        //timeElapsedParentLayout.setBackgroundColor(getResources().getColor(R.color.colorAccent));
-        timeElapsedParentLayout.setGravity(Gravity.CENTER);
-        timeElapsedParentLayout.addView(modeLayout);
-        settingsBar.addView(timeElapsedParentLayout);
-        memoryConsumedParentLayout.addView(settings);
-        settingsBar.addView(memoryConsumedParentLayout);
+        settingsBar.addView(flash);
+        settingsBar.addView(modeLayout);
+        settingsBar.addView(settings);
         modeText.setText(getResources().getString(R.string.VIDEO_MODE));
         settingsBar.setBackgroundColor(getResources().getColor(R.color.settingsBarColor));
         flash.setBackgroundColor(getResources().getColor(R.color.settingsBarColor));
