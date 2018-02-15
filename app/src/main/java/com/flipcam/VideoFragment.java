@@ -62,7 +62,6 @@ public class VideoFragment extends android.app.Fragment{
     ImageView imagePreview;
     TextView modeText;
     LinearLayout modeLayout;
-    TextView mode;
     OrientationEventListener orientationEventListener;
     int orientation = -1;
     LinearLayout flashParentLayout;
@@ -107,7 +106,6 @@ public class VideoFragment extends android.app.Fragment{
         cameraView.setFlashButton(flash);
         modeText = (TextView)getActivity().findViewById(modeInfo);
         modeLayout = (LinearLayout)getActivity().findViewById(R.id.modeLayout);
-        mode = (TextView)getActivity().findViewById(R.id.mode);
         permissionInterface = (PermissionInterface)getActivity();
         switchInterface = (SwitchInterface)getActivity();
     }
@@ -368,7 +366,7 @@ public class VideoFragment extends android.app.Fragment{
             }
         });
         cameraView.setFlashButton(flash);
-        flashParentLayout.removeView(flash);
+        flashParentLayout.removeAllViews();
         timeElapsedParentLayout.removeAllViews();
         memoryConsumedParentLayout.removeAllViews();
         flashParentLayout.setLayoutParams(parentLayoutParams);

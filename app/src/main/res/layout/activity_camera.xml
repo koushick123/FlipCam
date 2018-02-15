@@ -40,25 +40,14 @@
             >
 
             <TextView
-                android:id="@+id/mode"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:background="@color/modeText"
-                android:layout_marginBottom="@dimen/modeBottomMargin"
-                android:layout_marginTop="@dimen/modeTopMargin"
-                android:text="@string/MODE"
-                android:textSize="@dimen/modeTextSize"
-                android:textColor="@color/settingsBarColor" />
-
-            <TextView
                 android:id="@+id/modeInfo"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
                 android:layout_marginBottom="@dimen/modeInfoBottomMargin"
+                android:background="@color/modeText"
                 android:text="@string/VIDEO_MODE"
-                android:textColor="@color/modeColor" />
+                android:textColor="@color/settingsBarColor" />
         </LinearLayout>
 
         <ImageButton
