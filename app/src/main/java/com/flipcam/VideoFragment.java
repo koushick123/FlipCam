@@ -342,6 +342,7 @@ public class VideoFragment extends android.app.Fragment{
         videoBar.addView(photoMode);
         videoBar.addView(thumbnail);
         settingsBar.removeAllViews();
+        settingsBar.setWeightSum(0);
         flashParentLayout.removeAllViews();
         timeElapsedParentLayout.removeAllViews();
         memoryConsumedParentLayout.removeAllViews();
@@ -353,7 +354,7 @@ public class VideoFragment extends android.app.Fragment{
             }
         }
         LinearLayout.LayoutParams flashParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        flashParams.weight=1f;
+        flashParams.weight = 0.5f;
         flashParams.height = (int)getResources().getDimension(R.dimen.flashOnHeight);
         flashParams.width = (int)getResources().getDimension(R.dimen.flashOnWidth);
         flashParams.setMargins((int)getResources().getDimension(R.dimen.flashOnLeftMargin),0,0,0);
@@ -367,8 +368,8 @@ public class VideoFragment extends android.app.Fragment{
                 setFlash();
             }
         });
-        cameraView.setFlashButton(flash);
         settingsBar.addView(flash);
+        cameraView.setFlashButton(flash);
         settingsBar.addView(modeLayout);
         settingsBar.addView(settings);
         modeText.setText(getResources().getString(R.string.VIDEO_MODE));
