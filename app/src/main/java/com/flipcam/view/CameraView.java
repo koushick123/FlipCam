@@ -2,6 +2,7 @@ package com.flipcam.view;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Point;
 import android.graphics.SurfaceTexture;
@@ -1149,24 +1150,49 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         }
 
         public String getFilePath(boolean video) {
+            String path;
+            SharedPreferences sharedPreferences;
+            if(video)
+            {
+                sharedPreferences = videoFragment.getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
+            }
+            else
+            {
+                sharedPreferences = photoFragment.getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
+            }
+            if(sharedPreferences.contains(Constants.SAVE_MEDIA_PHONE_MEM))
+            {
+                if(sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
+                    path = fetchPhoneMemoryPath(video);
+                }
+                else{
+                    path = sharedPreferences.getString(Constants.SD_CARD_PATH, "");
+                    Log.d(TAG, "SD Card Path = "+path);
+                }
+            }
+            else {
+                path = fetchPhoneMemoryPath(video);
+            }
+            return path;
+        }
+
+        public String fetchPhoneMemoryPath(boolean video){
+            String phonePath;
             File dcim;
             dcim = getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + getResources().getString(R.string.FC_ROOT));
-            if(!dcim.exists())
-            {
+            if (!dcim.exists()) {
                 dcim.mkdirs();
             }
             SimpleDateFormat sdf = new SimpleDateFormat(getResources().getString(R.string.DATE_FORMAT_FOR_FILE));
             String filename = sdf.format(new Date());
-            Log.d(TAG,"filename = "+filename);
-            String path;
-            if(video) {
-                path = dcim.getPath() + getResources().getString(R.string.FC_VID_PREFIX) + filename + getResources().getString(R.string.VID_EXT);
+            Log.d(TAG, "filename = " + filename);
+            if (video) {
+                phonePath = dcim.getPath() + getResources().getString(R.string.FC_VID_PREFIX) + filename + getResources().getString(R.string.VID_EXT);
+            } else {
+                phonePath = dcim.getPath() + getResources().getString(R.string.FC_IMG_PREFIX) + filename + getResources().getString(R.string.IMG_EXT);
             }
-            else{
-                path = dcim.getPath() + getResources().getString(R.string.FC_IMG_PREFIX) + filename + getResources().getString(R.string.IMG_EXT);
-            }
-            Log.d(TAG,"Saving media file at = "+path);
-            return path;
+            Log.d(TAG, "Saving media file at = " + phonePath);
+            return phonePath;
         }
 
         void drawFrame()
