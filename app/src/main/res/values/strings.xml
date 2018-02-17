@@ -107,7 +107,7 @@
     <string name="sdCardPathNotExist">The SD Card Path does not exist or is invalid. Please try again.</string>
     <string name="sdCardPathSaved">SD Card Path Saved.</string>
     <string name="phoneMemoryLimitHeading">Phone Memory Limit Warning</string>
-    <string name="memoryThreshold">If the amount of available phone memory is below this limit, FlipCam will give you a warning message.\n\nThis could be anytime during video recording, or before
+    <string name="memoryThreshold">If the amount of available phone memory is below this limit, FlipCam will give you a warning message before
     you start to shoot a video/photo.</string>
     <string name="memoryThreasholdTitle">Phone Memory Threshold</string>
     <string name="validValuesThreshold"><font size="12">Threshold value should be\n greater than 0</font></string>
@@ -115,6 +115,7 @@
     <string name="thresholdSaved">Phone memory threshold set to %1$s %2$s.</string>
     <string name="disableThreshold">Disable Threshold Check</string>
     <string name="thresholdExceeds">The threshold entered is the same or more than the internal storage (%1$s %2$s) of your phone. Please enter a lower value.</string>
+    <string name="thresholdLowerThanMinimum">The threshold value cannot be lower than %1$s. Please enter a higher value.</string>
     <string name="saveToCloudTitle">Sign in to %1$s</string>
     <string name="continuesignin">CONTINUE</string>
     <string name="notnowsignin">NOT NOW</string>
@@ -175,5 +176,9 @@
     <string name="deleteMediaMsg">Deleting File...</string>
     <string name="chooserTitleImage">Share Photo with</string>
     <string name="chooserTitleVideo">Share Video with</string>
+    <string name="thresholdLimitExceededTitle">Phone Memory Limit Exceeded</string>
+    <string name="thresholdLimitExceededMsg">The available Phone Memory is below the threshold of %1$s.\n\nClick OK to continue.</string>
+    <string name="minimumThresholdExceeded">The available Phone Memory is below %1$s.\n\nYou need to free some space before you can continue to record video/photo.</string>
+    <string name="minimumThresholdDisabled">Minimum Threshold Check disabled. Please go to Settings to enable.</string>
 </resources>
 

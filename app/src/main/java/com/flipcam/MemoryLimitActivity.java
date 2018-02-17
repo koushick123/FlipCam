@@ -251,6 +251,26 @@ public class MemoryLimitActivity extends AppCompatActivity {
         }
     }
 
+    public boolean checkIfHigherThanDefaultThreshold(){
+        int defaultThreshold = getResources().getInteger(R.integer.minimumMemoryWarning);
+        int threshold = Integer.parseInt(memoryThresholdText.getText().toString());
+        long thresholdMem;
+        if(mbButton.isChecked()){
+            thresholdMem = (long)MEGA_BYTE * threshold;
+            Log.d(TAG,"checkIfHigherThanDefault MB = "+thresholdMem );
+        }
+        else{
+            thresholdMem = (long)GIGA_BYTE * threshold;
+            Log.d(TAG,"checkIfHigherThanDefault GB = "+thresholdMem );
+        }
+        if(thresholdMem < (defaultThreshold * MEGA_BYTE)){
+            return false;
+        }
+        else {
+            return true;
+        }
+    }
+
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         Log.d(TAG, "onSaveInstanceState");
@@ -270,14 +290,21 @@ public class MemoryLimitActivity extends AppCompatActivity {
         } else {
             if (validateThreshold()) {
                 if (calculateIfThresholdIsWithinInternalMemory()) {
-                    super.onBackPressed();
-                    settingsEditor.putString(Constants.PHONE_MEMORY_LIMIT, memoryThresholdText.getText().toString());
-                    settingsEditor.putString(Constants.PHONE_MEMORY_METRIC, mbSelect ? "MB" : "GB");
-                    settingsEditor.putBoolean(Constants.PHONE_MEMORY_DISABLE, false);
-                    settingsEditor.commit();
-                    overridePendingTransition(R.anim.slide_from_left, R.anim.slide_to_right);
-                    Toast.makeText(getApplicationContext(), getResources().getString(R.string.thresholdSaved, memoryThresholdText.getText().toString(), mbSelect ? "MB" : "GB"),
-                            Toast.LENGTH_SHORT).show();
+                    if(checkIfHigherThanDefaultThreshold()) {
+                        super.onBackPressed();
+                        settingsEditor.putString(Constants.PHONE_MEMORY_LIMIT, memoryThresholdText.getText().toString());
+                        settingsEditor.putString(Constants.PHONE_MEMORY_METRIC, mbSelect ? "MB" : "GB");
+                        settingsEditor.putBoolean(Constants.PHONE_MEMORY_DISABLE, false);
+                        settingsEditor.commit();
+                        overridePendingTransition(R.anim.slide_from_left, R.anim.slide_to_right);
+                        Toast.makeText(getApplicationContext(), getResources().getString(R.string.thresholdSaved, memoryThresholdText.getText().toString(), mbSelect ? "MB" : "GB"),
+                                Toast.LENGTH_SHORT).show();
+                    }
+                    else{
+                        Toast.makeText(getApplicationContext(), getResources().getString(R.string.thresholdLowerThanMinimum,getResources().getInteger(R.integer.minimumMemoryWarning)+" "+
+                                getResources().getString(R.string.MEM_PF_MB)),
+                                Toast.LENGTH_LONG).show();
+                    }
                 }
                 else{
                     Toast.makeText(getApplicationContext(), getResources().getString(R.string.thresholdExceeds,memory,memorymetric), Toast.LENGTH_LONG).show();

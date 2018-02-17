@@ -206,9 +206,7 @@ public class SettingsActivity extends AppCompatActivity{
             }
         }
         else{
-            String memoryLimit = settingsPref.getString(Constants.PHONE_MEMORY_LIMIT, getResources().getInteger(R.integer.minimumMemoryWarning) + "");
-            String memoryMetric = settingsPref.getString(Constants.PHONE_MEMORY_METRIC, "MB");
-            thresholdText.setText(getResources().getString(R.string.memoryThresholdLimit, Integer.parseInt(memoryLimit) + " " + memoryMetric));
+            thresholdText.setText(getResources().getString(R.string.memoryThresholdLimit, getResources().getString(R.string.phoneMemoryLimitDisabled)));
         }
         //Update Auto upload
         //Google Drive

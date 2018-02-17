@@ -26,7 +26,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:paddingLeft="10dp"
-            android:text="@string/noConnectionTitle"
+            android:text="@string/thresholdLimitExceededTitle"
             android:textAlignment="center"
             android:textColor="@color/mediaControlColor"
             android:textStyle="bold" />
@@ -46,28 +46,50 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal">
 
-        <ImageView
-            android:id="@+id/imageView2"
-            android:layout_width="70dp"
-            android:layout_height="60dp"
-            android:layout_marginLeft="20dp"
-            android:layout_marginTop="25dp"
-            android:layout_weight="0.20"
-            app:srcCompat="@drawable/ic_warning" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <ImageView
+                android:id="@+id/imageView2"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:layout_marginLeft="20dp"
+                android:layout_weight="0.20"
+                app:srcCompat="@drawable/ic_warning" />
+        </LinearLayout>
 
         <TextView
-            android:id="@+id/textView3"
+            android:id="@+id/memoryLimitMsg"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:layout_marginLeft="@dimen/noConnMsgLeftAndRightMargin"
-            android:layout_marginRight="@dimen/noConnMsgLeftAndRightMargin"
+            android:layout_marginLeft="20dp"
+            android:layout_marginRight="20dp"
             android:layout_weight="1"
-            android:paddingBottom="@dimen/noConnMsgTopAndBottomPadding"
-            android:paddingTop="@dimen/noConnMsgTopAndBottomPadding"
-            android:text="@string/noConnectionMessage"
+            android:paddingBottom="25dp"
+            android:paddingTop="25dp"
+            android:text="@string/thresholdLimitExceededMsg"
             android:textColor="@color/turqoise"
             android:textStyle="bold" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp"
+        android:gravity="center"
+        android:orientation="horizontal">
+
+        <CheckBox
+            android:id="@+id/disableThreshold"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/disableThreshold"
+            android:textColor="@color/turqoise"
+            app:buttonTint="@color/turqoise" />
     </LinearLayout>
 
     <LinearLayout
