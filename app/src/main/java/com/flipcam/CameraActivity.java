@@ -31,7 +31,6 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.d(TAG,"onCreate");
-        checkIfPhoneMemoryIsBelowLowestThreshold();
         setContentView(R.layout.activity_camera);
         getSupportActionBar().hide();
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
@@ -55,39 +54,6 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
     @Override
     public void switchToVideo() {
         showVideoFragment();
-    }
-
-    public void checkIfPhoneMemoryIsBelowLowestThreshold(){
-        SharedPreferences sharedPreferences = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
-        if(sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
-            StatFs storageStat = new StatFs(Environment.getDataDirectory().getPath());
-            int lowestThreshold = getResources().getInteger(R.integer.minimumMemoryWarning);
-            long lowestMemory = lowestThreshold * (long)Constants.MEGA_BYTE;
-            Log.d(TAG, "lowestMemory = "+lowestMemory);
-            Log.d(TAG, "avail mem = "+storageStat.getAvailableBytes());
-            if(storageStat.getAvailableBytes() < lowestMemory){
-                LayoutInflater layoutInflater = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-                View thresholdExceededRoot = layoutInflater.inflate(R.layout.threshold_exceeded, null);
-                final Dialog thresholdDialog = new Dialog(this);
-                TextView memoryLimitMsg = (TextView)thresholdExceededRoot.findViewById(R.id.memoryLimitMsg);
-                StringBuilder minimumThreshold = new StringBuilder(lowestThreshold+"");
-                minimumThreshold.append(" ");
-                minimumThreshold.append(getResources().getString(R.string.MEM_PF_MB));
-                memoryLimitMsg.setText(getResources().getString(R.string.minimumThresholdExceeded, minimumThreshold));
-                CheckBox disableThreshold = (CheckBox)thresholdExceededRoot.findViewById(R.id.disableThreshold);
-                disableThreshold.setVisibility(View.GONE);
-                Button okButton = (Button)thresholdExceededRoot.findViewById(R.id.okButton);
-                okButton.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        thresholdDialog.dismiss();
-                    }
-                });
-                thresholdDialog.setContentView(thresholdExceededRoot);
-                thresholdDialog.setCancelable(false);
-                thresholdDialog.show();
-            }
-        }
     }
 
     public void showVideoFragment()
@@ -117,7 +83,7 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
         fragmentTransaction.replace(R.id.cameraPreview, photoFragment).commit();
         Log.d(TAG,"photofragment added");
         SharedPreferences sharedPreferences = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
-        if(!sharedPreferences.getBoolean(Constants.PHONE_MEMORY_DISABLE, true)) {
+        if(!checkIfPhoneMemoryIsBelowLowThreshold() && !sharedPreferences.getBoolean(Constants.PHONE_MEMORY_DISABLE, true)) {
             final SharedPreferences.Editor editor = sharedPreferences.edit();
             int memoryThreshold = Integer.parseInt(sharedPreferences.getString(Constants.PHONE_MEMORY_LIMIT, ""));
             String memoryMetric = sharedPreferences.getString(Constants.PHONE_MEMORY_METRIC, "");

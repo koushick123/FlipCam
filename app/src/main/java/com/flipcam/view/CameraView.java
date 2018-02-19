@@ -152,9 +152,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     long focusPreviousTime=0;
     int previousOrientation = -1;
     SharedPreferences memoryPrefs;
-    StatFs storageStat = new StatFs(Environment.getDataDirectory().getPath());
     int lowestThreshold = getResources().getInteger(R.integer.minimumMemoryWarning);
     long lowestMemory = lowestThreshold * (long)Constants.MEGA_BYTE;
+    boolean isPhoneMemory = true;
 
     public CameraView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -265,14 +265,15 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         if(isRecord){
             if(VERBOSE)Log.d(TAG,"Frame avail cnt = "+(++cameraFrameCnt));
         }
-        /*if(storageStat.getAvailableBytes() < lowestMemory && isRecord) {
+        StatFs availableStatFs = new StatFs(Environment.getDataDirectory().getPath());
+        if(isPhoneMemory && (availableStatFs.getAvailableBytes() < lowestMemory) && isRecord) {
             Log.d(TAG, "lowestMemory = "+lowestMemory);
-            Log.d(TAG, "avail mem = "+storageStat.getAvailableBytes());
+            Log.d(TAG, "avail mem = "+availableStatFs.getAvailableBytes());
             this.videoFragment.stopRecordAndSaveFile(true);
-        }*/
-        //else {
+        }
+        else {
             cameraHandler.sendEmptyMessage(Constants.FRAME_AVAILABLE);
-        //}
+        }
     }
 
     private void prepareEGLDisplayandContext()
@@ -893,6 +894,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         Log.d(TAG,"Width = "+width+", height = "+height);
         if(this.videoFragment!=null) {
             memoryPrefs = this.videoFragment.getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
+            isPhoneMemory = memoryPrefs.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
             this.videoFragment.showRecordAndThumbnail();
             this.videoFragment.getLatestFileIfExists();
             camera1.setPhotoFragmentInstance(null);
