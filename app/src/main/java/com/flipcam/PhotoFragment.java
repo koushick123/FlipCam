@@ -1,5 +1,6 @@
 package com.flipcam;
 
+import android.app.Dialog;
 import android.app.Fragment;
 import android.content.Context;
 import android.content.Intent;
@@ -17,6 +18,8 @@ import android.view.LayoutInflater;
 import android.view.OrientationEventListener;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -52,6 +55,7 @@ public class PhotoFragment extends Fragment {
     LinearLayout photoBar;
     LinearLayout settingsBar;
     PhotoPermission photoPermission;
+    LowestThresholdCheckForPictureInterface lowestThresholdCheckForPictureInterface;
     SwitchPhoto switchPhoto;
     ImageButton capturePic;
     ImageView imagePreview;
@@ -73,6 +77,10 @@ public class PhotoFragment extends Fragment {
     public static PhotoFragment newInstance(){
         PhotoFragment photoFragment = new PhotoFragment();
         return photoFragment;
+    }
+
+    public interface LowestThresholdCheckForPictureInterface{
+        boolean checkIfPhoneMemoryIsBelowLowestThresholdForPicture();
     }
 
     @Override
@@ -97,6 +105,7 @@ public class PhotoFragment extends Fragment {
         modeText.setText(getResources().getString(R.string.PHOTO_MODE));
         photoPermission = (PhotoFragment.PhotoPermission)getActivity();
         switchPhoto = (PhotoFragment.SwitchPhoto)getActivity();
+        lowestThresholdCheckForPictureInterface = (LowestThresholdCheckForPictureInterface)getActivity();
     }
 
     @Nullable
@@ -158,7 +167,41 @@ public class PhotoFragment extends Fragment {
         capturePic.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view) {
-                showImagePreview();
+                capturePic.setClickable(false);
+                videoMode.setClickable(false);
+                switchCamera.setClickable(false);
+                thumbnail.setClickable(false);
+                if(lowestThresholdCheckForPictureInterface.checkIfPhoneMemoryIsBelowLowestThresholdForPicture()){
+                    LayoutInflater layoutInflater = (LayoutInflater)getActivity().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+                    View thresholdExceededRoot = layoutInflater.inflate(R.layout.threshold_exceeded, null);
+                    final Dialog thresholdDialog = new Dialog(getActivity());
+                    TextView memoryLimitMsg = (TextView)thresholdExceededRoot.findViewById(R.id.memoryLimitMsg);
+                    int lowestThreshold = getResources().getInteger(R.integer.minimumMemoryWarning);
+                    StringBuilder minimumThreshold = new StringBuilder(lowestThreshold+"");
+                    minimumThreshold.append(" ");
+                    minimumThreshold.append(getResources().getString(R.string.MEM_PF_MB));
+                    Log.d(TAG, "minimumThreshold = "+minimumThreshold);
+                    memoryLimitMsg.setText(getResources().getString(R.string.minimumThresholdExceeded, minimumThreshold));
+                    CheckBox disableThreshold = (CheckBox)thresholdExceededRoot.findViewById(R.id.disableThreshold);
+                    disableThreshold.setVisibility(View.GONE);
+                    Button okButton = (Button)thresholdExceededRoot.findViewById(R.id.okButton);
+                    okButton.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            capturePic.setClickable(true);
+                            videoMode.setClickable(true);
+                            switchCamera.setClickable(true);
+                            thumbnail.setClickable(true);
+                            thresholdDialog.dismiss();
+                        }
+                    });
+                    thresholdDialog.setContentView(thresholdExceededRoot);
+                    thresholdDialog.setCancelable(false);
+                    thresholdDialog.show();
+                }
+                else {
+                    showImagePreview();
+                }
             }
         });
         switchCamera = (ImageButton)view.findViewById(R.id.photoSwitchCamera);
@@ -285,6 +328,10 @@ public class PhotoFragment extends Fragment {
 
     public void showImagePreview()
     {
+        capturePic.setClickable(true);
+        videoMode.setClickable(true);
+        switchCamera.setClickable(true);
+        thumbnail.setClickable(true);
         imagePreview.setImageBitmap(cameraView.getDrawingCache());
         imagePreview.setVisibility(View.VISIBLE);
         cameraView.capturePhoto();

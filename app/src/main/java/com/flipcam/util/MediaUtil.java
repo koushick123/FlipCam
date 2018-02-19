@@ -1,9 +1,12 @@
 package com.flipcam.util;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Environment;
+import android.util.Log;
 
 import com.flipcam.R;
+import com.flipcam.constants.Constants;
 import com.flipcam.media.FileMedia;
 import com.flipcam.media.FileMediaLastModifiedComparator;
 
@@ -18,6 +21,7 @@ import java.util.Collections;
 
 public class MediaUtil {
 
+    public static final String TAG = "MediaUtil";
     private static FileMedia[] mediaList;
     private static Context appContext;
     public static FileMedia[] getMediaList(Context ctx){
@@ -27,7 +31,15 @@ public class MediaUtil {
     }
 
     private static void sortAsPerLatest() {
-        File dcimFc = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + appContext.getResources().getString(R.string.FC_ROOT));
+        File dcimFc;
+        SharedPreferences sharedPreferences = appContext.getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
+        if(sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)) {
+            dcimFc = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + appContext.getResources().getString(R.string.FC_ROOT));
+        }
+        else{
+            dcimFc = new File(sharedPreferences.getString(Constants.SD_CARD_PATH, ""));
+            Log.d(TAG, "SD card path = "+sharedPreferences.getString(Constants.SD_CARD_PATH, ""));
+        }
         if (dcimFc.exists() && dcimFc.isDirectory() && dcimFc.listFiles().length > 0) {
             File[] mediaFiles = dcimFc.listFiles(new FileFilter() {
                 @Override

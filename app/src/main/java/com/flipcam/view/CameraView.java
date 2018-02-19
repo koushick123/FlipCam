@@ -26,6 +26,7 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.os.StatFs;
 import android.support.v4.content.ContextCompat;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -150,6 +151,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     long previousTime = 0;
     long focusPreviousTime=0;
     int previousOrientation = -1;
+    SharedPreferences memoryPrefs;
+    StatFs storageStat = new StatFs(Environment.getDataDirectory().getPath());
+    int lowestThreshold = getResources().getInteger(R.integer.minimumMemoryWarning);
+    long lowestMemory = lowestThreshold * (long)Constants.MEGA_BYTE;
 
     public CameraView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -260,7 +265,14 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         if(isRecord){
             if(VERBOSE)Log.d(TAG,"Frame avail cnt = "+(++cameraFrameCnt));
         }
-        cameraHandler.sendEmptyMessage(Constants.FRAME_AVAILABLE);
+        /*if(storageStat.getAvailableBytes() < lowestMemory && isRecord) {
+            Log.d(TAG, "lowestMemory = "+lowestMemory);
+            Log.d(TAG, "avail mem = "+storageStat.getAvailableBytes());
+            this.videoFragment.stopRecordAndSaveFile(true);
+        }*/
+        //else {
+            cameraHandler.sendEmptyMessage(Constants.FRAME_AVAILABLE);
+        //}
     }
 
     private void prepareEGLDisplayandContext()
@@ -880,6 +892,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         Log.d(TAG,"surfaceChanged = "+surfaceHolder);
         Log.d(TAG,"Width = "+width+", height = "+height);
         if(this.videoFragment!=null) {
+            memoryPrefs = this.videoFragment.getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
             this.videoFragment.showRecordAndThumbnail();
             this.videoFragment.getLatestFileIfExists();
             camera1.setPhotoFragmentInstance(null);

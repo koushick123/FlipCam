@@ -61,6 +61,7 @@ public class VideoFragment extends android.app.Fragment{
     TextView memoryConsumed;
     PermissionInterface permissionInterface;
     SwitchInterface switchInterface;
+    LowestThresholdCheckForVideoInterface lowestThresholdCheckForVideoInterface;
     ImageButton stopRecord;
     ImageView imagePreview;
     TextView modeText;
@@ -89,6 +90,10 @@ public class VideoFragment extends android.app.Fragment{
         void switchToPhoto();
     }
 
+    public interface LowestThresholdCheckForVideoInterface{
+        boolean checkIfPhoneMemoryIsBelowLowestThresholdForVideo();
+    }
+
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
@@ -111,6 +116,7 @@ public class VideoFragment extends android.app.Fragment{
         modeLayout = (LinearLayout)getActivity().findViewById(R.id.modeLayout);
         permissionInterface = (PermissionInterface)getActivity();
         switchInterface = (SwitchInterface)getActivity();
+        lowestThresholdCheckForVideoInterface = (LowestThresholdCheckForVideoInterface)getActivity();
     }
 
     @Override
@@ -185,12 +191,45 @@ public class VideoFragment extends android.app.Fragment{
         startRecord.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                SharedPreferences sharedPreferences = getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
-                if(sharedPreferences.getBoolean(Constants.PHONE_MEMORY_DISABLE, true)){
-                    prepareAndStartRecord();
+                startRecord.setClickable(false);
+                switchCamera.setClickable(false);
+                photoMode.setClickable(false);
+                thumbnail.setClickable(false);
+                if(lowestThresholdCheckForVideoInterface.checkIfPhoneMemoryIsBelowLowestThresholdForVideo()){
+                    LayoutInflater layoutInflater = (LayoutInflater)getActivity().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+                    View thresholdExceededRoot = layoutInflater.inflate(R.layout.threshold_exceeded, null);
+                    final Dialog thresholdDialog = new Dialog(getActivity());
+                    TextView memoryLimitMsg = (TextView)thresholdExceededRoot.findViewById(R.id.memoryLimitMsg);
+                    int lowestThreshold = getResources().getInteger(R.integer.minimumMemoryWarning);
+                    StringBuilder minimumThreshold = new StringBuilder(lowestThreshold+"");
+                    minimumThreshold.append(" ");
+                    minimumThreshold.append(getResources().getString(R.string.MEM_PF_MB));
+                    Log.d(TAG, "minimumThreshold = "+minimumThreshold);
+                    memoryLimitMsg.setText(getResources().getString(R.string.minimumThresholdExceeded, minimumThreshold));
+                    CheckBox disableThreshold = (CheckBox)thresholdExceededRoot.findViewById(R.id.disableThreshold);
+                    disableThreshold.setVisibility(View.GONE);
+                    Button okButton = (Button)thresholdExceededRoot.findViewById(R.id.okButton);
+                    okButton.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            thresholdDialog.dismiss();
+                            startRecord.setClickable(true);
+                            photoMode.setClickable(true);
+                            thumbnail.setClickable(true);
+                            switchCamera.setClickable(true);
+                        }
+                    });
+                    thresholdDialog.setContentView(thresholdExceededRoot);
+                    thresholdDialog.setCancelable(false);
+                    thresholdDialog.show();
                 }
                 else {
-                    checkIfMemoryLimitIsExceeded();
+                    SharedPreferences sharedPreferences = getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
+                    if (sharedPreferences.getBoolean(Constants.PHONE_MEMORY_DISABLE, true)) {
+                        prepareAndStartRecord();
+                    } else {
+                        checkIfMemoryLimitIsExceeded();
+                    }
                 }
             }
         });
@@ -217,6 +256,10 @@ public class VideoFragment extends android.app.Fragment{
     }
 
     public void prepareAndStartRecord(){
+        startRecord.setClickable(true);
+        photoMode.setClickable(true);
+        thumbnail.setClickable(true);
+        switchCamera.setClickable(true);
         videoBar.removeAllViews();
         addStopAndPauseIcons();
         hideSettingsBarAndIcon();
@@ -308,26 +351,7 @@ public class VideoFragment extends android.app.Fragment{
         stopRecord.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                cameraView.record();
-                showRecordSaved();
-                showRecordAndThumbnail();
-                SharedPreferences sharedPreferences = getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
-                if(sharedPreferences.getBoolean(Constants.SAVE_TO_GOOGLE_DRIVE, false)) {
-                    Log.d(TAG, "Auto uploading to Google Drive");
-                    //Auto upload to Google Drive enabled.
-                    Intent googleDriveUploadIntent = new Intent(getApplicationContext(), GoogleDriveUploadService.class);
-                    googleDriveUploadIntent.putExtra("uploadFile", cameraView.getMediaPath());
-                    Log.d(TAG, "Uploading file = "+cameraView.getMediaPath());
-                    getActivity().startService(googleDriveUploadIntent);
-                }
-                if(sharedPreferences.getBoolean(Constants.SAVE_TO_DROPBOX, false)){
-                    Log.d(TAG, "Auto upload to Dropbox");
-                    //Auto upload to Dropbox enabled
-                    Intent dropboxUploadIntent = new Intent(getApplicationContext(), DropboxUploadService.class);
-                    dropboxUploadIntent.putExtra("uploadFile", cameraView.getMediaPath());
-                    Log.d(TAG, "Uploading file = "+cameraView.getMediaPath());
-                    getActivity().startService(dropboxUploadIntent);
-                }
+                stopRecordAndSaveFile(false);
             }
         });
         switchCamera.setBackgroundColor(getResources().getColor(R.color.transparentBar));
@@ -341,6 +365,54 @@ public class VideoFragment extends android.app.Fragment{
         videoBar.addView(switchCamera);
         videoBar.addView(stopRecord);
         videoBar.addView(recordSubstitute);
+    }
+
+    public void stopRecordAndSaveFile(boolean lowMemory){
+        cameraView.record();
+        if(lowMemory){
+            LayoutInflater layoutInflater = (LayoutInflater)getActivity().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+            View thresholdExceededRoot = layoutInflater.inflate(R.layout.threshold_exceeded, null);
+            final Dialog thresholdDialog = new Dialog(getActivity());
+            int lowestThreshold = getResources().getInteger(R.integer.minimumMemoryWarning);
+            TextView memoryLimitMsg = (TextView)thresholdExceededRoot.findViewById(R.id.memoryLimitMsg);
+            StringBuilder minimumThreshold = new StringBuilder(lowestThreshold+"");
+            minimumThreshold.append(" ");
+            minimumThreshold.append(getResources().getString(R.string.MEM_PF_MB));
+            memoryLimitMsg.setText(getResources().getString(R.string.minimumThresholdExceeded, minimumThreshold));
+            CheckBox disableThreshold = (CheckBox)thresholdExceededRoot.findViewById(R.id.disableThreshold);
+            disableThreshold.setVisibility(View.GONE);
+            Button okButton = (Button)thresholdExceededRoot.findViewById(R.id.okButton);
+            okButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    thresholdDialog.dismiss();
+                }
+            });
+            thresholdDialog.setContentView(thresholdExceededRoot);
+            thresholdDialog.setCancelable(false);
+            thresholdDialog.show();
+        }
+        else {
+            showRecordSaved();
+        }
+        showRecordAndThumbnail();
+        SharedPreferences sharedPreferences = getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
+        if(sharedPreferences.getBoolean(Constants.SAVE_TO_GOOGLE_DRIVE, false)) {
+            Log.d(TAG, "Auto uploading to Google Drive");
+            //Auto upload to Google Drive enabled.
+            Intent googleDriveUploadIntent = new Intent(getApplicationContext(), GoogleDriveUploadService.class);
+            googleDriveUploadIntent.putExtra("uploadFile", cameraView.getMediaPath());
+            Log.d(TAG, "Uploading file = "+cameraView.getMediaPath());
+            getActivity().startService(googleDriveUploadIntent);
+        }
+        if(sharedPreferences.getBoolean(Constants.SAVE_TO_DROPBOX, false)){
+            Log.d(TAG, "Auto upload to Dropbox");
+            //Auto upload to Dropbox enabled
+            Intent dropboxUploadIntent = new Intent(getApplicationContext(), DropboxUploadService.class);
+            dropboxUploadIntent.putExtra("uploadFile", cameraView.getMediaPath());
+            Log.d(TAG, "Uploading file = "+cameraView.getMediaPath());
+            getActivity().startService(dropboxUploadIntent);
+        }
     }
 
     float rotationAngle = 0f;
@@ -559,6 +631,10 @@ public class VideoFragment extends android.app.Fragment{
     {
         Log.d(TAG,"permissionInterface = "+permissionInterface);
         permissionInterface.askPermission();
+    }
+
+    public LowestThresholdCheckForVideoInterface getLowestThresholdCheckForVideoInterface() {
+        return lowestThresholdCheckForVideoInterface;
     }
 
     public void createAndShowThumbnail(String mediaPath)

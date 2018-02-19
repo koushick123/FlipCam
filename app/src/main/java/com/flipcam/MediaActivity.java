@@ -852,7 +852,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     {
         int videoLength = latestPos;
         int secs = (videoLength / 1000);
-        Log.d(TAG,"total no of secs = "+secs);
         int hour = 0;
         int mins = 0;
         if(secs >= 60){
