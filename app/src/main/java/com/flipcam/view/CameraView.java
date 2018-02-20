@@ -265,15 +265,16 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         if(isRecord){
             if(VERBOSE)Log.d(TAG,"Frame avail cnt = "+(++cameraFrameCnt));
         }
-        StatFs availableStatFs = new StatFs(Environment.getDataDirectory().getPath());
+        /*StatFs availableStatFs = new StatFs(Environment.getDataDirectory().getPath());
         if(isPhoneMemory && (availableStatFs.getAvailableBytes() < lowestMemory) && isRecord) {
             Log.d(TAG, "lowestMemory = "+lowestMemory);
             Log.d(TAG, "avail mem = "+availableStatFs.getAvailableBytes());
+            record();
             this.videoFragment.stopRecordAndSaveFile(true);
-        }
-        else {
+        }*/
+        //else {
             cameraHandler.sendEmptyMessage(Constants.FRAME_AVAILABLE);
-        }
+        //}
     }
 
     private void prepareEGLDisplayandContext()
@@ -1267,6 +1268,13 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 }
             }
             frameCount++;
+            StatFs availableStatFs = new StatFs(Environment.getDataDirectory().getPath());
+            if(isPhoneMemory && (availableStatFs.getAvailableBytes() < lowestMemory) && isRecord) {
+                Log.d(TAG, "lowestMemory = "+lowestMemory);
+                Log.d(TAG, "avail mem = "+availableStatFs.getAvailableBytes());
+                /*record();
+                this.videoFragment.stopRecordAndSaveFile(true);*/
+            }
         }
 
         void shutdown()

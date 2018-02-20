@@ -7,6 +7,7 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.net.ConnectivityManager;
@@ -471,6 +472,20 @@ public class SettingsActivity extends AppCompatActivity{
         createUploadFolder();
     }
 
+    public boolean doesPackageExist(Context c, String targetPackage) {
+        PackageManager pm = c.getPackageManager();
+        try {
+            PackageInfo info = pm.getPackageInfo(targetPackage, PackageManager.GET_META_DATA);
+            if(info != null) {
+                Log.d(TAG, "package name= " + info.packageName);
+            }
+        } catch (PackageManager.NameNotFoundException e) {
+            Log.d(TAG,"Package "+targetPackage+" does NOT exist");
+            return false;
+        }
+        return true;
+    }
+
     public void signInToCloud(View view){
         switch (view.getId()){
             case R.id.continueSignIn:
@@ -500,7 +515,12 @@ public class SettingsActivity extends AppCompatActivity{
                     TextView signInText = (TextView)signInProgressRoot.findViewById(R.id.signInText);
                     TextView signInprogressTitle = (TextView)signInProgressRoot.findViewById(R.id.savetocloudtitle);
                     signInprogressTitle.setText(getResources().getString(R.string.signInProgressTitle, getResources().getString(R.string.dropbox)));
-                    signInText.setText(getResources().getString(R.string.signInProgressDropbox));
+                    if(doesPackageExist(this, "com.dropbox.android")){
+                        signInText.setText("Opening Dropbox App...");
+                    }
+                    else {
+                        signInText.setText(getResources().getString(R.string.signInProgressDropbox));
+                    }
                     ImageView signInImage = (ImageView) signInProgressRoot.findViewById(R.id.signInImage);
                     signInImage.setImageDrawable(getResources().getDrawable(R.drawable.dropbox));
                     signInProgressDialog.setContentView(signInProgressRoot);

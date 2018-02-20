@@ -5,7 +5,6 @@ import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
 import android.content.res.Configuration;
@@ -407,20 +406,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
 
     public void hidePlayForVideo(){
         playCircle.setVisibility(View.GONE);
-    }
-
-    public boolean doesPackageExist(Context c, String targetPackage) {
-        PackageManager pm = c.getPackageManager();
-        try {
-            PackageInfo info = pm.getPackageInfo(targetPackage, PackageManager.GET_META_DATA);
-            if(info != null) {
-                Log.d(TAG, "package name= " + info.packageName);
-            }
-        } catch (PackageManager.NameNotFoundException e) {
-            Log.d(TAG,"Package "+targetPackage+" does NOT exist");
-            return false;
-        }
-        return true;
     }
 
     public boolean doesAppExistForIntent(Intent shareIntent){

@@ -288,6 +288,9 @@ public class DropboxUploadService extends Service {
                 else if(e.getMessage().contains("failed to connect")){
                     showTimeoutErrorNotification();
                 }
+                else if(e.getMessage().contains("invalid_access_token")){
+                    showFolderNotExistErrorNotification();
+                }
                 success = false;
             } catch (FileNotFoundException e) {
                 Log.i(TAG ,"FileNotFoundException = "+e.getMessage());
@@ -367,6 +370,17 @@ public class DropboxUploadService extends Service {
         mBuilder.setColor(getResources().getColor(R.color.uploadError));
         mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.timeoutError)));
         mBuilder.setContentText(getResources().getString(R.string.timeoutErrorLess));
+        mBuilder.setContentTitle(getResources().getString(R.string.autoUploadInterrupt, getResources().getString(R.string.dropbox)));
+        mBuilder.setSound(uploadNotification);
+        mBuilder.setPriority(NotificationCompat.PRIORITY_HIGH);
+        mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
+    }
+
+    public void showFolderNotExistErrorNotification(){
+        mBuilder.setColor(getResources().getColor(R.color.uploadError));
+        mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.folderNotExistError, getResources().getString(R.string.flipCamAppFolder),
+                getResources().getString(R.string.dropbox))));
+        mBuilder.setContentText(getResources().getString(R.string.folderNotExistErrorLess));
         mBuilder.setContentTitle(getResources().getString(R.string.autoUploadInterrupt, getResources().getString(R.string.dropbox)));
         mBuilder.setSound(uploadNotification);
         mBuilder.setPriority(NotificationCompat.PRIORITY_HIGH);

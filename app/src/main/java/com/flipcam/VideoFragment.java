@@ -368,7 +368,6 @@ public class VideoFragment extends android.app.Fragment{
     }
 
     public void stopRecordAndSaveFile(boolean lowMemory){
-        cameraView.record();
         if(lowMemory){
             LayoutInflater layoutInflater = (LayoutInflater)getActivity().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
             View thresholdExceededRoot = layoutInflater.inflate(R.layout.threshold_exceeded, null);
