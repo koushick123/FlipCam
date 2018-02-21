@@ -12,7 +12,6 @@
     <string name="IMG_EXT">.jpeg</string>
     <string name="ANOTHER_IMG_EXT">.jpg</string>
     <string name="DATE_FORMAT_FOR_FILE">yyyy-MM-dd-HH-mm-ss</string>
-    <string name="DATE_FORMAT_FOR_UPLOAD_PROCESS">MMddHHmmss</string>
     <string name="MEM_PF_KB"> KB</string>
     <string name="MEM_PF_MB"> MB</string>
     <string name="MEM_PF_GB"> GB</string>

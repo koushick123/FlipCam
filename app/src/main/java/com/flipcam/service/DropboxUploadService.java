@@ -7,8 +7,6 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.RingtoneManager;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -42,8 +40,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.lang.ref.WeakReference;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 /**
  * Created by Koushick on 29-01-2018.
@@ -65,7 +61,6 @@ public class DropboxUploadService extends Service {
     DbxRequestConfig dbxRequestConfig;
     DbxClientV2 dbxClientV2;
     String folderName;
-    int retryCount = Constants.RETRY_COUNT;
 
     class DropboxUploadHandler extends Handler {
         WeakReference<DropboxUploadService> serviceWeakReference;
@@ -143,8 +138,8 @@ public class DropboxUploadService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        SimpleDateFormat sdf = new SimpleDateFormat(getResources().getString(R.string.DATE_FORMAT_FOR_UPLOAD_PROCESS));
-        String startID = sdf.format(new Date());
+        String randomNo = Math.random()+"";
+        String startID = randomNo.substring(randomNo.length() - 5, randomNo.length());
         Log.i(TAG,"onStartCommand = "+startID);
         final String uploadfilepath = (String)intent.getExtras().get("uploadFile");
         Log.i(TAG,"Upload file = "+uploadfilepath);
@@ -156,16 +151,6 @@ public class DropboxUploadService extends Service {
     public void onDestroy() {
         super.onDestroy();
         Log.i(TAG,"onDestroy");
-    }
-
-    public boolean isConnectedToInternet(){
-        ConnectivityManager cm =
-                (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
-
-        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
-        boolean isConnected = activeNetwork != null &&
-                activeNetwork.isConnectedOrConnecting();
-        return isConnected;
     }
 
     class DropboxUploadTask extends AsyncTask<String, Void, Boolean>{
@@ -220,9 +205,9 @@ public class DropboxUploadService extends Service {
                 randomAccessFile = new RandomAccessFile(new File(uploadFile),"r");
                 String sessionId = null;
                 int readSize;
-                byte[] cache = new byte[500 * 1024];
+                byte[] cache = new byte[1000 * 1024];
                 if(!isImage(uploadFile)) {
-                    cache = new byte[2000 * 1024];
+                    cache = new byte[3000 * 1024];
                 }
                 long bytesUploaded = 0;
                 UploadSessionCursor uploadSessionCursor = null;

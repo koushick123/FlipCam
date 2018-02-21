@@ -55,8 +55,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.ref.WeakReference;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -186,8 +184,9 @@ public class GoogleDriveUploadService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        SimpleDateFormat sdf = new SimpleDateFormat(getResources().getString(R.string.DATE_FORMAT_FOR_UPLOAD_PROCESS));
-        String startID = sdf.format(new Date());
+        //SimpleDateFormat sdf = new SimpleDateFormat(getResources().getString(R.string.DATE_FORMAT_FOR_UPLOAD_PROCESS));
+        String randomNo = Math.random()+"";
+        String startID = randomNo.substring(randomNo.length() - 5, randomNo.length());
         Log.i(TAG,"onStartCommand = "+startID);
         final String uploadfilepath = (String)intent.getExtras().get("uploadFile");
         Log.i(TAG,"Upload file = "+uploadfilepath);

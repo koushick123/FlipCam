@@ -16,6 +16,7 @@ public class Constants
     public final static int SHOW_MEMORY_CONSUMED = 5000;
     public final static int SHOW_ELAPSED_TIME = 10000;
     public final static int RECORD_STOP_ENABLE = 14000;
+    public final static int RECORD_STOP_LOW_MEMORY = 15000;
 
     //File size for calculating memory consumed
     public final static double KILO_BYTE = 1024.0;

@@ -392,6 +392,7 @@ public class VideoFragment extends android.app.Fragment{
             thresholdDialog.show();
         }
         else {
+            cameraView.record();
             showRecordSaved();
         }
         showRecordAndThumbnail();

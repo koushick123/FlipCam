@@ -155,6 +155,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     int lowestThreshold = getResources().getInteger(R.integer.minimumMemoryWarning);
     long lowestMemory = lowestThreshold * (long)Constants.MEGA_BYTE;
     boolean isPhoneMemory = true;
+    StatFs availableStatFs = new StatFs(Environment.getDataDirectory().getPath());
 
     public CameraView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -237,6 +238,16 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 case Constants.RECORD_STOP_ENABLE:
                     if(VERBOSE)Log.d(TAG,"Enable stop record");
                     enableStopButton();
+                    break;
+                case Constants.RECORD_STOP_LOW_MEMORY:
+                    setKeepScreenOn(false);
+                    orientationEventListener.enable();
+                    camera1.disableRecordingHint();
+                    //Reset the RECORD Matrix to be portrait.
+                    System.arraycopy(IDENTITY_MATRIX,0,RECORD_IDENTITY_MATRIX,0,IDENTITY_MATRIX.length);
+                    //Reset Rotation angle
+                    rotationAngle = 0f;
+                    videoFragment.stopRecordAndSaveFile(true);
                     break;
             }
         }
@@ -1268,12 +1279,32 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 }
             }
             frameCount++;
-            StatFs availableStatFs = new StatFs(Environment.getDataDirectory().getPath());
-            if(isPhoneMemory && (availableStatFs.getAvailableBytes() < lowestMemory) && isRecord) {
+            availableStatFs.restat(Environment.getDataDirectory().getPath());
+            if(isRecord && isPhoneMemory && (availableStatFs.getAvailableBytes() < lowestMemory)) {
                 Log.d(TAG, "lowestMemory = "+lowestMemory);
                 Log.d(TAG, "avail mem = "+availableStatFs.getAvailableBytes());
-                /*record();
-                this.videoFragment.stopRecordAndSaveFile(true);*/
+                isRecord=false;
+                stopTimerThread();
+                isRecording = false;
+                recordStop = -1;
+                cameraHandler.setRecordIncomplete(false);
+                try {
+                    mediaRecorder.stop();
+                }
+                catch(RuntimeException runtime){
+                    Log.d(TAG,"Video data not received... delete file = "+videoFile.getPath());
+                    if(videoFile.delete()){
+                        Log.d(TAG,"File deleted");
+                    }
+                    cameraHandler.setRecordIncomplete(true);
+                }
+                mediaRecorder.release();
+                mediaRecorder = null;
+                Log.d(TAG,"stop isRecording == "+isRecording);
+                if(!cameraHandler.isRecordIncomplete()){
+                    mainHandler.sendEmptyMessage(Constants.RECORD_COMPLETE);
+                }
+                mainHandler.sendEmptyMessage(Constants.RECORD_STOP_LOW_MEMORY);
             }
         }
 
@@ -1287,6 +1318,14 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             WeakReference<CameraRenderer> cameraRender;
             CameraRenderer cameraRenderer;
             boolean recordIncomplete = false;
+
+            public boolean isRecordIncomplete() {
+                return recordIncomplete;
+            }
+
+            public void setRecordIncomplete(boolean recordIncomplete) {
+                this.recordIncomplete = recordIncomplete;
+            }
 
             public CameraHandler(CameraRenderer cameraRenderer){
                 cameraRender = new WeakReference<>(cameraRenderer);

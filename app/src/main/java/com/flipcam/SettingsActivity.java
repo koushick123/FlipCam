@@ -420,6 +420,8 @@ public class SettingsActivity extends AppCompatActivity{
             imageParams.width = (int)getResources().getDimension(R.dimen.googleDriveIconWidth);
             imageParams.height = (int)getResources().getDimension(R.dimen.googleDriveIconHeight);
             placeHolderIcon.setLayoutParams(imageParams);
+            TextView savetoCloudMsg = (TextView)saveToCloudRoot.findViewById(R.id.savetocloudmsg);
+            savetoCloudMsg.setText(getResources().getString(R.string.continueToCloud));
             saveToCloud.setContentView(saveToCloudRoot);
             saveToCloud.setCancelable(false);
             saveToCloud.show();
