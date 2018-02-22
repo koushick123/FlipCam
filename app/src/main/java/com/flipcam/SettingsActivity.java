@@ -61,6 +61,9 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -303,7 +306,51 @@ public class SettingsActivity extends AppCompatActivity{
                 sdCardBtn.setChecked(true);
                 editSdCardPath.setClickable(true);
                 if(!settingsPref.contains(Constants.SD_CARD_PATH)) {
-                    openSdCardPath(view);
+                    //openSdCardPath(view);
+                    File file = new File("/proc/self/mountinfo");
+                    FileInputStream fileInputStream=null;
+                    try
+                    {
+                        if(file.isDirectory()){
+                            File[] list = file.listFiles();
+                            Log.d(TAG, "mounts list = "+list.length);
+                        }
+                        else{
+                            fileInputStream = new FileInputStream(file.getPath());
+                            int readChar;
+                            int lineLength = 0;
+                            char[] cache = new char[120];
+                            int i=0;
+                            while((readChar = fileInputStream.read()) != -1){
+                                if(lineLength < 120) {
+                                    cache[i++] = (char) readChar;
+                                    lineLength++;
+                                }
+                                else{
+                                    lineLength = 0;
+                                    i=0;
+                                    Log.d(TAG, new String(cache));
+                                }
+                            }
+                        }
+                    }
+                    catch(NullPointerException o)
+                    {
+                        Log.d(TAG, "No Mounts info");
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    finally {
+                        if(fileInputStream!=null){
+                            try {
+                                fileInputStream.close();
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
                 }
                 else{
                     settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM,false);
