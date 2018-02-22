@@ -272,7 +272,9 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             clearPreferences();
         }
         Log.d(TAG ,"selectedPosition = "+selectedPosition);
-        hashMapFrags.get(selectedPosition).getMediaView().setVisibility(View.INVISIBLE);
+        if(hashMapFrags.get(selectedPosition) != null) {
+            hashMapFrags.get(selectedPosition).getMediaView().setVisibility(View.INVISIBLE);
+        }
     }
 
     @Override

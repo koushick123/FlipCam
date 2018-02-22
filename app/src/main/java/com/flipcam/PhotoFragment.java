@@ -411,6 +411,7 @@ public class PhotoFragment extends Fragment {
                 openMedia(cameraView.getPhotoMediaPath());
             }
         });
+        thumbnail.setRotation(rotationAngle);
     }
 
     public boolean isImage(String path)
@@ -459,6 +460,7 @@ public class PhotoFragment extends Fragment {
                     }
                 });
             }
+            thumbnail.setRotation(rotationAngle);
         }
         else{
             setPlaceholderThumbnail();

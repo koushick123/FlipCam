@@ -366,6 +366,7 @@ MediaPlayer.OnErrorListener, Serializable{
         double screenAR = (double)screenSize.x / (double)screenSize.y;
         Log.d(TAG, "screenSize = "+screenSize.x+" X "+screenSize.y);
         double imageAR = (double)imageWidth / (double)imageHeight;
+        Log.d(TAG, "imageSize = "+imageWidth+" X "+imageHeight);
         Log.d(TAG,"imageAR = "+imageAR);
         Log.d(TAG,"screenAR = "+screenAR);
         FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
@@ -375,26 +376,17 @@ MediaPlayer.OnErrorListener, Serializable{
                 layoutParams.width = screenSize.x;
                 layoutParams.height = screenSize.y;
             }
-            else{
-                layoutParams.width = screenSize.x;
-                layoutParams.height = (int)(screenSize.x / imageAR);
-                layoutParams.gravity = Gravity.CENTER;
-                Log.d(TAG,"1111 layoutParams.width = "+layoutParams.width);
-                Log.d(TAG,"layoutParams.height = "+layoutParams.height);
-            }
+            Log.d(TAG,"1111 layoutParams.width = "+layoutParams.width);
+            Log.d(TAG,"layoutParams.height = "+layoutParams.height);
         }
         else if (display.getRotation() == Surface.ROTATION_90 || display.getRotation() == Surface.ROTATION_270) {
             if (Math.abs(screenAR - imageAR) < 0.1) {
                 Log.d(TAG,"Landscape");
                 layoutParams.width = screenSize.x;
                 layoutParams.height = screenSize.y;
-            } else {
-                layoutParams.width = (int) (imageAR * screenSize.y);
-                layoutParams.height = screenSize.y;
-                layoutParams.gravity = Gravity.CENTER;
-                Log.d(TAG,"2222 layoutParams.width = "+layoutParams.width);
-                Log.d(TAG,"layoutParams.height = "+layoutParams.height);
             }
+            Log.d(TAG,"2222 layoutParams.width = "+layoutParams.width);
+            Log.d(TAG,"layoutParams.height = "+layoutParams.height);
         }
         picture.setLayoutParams(layoutParams);
     }

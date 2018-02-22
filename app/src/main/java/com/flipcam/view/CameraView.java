@@ -21,7 +21,6 @@ import android.opengl.EGLSurface;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import android.opengl.Matrix;
-import android.os.Build;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
@@ -61,7 +60,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import static android.content.Context.SENSOR_SERVICE;
-import static android.os.Environment.getExternalStorageDirectory;
 import static android.os.Environment.getExternalStoragePublicDirectory;
 import static com.flipcam.constants.Constants.SHOW_ELAPSED_TIME;
 
@@ -276,16 +274,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         if(isRecord){
             if(VERBOSE)Log.d(TAG,"Frame avail cnt = "+(++cameraFrameCnt));
         }
-        /*StatFs availableStatFs = new StatFs(Environment.getDataDirectory().getPath());
-        if(isPhoneMemory && (availableStatFs.getAvailableBytes() < lowestMemory) && isRecord) {
-            Log.d(TAG, "lowestMemory = "+lowestMemory);
-            Log.d(TAG, "avail mem = "+availableStatFs.getAvailableBytes());
-            record();
-            this.videoFragment.stopRecordAndSaveFile(true);
-        }*/
-        //else {
-            cameraHandler.sendEmptyMessage(Constants.FRAME_AVAILABLE);
-        //}
+        cameraHandler.sendEmptyMessage(Constants.FRAME_AVAILABLE);
     }
 
     private void prepareEGLDisplayandContext()
@@ -814,45 +803,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         mEGLConfig = null;
     }
 
-    public String getFilePath(boolean video) {
-        File dcim;
-        if(video) {
-            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N){
-                dcim = getExternalStorageDirectory();
-                dcim = new File(dcim.getPath()+getResources().getString(R.string.FC_ROOT));
-            }
-            else {
-                dcim = getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + getResources().getString(R.string.FC_ROOT));
-            }
-        }
-        else{
-            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N){
-                dcim = getExternalStorageDirectory();
-                dcim = new File(dcim.getPath()+getResources().getString(R.string.FC_ROOT));
-            }
-            else {
-                dcim = getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + getResources().getString(R.string.FC_ROOT));
-            }
-        }
-
-        if(!dcim.exists())
-        {
-            dcim.mkdirs();
-        }
-        SimpleDateFormat sdf = new SimpleDateFormat(getResources().getString(R.string.DATE_FORMAT_FOR_FILE));
-        String filename = sdf.format(new Date());
-        Log.d(TAG,"filename = "+filename);
-        String path;
-        if(video) {
-            path = dcim.getPath() + getResources().getString(R.string.FC_VID_PREFIX) + filename + getResources().getString(R.string.VID_EXT);
-        }
-        else{
-            path = dcim.getPath() + getResources().getString(R.string.FC_IMG_PREFIX) + filename + getResources().getString(R.string.IMG_EXT);
-        }
-        Log.d(TAG,"Saving media file at = "+path);
-        return path;
-    }
-
     public void capturePhoto()
     {
         determineOrientation();
@@ -867,7 +817,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             }
         }
         camera1.setRotation(imageRotationAngle);
-        mNextPhotoAbsolutePath = getFilePath(false);
+        mNextPhotoAbsolutePath = cameraHandler.getCameraRendererInstance().getFilePath(false);
         camera1.setPhotoPath(mNextPhotoAbsolutePath);
         camera1.capturePicture();
     }
