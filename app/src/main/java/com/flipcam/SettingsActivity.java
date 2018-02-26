@@ -13,6 +13,7 @@ import android.content.res.Configuration;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -61,9 +62,6 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -307,47 +305,65 @@ public class SettingsActivity extends AppCompatActivity{
                 editSdCardPath.setClickable(true);
                 if(!settingsPref.contains(Constants.SD_CARD_PATH)) {
                     //openSdCardPath(view);
-                    File file = new File("/proc/self/mountinfo");
-                    FileInputStream fileInputStream=null;
-                    try
-                    {
-                        if(file.isDirectory()){
-                            File[] list = file.listFiles();
-                            Log.d(TAG, "mounts list = "+list.length);
+                    /*StringBuffer output = new StringBuffer();
+                    Process p;
+                    ArrayList<String> storageInfo = new ArrayList<>();
+                    try {
+                        p = Runtime.getRuntime().exec("df");
+                        p.waitFor();
+                        BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                        String line = "";
+                        while ((line = reader.readLine())!= null) {
+                            if(line.contains("/storage")){
+                                storageInfo.add(line);
+                            }
+                            output.append(line + "\n");
                         }
-                        else{
-                            fileInputStream = new FileInputStream(file.getPath());
-                            int readChar;
-                            int lineLength = 0;
-                            char[] cache = new char[120];
-                            int i=0;
-                            while((readChar = fileInputStream.read()) != -1){
-                                if(lineLength < 120) {
-                                    cache[i++] = (char) readChar;
-                                    lineLength++;
-                                }
-                                else{
-                                    lineLength = 0;
-                                    i=0;
-                                    Log.d(TAG, new String(cache));
-                                }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    String response = output.toString();
+                    Log.d(TAG, "Response = \n"+response);
+                    Iterator<String> storageIter = storageInfo.iterator();
+                    while(storageIter.hasNext()){
+                        String storage = storageIter.next();
+                    }*/
+                    File[] storage = new File("/storage").listFiles();
+                    File fc=null;
+                    boolean sdCard = false;
+                    for(int i=0;i<storage.length;i++){
+                        /*if(Environment.getExternalStorageState(storage[i]).equals(Environment.MEDIA_MOUNTED)) {
+                            Log.d(TAG, "getExternalStorageState = " +storage[i].getPath());
+                            sdCard = true;
+                            break;
+                        }*/
+                        try{
+                            if(Environment.isExternalStorageRemovable(storage[i])){
+                                sdCard = true;
+                                Log.d(TAG, "Removable storage = "+storage[i]);
+                                fc = storage[i];
+                                break;
                             }
                         }
+                        catch(IllegalArgumentException illegal){
+                            Log.d(TAG, "Not a valid storage device");
+                        }
                     }
-                    catch(NullPointerException o)
-                    {
-                        Log.d(TAG, "No Mounts info");
-                    } catch (FileNotFoundException e) {
-                        e.printStackTrace();
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                    if(!sdCard){
+                        Log.d(TAG, "No SD Card");
                     }
-                    finally {
-                        if(fileInputStream!=null){
-                            try {
-                                fileInputStream.close();
-                            } catch (IOException e) {
-                                e.printStackTrace();
+                    else{
+                        if(fc!=null) {
+                            File fcexists = new File(fc.getPath() + getResources().getString(R.string.FC_ROOT));
+                            Log.d(TAG, "fcexists = " + fcexists.exists());
+                            Log.d(TAG, "getPath = " + fcexists.getPath());
+                            if(!fcexists.exists()) {
+                                if(fcexists.mkdir()) {
+                                    Toast.makeText(this, "FC created", Toast.LENGTH_SHORT).show();
+                                }
+                                else{
+                                    Toast.makeText(this, "FC NOT created", Toast.LENGTH_SHORT).show();
+                                }
                             }
                         }
                     }
