@@ -16,6 +16,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -62,6 +63,9 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -353,19 +357,43 @@ public class SettingsActivity extends AppCompatActivity{
                         Log.d(TAG, "No SD Card");
                     }
                     else{
-                        if(fc!=null) {
-                            File fcexists = new File(fc.getPath() + getResources().getString(R.string.FC_ROOT));
-                            Log.d(TAG, "fcexists = " + fcexists.exists());
-                            Log.d(TAG, "getPath = " + fcexists.getPath());
-                            if(!fcexists.exists()) {
-                                if(fcexists.mkdir()) {
-                                    Toast.makeText(this, "FC created", Toast.LENGTH_SHORT).show();
+                        //fcexists = new File(fc.getPath() + getResources().getString(R.string.FC_ROOT));
+                        fcexists = new File(fc.getPath() + "/Android/data/com.flipcam/files");
+                        Log.d(TAG, "fcexists = " + fcexists.exists());
+                        Log.d(TAG, "getPath = " + fcexists.getPath());
+                        //if(!fcexists.exists()) {
+                            int storagepermission = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE);
+                            if(storagepermission == PackageManager.PERMISSION_GRANTED){
+                                Log.d(TAG, "Permission exists");
+                                FileOutputStream fileOutputStream=null;
+                                try {
+                                    fileOutputStream = new FileOutputStream(fcexists  +"/newfile.txt");
+                                    Toast.makeText(this,"FC Created",Toast.LENGTH_SHORT).show();
+                                } catch (FileNotFoundException e) {
+                                    e.printStackTrace();
+                                    Toast.makeText(this,"FC NOT Created",Toast.LENGTH_SHORT).show();
+                                }
+                                finally {
+                                    if(fileOutputStream!=null) {
+                                        try {
+                                            fileOutputStream.close();
+                                        } catch (IOException e) {
+                                            e.printStackTrace();
+                                        }
+                                    }
+                                }
+                                /*if(fcexists.mkdir()){
+                                    Toast.makeText(this,"FC Created",Toast.LENGTH_SHORT).show();
                                 }
                                 else{
-                                    Toast.makeText(this, "FC NOT created", Toast.LENGTH_SHORT).show();
-                                }
+                                    Toast.makeText(this,"FC NOT Created",Toast.LENGTH_SHORT).show();
+                                }*/
                             }
-                        }
+                            else{
+                                Log.d(TAG, "No Permission");
+                                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, ALL_PERMISSIONS);
+                            }
+                        //}
                     }
                 }
                 else{
@@ -375,7 +403,8 @@ public class SettingsActivity extends AppCompatActivity{
                 break;
         }
     }
-
+    File fc=null;
+    File fcexists=null;
     public void saveSdCardPath(View view){
         switch (view.getId()){
             case R.id.okSdCard:
@@ -398,11 +427,6 @@ public class SettingsActivity extends AppCompatActivity{
                             fullPath = sdCard.getPath() + getResources().getString(R.string.FC_ROOT);
                         }
                         Log.d(TAG, "Full path = " + fullPath);
-                        File fc = new File(fullPath);
-                        if (!fc.exists()) {
-                            fc.mkdir();
-                            Log.d(TAG, "Able to create FC");
-                        }
                         Toast.makeText(getApplicationContext(),getResources().getString(R.string.sdCardPathSaved),Toast.LENGTH_SHORT).show();
                         settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM,false);
                         settingsEditor.putString(Constants.SD_CARD_PATH,fc.getPath());
@@ -438,6 +462,8 @@ public class SettingsActivity extends AppCompatActivity{
                 break;
         }
     }
+    private final int ALL_PERMISSIONS = 0;
+    static final String STORAGE_PERMISSIONS = "android.permission.WRITE_EXTERNAL_STORAGE";
 
     public void showSDCardPath(String path){
         sdCardPathMsg.setText(path);
@@ -1026,6 +1052,19 @@ public class SettingsActivity extends AppCompatActivity{
                         saveToCloud.dismiss();
                         if(cloud == Constants.GOOGLE_DRIVE_CLOUD) {
                             switchOnDrive.setChecked(false);
+                        }
+                    }
+                }
+                else{
+                    super.onRequestPermissionsResult(requestCode,permissions,grantResults);
+                }
+                break;
+            case ALL_PERMISSIONS:
+                if(permissions != null && permissions.length > 0) {
+                    if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                        if(fc!=null) {
+                            fc.mkdir();
+                            Log.d(TAG, "Able to create FC 222");
                         }
                     }
                 }
