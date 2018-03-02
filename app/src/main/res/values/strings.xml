@@ -179,5 +179,10 @@
     <string name="thresholdLimitExceededMsg">The available Phone Memory is below the threshold of %1$s.\n\nClick OK to continue.</string>
     <string name="minimumThresholdExceeded">The available Phone Memory is below %1$s.\n\nYou need to free some space before you can continue to record video/photo.</string>
     <string name="minimumThresholdDisabled">Minimum Threshold Check disabled. Please go to Settings to enable.</string>
+    <string name="sdCardDetectTitle">SD Card Detected</string>
+    <string name="sdCardDetectMessage">SD Card has been detected. Files will be stored in below location.\n\n%1$s\n\nNOTE: If the application is uninstalled,
+    the files in the above folder will be removed.</string>
+    <string name="sdCardNotDetectTitle">SD Card Not Detected</string>
+    <string name="sdCardNotDetectMessage">No SD Card has been detected.\n\nPlease insert an SD Card and try again.</string>
 </resources>
 

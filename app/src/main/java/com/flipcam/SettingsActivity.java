@@ -9,14 +9,12 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.content.res.Configuration;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -81,7 +79,6 @@ public class SettingsActivity extends AppCompatActivity{
     Dialog sdCardDialog;
     LinearLayout sdcardlayout;
     TextView sdCardPathMsg;
-    ImageView editSdCardPath;
     LayoutInflater layoutInflater;
     CheckBox switchOnDrive;
     CheckBox switchOnDropbox;
@@ -96,7 +93,6 @@ public class SettingsActivity extends AppCompatActivity{
     Dialog cloudUpload;
     View cloudUploadRoot;
     View signInProgressRoot;
-    View sdCardRoot;
     View saveToCloudRoot;
     View autoUploadEnabledWithFolderRoot;
     View autoUploadEnabledRoot;
@@ -121,7 +117,6 @@ public class SettingsActivity extends AppCompatActivity{
     DbxRequestConfig dbxRequestConfig;
     boolean goToDropbox = false;
     CheckBox showMemoryConsumed;
-    private final int SD_CARD_PERMISSION = 0;
     View taskInProgressRoot;
     Dialog taskInProgress;
 
@@ -137,7 +132,6 @@ public class SettingsActivity extends AppCompatActivity{
         phoneMemBtn = (RadioButton)findViewById(R.id.phoneMemButton);
         sdCardBtn = (RadioButton)findViewById(R.id.sdCardbutton);
         sdCardPathMsg = (TextView)findViewById(R.id.sdcardpathmsg);
-        editSdCardPath = (ImageView)findViewById(R.id.editSdCardPath);
         switchOnDropbox = (CheckBox) findViewById(R.id.switchOnDropbox);
         switchOnDrive = (CheckBox) findViewById(R.id.switchOnDrive);
         sdcardlayout = (LinearLayout)findViewById(R.id.sdcardlayout);
@@ -155,7 +149,6 @@ public class SettingsActivity extends AppCompatActivity{
             hideSDCardPath();
         }
         layoutInflater = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        sdCardRoot = layoutInflater.inflate(R.layout.sd_card_location,null);
         saveToCloudRoot = layoutInflater.inflate(R.layout.save_to_cloud,null);
         cloudUploadRoot = layoutInflater.inflate(R.layout.cloud_upload_folder,null);
         signInProgressRoot = layoutInflater.inflate(R.layout.task_in_progress,null);
@@ -187,20 +180,17 @@ public class SettingsActivity extends AppCompatActivity{
                 Log.d(TAG,"Phone memory is true");
                 phoneMemBtn.setChecked(true);
                 sdCardBtn.setChecked(false);
-                editSdCardPath.setClickable(false);
             }
             else{
                 Log.d(TAG,"Phone memory is false");
                 phoneMemBtn.setChecked(false);
                 sdCardBtn.setChecked(true);
-                editSdCardPath.setClickable(true);
             }
         }
         else{
             Log.d(TAG,"Phone memory NOT exists");
             phoneMemBtn.setChecked(true);
             sdCardBtn.setChecked(false);
-            editSdCardPath.setClickable(false);
         }
         //Update Phone memory
         if(settingsPref.contains(Constants.PHONE_MEMORY_DISABLE)){
@@ -265,6 +255,23 @@ public class SettingsActivity extends AppCompatActivity{
         settingsEditor.commit();
     }
 
+    public String getSDCardPath(){
+        //File[] storage = new File("/storage").listFiles();
+        File[] mediaDirs = getExternalMediaDirs();
+        for(int i=0;i<mediaDirs.length;i++){
+            try{
+                if(Environment.isExternalStorageRemovable(mediaDirs[i])){
+                    Log.d(TAG, "Removable storage = "+mediaDirs[i]);
+                    return mediaDirs[i].getPath();
+                }
+            }
+            catch(IllegalArgumentException illegal){
+                Log.d(TAG, "Not a valid storage device");
+            }
+        }
+        return null;
+    }
+
     public void selectSaveMedia(View view){
         switch (view.getId()){
             case R.id.phoneMemButton:
@@ -273,155 +280,33 @@ public class SettingsActivity extends AppCompatActivity{
                 settingsEditor.commit();
                 phoneMemBtn.setChecked(true);
                 sdCardBtn.setChecked(false);
-                editSdCardPath.setClickable(false);
+                hideSDCardPath();
                 break;
             case R.id.sdCardbutton:
                 Log.d(TAG,"Save in sd card");
                 phoneMemBtn.setChecked(false);
                 sdCardBtn.setChecked(true);
-                editSdCardPath.setClickable(true);
                 if(!settingsPref.contains(Constants.SD_CARD_PATH)) {
-                    //openSdCardPath(view);
-                    /*StringBuffer output = new StringBuffer();
-                    Process p;
-                    ArrayList<String> storageInfo = new ArrayList<>();
-                    try {
-                        p = Runtime.getRuntime().exec("df");
-                        p.waitFor();
-                        BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-                        String line = "";
-                        while ((line = reader.readLine())!= null) {
-                            if(line.contains("/storage")){
-                                storageInfo.add(line);
-                            }
-                            output.append(line + "\n");
-                        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                    String response = output.toString();
-                    Log.d(TAG, "Response = \n"+response);
-                    Iterator<String> storageIter = storageInfo.iterator();
-                    while(storageIter.hasNext()){
-                        String storage = storageIter.next();
-                    }*/
-                    File[] storage = new File("/storage").listFiles();
-                    boolean sdCard = false;
-                    for(int i=0;i<storage.length;i++){
-                        /*if(Environment.getExternalStorageState(storage[i]).equals(Environment.MEDIA_MOUNTED)) {
-                            Log.d(TAG, "getExternalStorageState = " +storage[i].getPath());
-                            sdCard = true;
-                            break;
-                        }*/
-                        try{
-                            if(Environment.isExternalStorageRemovable(storage[i])){
-                                sdCard = true;
-                                Log.d(TAG, "Removable storage = "+storage[i]);
-                                break;
-                            }
-                        }
-                        catch(IllegalArgumentException illegal){
-                            Log.d(TAG, "Not a valid storage device");
-                        }
-                    }
-                    if(!sdCard){
+                    String sdCardPath = getSDCardPath();
+                    if(sdCardPath == null){
                         Log.d(TAG, "No SD Card");
                         phoneMemBtn.setChecked(true);
                         sdCardBtn.setChecked(false);
                         settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
                         settingsEditor.commit();
+                        hideSDCardPath();
                     }
                     else{
-                        Log.d(TAG, "fcexists = " + fcexists.exists());
-                        Log.d(TAG, "getPath = " + fcexists.getPath());
-                        int storagepermission = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE);
-                        if(storagepermission == PackageManager.PERMISSION_GRANTED){
-                            Log.d(TAG, "Permission exists");
-                            File[] files = getExternalMediaDirs();
-                            if(files!=null){
-                                for(File file : files) {
-                                    try {
-                                        Log.d(TAG, "media files path = " + file.getPath());
-                                        Log.d(TAG, "isExternalStorageRemovable = " + Environment.isExternalStorageRemovable(file));
-                                        if(Environment.isExternalStorageRemovable(file)){
-                                            settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, false);
-                                            settingsEditor.putString(Constants.SD_CARD_PATH, file.getPath());
-                                            settingsEditor.commit();
-                                            showSDCardPath(file.getPath());
-                                        }
-                                    }
-                                    catch(IllegalArgumentException illegal){
-                                        Log.d(TAG, "Not a valid storage device");
-                                    }
-                                }
-                            }
-                        }
-                        else{
-                            Log.d(TAG, "No Permission");
-                            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, SD_CARD_PERMISSION);
-                        }
+                        settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, false);
+                        settingsEditor.putString(Constants.SD_CARD_PATH, sdCardPath);
+                        settingsEditor.commit();
+                        showSDCardPath(sdCardPath);
                     }
                 }
                 else{
                     settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM,false);
                     settingsEditor.commit();
                 }
-                break;
-        }
-    }
-    File fc=null;
-    File fcexists=null;
-    public void saveSdCardPath(View view) {
-        switch (view.getId()) {
-            case R.id.okSdCard:
-                Log.d(TAG, "Checking if path is valid");
-                String path;
-                path = ((EditText) sdCardRoot.findViewById(R.id.sdCardPathText)).getText().toString();
-                Log.d(TAG, "Path = " + path);
-                File sdCard = new File(path);
-                if (!sdCard.exists() || !sdCard.isDirectory()) {
-                    Toast.makeText(getApplicationContext(), getResources().getString(R.string.sdCardPathNotExist), Toast.LENGTH_SHORT).show();
-                } else {
-                    String fullPath;
-                    Log.d(TAG, "Existing path = " + sdCard.getPath());
-                    if (!sdCard.getPath().contains(getResources().getString(R.string.app_name))) {
-                        if (sdCard.getPath().endsWith("/")) {
-                            String pathExcludeFrontSlash = sdCard.getPath().substring(0, sdCard.getPath().length() - 1);
-                            fullPath = pathExcludeFrontSlash + getResources().getString(R.string.FC_ROOT);
-                        } else {
-                            fullPath = sdCard.getPath() + getResources().getString(R.string.FC_ROOT);
-                        }
-                        Log.d(TAG, "Full path = " + fullPath);
-                        Toast.makeText(getApplicationContext(), getResources().getString(R.string.sdCardPathSaved), Toast.LENGTH_SHORT).show();
-                        settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, false);
-                        settingsEditor.putString(Constants.SD_CARD_PATH, fc.getPath());
-                        settingsEditor.commit();
-                        showSDCardPath(fc.getPath());
-                    } else {
-                        Toast.makeText(getApplicationContext(), getResources().getString(R.string.sdCardPathSaved), Toast.LENGTH_SHORT).show();
-                        settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, false);
-                        settingsEditor.putString(Constants.SD_CARD_PATH, sdCard.getPath());
-                        settingsEditor.commit();
-                        showSDCardPath(sdCard.getPath());
-                    }
-                    sdCardDialog.dismiss();
-                }
-                break;
-            case R.id.cancelSdCard:
-                Log.d(TAG, "SD Card Path = " + settingsPref.getString(Constants.SD_CARD_PATH, ""));
-                if (settingsPref.contains(Constants.SD_CARD_PATH) && !settingsPref.getString(Constants.SD_CARD_PATH, "").equalsIgnoreCase("")) {
-                    phoneMemBtn.setChecked(false);
-                    sdCardBtn.setChecked(true);
-                    settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, false);
-                    settingsEditor.commit();
-                } else {
-                    phoneMemBtn.setChecked(true);
-                    sdCardBtn.setChecked(false);
-                    settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
-                    settingsEditor.commit();
-                }
-                sdCardDialog.dismiss();
-                Log.d(TAG, "cancel sd card");
                 break;
         }
     }
@@ -433,18 +318,6 @@ public class SettingsActivity extends AppCompatActivity{
 
     public void hideSDCardPath(){
         sdcardlayout.setVisibility(View.GONE);
-    }
-
-    public void reDrawSDCardScreen(){
-        Configuration config = getResources().getConfiguration();
-        if(config.orientation == Configuration.ORIENTATION_PORTRAIT){
-            TextView sdcardText = (TextView)sdCardRoot.findViewById(R.id.sdCardMsg);
-            sdcardText.setText(getResources().getString(R.string.sdCardPathPortrait));
-        }
-        else{
-            TextView sdcardText = (TextView)sdCardRoot.findViewById(R.id.sdCardMsg);
-            sdcardText.setText(getResources().getString(R.string.sdCardPathLandscape));
-        }
     }
 
     public void showMemoryConsumed(View view){
@@ -1020,34 +893,6 @@ public class SettingsActivity extends AppCompatActivity{
                     super.onRequestPermissionsResult(requestCode,permissions,grantResults);
                 }
                 break;
-            case SD_CARD_PERMISSION:
-                if(permissions != null && permissions.length > 0) {
-                    if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                        Log.d(TAG, "Permission granted");
-                        File[] files = getExternalMediaDirs();
-                        if(files!=null){
-                            for(File file : files) {
-                                try {
-                                    Log.d(TAG, "media files path = " + file.getPath());
-                                    Log.d(TAG, "isExternalStorageRemovable = " + Environment.isExternalStorageRemovable(file));
-                                    if(Environment.isExternalStorageRemovable(file)){
-                                        settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, false);
-                                        settingsEditor.putString(Constants.SD_CARD_PATH, file.getPath());
-                                        settingsEditor.commit();
-                                        showSDCardPath(file.getPath());
-                                    }
-                                }
-                                catch(IllegalArgumentException illegal){
-                                    Log.d(TAG, "Not a valid storage device");
-                                }
-                            }
-                        }
-                    }
-                }
-                else{
-                    super.onRequestPermissionsResult(requestCode,permissions,grantResults);
-                }
-                break;
         }
     }
 
@@ -1398,11 +1243,5 @@ public class SettingsActivity extends AppCompatActivity{
         settingsEditor.putString(Constants.DROPBOX_FOLDER,folderName);
         settingsEditor.putBoolean(Constants.SAVE_TO_DROPBOX, saveTo);
         settingsEditor.commit();
-    }
-
-    @Override
-    public void onConfigurationChanged(Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-        reDrawSDCardScreen();
     }
 }
