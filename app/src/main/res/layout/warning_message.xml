@@ -1,5 +1,6 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/warningParent"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/backColorDialog"
@@ -21,7 +22,7 @@
             android:src="@mipmap/ic_launcher" />
 
         <TextView
-            android:id="@+id/textView"
+            android:id="@+id/warningTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
@@ -47,7 +48,7 @@
         android:orientation="horizontal">
 
         <ImageView
-            android:id="@+id/imageView2"
+            android:id="@+id/warningSign"
             android:layout_width="70dp"
             android:layout_height="60dp"
             android:layout_marginLeft="20dp"
@@ -56,7 +57,7 @@
             app:srcCompat="@drawable/ic_warning" />
 
         <TextView
-            android:id="@+id/textView3"
+            android:id="@+id/warningText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"

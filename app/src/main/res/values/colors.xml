@@ -24,16 +24,10 @@
     <color name="memoryConsumed">#ff0000</color>
     //Top and Bottom media control color for image
     <color name="mediaControlColor">#000000</color>
-    //Progress fill color for video seekbar
-    <color name="seekFill">#FFFFFF</color>
-    //Start and end time color
-    <color name="time">#FFFFFF</color>
     //Background color for mode
     <color name="modeText">#4dc2a5</color>
     //Text for color for save message
     <color name="saveText">#ffffff</color>
-    //Text color for mode
-    <color name="modeColor">#FFFFFF</color>
     //Transparent color for saved message
     <color name="savedMsg">#7F000000</color>
     //Transparent color for upload message

@@ -134,7 +134,7 @@
         \n\nThis is necessary to be able to auto upload to Google Drive.\n\nClick Yes to give permission.</string>
     <string name="permissionHeader">Account Check Permission</string>
     <string name="yesPermission">YES</string>
-    <string name="noPermission">LATER</string>
+    <string name="noPermission">NO</string>
     <string name="autouploadFolderCreated">FlipCam will now auto upload your photos/videos onto this folder in %1$s.\n\nPlease check your notifications for upload status.</string>
     <string name="autouploadFolderUpdated">FlipCam will now auto upload your photos/videos onto <u>%1$s</u> folder in %2$s.\n\nPlease check your notifications for upload status.</string>
     <string name="signInProgress">Fetching Google Account information in your phone for signing into %1$s.\n\nPlease Wait...</string>
@@ -158,7 +158,7 @@
     <string name="continueToCloud">Do you want to continue?</string>
     <string name="uploadCheckHeader">Upload Folder</string>
     <string name="uploadFolderFound">The below folder was found to be earlier created using FlipCam:</string>
-    <string name="uploadCheckMessage">Checking if a folder was earlier created in %1$s using FlipCam.\n\nIf not, one will be created now.</string>
+    <string name="uploadCheckMessage">Checking for earlier created folder in %1$s using FlipCam.\n\nIf not, one will be created now.</string>
     <string name="uploadCheckDropboxMsg">Checking for earlier created subfolder inside FlipCam folder in user\'s %1$s account.</string>
     <string name="uploadFolderNotExist">Upload Folder Moved/Deleted</string>
     <string name="uploadFolderMovedDeleted">The earlier created folder %1$s in Dropbox has been moved/deleted.\n\nSetting upload folder as FlipCam...</string>

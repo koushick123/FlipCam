@@ -633,10 +633,6 @@ public class VideoFragment extends android.app.Fragment{
         permissionInterface.askPermission();
     }
 
-    public LowestThresholdCheckForVideoInterface getLowestThresholdCheckForVideoInterface() {
-        return lowestThresholdCheckForVideoInterface;
-    }
-
     public void createAndShowThumbnail(String mediaPath)
     {
         //Storing in public folder. This will ensure that the files are visible in other apps as well.
@@ -730,29 +726,6 @@ public class VideoFragment extends android.app.Fragment{
     {
         thumbnail.setImageDrawable(getResources().getDrawable(R.drawable.placeholder));
         thumbnail.setClickable(false);
-    }
-
-    private void fetchMedia(ImageView thumbnail)
-    {
-        String removableStoragePath;
-        Log.d(TAG,"storage state = "+Environment.getExternalStorageState());
-        File fileList[] = new File("/storage/").listFiles();
-        //To find location of SD Card, if it exists
-        for (File file : fileList)
-        {
-            if(!file.getAbsolutePath().equalsIgnoreCase(Environment.getExternalStorageDirectory().getAbsolutePath()) && file.isDirectory() && file.canRead()) {
-                removableStoragePath = file.getAbsolutePath();
-                Log.d(TAG,removableStoragePath);
-                File newDir = new File(removableStoragePath+"/FC_Media");
-                if(!newDir.exists()){
-                    newDir.mkdir();
-                }
-                /*for(File file1 : new File(removableStoragePath).listFiles())
-                {
-                    Log.d(TAG,"SD Card path = "+file1.getPath());
-                }*/
-            }
-        }
     }
 
     private void openMedia()

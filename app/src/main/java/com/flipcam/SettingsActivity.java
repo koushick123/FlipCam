@@ -20,6 +20,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -117,8 +118,9 @@ public class SettingsActivity extends AppCompatActivity{
     DbxRequestConfig dbxRequestConfig;
     boolean goToDropbox = false;
     CheckBox showMemoryConsumed;
-    View taskInProgressRoot;
-    Dialog taskInProgress;
+    View warningMsgRoot;
+    Dialog warningMsg;
+    Button okButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -157,8 +159,8 @@ public class SettingsActivity extends AppCompatActivity{
         autoUploadDisabledRoot = layoutInflater.inflate(R.layout.auto_upload_disabled, null);
         uploadFolderCheckRoot = layoutInflater.inflate(R.layout.upload_folder_check, null);
         accessGrantedDropboxRoot = layoutInflater.inflate(R.layout.access_granted_dropbox, null);
-        taskInProgressRoot = layoutInflater.inflate(R.layout.task_in_progress,null);
-        taskInProgress = new Dialog(this);
+        warningMsgRoot = layoutInflater.inflate(R.layout.warning_message,null);
+        warningMsg = new Dialog(this);
         sdCardDialog = new Dialog(this);
         saveToCloud = new Dialog(this);
         cloudUpload = new Dialog(this);
@@ -176,15 +178,44 @@ public class SettingsActivity extends AppCompatActivity{
         //Update Save Media in
         if(settingsPref.contains(Constants.SAVE_MEDIA_PHONE_MEM)){
             Log.d(TAG,"Phone memory exists");
-            if(settingsPref.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM,true)){
+            if(settingsPref.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
                 Log.d(TAG,"Phone memory is true");
                 phoneMemBtn.setChecked(true);
                 sdCardBtn.setChecked(false);
+                hideSDCardPath();
             }
             else{
                 Log.d(TAG,"Phone memory is false");
-                phoneMemBtn.setChecked(false);
-                sdCardBtn.setChecked(true);
+                if(getSDCardPath() != null) {
+                    phoneMemBtn.setChecked(false);
+                    sdCardBtn.setChecked(true);
+                    showSDCardPath(settingsPref.getString(Constants.SD_CARD_PATH, ""));
+                }
+                else{
+                    phoneMemBtn.setChecked(true);
+                    sdCardBtn.setChecked(false);
+                    hideSDCardPath();
+                    settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
+                    settingsEditor.commit();
+                    LinearLayout warningParent = (LinearLayout)warningMsgRoot.findViewById(R.id.warningParent);
+                    warningParent.setBackgroundColor(getResources().getColor(R.color.backColorSettingMsg));
+                    TextView warningTitle = (TextView)warningMsgRoot.findViewById(R.id.warningTitle);
+                    warningTitle.setText(getResources().getString(R.string.sdCardNotDetectTitle));
+                    ImageView warningSign = (ImageView)warningMsgRoot.findViewById(R.id.warningSign);
+                    warningSign.setVisibility(View.VISIBLE);
+                    TextView warningText = (TextView)warningMsgRoot.findViewById(R.id.warningText);
+                    warningText.setText(getResources().getString(R.string.sdCardNotDetectMessage));
+                    okButton = (Button)warningMsgRoot.findViewById(R.id.okButton);
+                    okButton.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            warningMsg.dismiss();
+                        }
+                    });
+                    warningMsg.setContentView(warningMsgRoot);
+                    warningMsg.setCancelable(false);
+                    warningMsg.show();
+                }
             }
         }
         else{
@@ -286,27 +317,47 @@ public class SettingsActivity extends AppCompatActivity{
                 Log.d(TAG,"Save in sd card");
                 phoneMemBtn.setChecked(false);
                 sdCardBtn.setChecked(true);
-                if(!settingsPref.contains(Constants.SD_CARD_PATH)) {
-                    String sdCardPath = getSDCardPath();
-                    if(sdCardPath == null){
-                        Log.d(TAG, "No SD Card");
-                        phoneMemBtn.setChecked(true);
-                        sdCardBtn.setChecked(false);
-                        settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
-                        settingsEditor.commit();
-                        hideSDCardPath();
-                    }
-                    else{
-                        settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, false);
-                        settingsEditor.putString(Constants.SD_CARD_PATH, sdCardPath);
-                        settingsEditor.commit();
-                        showSDCardPath(sdCardPath);
-                    }
+                String sdCardPath = getSDCardPath();
+                if(sdCardPath == null){
+                    Log.d(TAG, "No SD Card");
+                    phoneMemBtn.setChecked(true);
+                    sdCardBtn.setChecked(false);
+                    settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
+                    settingsEditor.commit();
+                    hideSDCardPath();
+                    LinearLayout warningParent = (LinearLayout)warningMsgRoot.findViewById(R.id.warningParent);
+                    warningParent.setBackgroundColor(getResources().getColor(R.color.backColorSettingMsg));
+                    TextView warningTitle = (TextView)warningMsgRoot.findViewById(R.id.warningTitle);
+                    warningTitle.setText(getResources().getString(R.string.sdCardNotDetectTitle));
+                    ImageView warningSign = (ImageView)warningMsgRoot.findViewById(R.id.warningSign);
+                    warningSign.setVisibility(View.VISIBLE);
+                    TextView warningText = (TextView)warningMsgRoot.findViewById(R.id.warningText);
+                    warningText.setText(getResources().getString(R.string.sdCardNotDetectMessage));
                 }
                 else{
-                    settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM,false);
+                    settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, false);
+                    settingsEditor.putString(Constants.SD_CARD_PATH, sdCardPath);
                     settingsEditor.commit();
+                    showSDCardPath(sdCardPath);
+                    LinearLayout warningParent = (LinearLayout)warningMsgRoot.findViewById(R.id.warningParent);
+                    warningParent.setBackgroundColor(getResources().getColor(R.color.backColorSettingMsg));
+                    ImageView warningSign = (ImageView)warningMsgRoot.findViewById(R.id.warningSign);
+                    warningSign.setVisibility(View.GONE);
+                    TextView warningTitle = (TextView)warningMsgRoot.findViewById(R.id.warningTitle);
+                    warningTitle.setText(getResources().getString(R.string.sdCardDetectTitle));
+                    TextView warningText = (TextView)warningMsgRoot.findViewById(R.id.warningText);
+                    warningText.setText(getResources().getString(R.string.sdCardDetectMessage, sdCardPath));
                 }
+                warningMsg.setContentView(warningMsgRoot);
+                warningMsg.setCancelable(false);
+                warningMsg.show();
+                okButton = (Button)warningMsgRoot.findViewById(R.id.okButton);
+                okButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        warningMsg.dismiss();
+                    }
+                });
                 break;
         }
     }

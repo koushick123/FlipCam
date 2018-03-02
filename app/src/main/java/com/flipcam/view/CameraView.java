@@ -1144,6 +1144,15 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 }
                 else{
                     path = sharedPreferences.getString(Constants.SD_CARD_PATH, "");
+                    SimpleDateFormat sdf = new SimpleDateFormat(getResources().getString(R.string.DATE_FORMAT_FOR_FILE));
+                    String filename = sdf.format(new Date());
+                    Log.d(TAG, "sd card filename = " + filename);
+                    if(video){
+                        path += getResources().getString(R.string.FC_VID_PREFIX) + filename + getResources().getString(R.string.VID_EXT);
+                    }
+                    else{
+                        path += getResources().getString(R.string.FC_IMG_PREFIX) + filename + getResources().getString(R.string.IMG_EXT);
+                    }
                     Log.d(TAG, "SD Card Path = "+path);
                 }
             }
