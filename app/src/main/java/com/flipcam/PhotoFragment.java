@@ -9,6 +9,7 @@ import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.hardware.SensorManager;
+import android.media.ExifInterface;
 import android.media.MediaMetadataRetriever;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -33,6 +34,8 @@ import com.flipcam.service.DropboxUploadService;
 import com.flipcam.service.GoogleDriveUploadService;
 import com.flipcam.util.MediaUtil;
 import com.flipcam.view.CameraView;
+
+import java.io.IOException;
 
 import static com.facebook.FacebookSdk.getApplicationContext;
 import static com.flipcam.PermissionActivity.FC_SHARED_PREFERENCE;
@@ -448,6 +451,16 @@ public class PhotoFragment extends Fragment {
                     setPlaceholderThumbnail();
                 }
             } else {
+                try {
+                    ExifInterface exifInterface = new ExifInterface(filePath);
+                    Log.d(TAG, "TAG_ORIENTATION = "+exifInterface.getAttribute(ExifInterface.TAG_ORIENTATION));
+                    if(exifInterface.getAttribute(ExifInterface.TAG_ORIENTATION).equalsIgnoreCase(String.valueOf(ExifInterface.ORIENTATION_ROTATE_90)))
+                    {
+                        exifInterface.setAttribute(ExifInterface.TAG_ORIENTATION, String.valueOf(ExifInterface.ORIENTATION_UNDEFINED));
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
                 Bitmap pic = BitmapFactory.decodeFile(filePath);
                 pic = Bitmap.createScaledBitmap(pic, (int) getResources().getDimension(R.dimen.thumbnailWidth),
                         (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
@@ -460,7 +473,6 @@ public class PhotoFragment extends Fragment {
                     }
                 });
             }
-            //thumbnail.setRotation(rotationAngle);
         }
         else{
             setPlaceholderThumbnail();
