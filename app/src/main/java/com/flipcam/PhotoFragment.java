@@ -66,6 +66,7 @@ public class PhotoFragment extends Fragment {
     boolean continuousAF = true;
     OrientationEventListener orientationEventListener;
     int orientation = -1;
+    ExifInterface exifInterface=null;
 
     public interface PhotoPermission{
         void askPhotoPermission();
@@ -273,6 +274,12 @@ public class PhotoFragment extends Fragment {
         switchCamera.setRotation(rotationAngle);
         videoMode.setRotation(rotationAngle);
         flash.setRotation(rotationAngle);
+        if(exifInterface!=null && !filePath.equalsIgnoreCase(""))
+        {
+            if(isImage(filePath) && exifInterface.getAttribute(ExifInterface.TAG_ORIENTATION).equalsIgnoreCase(String.valueOf(ExifInterface.ORIENTATION_ROTATE_90))) {
+                rotationAngle += 90f;
+            }
+        }
         thumbnail.setRotation(rotationAngle);
     }
 
@@ -424,13 +431,13 @@ public class PhotoFragment extends Fragment {
         }
         return false;
     }
-
+    String filePath = "";
     public void getLatestFileIfExists()
     {
         FileMedia[] medias = MediaUtil.getMediaList(getActivity().getApplicationContext());
         if (medias != null && medias.length > 0) {
             Log.d(TAG, "Latest file is = " + medias[0].getPath());
-            final String filePath = medias[0].getPath();
+            filePath = medias[0].getPath();
             if (!isImage(filePath)) {
                 MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
                 mediaMetadataRetriever.setDataSource(filePath);
@@ -452,19 +459,15 @@ public class PhotoFragment extends Fragment {
                 }
             } else {
                 try {
-                    ExifInterface exifInterface = new ExifInterface(filePath);
+                    exifInterface = new ExifInterface(filePath);
                     Log.d(TAG, "TAG_ORIENTATION = "+exifInterface.getAttribute(ExifInterface.TAG_ORIENTATION));
-                    if(exifInterface.getAttribute(ExifInterface.TAG_ORIENTATION).equalsIgnoreCase(String.valueOf(ExifInterface.ORIENTATION_ROTATE_90)))
-                    {
-                        exifInterface.setAttribute(ExifInterface.TAG_ORIENTATION, String.valueOf(ExifInterface.ORIENTATION_UNDEFINED));
-                    }
+                    Bitmap pic = BitmapFactory.decodeFile(filePath);
+                    pic = Bitmap.createScaledBitmap(pic, (int) getResources().getDimension(R.dimen.thumbnailWidth),
+                            (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
+                    thumbnail.setImageBitmap(pic);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                Bitmap pic = BitmapFactory.decodeFile(filePath);
-                pic = Bitmap.createScaledBitmap(pic, (int) getResources().getDimension(R.dimen.thumbnailWidth),
-                        (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
-                thumbnail.setImageBitmap(pic);
                 thumbnail.setClickable(true);
                 thumbnail.setOnClickListener(new View.OnClickListener() {
                     @Override

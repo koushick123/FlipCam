@@ -9,6 +9,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Typeface;
 import android.hardware.SensorManager;
+import android.media.ExifInterface;
 import android.media.MediaMetadataRetriever;
 import android.os.Bundle;
 import android.os.Environment;
@@ -37,6 +38,7 @@ import com.flipcam.util.MediaUtil;
 import com.flipcam.view.CameraView;
 
 import java.io.File;
+import java.io.IOException;
 
 import static android.widget.Toast.makeText;
 import static com.facebook.FacebookSdk.getApplicationContext;
@@ -72,7 +74,7 @@ public class VideoFragment extends android.app.Fragment{
     LinearLayout timeElapsedParentLayout;
     LinearLayout memoryConsumedParentLayout;
     LinearLayout.LayoutParams parentLayoutParams;
-
+    ExifInterface exifInterface=null;
     public VideoFragment() {
         // Required empty public constructor
     }
@@ -330,6 +332,12 @@ public class VideoFragment extends android.app.Fragment{
         switchCamera.setRotation(rotationAngle);
         photoMode.setRotation(rotationAngle);
         flash.setRotation(rotationAngle);
+        if(exifInterface!=null && !filePath.equalsIgnoreCase(""))
+        {
+            if(isImage(filePath) && exifInterface.getAttribute(ExifInterface.TAG_ORIENTATION).equalsIgnoreCase(String.valueOf(ExifInterface.ORIENTATION_ROTATE_90))) {
+                rotationAngle += 90f;
+            }
+        }
         thumbnail.setRotation(rotationAngle);
     }
 
@@ -677,13 +685,13 @@ public class VideoFragment extends android.app.Fragment{
         }
         return false;
     }
-
+    String filePath = "";
     public void getLatestFileIfExists()
     {
         FileMedia[] medias = MediaUtil.getMediaList(getActivity().getApplicationContext());
         if (medias != null && medias.length > 0) {
             Log.d(TAG, "Latest file is = " + medias[0].getPath());
-            final String filePath = medias[0].getPath();
+            filePath = medias[0].getPath();
             if (!isImage(filePath)) {
                 MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
                 mediaMetadataRetriever.setDataSource(filePath);
@@ -704,6 +712,12 @@ public class VideoFragment extends android.app.Fragment{
                     setPlaceholderThumbnail();
                 }
             } else {
+                try {
+                    exifInterface = new ExifInterface(filePath);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                Log.d(TAG, "TAG_ORIENTATION = "+exifInterface.getAttribute(ExifInterface.TAG_ORIENTATION));
                 Bitmap pic = BitmapFactory.decodeFile(filePath);
                 pic = Bitmap.createScaledBitmap(pic, (int) getResources().getDimension(R.dimen.thumbnailWidth),
                         (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
