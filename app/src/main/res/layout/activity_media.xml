@@ -117,7 +117,7 @@
             <ImageButton
                 android:id="@+id/playButton"
                 android:layout_width="wrap_content"
-                android:layout_height="60dp"
+                android:layout_height="@dimen/playButtonHeight"
                 android:layout_gravity="center"
                 android:layout_weight="0.1"
                 android:background="@color/mediaControlColor"

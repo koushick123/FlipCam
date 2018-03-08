@@ -72,9 +72,10 @@
     //Size for no image text
     <dimen name="noImageTextSize">25sp</dimen>
     //Size of top bar for media (Portrait)
-    <dimen name="topMediaBarPortrait">60dp</dimen>
+    <dimen name="topMediaBarPortrait">40dp</dimen>
     //Size of top bar for media (Landscape)
     <dimen name="topMediaBarLandscape">40dp</dimen>
+    <dimen name="playButtonHeight">40dp</dimen>
     //Text size for settings
     <dimen name="settingsMainText">17sp</dimen>
     //Text size for subtext
