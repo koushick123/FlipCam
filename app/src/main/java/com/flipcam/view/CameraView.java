@@ -232,7 +232,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 case Constants.RECORD_COMPLETE:
                     Log.d(TAG,"Update thumbnail now");
                     videoFragment.createAndShowThumbnail(getMediaPath());
-//                    videoFragment.showRecordSaved();
                     break;
                 case Constants.RECORD_STOP_ENABLE:
                     if(VERBOSE)Log.d(TAG,"Enable stop record");
