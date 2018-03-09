@@ -3,12 +3,8 @@ package com.flipcam.cameramanager;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
-import android.graphics.Matrix;
-import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
-import android.graphics.YuvImage;
 import android.hardware.Camera;
 import android.util.Log;
 
@@ -16,7 +12,6 @@ import com.flipcam.PermissionActivity;
 import com.flipcam.PhotoFragment;
 import com.flipcam.camerainterface.CameraOperations;
 
-import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -27,7 +22,7 @@ import java.util.List;
  * Created by Koushick on 02-08-2017.
  */
 
-public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeListener, Camera.ShutterCallback,Camera.PictureCallback, Camera.PreviewCallback {
+public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeListener, Camera.ShutterCallback,Camera.PictureCallback {
 
     private Camera mCamera;
     public final String TAG = "Camera1Manager";
@@ -98,7 +93,6 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
             parameters.setExposureCompensation((parameters.getMaxExposureCompensation()-3) > 0 ? parameters.getMaxExposureCompensation()-3 : 0);
             mCamera.setParameters(parameters);
             Log.d(TAG,"exp comp set = "+parameters.getExposureCompensation());
-            mCamera.setPreviewCallback(this);
         }
         else{
             mCamera=null;
@@ -253,7 +247,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         }*/
         //else {
             Log.d(TAG,"take pic");
-            capture=true;
+//            capture=true;
             Camera.Parameters parameters = mCamera.getParameters();
             parameters.setZoom(zoomedVal);
             mCamera.takePicture(this, null, null, this);
@@ -281,7 +275,6 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
             picture = new FileOutputStream(photoPath);
             picture.write(data);
             picture.close();
-            photoFrag.showImageSaved();
             SharedPreferences.Editor editor = photoFrag.getActivity().getSharedPreferences(PermissionActivity.FC_SHARED_PREFERENCE, Context.MODE_PRIVATE).edit();
             editor.putBoolean("videoCapture",false);
             editor.commit();
@@ -297,6 +290,8 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
             //Start the preview no matter if photo is saved or not.
             Log.d(TAG, "photo is ready");
             camera.startPreview();
+            photoFrag.showImageSaved();
+            photoFrag.showCapturedImagePreview(photoPath);
             photoFrag.getCapturePic().setClickable(true);
             photoFrag.hideImagePreview();
         }
@@ -460,31 +455,6 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         }
     }
     boolean capture=false;
-    @Override
-    public void onPreviewFrame(byte[] bytes, Camera camera) {
-        if(capture)
-        {
-            try {
-                capture = false;
-                Log.d(TAG, "inside onpreviewframe");
-                int previewWidth = camera.getParameters().getPreviewSize().width;
-                int previewHeight = camera.getParameters().getPreviewSize().height;
-                YuvImage yuvImage = new YuvImage(bytes, ImageFormat.NV21, previewWidth, previewHeight, null);
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                yuvImage.compressToJpeg(new Rect(0, 0, previewWidth, previewHeight), 100, baos);
-                Bitmap thumb = BitmapFactory.decodeByteArray(baos.toByteArray(), 0, baos.size());
-                baos.close();
-                Matrix rotate = new Matrix();
-                rotate.setRotate(rotation);
-                Log.d(TAG,"rotation = "+rotation);
-                thumb = Bitmap.createBitmap(thumb, 0, 0, previewWidth, previewHeight, rotate, false);
-                photoFrag.createAndShowPhotoThumbnail(thumb);
-                Log.d(TAG, "photo thumbnail created");
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
 
     @Override
     public String getFocusModeAuto() {

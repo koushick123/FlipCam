@@ -276,8 +276,13 @@ public class PhotoFragment extends Fragment {
         flash.setRotation(rotationAngle);
         if(exifInterface!=null && !filePath.equalsIgnoreCase(""))
         {
-            if(isImage(filePath) && exifInterface.getAttribute(ExifInterface.TAG_ORIENTATION).equalsIgnoreCase(String.valueOf(ExifInterface.ORIENTATION_ROTATE_90))) {
-                rotationAngle += 90f;
+            if(isImage(filePath)) {
+                if(exifInterface.getAttribute(ExifInterface.TAG_ORIENTATION).equalsIgnoreCase(String.valueOf(ExifInterface.ORIENTATION_ROTATE_90))) {
+                    rotationAngle += 90f;
+                }
+                else if(exifInterface.getAttribute(ExifInterface.TAG_ORIENTATION).equalsIgnoreCase(String.valueOf(ExifInterface.ORIENTATION_ROTATE_270))) {
+                    rotationAngle += 270f;
+                }
             }
         }
         thumbnail.setRotation(rotationAngle);
@@ -309,7 +314,7 @@ public class PhotoFragment extends Fragment {
             @Override
             public void run() {
                 try {
-                    Thread.sleep(700);
+                    Thread.sleep(1200);
                     showCompleted.cancel();
                 }catch (InterruptedException ie){
                     ie.printStackTrace();
@@ -432,6 +437,26 @@ public class PhotoFragment extends Fragment {
         return false;
     }
     String filePath = "";
+    public void showCapturedImagePreview(final String capturedPhotoPath){
+        try {
+            exifInterface = new ExifInterface(capturedPhotoPath);
+            Log.d(TAG, "TAG_ORIENTATION captured image = "+exifInterface.getAttribute(ExifInterface.TAG_ORIENTATION));
+            Bitmap pic = BitmapFactory.decodeFile(capturedPhotoPath);
+            pic = Bitmap.createScaledBitmap(pic, (int) getResources().getDimension(R.dimen.thumbnailWidth),
+                    (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
+            thumbnail.setImageBitmap(pic);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        thumbnail.setClickable(true);
+        thumbnail.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                openMedia(capturedPhotoPath);
+            }
+        });
+    }
+
     public void getLatestFileIfExists()
     {
         FileMedia[] medias = MediaUtil.getMediaList(getActivity().getApplicationContext());

@@ -287,13 +287,12 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     public void reDrawPause(){
         LinearLayout.LayoutParams pauseParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         if(display.getRotation() == Surface.ROTATION_0) {
-            pauseParams.height = 125;
             pauseParams.weight = 0.1f;
         }
         else{
-            pauseParams.height = 70;
             pauseParams.weight = 0.04f;
         }
+        pauseParams.height = (int)getResources().getDimension(R.dimen.playButtonHeight);
         pauseParams.gravity = Gravity.CENTER;
         pause.setScaleType(ImageView.ScaleType.CENTER_CROP);
         pause.setLayoutParams(pauseParams);

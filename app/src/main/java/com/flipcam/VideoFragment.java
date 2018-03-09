@@ -334,8 +334,13 @@ public class VideoFragment extends android.app.Fragment{
         flash.setRotation(rotationAngle);
         if(exifInterface!=null && !filePath.equalsIgnoreCase(""))
         {
-            if(isImage(filePath) && exifInterface.getAttribute(ExifInterface.TAG_ORIENTATION).equalsIgnoreCase(String.valueOf(ExifInterface.ORIENTATION_ROTATE_90))) {
-                rotationAngle += 90f;
+            if(isImage(filePath)) {
+                if(exifInterface.getAttribute(ExifInterface.TAG_ORIENTATION).equalsIgnoreCase(String.valueOf(ExifInterface.ORIENTATION_ROTATE_90))) {
+                    rotationAngle += 90f;
+                }
+                else if(exifInterface.getAttribute(ExifInterface.TAG_ORIENTATION).equalsIgnoreCase(String.valueOf(ExifInterface.ORIENTATION_ROTATE_270))) {
+                    rotationAngle += 270f;
+                }
             }
         }
         thumbnail.setRotation(rotationAngle);
