@@ -406,7 +406,6 @@ public class VideoFragment extends android.app.Fragment{
         }
         else {
             cameraView.record();
-            showRecordSaved();
         }
         showRecordAndThumbnail();
         SharedPreferences sharedPreferences = getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
@@ -671,6 +670,7 @@ public class VideoFragment extends android.app.Fragment{
             Log.d(TAG,"video fragment is already detached. ");
             isDetached=true;
         }
+        showRecordSaved();
         if(!isDetached) {
             thumbnail.setImageBitmap(firstFrame);
             thumbnail.setClickable(true);

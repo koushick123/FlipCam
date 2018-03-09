@@ -314,7 +314,7 @@ public class PhotoFragment extends Fragment {
             @Override
             public void run() {
                 try {
-                    Thread.sleep(1200);
+                    Thread.sleep(1000);
                     showCompleted.cancel();
                 }catch (InterruptedException ie){
                     ie.printStackTrace();
@@ -426,7 +426,6 @@ public class PhotoFragment extends Fragment {
                 openMedia(cameraView.getPhotoMediaPath());
             }
         });
-        //thumbnail.setRotation(rotationAngle);
     }
 
     public boolean isImage(String path)
@@ -437,25 +436,6 @@ public class PhotoFragment extends Fragment {
         return false;
     }
     String filePath = "";
-    public void showCapturedImagePreview(final String capturedPhotoPath){
-        try {
-            exifInterface = new ExifInterface(capturedPhotoPath);
-            Log.d(TAG, "TAG_ORIENTATION captured image = "+exifInterface.getAttribute(ExifInterface.TAG_ORIENTATION));
-            Bitmap pic = BitmapFactory.decodeFile(capturedPhotoPath);
-            pic = Bitmap.createScaledBitmap(pic, (int) getResources().getDimension(R.dimen.thumbnailWidth),
-                    (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
-            thumbnail.setImageBitmap(pic);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        thumbnail.setClickable(true);
-        thumbnail.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                openMedia(capturedPhotoPath);
-            }
-        });
-    }
 
     public void getLatestFileIfExists()
     {
