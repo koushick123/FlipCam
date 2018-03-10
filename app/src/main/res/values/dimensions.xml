@@ -105,7 +105,7 @@
     <dimen name="memoryThresholdMsg">14sp</dimen>
     <dimen name="dropboxCheckboxTopMargin">10dp</dimen>
     //Left and Right margins for OK button
-    <dimen name="okBtnLeftAndRightMargin">120dp</dimen>
+    <dimen name="okBtnLeftAndRightMargin">100dp</dimen>
     //Left and Right margin for no connection msg
     <dimen name="noConnMsgLeftAndRightMargin">20dp</dimen>
     //Top and Bottom padding for no connection msg

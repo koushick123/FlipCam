@@ -15,10 +15,13 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.flipcam.constants.Constants;
+
+import java.io.File;
 
 public class CameraActivity extends AppCompatActivity implements VideoFragment.PermissionInterface, PhotoFragment.PhotoPermission,VideoFragment.SwitchInterface,
 PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, PhotoFragment.LowestThresholdCheckForPictureInterface{
@@ -27,6 +30,10 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
     private static final String VIDEO = "1";
     VideoFragment videoFragment = null;
     PhotoFragment photoFragment = null;
+    View warningMsgRoot;
+    Dialog warningMsg;
+    Button okButton;
+    LayoutInflater layoutInflater;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -38,6 +45,56 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
             //Start with video fragment
             showVideoFragment();
         }
+        layoutInflater = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        warningMsgRoot = layoutInflater.inflate(R.layout.warning_message,null);
+        warningMsg = new Dialog(this);
+        SharedPreferences sharedPreferences = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
+        SharedPreferences.Editor settingsEditor = sharedPreferences.edit();
+        if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
+            if(doesSDCardExist() == null){
+                settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
+                settingsEditor.commit();
+                LinearLayout warningParent = (LinearLayout)warningMsgRoot.findViewById(R.id.warningParent);
+                warningParent.setBackgroundColor(getResources().getColor(R.color.backColorSettingMsg));
+                TextView warningTitle = (TextView)warningMsgRoot.findViewById(R.id.warningTitle);
+                warningTitle.setText(getResources().getString(R.string.sdCardRemovedTitle));
+                TextView warningText = (TextView)warningMsgRoot.findViewById(R.id.warningText);
+                warningText.setText(getResources().getString(R.string.sdCardNotPresentForRecord));
+                okButton = (Button)warningMsgRoot.findViewById(R.id.okButton);
+                okButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        warningMsg.dismiss();
+                        videoFragment.getLatestFileIfExists();
+                    }
+                });
+                warningMsg.setContentView(warningMsgRoot);
+                warningMsg.setCancelable(false);
+                warningMsg.show();
+            }
+        }
+    }
+
+    public String doesSDCardExist(){
+//        File[] storage = new File("/storage").listFiles();
+        File[] mediaDirs = getExternalMediaDirs();
+        if(mediaDirs != null) {
+            Log.d(TAG, "mediaDirs = " + mediaDirs.length);
+        }
+        for(int i=0;i<mediaDirs.length;i++){
+            Log.d(TAG, "external media dir = "+mediaDirs[i]);
+            if(mediaDirs[i] != null) {
+                try {
+                    if (Environment.isExternalStorageRemovable(mediaDirs[i])) {
+                        Log.d(TAG, "Removable storage = " + mediaDirs[i]);
+                        return mediaDirs[i].getPath();
+                    }
+                } catch (IllegalArgumentException illegal) {
+                    Log.d(TAG, "Not a valid storage device");
+                }
+            }
+        }
+        return null;
     }
 
     public void goToSettings(View view){

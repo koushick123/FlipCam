@@ -4,8 +4,10 @@ import android.Manifest;
 import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.app.Dialog;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -121,12 +123,16 @@ public class SettingsActivity extends AppCompatActivity{
     View warningMsgRoot;
     Dialog warningMsg;
     Button okButton;
+    SDCardEventReceiver sdCardEventReceiver;
+    IntentFilter mediaFilters;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.d(TAG,"onCreate");
         setContentView(R.layout.activity_settings);
+        mediaFilters = new IntentFilter();
+        sdCardEventReceiver = new SDCardEventReceiver();
         phoneMemParentVert = (LinearLayout)findViewById(R.id.phoneMemParentVert);
         phoneMemTextMsg = (TextView)findViewById(R.id.phoneMemTextMsg);
         thresholdText = (TextView)findViewById(R.id.thresholdText);
@@ -174,6 +180,42 @@ public class SettingsActivity extends AppCompatActivity{
         accountManager = (AccountManager)getSystemService(Context.ACCOUNT_SERVICE);
     }
 
+    class SDCardEventReceiver extends BroadcastReceiver{
+        @Override
+        public void onReceive(Context ctx, Intent intent) {
+            Log.d(TAG, "onReceive = "+intent.getAction());
+            if(intent.getAction().equalsIgnoreCase(Intent.ACTION_MEDIA_UNMOUNTED)){
+                //Check if SD Card was selected
+                if(!settingsPref.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
+                    Log.d(TAG, "SD Card Removed");
+                    phoneMemBtn.setChecked(true);
+                    sdCardBtn.setChecked(false);
+                    settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
+                    settingsEditor.commit();
+                    hideSDCardPath();
+                    LinearLayout warningParent = (LinearLayout)warningMsgRoot.findViewById(R.id.warningParent);
+                    warningParent.setBackgroundColor(getResources().getColor(R.color.backColorSettingMsg));
+                    TextView warningTitle = (TextView)warningMsgRoot.findViewById(R.id.warningTitle);
+                    warningTitle.setText(getResources().getString(R.string.sdCardRemovedTitle));
+                    ImageView warningSign = (ImageView)warningMsgRoot.findViewById(R.id.warningSign);
+                    warningSign.setVisibility(View.VISIBLE);
+                    TextView warningText = (TextView)warningMsgRoot.findViewById(R.id.warningText);
+                    warningText.setText(getResources().getString(R.string.sdCardNotPresentForRecord));
+                    okButton = (Button)warningMsgRoot.findViewById(R.id.okButton);
+                    okButton.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            warningMsg.dismiss();
+                        }
+                    });
+                    warningMsg.setContentView(warningMsgRoot);
+                    warningMsg.setCancelable(false);
+                    warningMsg.show();
+                }
+            }
+        }
+    }
+
     public void updateSettingsValues(){
         //Update Save Media in
         if(settingsPref.contains(Constants.SAVE_MEDIA_PHONE_MEM)){
@@ -186,7 +228,7 @@ public class SettingsActivity extends AppCompatActivity{
             }
             else{
                 Log.d(TAG,"Phone memory is false");
-                if(getSDCardPath() != null) {
+                if(doesSDCardExist() != null) {
                     phoneMemBtn.setChecked(false);
                     sdCardBtn.setChecked(true);
                     showSDCardPath(settingsPref.getString(Constants.SD_CARD_PATH, ""));
@@ -200,11 +242,9 @@ public class SettingsActivity extends AppCompatActivity{
                     LinearLayout warningParent = (LinearLayout)warningMsgRoot.findViewById(R.id.warningParent);
                     warningParent.setBackgroundColor(getResources().getColor(R.color.backColorSettingMsg));
                     TextView warningTitle = (TextView)warningMsgRoot.findViewById(R.id.warningTitle);
-                    warningTitle.setText(getResources().getString(R.string.sdCardNotDetectTitle));
-                    ImageView warningSign = (ImageView)warningMsgRoot.findViewById(R.id.warningSign);
-                    warningSign.setVisibility(View.VISIBLE);
+                    warningTitle.setText(getResources().getString(R.string.sdCardRemovedTitle));
                     TextView warningText = (TextView)warningMsgRoot.findViewById(R.id.warningText);
-                    warningText.setText(getResources().getString(R.string.sdCardNotDetectMessage));
+                    warningText.setText(getResources().getString(R.string.sdCardNotPresentForRecord));
                     okButton = (Button)warningMsgRoot.findViewById(R.id.okButton);
                     okButton.setOnClickListener(new View.OnClickListener() {
                         @Override
@@ -286,18 +326,23 @@ public class SettingsActivity extends AppCompatActivity{
         settingsEditor.commit();
     }
 
-    public String getSDCardPath(){
-        //File[] storage = new File("/storage").listFiles();
+    public String doesSDCardExist(){
+//        File[] storage = new File("/storage").listFiles();
         File[] mediaDirs = getExternalMediaDirs();
+        if(mediaDirs != null) {
+            Log.d(TAG, "mediaDirs = " + mediaDirs.length);
+        }
         for(int i=0;i<mediaDirs.length;i++){
-            try{
-                if(Environment.isExternalStorageRemovable(mediaDirs[i])){
-                    Log.d(TAG, "Removable storage = "+mediaDirs[i]);
-                    return mediaDirs[i].getPath();
+            Log.d(TAG, "external media dir = "+mediaDirs[i]);
+            if(mediaDirs[i] != null) {
+                try {
+                    if (Environment.isExternalStorageRemovable(mediaDirs[i])) {
+                        Log.d(TAG, "Removable storage = " + mediaDirs[i]);
+                        return mediaDirs[i].getPath();
+                    }
+                } catch (IllegalArgumentException illegal) {
+                    Log.d(TAG, "Not a valid storage device");
                 }
-            }
-            catch(IllegalArgumentException illegal){
-                Log.d(TAG, "Not a valid storage device");
             }
         }
         return null;
@@ -317,7 +362,7 @@ public class SettingsActivity extends AppCompatActivity{
                 Log.d(TAG,"Save in sd card");
                 phoneMemBtn.setChecked(false);
                 sdCardBtn.setChecked(true);
-                String sdCardPath = getSDCardPath();
+                String sdCardPath = doesSDCardExist();
                 if(sdCardPath == null){
                     Log.d(TAG, "No SD Card");
                     phoneMemBtn.setChecked(true);
@@ -552,12 +597,20 @@ public class SettingsActivity extends AppCompatActivity{
     protected void onPause() {
         super.onPause();
         Log.d(TAG,"onPause");
+        try {
+            unregisterReceiver(sdCardEventReceiver);
+        }catch (IllegalArgumentException illegal){
+            Log.d(TAG, "Receiver was never registered");
+        }
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        Log.d(TAG,"onResume goToDropbox = "+goToDropbox);
+        mediaFilters.addAction(Intent.ACTION_MEDIA_UNMOUNTED);
+        mediaFilters.addAction(Intent.ACTION_MEDIA_MOUNTED);
+        mediaFilters.addDataScheme("file");
+        registerReceiver(sdCardEventReceiver, mediaFilters);
         updateSettingsValues();
         if (signInProgress) {
             signInProgressDialog.dismiss();
