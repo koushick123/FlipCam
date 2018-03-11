@@ -292,19 +292,20 @@ public class VideoFragment extends android.app.Fragment{
                     okButton.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View view) {
-                            getLatestFileIfExists();
                             warningMsg.dismiss();
                         }
                     });
                     warningMsg.setContentView(warningMsgRoot);
                     warningMsg.setCancelable(false);
                     warningMsg.show();
+                    getLatestFileIfExists();
                 }
             }
         }
     }
 
     public void checkForSDCard(){
+        Log.d(TAG, "getActivity = "+getActivity());
         SharedPreferences settingsPref = getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
         SharedPreferences.Editor settingsEditor = settingsPref.edit();
         if(!settingsPref.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
@@ -322,13 +323,13 @@ public class VideoFragment extends android.app.Fragment{
                 okButton.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
-                        getLatestFileIfExists();
                         warningMsg.dismiss();
                     }
                 });
                 warningMsg.setContentView(warningMsgRoot);
                 warningMsg.setCancelable(false);
                 warningMsg.show();
+                getLatestFileIfExists();
             }
         }
     }
@@ -690,14 +691,16 @@ public class VideoFragment extends android.app.Fragment{
         }
         for(int i=0;i<mediaDirs.length;i++){
             Log.d(TAG, "external media dir = "+mediaDirs[i]);
-            try{
-                if(Environment.isExternalStorageRemovable(mediaDirs[i])){
-                    Log.d(TAG, "Removable storage = "+mediaDirs[i]);
-                    return mediaDirs[i].getPath();
+            if(mediaDirs[i] != null){
+                try{
+                    if(Environment.isExternalStorageRemovable(mediaDirs[i])){
+                        Log.d(TAG, "Removable storage = "+mediaDirs[i]);
+                        return mediaDirs[i].getPath();
+                    }
                 }
-            }
-            catch(IllegalArgumentException illegal){
-                Log.d(TAG, "Not a valid storage device");
+                catch(IllegalArgumentException illegal) {
+                    Log.d(TAG, "Not a valid storage device");
+                }
             }
         }
         return null;
