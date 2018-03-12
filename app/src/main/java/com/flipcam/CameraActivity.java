@@ -77,7 +77,7 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
 
     public String doesSDCardExist(){
 //        File[] storage = new File("/storage").listFiles();
-        File[] mediaDirs = getApplicationContext().getExternalMediaDirs();
+        File[] mediaDirs = getExternalMediaDirs();
         if(mediaDirs != null) {
             Log.d(TAG, "mediaDirs = " + mediaDirs.length);
         }
@@ -244,7 +244,7 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
     protected void onResume() {
         super.onResume();
         Log.d(TAG,"onResume");
-        doesSDCardExist();
+//        doesSDCardExist();
     }
 
     @Override

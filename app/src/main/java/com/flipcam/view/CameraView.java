@@ -247,6 +247,16 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                     rotationAngle = 0f;
                     videoFragment.stopRecordAndSaveFile(true);
                     break;
+                /*case Constants.RECORD_STOP_NO_SD_CARD:
+                    setKeepScreenOn(false);
+                    orientationEventListener.enable();
+                    camera1.disableRecordingHint();
+                    //Reset the RECORD Matrix to be portrait.
+                    System.arraycopy(IDENTITY_MATRIX,0,RECORD_IDENTITY_MATRIX,0,IDENTITY_MATRIX.length);
+                    //Reset Rotation angle
+                    rotationAngle = 0f;
+                    videoFragment.recordStopNoSDCard();
+                    break;*/
             }
         }
     }

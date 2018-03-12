@@ -40,6 +40,8 @@ import com.flipcam.util.MediaUtil;
 import com.flipcam.view.CameraView;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 
 import static android.widget.Toast.makeText;
@@ -83,6 +85,7 @@ public class VideoFragment extends android.app.Fragment{
     SDCardEventReceiver sdCardEventReceiver;
     IntentFilter mediaFilters;
     Button okButton;
+    boolean sdCardUnavailWarned = false;
     public VideoFragment() {
         // Required empty public constructor
     }
@@ -240,8 +243,33 @@ public class VideoFragment extends android.app.Fragment{
                 }
                 else {
                     SharedPreferences sharedPreferences = getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
+                    SharedPreferences.Editor settingsEditor = sharedPreferences.edit();
                     if (sharedPreferences.getBoolean(Constants.PHONE_MEMORY_DISABLE, true)) {
-                        prepareAndStartRecord();
+                        if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
+                            String path = sharedPreferences.getString(Constants.SD_CARD_PATH , "");
+                            try {
+                                String filename = "doesSDCardExist_"+String.valueOf(System.currentTimeMillis()).substring(0,5);
+                                path += filename;
+                                Log.d(TAG, "Creating TEST file in SD Card before proceeding");
+                                FileOutputStream createTestFile = new FileOutputStream(path);
+                                sdCardUnavailWarned = false;
+                                File testfile = new File(path);
+                                createTestFile.close();
+                                testfile.delete();
+                                prepareAndStartRecord();
+                            } catch (FileNotFoundException e) {
+                                Log.d(TAG, "SD Card NOT present");
+                                sdCardUnavailWarned = true;
+                                settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
+                                settingsEditor.commit();
+                                showSDCardUnavailableMessage();
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                        else{
+                            prepareAndStartRecord();
+                        }
                     } else {
                         checkIfMemoryLimitIsExceeded();
                     }
@@ -278,30 +306,38 @@ public class VideoFragment extends android.app.Fragment{
                 //Check if SD Card was selected
                 SharedPreferences settingsPref = getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
                 SharedPreferences.Editor settingsEditor = settingsPref.edit();
-                if(!settingsPref.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
+                if(!settingsPref.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true) && !sdCardUnavailWarned){
                     Log.d(TAG, "SD Card Removed");
                     settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
                     settingsEditor.commit();
-                    LinearLayout warningParent = (LinearLayout)warningMsgRoot.findViewById(R.id.warningParent);
-                    warningParent.setBackgroundColor(getResources().getColor(R.color.backColorSettingMsg));
-                    TextView warningTitle = (TextView)warningMsgRoot.findViewById(R.id.warningTitle);
-                    warningTitle.setText(getResources().getString(R.string.sdCardRemovedTitle));
-                    TextView warningText = (TextView)warningMsgRoot.findViewById(R.id.warningText);
-                    warningText.setText(getResources().getString(R.string.sdCardNotPresentForRecord));
-                    okButton = (Button)warningMsgRoot.findViewById(R.id.okButton);
-                    okButton.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View view) {
-                            warningMsg.dismiss();
-                        }
-                    });
-                    warningMsg.setContentView(warningMsgRoot);
-                    warningMsg.setCancelable(false);
-                    warningMsg.show();
-                    getLatestFileIfExists();
+                    showSDCardUnavailableMessage();
                 }
             }
         }
+    }
+
+    public void showSDCardUnavailableMessage(){
+        LinearLayout warningParent = (LinearLayout)warningMsgRoot.findViewById(R.id.warningParent);
+        warningParent.setBackgroundColor(getResources().getColor(R.color.backColorSettingMsg));
+        TextView warningTitle = (TextView)warningMsgRoot.findViewById(R.id.warningTitle);
+        warningTitle.setText(getResources().getString(R.string.sdCardRemovedTitle));
+        TextView warningText = (TextView)warningMsgRoot.findViewById(R.id.warningText);
+        warningText.setText(getResources().getString(R.string.sdCardNotPresentForRecord));
+        okButton = (Button)warningMsgRoot.findViewById(R.id.okButton);
+        okButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startRecord.setClickable(true);
+                photoMode.setClickable(true);
+                thumbnail.setClickable(true);
+                switchCamera.setClickable(true);
+                warningMsg.dismiss();
+            }
+        });
+        warningMsg.setContentView(warningMsgRoot);
+        warningMsg.setCancelable(false);
+        warningMsg.show();
+        getLatestFileIfExists();
     }
 
     public void checkForSDCard(){
@@ -313,23 +349,7 @@ public class VideoFragment extends android.app.Fragment{
                 Log.d(TAG, "SD Card Removed");
                 settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
                 settingsEditor.commit();
-                LinearLayout warningParent = (LinearLayout) warningMsgRoot.findViewById(R.id.warningParent);
-                warningParent.setBackgroundColor(getResources().getColor(R.color.backColorSettingMsg));
-                TextView warningTitle = (TextView) warningMsgRoot.findViewById(R.id.warningTitle);
-                warningTitle.setText(getResources().getString(R.string.sdCardRemovedTitle));
-                TextView warningText = (TextView) warningMsgRoot.findViewById(R.id.warningText);
-                warningText.setText(getResources().getString(R.string.sdCardNotPresentForRecord));
-                okButton = (Button) warningMsgRoot.findViewById(R.id.okButton);
-                okButton.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        warningMsg.dismiss();
-                    }
-                });
-                warningMsg.setContentView(warningMsgRoot);
-                warningMsg.setCancelable(false);
-                warningMsg.show();
-                getLatestFileIfExists();
+                showSDCardUnavailableMessage();
             }
         }
     }
@@ -502,6 +522,32 @@ public class VideoFragment extends android.app.Fragment{
             Log.d(TAG, "Uploading file = "+cameraView.getMediaPath());
             getActivity().startService(dropboxUploadIntent);
         }
+    }
+
+    public void recordStopNoSDCard(){
+        Log.d(TAG, "Show SD Card not present for recording");
+        SharedPreferences settingsPref = getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
+        SharedPreferences.Editor settingsEditor = settingsPref.edit();
+        settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
+        settingsEditor.commit();
+        LinearLayout warningParent = (LinearLayout) warningMsgRoot.findViewById(R.id.warningParent);
+        warningParent.setBackgroundColor(getResources().getColor(R.color.backColorSettingMsg));
+        TextView warningTitle = (TextView) warningMsgRoot.findViewById(R.id.warningTitle);
+        warningTitle.setText(getResources().getString(R.string.sdCardRemovedTitle));
+        TextView warningText = (TextView) warningMsgRoot.findViewById(R.id.warningText);
+        warningText.setText(getResources().getString(R.string.sdCardNotPresentForRecord));
+        okButton = (Button) warningMsgRoot.findViewById(R.id.okButton);
+        okButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                warningMsg.dismiss();
+            }
+        });
+        warningMsg.setContentView(warningMsgRoot);
+        warningMsg.setCancelable(false);
+        warningMsg.show();
+        showRecordAndThumbnail();
+        getLatestFileIfExists();
     }
 
     float rotationAngle = 0f;
@@ -685,7 +731,7 @@ public class VideoFragment extends android.app.Fragment{
 
     public String doesSDCardExist(){
         //File[] storage = new File("/storage").listFiles();
-        File[] mediaDirs = getApplicationContext().getExternalMediaDirs();
+        /*File[] mediaDirs = getApplicationContext().getExternalMediaDirs();
         if(mediaDirs != null) {
             Log.d(TAG, "mediaDirs = " + mediaDirs.length);
         }
@@ -702,8 +748,24 @@ public class VideoFragment extends android.app.Fragment{
                     Log.d(TAG, "Not a valid storage device");
                 }
             }
+        }*/
+        SharedPreferences sharedPreferences = getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
+        String sdcardpath = sharedPreferences.getString(Constants.SD_CARD_PATH, "");
+        try {
+            String filename = "doesSDCardExist_"+String.valueOf(System.currentTimeMillis()).substring(0,5);
+            sdcardpath += filename;
+            FileOutputStream createTestFile = new FileOutputStream(sdcardpath);
+            Log.d(TAG, "Able to create file... SD Card exists");
+            File testfile = new File(sdcardpath);
+            createTestFile.close();
+            testfile.delete();
+        } catch (FileNotFoundException e) {
+            Log.d(TAG, "Unable to create file... SD Card NOT exists");
+            return null;
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        return null;
+        return sharedPreferences.getString(Constants.SD_CARD_PATH, "");
     }
 
     boolean flashOn=false;
@@ -890,6 +952,7 @@ public class VideoFragment extends android.app.Fragment{
         if(getActivity() != null){
             getActivity().registerReceiver(sdCardEventReceiver, mediaFilters);
         }
+        sdCardUnavailWarned = false;
         checkForSDCard();
     }
 
