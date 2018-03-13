@@ -248,17 +248,27 @@ public class VideoFragment extends android.app.Fragment{
                         if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
                             String path = sharedPreferences.getString(Constants.SD_CARD_PATH , "");
                             try {
-                                String filename = "doesSDCardExist_"+String.valueOf(System.currentTimeMillis()).substring(0,5);
+                                String filename = "/doesSDCardExist_"+String.valueOf(System.currentTimeMillis()).substring(0,5);
                                 path += filename;
+                                final String testPath = path;
                                 Log.d(TAG, "Creating TEST file in SD Card before proceeding");
-                                FileOutputStream createTestFile = new FileOutputStream(path);
+                                final FileOutputStream createTestFile = new FileOutputStream(path);
                                 sdCardUnavailWarned = false;
-                                File testfile = new File(path);
-                                createTestFile.close();
-                                testfile.delete();
+                                new Thread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        try {
+                                            File testfile = new File(testPath);
+                                            createTestFile.close();
+                                            testfile.delete();
+                                        } catch (IOException e) {
+                                            e.printStackTrace();
+                                        }
+                                    }
+                                }).start();
                                 prepareAndStartRecord();
                             } catch (FileNotFoundException e) {
-                                Log.d(TAG, "SD Card NOT present");
+                                Log.d(TAG, "SD Card NOT present....."+e.getMessage());
                                 sdCardUnavailWarned = true;
                                 settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
                                 settingsEditor.commit();
@@ -318,7 +328,7 @@ public class VideoFragment extends android.app.Fragment{
 
     public void showSDCardUnavailableMessage(){
         LinearLayout warningParent = (LinearLayout)warningMsgRoot.findViewById(R.id.warningParent);
-        warningParent.setBackgroundColor(getResources().getColor(R.color.backColorSettingMsg));
+//        warningParent.setBackgroundColor(getResources().getColor(R.color.backColorSettingMsg));
         TextView warningTitle = (TextView)warningMsgRoot.findViewById(R.id.warningTitle);
         warningTitle.setText(getResources().getString(R.string.sdCardRemovedTitle));
         TextView warningText = (TextView)warningMsgRoot.findViewById(R.id.warningText);
@@ -752,7 +762,7 @@ public class VideoFragment extends android.app.Fragment{
         SharedPreferences sharedPreferences = getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
         String sdcardpath = sharedPreferences.getString(Constants.SD_CARD_PATH, "");
         try {
-            String filename = "doesSDCardExist_"+String.valueOf(System.currentTimeMillis()).substring(0,5);
+            String filename = "/doesSDCardExist_"+String.valueOf(System.currentTimeMillis()).substring(0,5);
             sdcardpath += filename;
             FileOutputStream createTestFile = new FileOutputStream(sdcardpath);
             Log.d(TAG, "Able to create file... SD Card exists");
@@ -760,7 +770,7 @@ public class VideoFragment extends android.app.Fragment{
             createTestFile.close();
             testfile.delete();
         } catch (FileNotFoundException e) {
-            Log.d(TAG, "Unable to create file... SD Card NOT exists");
+            Log.d(TAG, "Unable to create file... SD Card NOT exists..... "+e.getMessage());
             return null;
         } catch (IOException e) {
             e.printStackTrace();

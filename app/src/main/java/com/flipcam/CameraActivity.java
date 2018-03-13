@@ -244,7 +244,6 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
     protected void onResume() {
         super.onResume();
         Log.d(TAG,"onResume");
-//        doesSDCardExist();
     }
 
     @Override
