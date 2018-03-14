@@ -251,7 +251,7 @@ public class VideoFragment extends android.app.Fragment{
                                 String filename = "/doesSDCardExist_"+String.valueOf(System.currentTimeMillis()).substring(0,5);
                                 path += filename;
                                 final String testPath = path;
-                                Log.d(TAG, "Creating TEST file in SD Card before proceeding");
+                                Log.d(TAG, "Creating TEST `file in SD Card before proceeding");
                                 final FileOutputStream createTestFile = new FileOutputStream(path);
                                 sdCardUnavailWarned = false;
                                 new Thread(new Runnable() {
@@ -326,9 +326,29 @@ public class VideoFragment extends android.app.Fragment{
         }
     }
 
+    public void showSDCardUnavailWhileRecordMessage(){
+        TextView warningTitle = (TextView)warningMsgRoot.findViewById(R.id.warningTitle);
+        warningTitle.setText(getResources().getString(R.string.sdCardRemovedTitle));
+        TextView warningText = (TextView)warningMsgRoot.findViewById(R.id.warningText);
+        warningText.setText(getResources().getString(R.string.sdCardRemovedWhileRecord));
+        okButton = (Button)warningMsgRoot.findViewById(R.id.okButton);
+        okButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startRecord.setClickable(true);
+                photoMode.setClickable(true);
+                thumbnail.setClickable(true);
+                switchCamera.setClickable(true);
+                warningMsg.dismiss();
+            }
+        });
+        warningMsg.setContentView(warningMsgRoot);
+        warningMsg.setCancelable(false);
+        warningMsg.show();
+        getLatestFileIfExists();
+    }
+
     public void showSDCardUnavailableMessage(){
-        LinearLayout warningParent = (LinearLayout)warningMsgRoot.findViewById(R.id.warningParent);
-//        warningParent.setBackgroundColor(getResources().getColor(R.color.backColorSettingMsg));
         TextView warningTitle = (TextView)warningMsgRoot.findViewById(R.id.warningTitle);
         warningTitle.setText(getResources().getString(R.string.sdCardRemovedTitle));
         TextView warningText = (TextView)warningMsgRoot.findViewById(R.id.warningText);
@@ -534,30 +554,12 @@ public class VideoFragment extends android.app.Fragment{
         }
     }
 
-    public void recordStopNoSDCard(){
-        Log.d(TAG, "Show SD Card not present for recording");
-        SharedPreferences settingsPref = getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
-        SharedPreferences.Editor settingsEditor = settingsPref.edit();
-        settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
-        settingsEditor.commit();
-        LinearLayout warningParent = (LinearLayout) warningMsgRoot.findViewById(R.id.warningParent);
-        warningParent.setBackgroundColor(getResources().getColor(R.color.backColorSettingMsg));
-        TextView warningTitle = (TextView) warningMsgRoot.findViewById(R.id.warningTitle);
-        warningTitle.setText(getResources().getString(R.string.sdCardRemovedTitle));
-        TextView warningText = (TextView) warningMsgRoot.findViewById(R.id.warningText);
-        warningText.setText(getResources().getString(R.string.sdCardNotPresentForRecord));
-        okButton = (Button) warningMsgRoot.findViewById(R.id.okButton);
-        okButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                warningMsg.dismiss();
-            }
-        });
-        warningMsg.setContentView(warningMsgRoot);
-        warningMsg.setCancelable(false);
-        warningMsg.show();
-        showRecordAndThumbnail();
-        getLatestFileIfExists();
+    public boolean isSdCardUnavailWarned() {
+        return sdCardUnavailWarned;
+    }
+
+    public void setSdCardUnavailWarned(boolean sdCardUnavailWarned) {
+        this.sdCardUnavailWarned = sdCardUnavailWarned;
     }
 
     float rotationAngle = 0f;
@@ -823,15 +825,27 @@ public class VideoFragment extends android.app.Fragment{
         //Use this for sharing files between apps
         final File video = new File(mediaPath);
         MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
-        mediaMetadataRetriever.setDataSource(mediaPath);
-        Bitmap firstFrame = mediaMetadataRetriever.getFrameAtTime(Constants.FIRST_SEC_MICRO);
-        if(firstFrame == null){
+        try{
+            mediaMetadataRetriever.setDataSource(mediaPath);
+        } catch(IllegalArgumentException illegal){
             Log.d(TAG,"NOT A VALID video file");
+            SharedPreferences sharedPreferences = getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true) && !sdCardUnavailWarned){
+                sdCardUnavailWarned = true;
+                editor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
+                editor.commit();
+                showSDCardUnavailWhileRecordMessage();
+            }
             if(video != null && video.delete()){
                 Log.d(TAG,"Removed file = "+mediaPath);
             }
             return;
         }
+        Bitmap firstFrame = mediaMetadataRetriever.getFrameAtTime(Constants.FIRST_SEC_MICRO);
+        /*if(firstFrame == null){
+
+        }*/
         Log.d(TAG,"width = "+firstFrame.getWidth()+" , height = "+firstFrame.getHeight());
         boolean isDetached=false;
         try {
@@ -871,6 +885,13 @@ public class VideoFragment extends android.app.Fragment{
             filePath = medias[0].getPath();
             if (!isImage(filePath)) {
                 MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
+                Bitmap firstFrame = mediaMetadataRetriever.getFrameAtTime(Constants.FIRST_SEC_MICRO);
+                if(firstFrame == null){
+                    File badFile = new File(filePath);
+                    if(badFile.delete()) {
+                        getLatestFileIfExists();
+                    }
+                }
                 mediaMetadataRetriever.setDataSource(filePath);
                 Bitmap vid = mediaMetadataRetriever.getFrameAtTime(Constants.FIRST_SEC_MICRO);
                 //If video cannot be played for whatever reason

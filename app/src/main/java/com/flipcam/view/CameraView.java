@@ -1,7 +1,10 @@
 package com.flipcam.view;
 
 import android.Manifest;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Point;
@@ -154,6 +157,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     long lowestMemory = lowestThreshold * (long)Constants.MEGA_BYTE;
     boolean isPhoneMemory = true;
     StatFs availableStatFs = new StatFs(Environment.getDataDirectory().getPath());
+    IntentFilter mediaFilters;
+    boolean sdCardUnavailWarned = false;
+    SDCardEventReceiver sdCardEventReceiver;
 
     public CameraView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -870,6 +876,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             this.videoFragment.showRecordAndThumbnail();
             this.videoFragment.getLatestFileIfExists();
             camera1.setPhotoFragmentInstance(null);
+            mediaFilters = new IntentFilter();
+            sdCardEventReceiver = new SDCardEventReceiver();
+            this.videoFragment.getActivity().registerReceiver(sdCardEventReceiver, mediaFilters);
         }
         else{
             this.photoFragment.getLatestFileIfExists();
@@ -897,6 +906,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         orientationEventListener.disable();
         if(this.photoFragment!=null && !this.photoFragment.isContinuousAF()) {
             unregisterAccelSensor();
+        }
+        if(this.videoFragment!=null){
+            this.videoFragment.getActivity().unregisterReceiver(sdCardEventReceiver);
         }
         mSensorManager.unregisterListener(this);
         if(cameraHandler!=null) {
@@ -1350,6 +1362,14 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         if(VERBOSE)Log.d(TAG, "Exit recording...");
                         if(VERBOSE)Log.d(TAG,"Orig frame = "+frameCount+" , Rendered frame "+frameCnt);
                         break;
+                    case Constants.RECORD_STOP_NO_SD_CARD:
+                        isRecording = false;
+                        recordStop = -1;
+                        recordIncomplete = false;
+                        mediaRecorder.release();
+                        mediaRecorder = null;
+                        Log.d(TAG,"stop no SD Card isRecording == "+isRecording);
+                        break;
                     case Constants.GET_CAMERA_RENDERER_INSTANCE:
                         getCameraRendererInstance();
                         break;
@@ -1357,6 +1377,31 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             }
         }
     }
+
+    class SDCardEventReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context ctx, Intent intent) {
+            Log.d(TAG, "onReceive = " + intent.getAction());
+            if (intent.getAction().equalsIgnoreCase(Intent.ACTION_MEDIA_UNMOUNTED)) {
+                //Check if SD Card was selected
+                SharedPreferences.Editor settingsEditor = memoryPrefs.edit();
+                if (!memoryPrefs.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)) {
+                    Log.d(TAG, "SD Card Removed");
+                    cameraHandler.sendEmptyMessage(Constants.RECORD_STOP_NO_SD_CARD);
+                    if (videoFragment != null) {
+                        if (!videoFragment.isSdCardUnavailWarned()) {
+                            videoFragment.setSdCardUnavailWarned(true);
+                            settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
+                            settingsEditor.commit();
+                            videoFragment.showRecordAndThumbnail();
+                            videoFragment.showSDCardUnavailWhileRecordMessage();
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     public void startTimerThread()
     {
         startTimer = true;

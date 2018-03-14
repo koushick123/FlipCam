@@ -181,10 +181,11 @@
     <string name="minimumThresholdDisabled">Minimum Threshold Check disabled. Please go to Settings to enable.</string>
     <string name="sdCardDetectTitle">SD Card Detected</string>
     <string name="sdCardDetectMessage">SD Card has been detected. Files will be stored in below location.\n\n%1$s\n\nNOTE: If the application is uninstalled,
-    the files in the above folder will be removed.</string>
+    you will lose the files in above location.</string>
     <string name="sdCardNotDetectTitle">SD Card Not Detected</string>
     <string name="sdCardRemovedTitle">SD Card Removed</string>
     <string name="sdCardNotDetectMessage">No SD Card has been detected.\n\nPlease insert an SD Card and try again.</string>
     <string name="sdCardNotPresentForRecord">SD Card has been removed.\n\nDefault storage location is now Phone Memory.</string>
+    <string name="sdCardRemovedWhileRecord">Error while saving video. SD Card has been removed.\n\nDefault storage location is now Phone Memory.</string>
 </resources>
 
