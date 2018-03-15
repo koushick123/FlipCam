@@ -186,6 +186,6 @@
     <string name="sdCardRemovedTitle">SD Card Removed</string>
     <string name="sdCardNotDetectMessage">No SD Card has been detected.\n\nPlease insert an SD Card and try again.</string>
     <string name="sdCardNotPresentForRecord">SD Card has been removed.\n\nDefault storage location is now Phone Memory.</string>
-    <string name="sdCardRemovedWhileRecord">Error while saving video. SD Card has been removed.\n\nDefault storage location is now Phone Memory.</string>
+    <string name="sdCardRemovedWhileRecord">Unable to save video. SD Card has been removed.\n\nDefault storage location is now Phone Memory.</string>
 </resources>
 
