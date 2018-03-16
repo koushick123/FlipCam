@@ -15,13 +15,15 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.CheckBox;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.flipcam.constants.Constants;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 
 public class CameraActivity extends AppCompatActivity implements VideoFragment.PermissionInterface, PhotoFragment.PhotoPermission,VideoFragment.SwitchInterface,
 PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, PhotoFragment.LowestThresholdCheckForPictureInterface{
@@ -54,8 +56,6 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
             if(doesSDCardExist() == null){
                 settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
                 settingsEditor.commit();
-                LinearLayout warningParent = (LinearLayout)warningMsgRoot.findViewById(R.id.warningParent);
-                warningParent.setBackgroundColor(getResources().getColor(R.color.backColorSettingMsg));
                 TextView warningTitle = (TextView)warningMsgRoot.findViewById(R.id.warningTitle);
                 warningTitle.setText(getResources().getString(R.string.sdCardRemovedTitle));
                 TextView warningText = (TextView)warningMsgRoot.findViewById(R.id.warningText);
@@ -77,7 +77,7 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
 
     public String doesSDCardExist(){
 //        File[] storage = new File("/storage").listFiles();
-        File[] mediaDirs = getExternalMediaDirs();
+        /*File[] mediaDirs = getExternalMediaDirs();
         if(mediaDirs != null) {
             Log.d(TAG, "mediaDirs = " + mediaDirs.length);
         }
@@ -94,7 +94,33 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
                 }
             }
         }
-        return null;
+        return null;*/
+        String sdcardpath = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE).getString(Constants.SD_CARD_PATH, "");
+        try {
+            String filename = "/doesSDCardExist_"+String.valueOf(System.currentTimeMillis()).substring(0,5);
+            sdcardpath += filename;
+            final String sdCardFilePath = sdcardpath;
+            final FileOutputStream createTestFile = new FileOutputStream(sdcardpath);
+            Log.d(TAG, "Able to create file... SD Card exists");
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    File testfile = new File(sdCardFilePath);
+                    try {
+                        createTestFile.close();
+                        testfile.delete();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }).start();
+        } catch (FileNotFoundException e) {
+            Log.d(TAG, "Unable to create file... SD Card NOT exists..... "+e.getMessage());
+            return null;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE).getString(Constants.SD_CARD_PATH, "");
     }
 
     public void goToSettings(View view){

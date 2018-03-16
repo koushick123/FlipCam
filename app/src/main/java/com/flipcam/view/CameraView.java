@@ -539,6 +539,14 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         }
     }
 
+    public boolean isRecord() {
+        return isRecord;
+    }
+
+    public void setRecord(boolean record) {
+        isRecord = record;
+    }
+
     public boolean isFlashModeSupported(String flashMode)
     {
         return camera1.isFlashModeSupported(flashMode);
@@ -930,7 +938,17 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 //Reset Rotation angle
                 rotationAngle = 0f;
                 Message recordStop = new Message();
-                recordStop.what = Constants.RECORD_STOP;
+                if(!memoryPrefs.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
+                    if(videoFragment.doesSDCardExist() != null){
+                        recordStop.what = Constants.RECORD_STOP;
+                    }
+                    else{
+                        recordStop.what = Constants.RECORD_STOP_NO_SD_CARD;
+                    }
+                }
+                else{
+                    recordStop.what = Constants.RECORD_STOP;
+                }
                 cameraHandler.sendMessageAtFrontOfQueue(recordStop);
                 Log.d(TAG,"Recording STOPPED");
             }

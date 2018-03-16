@@ -299,7 +299,25 @@ public class VideoFragment extends android.app.Fragment{
                     Log.d(TAG, "SD Card Removed");
                     settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
                     settingsEditor.commit();
-                    showSDCardUnavailableMessage();
+                    Log.d(TAG, "cameraView.isRecord = "+cameraView.isRecord());
+                    if(!cameraView.isRecord()) {
+                        showSDCardUnavailableMessage();
+                    }
+                    else{
+                        startRecord.setClickable(false);
+                        photoMode.setClickable(false);
+                        thumbnail.setClickable(false);
+                        switchCamera.setClickable(false);
+                        showSDCardUnavailWhileRecordMessage();
+                        cameraView.record(true);
+                        showRecordAndThumbnail();
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                deleteLatestBadFile();
+                            }
+                        }).start();
+                    }
                 }
             }
         }
@@ -519,17 +537,21 @@ public class VideoFragment extends android.app.Fragment{
                     noSdCard = false;
                 }
                 else{
+                    startRecord.setClickable(false);
+                    photoMode.setClickable(false);
+                    thumbnail.setClickable(false);
+                    switchCamera.setClickable(false);
                     noSdCard = true;
+                    SharedPreferences.Editor settingsEditor = sharedPreferences.edit();
+                    settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
+                    settingsEditor.commit();
+                    showSDCardUnavailWhileRecordMessage();
                     new Thread(new Runnable() {
                         @Override
                         public void run() {
                             deleteLatestBadFile();
                         }
                     }).start();
-                    SharedPreferences.Editor settingsEditor = sharedPreferences.edit();
-                    settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
-                    settingsEditor.commit();
-                    showSDCardUnavailWhileRecordMessage();
                 }
             }
             else{
@@ -537,9 +559,9 @@ public class VideoFragment extends android.app.Fragment{
             }
             cameraView.record(noSdCard);
         }
+        showRecordAndThumbnail();
         stopRecord.setClickable(true);
         switchCamera.setClickable(true);
-        showRecordAndThumbnail();
         if(sharedPreferences.getBoolean(Constants.SAVE_TO_GOOGLE_DRIVE, false) && !noSdCard) {
             Log.d(TAG, "Auto uploading to Google Drive");
             //Auto upload to Google Drive enabled.
@@ -556,14 +578,6 @@ public class VideoFragment extends android.app.Fragment{
             Log.d(TAG, "Uploading file = "+cameraView.getMediaPath());
             getActivity().startService(dropboxUploadIntent);
         }
-    }
-
-    public boolean isSdCardUnavailWarned() {
-        return sdCardUnavailWarned;
-    }
-
-    public void setSdCardUnavailWarned(boolean sdCardUnavailWarned) {
-        this.sdCardUnavailWarned = sdCardUnavailWarned;
     }
 
     float rotationAngle = 0f;
