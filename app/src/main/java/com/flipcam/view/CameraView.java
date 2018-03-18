@@ -944,6 +944,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                     }
                     else{
                         recordStop.what = Constants.RECORD_STOP_NO_SD_CARD;
+                        SharedPreferences.Editor editor = memoryPrefs.edit();
+                        editor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
+                        editor.commit();
+                        videoFragment.showToastSDCardUnavailWhileRecordMessage();
                     }
                 }
                 else{

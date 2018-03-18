@@ -299,25 +299,7 @@ public class VideoFragment extends android.app.Fragment{
                     Log.d(TAG, "SD Card Removed");
                     settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
                     settingsEditor.commit();
-                    Log.d(TAG, "cameraView.isRecord = "+cameraView.isRecord());
-                    if(!cameraView.isRecord()) {
-                        showSDCardUnavailableMessage();
-                    }
-                    else{
-                        startRecord.setClickable(false);
-                        photoMode.setClickable(false);
-                        thumbnail.setClickable(false);
-                        switchCamera.setClickable(false);
-                        showSDCardUnavailWhileRecordMessage();
-                        cameraView.record(true);
-                        showRecordAndThumbnail();
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                deleteLatestBadFile();
-                            }
-                        }).start();
-                    }
+                    showSDCardUnavailableMessage();
                 }
             }
         }
@@ -343,6 +325,10 @@ public class VideoFragment extends android.app.Fragment{
         warningMsg.setCancelable(false);
         warningMsg.show();
         getLatestFileIfExists();
+    }
+
+    public void showToastSDCardUnavailWhileRecordMessage(){
+        Toast.makeText(getApplicationContext(),getResources().getString(R.string.sdCardRemovedWhileRecord),Toast.LENGTH_LONG).show();
     }
 
     public void showSDCardUnavailableMessage(){
