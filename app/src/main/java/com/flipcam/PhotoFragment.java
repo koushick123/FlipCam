@@ -14,7 +14,6 @@ import android.hardware.SensorManager;
 import android.media.ExifInterface;
 import android.media.MediaMetadataRetriever;
 import android.os.Bundle;
-import android.os.Environment;
 import android.support.annotation.Nullable;
 import android.util.Log;
 import android.view.Gravity;
@@ -39,10 +38,11 @@ import com.flipcam.util.MediaUtil;
 import com.flipcam.view.CameraView;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 
 import static com.facebook.FacebookSdk.getApplicationContext;
-import static com.flipcam.PermissionActivity.FC_SHARED_PREFERENCE;
 
 /**
  * Created by koushick on 02-Oct-17.
@@ -77,6 +77,8 @@ public class PhotoFragment extends Fragment {
     SDCardEventReceiver sdCardEventReceiver;
     IntentFilter mediaFilters;
     Button okButton;
+    SharedPreferences sharedPreferences;
+    boolean sdCardUnavailWarned = false;
 
     public interface PhotoPermission{
         void askPhotoPermission();
@@ -125,6 +127,7 @@ public class PhotoFragment extends Fragment {
         warningMsg = new Dialog(getActivity());
         mediaFilters = new IntentFilter();
         sdCardEventReceiver = new SDCardEventReceiver();
+        sharedPreferences = getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
     }
 
     @Nullable
@@ -219,7 +222,19 @@ public class PhotoFragment extends Fragment {
                     thresholdDialog.show();
                 }
                 else {
-                    showImagePreview();
+                    if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
+                        if(doesSDCardExist() == null && !sdCardUnavailWarned){
+                            sdCardUnavailWarned = true;
+                            showSDCardUnavailMessage();
+                        }
+                        else{
+                            sdCardUnavailWarned = false;
+                            showImagePreview();
+                        }
+                    }
+                    else {
+                        showImagePreview();
+                    }
                 }
             }
         });
@@ -266,32 +281,38 @@ public class PhotoFragment extends Fragment {
             Log.d(TAG, "onReceive = "+intent.getAction());
             if(intent.getAction().equalsIgnoreCase(Intent.ACTION_MEDIA_UNMOUNTED)){
                 //Check if SD Card was selected
-                SharedPreferences settingsPref = getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
-                SharedPreferences.Editor settingsEditor = settingsPref.edit();
-                if(!settingsPref.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
-                    Log.d(TAG, "SD Card Removed");
-                    settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
-                    settingsEditor.commit();
-                    LinearLayout warningParent = (LinearLayout)warningMsgRoot.findViewById(R.id.warningParent);
-                    warningParent.setBackgroundColor(getResources().getColor(R.color.backColorSettingMsg));
-                    TextView warningTitle = (TextView)warningMsgRoot.findViewById(R.id.warningTitle);
-                    warningTitle.setText(getResources().getString(R.string.sdCardRemovedTitle));
-                    TextView warningText = (TextView)warningMsgRoot.findViewById(R.id.warningText);
-                    warningText.setText(getResources().getString(R.string.sdCardNotPresentForRecord));
-                    okButton = (Button)warningMsgRoot.findViewById(R.id.okButton);
-                    okButton.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View view) {
-                            warningMsg.dismiss();
-                        }
-                    });
-                    warningMsg.setContentView(warningMsgRoot);
-                    warningMsg.setCancelable(false);
-                    warningMsg.show();
-                    getLatestFileIfExists();
+                if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true) && !sdCardUnavailWarned){
+                    sdCardUnavailWarned = true;
+                    showSDCardUnavailMessage();
                 }
             }
         }
+    }
+
+    public void showSDCardUnavailMessage(){
+        Log.d(TAG, "SD Card Removed");
+        SharedPreferences.Editor settingsEditor = sharedPreferences.edit();
+        settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
+        settingsEditor.commit();
+        TextView warningTitle = (TextView)warningMsgRoot.findViewById(R.id.warningTitle);
+        warningTitle.setText(getResources().getString(R.string.sdCardRemovedTitle));
+        TextView warningText = (TextView)warningMsgRoot.findViewById(R.id.warningText);
+        warningText.setText(getResources().getString(R.string.sdCardNotPresentForRecord));
+        okButton = (Button)warningMsgRoot.findViewById(R.id.okButton);
+        okButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                warningMsg.dismiss();
+                capturePic.setClickable(true);
+                videoMode.setClickable(true);
+                switchCamera.setClickable(true);
+                thumbnail.setClickable(true);
+            }
+        });
+        warningMsg.setContentView(warningMsgRoot);
+        warningMsg.setCancelable(false);
+        warningMsg.show();
+        getLatestFileIfExists();
     }
 
     float rotationAngle = 0f;
@@ -404,7 +425,6 @@ public class PhotoFragment extends Fragment {
     public void hideImagePreview()
     {
         imagePreview.setVisibility(View.INVISIBLE);
-        SharedPreferences sharedPreferences = getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
         if(sharedPreferences.getBoolean(Constants.SAVE_TO_GOOGLE_DRIVE, false)) {
             Log.d(TAG, "Auto uploading to Google Drive");
             //Auto upload to Google Drive enabled
@@ -425,55 +445,40 @@ public class PhotoFragment extends Fragment {
 
     public void checkForSDCard(){
         Log.d(TAG, "getActivity = "+getActivity());
-        SharedPreferences settingsPref = getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
-        SharedPreferences.Editor settingsEditor = settingsPref.edit();
-        if(!settingsPref.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
+        if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
             if(doesSDCardExist() == null) {
-                Log.d(TAG, "SD Card Removed");
-                settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
-                settingsEditor.commit();
-                LinearLayout warningParent = (LinearLayout) warningMsgRoot.findViewById(R.id.warningParent);
-                warningParent.setBackgroundColor(getResources().getColor(R.color.backColorSettingMsg));
-                TextView warningTitle = (TextView) warningMsgRoot.findViewById(R.id.warningTitle);
-                warningTitle.setText(getResources().getString(R.string.sdCardRemovedTitle));
-                TextView warningText = (TextView) warningMsgRoot.findViewById(R.id.warningText);
-                warningText.setText(getResources().getString(R.string.sdCardNotPresentForRecord));
-                okButton = (Button) warningMsgRoot.findViewById(R.id.okButton);
-                okButton.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        warningMsg.dismiss();
-                    }
-                });
-                warningMsg.setContentView(warningMsgRoot);
-                warningMsg.setCancelable(false);
-                warningMsg.show();
-                getLatestFileIfExists();
+                showSDCardUnavailMessage();
             }
         }
     }
 
     public String doesSDCardExist(){
-        //File[] storage = new File("/storage").listFiles();
-        File[] mediaDirs = getApplicationContext().getExternalMediaDirs();
-        if(mediaDirs != null) {
-            Log.d(TAG, "mediaDirs = " + mediaDirs.length);
-        }
-        for(int i=0;i<mediaDirs.length;i++){
-            Log.d(TAG, "external media dir = "+mediaDirs[i]);
-            if(mediaDirs[i] != null){
-                try{
-                    if(Environment.isExternalStorageRemovable(mediaDirs[i])){
-                        Log.d(TAG, "Removable storage = "+mediaDirs[i]);
-                        return mediaDirs[i].getPath();
+        String sdcardpath = sharedPreferences.getString(Constants.SD_CARD_PATH, "");
+        try {
+            String filename = "/doesSDCardExist_"+String.valueOf(System.currentTimeMillis()).substring(0,5);
+            sdcardpath += filename;
+            final String sdCardFilePath = sdcardpath;
+            final FileOutputStream createTestFile = new FileOutputStream(sdcardpath);
+            Log.d(TAG, "Able to create file... SD Card exists");
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    File testfile = new File(sdCardFilePath);
+                    try {
+                        createTestFile.close();
+                        testfile.delete();
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
                 }
-                catch(IllegalArgumentException illegal) {
-                    Log.d(TAG, "Not a valid storage device");
-                }
-            }
+            }).start();
+        } catch (FileNotFoundException e) {
+            Log.d(TAG, "Unable to create file... SD Card NOT exists..... "+e.getMessage());
+            return null;
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        return null;
+        return sharedPreferences.getString(Constants.SD_CARD_PATH, "");
     }
 
     boolean flashOn=false;
@@ -539,6 +544,13 @@ public class PhotoFragment extends Fragment {
     }
     String filePath = "";
 
+    public void deleteFileAndRefreshThumbnail(){
+        File badFile = new File(filePath);
+        badFile.delete();
+        Log.d(TAG, "Bad file removed...."+filePath);
+        getLatestFileIfExists();
+    }
+
     public void getLatestFileIfExists()
     {
         FileMedia[] medias = MediaUtil.getMediaList(getActivity().getApplicationContext());
@@ -547,7 +559,16 @@ public class PhotoFragment extends Fragment {
             filePath = medias[0].getPath();
             if (!isImage(filePath)) {
                 MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
-                mediaMetadataRetriever.setDataSource(filePath);
+                try {
+                    mediaMetadataRetriever.setDataSource(filePath);
+                } catch (RuntimeException runtime){
+                    Log.d(TAG, "RuntimeException "+runtime.getMessage());
+                    if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
+                        //Possible bad file in SD Card. Remove it.
+                        deleteFileAndRefreshThumbnail();
+                        return;
+                    }
+                }
                 Bitmap vid = mediaMetadataRetriever.getFrameAtTime(Constants.FIRST_SEC_MICRO);
                 //If video cannot be played for whatever reason
                 if (vid != null) {
@@ -562,7 +583,8 @@ public class PhotoFragment extends Fragment {
                         }
                     });
                 } else {
-                    setPlaceholderThumbnail();
+                    deleteFileAndRefreshThumbnail();
+                    return;
                 }
             } else {
                 try {
@@ -606,7 +628,7 @@ public class PhotoFragment extends Fragment {
     private void setCameraClose()
     {
         //Set this if you want to continue when the launcher activity resumes.
-        SharedPreferences.Editor editor = getActivity().getSharedPreferences(FC_SHARED_PREFERENCE, Context.MODE_PRIVATE).edit();
+        SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putBoolean("startCamera",false);
         editor.commit();
     }
@@ -614,7 +636,7 @@ public class PhotoFragment extends Fragment {
     private void setCameraQuit()
     {
         //Set this if you want to quit the app when launcher activity resumes.
-        SharedPreferences.Editor editor = getActivity().getSharedPreferences(FC_SHARED_PREFERENCE, Context.MODE_PRIVATE).edit();
+        SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putBoolean("startCamera",true);
         editor.commit();
     }

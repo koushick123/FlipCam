@@ -166,7 +166,30 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
         fragmentTransaction.replace(R.id.cameraPreview, photoFragment).commit();
         Log.d(TAG,"photofragment added");
         SharedPreferences sharedPreferences = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
-        if(!checkIfPhoneMemoryIsBelowLowThreshold() && !sharedPreferences.getBoolean(Constants.PHONE_MEMORY_DISABLE, true)) {
+        SharedPreferences.Editor settingsEditor = sharedPreferences.edit();
+        if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
+            //Check if SD Card exists
+            if(doesSDCardExist() == null){
+                settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
+                settingsEditor.commit();
+                TextView warningTitle = (TextView)warningMsgRoot.findViewById(R.id.warningTitle);
+                warningTitle.setText(getResources().getString(R.string.sdCardRemovedTitle));
+                TextView warningText = (TextView)warningMsgRoot.findViewById(R.id.warningText);
+                warningText.setText(getResources().getString(R.string.sdCardNotPresentForRecord));
+                okButton = (Button)warningMsgRoot.findViewById(R.id.okButton);
+                okButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        warningMsg.dismiss();
+                        photoFragment.getLatestFileIfExists();
+                    }
+                });
+                warningMsg.setContentView(warningMsgRoot);
+                warningMsg.setCancelable(false);
+                warningMsg.show();
+            }
+        }
+        else if(!checkIfPhoneMemoryIsBelowLowThreshold() && !sharedPreferences.getBoolean(Constants.PHONE_MEMORY_DISABLE, true)) {
             final SharedPreferences.Editor editor = sharedPreferences.edit();
             int memoryThreshold = Integer.parseInt(sharedPreferences.getString(Constants.PHONE_MEMORY_LIMIT, ""));
             String memoryMetric = sharedPreferences.getString(Constants.PHONE_MEMORY_METRIC, "");

@@ -930,7 +930,6 @@ public class VideoFragment extends android.app.Fragment{
                 } else {
                     deleteFileAndRefreshThumbnail();
                     return;
-//                    setPlaceholderThumbnail();
                 }
             } else {
                 try {
