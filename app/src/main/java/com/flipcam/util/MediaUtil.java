@@ -44,7 +44,9 @@ public class MediaUtil {
             File[] mediaFiles = dcimFc.listFiles(new FileFilter() {
                 @Override
                 public boolean accept(File file) {
-                    if (!file.isDirectory()) {
+                    if (!file.isDirectory() && (file.getPath().endsWith(appContext.getResources().getString(R.string.IMG_EXT)) ||
+                            file.getPath().endsWith(appContext.getResources().getString(R.string.ANOTHER_IMG_EXT)) ||
+                                    file.getPath().endsWith(appContext.getResources().getString(R.string.VID_EXT)))) {
                         return true;
                     }
                     return false;

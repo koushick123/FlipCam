@@ -153,7 +153,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         sharedPreferences = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
         if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
             if(doesSDCardExist() == null){
-                refreshMediaFromMemoryNoSDCard();
+                exitMediaAndShowNoSDCard();
             }
             else {
                 medias = MediaUtil.getMediaList(getApplicationContext());
@@ -222,6 +222,12 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                         }
                         if (shareIntent.resolveActivity(getPackageManager()) != null) {
                             Log.d(TAG, "Start activity to choose");
+                            if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
+                                if(doesSDCardExist() == null){
+                                    exitMediaAndShowNoSDCard();
+                                    return;
+                                }
+                            }
                             startActivity(chooser);
                         }
                     } else {
@@ -368,7 +374,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     }
 
     public String doesSDCardExist(){
-        SharedPreferences sharedPreferences = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
         String sdcardpath = sharedPreferences.getString(Constants.SD_CARD_PATH, "");
         try {
             String filename = "/doesSDCardExist_"+String.valueOf(System.currentTimeMillis()).substring(0,5);
@@ -390,6 +395,13 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
 
     public void deleteMedia(int position)
     {
+        if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
+            if(doesSDCardExist() == null){
+                taskAlert.dismiss();
+                exitMediaAndShowNoSDCard();
+                return;
+            }
+        }
         Log.d(TAG,"Length before delete = "+medias.length);
         Log.d(TAG,"Deleting file = "+medias[position].getPath());
         if(MediaUtil.deleteFile(medias[position])) {
@@ -726,6 +738,13 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
 
     @Override
     public void onPageSelected(int position) {
+        if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
+            String sdCard = doesSDCardExist();
+            if(sdCard == null){
+                exitMediaAndShowNoSDCard();
+                return;
+            }
+        }
         Log.d(TAG,"onPageSelected = "+position+", previousSelectedFragment = "+previousSelectedFragment);
         selectedPosition = position;
         final SurfaceViewVideoFragment currentFrag = hashMapFrags.get(position);
@@ -839,8 +858,15 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         final int pos = position;
         currentFrag.mediaPlayer.setOnErrorListener(new MediaPlayer.OnErrorListener() {
             @Override
-            public boolean onError(MediaPlayer mediaPlayer, int i, int i1) {
-                Log.d(TAG,"CATCH onError");
+            public boolean onError(MediaPlayer mediaPlayer, int what, int extra) {
+                Log.d(TAG,"CATCH onError = "+extra);
+                if(extra == MediaPlayer.MEDIA_ERROR_IO){
+                    //Possible file not found since SD Card removed
+                    if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
+                        exitMediaAndShowNoSDCard();
+                        return true;
+                    }
+                }
                 currentFrag.mediaPlayer.reset();
                 try {
                     currentFrag.mediaPlayer.setOnCompletionListener(currentFrag);
@@ -950,7 +976,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             if(intent.getAction().equalsIgnoreCase(Intent.ACTION_MEDIA_UNMOUNTED)){
                 //Check if SD Card was selected
                 if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
-                    refreshMediaFromMemoryNoSDCard();
+                    exitMediaAndShowNoSDCard();
                 }
             }
         }
@@ -967,7 +993,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         if(!mediaLoadedFromCreate) {
             if (!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)) {
                 if (doesSDCardExist() == null) {
-                    refreshMediaFromMemoryNoSDCard();
+                    exitMediaAndShowNoSDCard();
                 } else {
                     refreshMediaFromSource();
                 }
@@ -1004,8 +1030,8 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         }
     }
 
-    public void refreshMediaFromMemoryNoSDCard(){
-        Log.d(TAG, "refreshMediaFromMemoryNoSDCard = "+showVideo);
+    public void exitMediaAndShowNoSDCard(){
+        Log.d(TAG, "exitMediaAndShowNoSDCard = "+showVideo);
         Intent camera = new Intent(this,CameraActivity.class);
         camera.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_NEW_TASK);
         camera.putExtra("showVideo",showVideo);

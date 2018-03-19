@@ -51,6 +51,7 @@ import com.google.android.gms.tasks.Task;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -437,53 +438,58 @@ public class GoogleDriveUploadService extends Service {
                                                                                         throws Exception {
                                                                                     contents = task.getResult();
                                                                                     OutputStream outputStream = contents.getOutputStream();
-                                                                                    FileInputStream fileInputStream = new FileInputStream(uploadFile);
-                                                                                    if(!isImage(uploadFile)) {
-                                                                                        BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
-                                                                                        int data;
-                                                                                        byte[] cache = new byte[102400];
-                                                                                        int writeLength = 0;
-                                                                                        try {
-                                                                                            while ((data = bufferedInputStream.read(cache, 0, cache.length)) != -1) {
-                                                                                                outputStream.write(cache, 0, data);
-                                                                                                writeLength += data;
+                                                                                    if(doesFileExist()) {
+                                                                                        FileInputStream fileInputStream = new FileInputStream(uploadFile);
+                                                                                        if (!isImage(uploadFile)) {
+                                                                                            BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
+                                                                                            int data;
+                                                                                            byte[] cache = new byte[102400];
+                                                                                            int writeLength = 0;
+                                                                                            try {
+                                                                                                while ((data = bufferedInputStream.read(cache, 0, cache.length)) != -1) {
+                                                                                                    outputStream.write(cache, 0, data);
+                                                                                                    writeLength += data;
+                                                                                                }
+                                                                                                Log.i(TAG, "Data size = " + writeLength);
+                                                                                            } catch (IOException e1) {
+                                                                                                Log.i(TAG, "Unable to write video file contents.");
+                                                                                            } finally {
+                                                                                                outputStream.close();
                                                                                             }
-                                                                                            Log.i(TAG, "Data size = " + writeLength);
-                                                                                        } catch (IOException e1) {
-                                                                                            Log.i(TAG, "Unable to write video file contents.");
-                                                                                        } finally {
-                                                                                            outputStream.close();
+                                                                                            changeSet = new MetadataChangeSet.Builder()
+                                                                                                    .setTitle(filename)
+                                                                                                    .setMimeType("video/mp4")
+                                                                                                    .build();
+                                                                                        } else {
+                                                                                            Log.i(TAG, "Send IMAGE file");
+                                                                                            Bitmap image = BitmapFactory.decodeFile(uploadFile);
+                                                                                            ByteArrayOutputStream bitmapStream = new ByteArrayOutputStream();
+                                                                                            image.compress(Bitmap.CompressFormat.JPEG, 100, bitmapStream);
+                                                                                            try {
+                                                                                                Log.i(TAG, "Writing image to contents");
+                                                                                                outputStream.write(bitmapStream.toByteArray());
+                                                                                            } catch (IOException e1) {
+                                                                                                Log.i(TAG, "Unable to write image file contents.");
+                                                                                            } finally {
+                                                                                                outputStream.close();
+                                                                                            }
+                                                                                            StringBuffer mimeType = new StringBuffer("image/");
+                                                                                            if (filename.endsWith(getResources().getString(R.string.IMG_EXT))) {
+                                                                                                mimeType.append("jpeg");
+                                                                                            } else {
+                                                                                                mimeType.append("jpg");
+                                                                                            }
+                                                                                            changeSet = new MetadataChangeSet.Builder()
+                                                                                                    .setTitle(filename)
+                                                                                                    .setMimeType(mimeType.toString())
+                                                                                                    .build();
                                                                                         }
-                                                                                        changeSet = new MetadataChangeSet.Builder()
-                                                                                                .setTitle(filename)
-                                                                                                .setMimeType("video/mp4")
-                                                                                                .build();
                                                                                     }
                                                                                     else{
-                                                                                        Log.i(TAG, "Send IMAGE file");
-                                                                                        Bitmap image = BitmapFactory.decodeFile(uploadFile);
-                                                                                        ByteArrayOutputStream bitmapStream = new ByteArrayOutputStream();
-                                                                                        image.compress(Bitmap.CompressFormat.JPEG, 100, bitmapStream);
-                                                                                        try {
-                                                                                            Log.i(TAG, "Writing image to contents");
-                                                                                            outputStream.write(bitmapStream.toByteArray());
-                                                                                        }
-                                                                                        catch (IOException e1) {
-                                                                                            Log.i(TAG, "Unable to write image file contents.");
-                                                                                        } finally {
-                                                                                            outputStream.close();
-                                                                                        }
-                                                                                        StringBuffer mimeType = new StringBuffer("image/");
-                                                                                        if(filename.endsWith(getResources().getString(R.string.IMG_EXT))) {
-                                                                                            mimeType.append("jpeg");
-                                                                                        }
-                                                                                        else{
-                                                                                            mimeType.append("jpg");
-                                                                                        }
-                                                                                        changeSet = new MetadataChangeSet.Builder()
-                                                                                                .setTitle(filename)
-                                                                                                .setMimeType(mimeType.toString())
-                                                                                                .build();
+                                                                                        Log.i(TAG, "File not found exception");
+                                                                                        success = false;
+                                                                                        showFileErrorNotification();
+                                                                                        stopSelf(Integer.parseInt(uploadId));
                                                                                     }
                                                                                     return mDriveResourceClient.createFile(uploadToFolder, changeSet, contents);
                                                                                 }
@@ -548,6 +554,11 @@ public class GoogleDriveUploadService extends Service {
         }
     }
 
+    public boolean doesFileExist(){
+        File uploadfile = new File(uploadFile);
+        return !uploadfile.isDirectory() && uploadfile.exists();
+    }
+
     private void getDriveClient(GoogleSignInAccount signInAccount) {
         Log.i(TAG,"getDriveClient");
         mDriveClient = Drive.getDriveClient(getApplicationContext(), signInAccount);
@@ -598,6 +609,16 @@ public class GoogleDriveUploadService extends Service {
         mBuilder.setColor(getResources().getColor(R.color.uploadError));
         mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.signInError)));
         mBuilder.setContentText(getResources().getString(R.string.signInErrorLess));
+        mBuilder.setContentTitle(getResources().getString(R.string.autoUploadInterrupt, getResources().getString(R.string.googleDrive)));
+        mBuilder.setSound(uploadNotification);
+        mBuilder.setPriority(NotificationCompat.PRIORITY_HIGH);
+        mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
+    }
+
+    public void showFileErrorNotification(){
+        mBuilder.setColor(getResources().getColor(R.color.uploadError));
+        mBuilder.setContentText(getResources().getString(R.string.fileErrorMessage, filename));
+        mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.fileErrorMessage, filename)));
         mBuilder.setContentTitle(getResources().getString(R.string.autoUploadInterrupt, getResources().getString(R.string.googleDrive)));
         mBuilder.setSound(uploadNotification);
         mBuilder.setPriority(NotificationCompat.PRIORITY_HIGH);
