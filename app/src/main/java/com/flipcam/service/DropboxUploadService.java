@@ -212,12 +212,6 @@ public class DropboxUploadService extends Service {
                 long bytesUploaded = 0;
                 UploadSessionCursor uploadSessionCursor = null;
                 while ((readSize = bufferedInputStream.read(cache, 0, cache.length)) != -1) {
-                    if (!doesFileExist()) {
-                        success = false;
-                        sessionId = null;
-                        showFileErrorNotification();
-                        break;
-                    }
                     Log.i(TAG, "Read " + readSize + " bytes");
                     if (sessionId == null) {
                         uploadSessionStartUploader = dbxUserFilesRequests.uploadSessionStart(false);
@@ -242,6 +236,12 @@ public class DropboxUploadService extends Service {
                     message.setData(bundle);
                     message.what = Constants.UPLOAD_PROGRESS;
                     dropboxUploadHandler.sendMessage(message);
+                    if (!doesFileExist()) {
+                        success = false;
+                        sessionId = null;
+                        showFileErrorNotification();
+                        break;
+                    }
                 }
                 if (sessionId != null) {
                     String path;
