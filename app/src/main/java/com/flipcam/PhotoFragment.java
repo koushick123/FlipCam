@@ -530,7 +530,7 @@ public class PhotoFragment extends Fragment {
             @Override
             public void onClick(View view)
             {
-                openMedia(cameraView.getPhotoMediaPath());
+                openMedia();
             }
         });
     }
@@ -579,7 +579,7 @@ public class PhotoFragment extends Fragment {
                     thumbnail.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View view) {
-                            openMedia(filePath);
+                            openMedia();
                         }
                     });
                 } else {
@@ -601,7 +601,7 @@ public class PhotoFragment extends Fragment {
                 thumbnail.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
-                        openMedia(filePath);
+                        openMedia();
                     }
                 });
             }
@@ -617,11 +617,11 @@ public class PhotoFragment extends Fragment {
         thumbnail.setClickable(false);
     }
 
-    private void openMedia(String path)
+    private void openMedia()
     {
         setCameraClose();
         Intent intent = new Intent(getActivity().getApplicationContext(), MediaActivity.class);
-        intent.putExtra("mediaPath",path);
+        intent.putExtra("showVideo",false);
         startActivity(intent);
     }
 
@@ -653,7 +653,6 @@ public class PhotoFragment extends Fragment {
         orientationEventListener.enable();
         Log.d(TAG,"onResume");
         mediaFilters.addAction(Intent.ACTION_MEDIA_UNMOUNTED);
-        mediaFilters.addAction(Intent.ACTION_MEDIA_MOUNTED);
         mediaFilters.addDataScheme("file");
         if(getActivity() != null){
             getActivity().registerReceiver(sdCardEventReceiver, mediaFilters);

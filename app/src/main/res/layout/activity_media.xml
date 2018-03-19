@@ -35,6 +35,7 @@
         android:layout_width="84dp"
         android:layout_height="84dp"
         android:layout_gravity="center"
+        android:visibility="invisible"
         app:srcCompat="@drawable/ic_play_circle_outline" />
 
     <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"

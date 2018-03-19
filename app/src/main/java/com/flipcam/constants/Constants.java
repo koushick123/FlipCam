@@ -52,4 +52,6 @@ public class Constants
     public static final String DROPBOX_ACCESS_TOKEN = "DropBoxAccessToken";
     //Show memory consumed msg
     public static final String SHOW_MEMORY_CONSUMED_MSG = "ShowMemoryConsumedText";
+    public static final String MEDIA_COUNT_MEM = "mediaCountMem";
+    public static final String MEDIA_COUNT_SD_CARD = "mediaCountSdCard";
 }
