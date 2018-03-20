@@ -34,7 +34,7 @@
     <string name="shareTitle">Share Media</string>
     <string name="shareFacebook">Upload to Facebook</string>
     <string name="noConnectionTitle">Connection Failure</string>
-    <string name="shareMessage">There are no installed apps that can share your %1$s.\n\nFlipCam can share to Facebook without the app. Would you lik to share?</string>
+    <string name="shareMessage">There are no installed apps that can share your %1$s.\n\nFlipCam can share to Facebook without the app. Would you like to share?</string>
     <string name="shareFacebookMessage">The media will be uploaded to Facebook</string>
     <string name="continuetoFB">CONTINUE</string>
     <string name="queuedForUpload">Media queued for upload. Please check notification bar for status.</string>
@@ -187,5 +187,9 @@
     <string name="sdCardNotDetectMessage">No SD Card has been detected.\n\nPlease insert an SD Card and try again.</string>
     <string name="sdCardNotPresentForRecord">SD Card has been removed.\n\nDefault storage location is now Phone Memory.</string>
     <string name="sdCardRemovedWhileRecord">Unable to save video. SD Card has been removed.\n\nDefault storage location is now Phone Memory.</string>
+    <string name="resetTitle">Reset ALL Settings</string>
+    <string name="resetMsg">This will reset ALL your settings to default values that were set when FlipCam was installed.\n\nThis cannot be undone.\n\n
+    Do you want to proceed?</string>
+    <string name="reset">RESET</string>
 </resources>
 

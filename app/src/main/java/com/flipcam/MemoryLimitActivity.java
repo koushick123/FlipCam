@@ -59,7 +59,7 @@ public class MemoryLimitActivity extends AppCompatActivity {
         settingsEditor = settingsPref.edit();
         if(savedInstanceState == null) {
             if (settingsPref.contains(Constants.PHONE_MEMORY_DISABLE)) {
-                if (!settingsPref.getBoolean(Constants.PHONE_MEMORY_DISABLE, false)) {
+                if (!settingsPref.getBoolean(Constants.PHONE_MEMORY_DISABLE, true)) {
                     enableThresholdElements();
                     disablethresholdCheck.setChecked(false);
                     if (settingsPref.contains(Constants.PHONE_MEMORY_LIMIT)) {

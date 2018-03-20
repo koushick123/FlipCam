@@ -102,20 +102,22 @@ public class SettingsActivity extends AppCompatActivity{
     View autoUploadDisabledRoot;
     View uploadFolderCheckRoot;
     View accessGrantedDropboxRoot;
+    View shareMediaRoot;
     TextView uploadFolderTitle;
     TextView uploadFolderMsg;
     int cloud = 0; //Default to Google Drive. 1 for Dropbox.
     AccountManager accountManager;
     final int GET_ACCOUNTS_PERM = 100;
+    boolean signInProgress = false;
     Dialog permissionAccount;
     Dialog signInProgressDialog;
-    boolean signInProgress = false;
     ImageView uploadDestIcon;
     Dialog autoUploadEnabledWithFolder;
     Dialog autoUploadEnabled;
     Dialog autoUploadDisabled;
     Dialog uploadFolderCheck;
     Dialog accesGrantedDropbox;
+    Dialog shareMedia;
     DbxClientV2 dbxClientV2;
     DbxRequestConfig dbxRequestConfig;
     boolean goToDropbox = false;
@@ -166,6 +168,7 @@ public class SettingsActivity extends AppCompatActivity{
         uploadFolderCheckRoot = layoutInflater.inflate(R.layout.upload_folder_check, null);
         accessGrantedDropboxRoot = layoutInflater.inflate(R.layout.access_granted_dropbox, null);
         warningMsgRoot = layoutInflater.inflate(R.layout.warning_message,null);
+        shareMediaRoot = layoutInflater.inflate(R.layout.share_media, null);
         warningMsg = new Dialog(this);
         sdCardDialog = new Dialog(this);
         saveToCloud = new Dialog(this);
@@ -177,6 +180,7 @@ public class SettingsActivity extends AppCompatActivity{
         autoUploadDisabled = new Dialog(this);
         uploadFolderCheck = new Dialog(this);
         accesGrantedDropbox = new Dialog(this);
+        shareMedia = new Dialog(this);
         accountManager = (AccountManager)getSystemService(Context.ACCOUNT_SERVICE);
     }
 
@@ -265,7 +269,7 @@ public class SettingsActivity extends AppCompatActivity{
         }
         //Update Phone memory
         if(settingsPref.contains(Constants.PHONE_MEMORY_DISABLE)){
-            if(!settingsPref.getBoolean(Constants.PHONE_MEMORY_DISABLE, false)){
+            if(!settingsPref.getBoolean(Constants.PHONE_MEMORY_DISABLE, true)){
                 String memoryLimit = settingsPref.getString(Constants.PHONE_MEMORY_LIMIT, getResources().getInteger(R.integer.minimumMemoryWarning) + "");
                 String memoryMetric = settingsPref.getString(Constants.PHONE_MEMORY_METRIC, "MB");
                 thresholdText.setText(getResources().getString(R.string.memoryThresholdLimit, Integer.parseInt(memoryLimit) + " " + memoryMetric));
@@ -314,6 +318,51 @@ public class SettingsActivity extends AppCompatActivity{
         else{
             showMemoryConsumed.setChecked(false);
         }
+    }
+
+    public void resetAllValues(View view){
+        LinearLayout shareMediaParent = (LinearLayout)shareMediaRoot.findViewById(R.id.shareMediaParent);
+        shareMediaParent.setBackgroundColor(getResources().getColor(R.color.backColorSettingMsg));
+        TextView shareTitle = (TextView)shareMediaRoot.findViewById(R.id.shareTitle);
+        shareTitle.setText(getResources().getString(R.string.resetTitle));
+        TextView shareMsg = (TextView)shareMediaRoot.findViewById(R.id.shareText);
+        shareMsg.setText(getResources().getString(R.string.resetMsg));
+        Button okBtn = (Button)shareMediaRoot.findViewById(R.id.okToShare);
+        okBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                okReset();
+            }
+        });
+        Button cancelBtn = (Button)shareMediaRoot.findViewById(R.id.cancelToShare);
+        cancelBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                cancelReset();
+            }
+        });
+        shareMedia.setContentView(shareMediaRoot);
+        shareMedia.setCancelable(true);
+        shareMedia.show();
+    }
+
+    public void okReset(){
+        //Reset Save Media
+        settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
+        //Reset threshold warning
+        settingsEditor.putBoolean(Constants.PHONE_MEMORY_DISABLE, true);
+        //Reset auto upload
+        settingsEditor.putBoolean(Constants.SAVE_TO_GOOGLE_DRIVE, false);
+        settingsEditor.putBoolean(Constants.SAVE_TO_DROPBOX, false);
+        //Reset memory consumed
+        settingsEditor.putBoolean(Constants.SHOW_MEMORY_CONSUMED_MSG, false);
+        settingsEditor.commit();
+        updateSettingsValues();
+        shareMedia.dismiss();
+    }
+
+    public void cancelReset(){
+        shareMedia.dismiss();
     }
 
     public void checkShowMemoryConsumed(View view){
