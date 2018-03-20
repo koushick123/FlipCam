@@ -3,13 +3,18 @@ package com.flipcam.camerainterface;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 
+import com.flipcam.PhotoFragment;
+
 import java.util.List;
 
 /**
  * Created by Koushick on 02-08-2017.
- * Contains a lit of camera related operations.
+ * Contains a list of camera related operations.
  * This Interface will be the only way to use a camera in this app. This will have two implementations. One for Camera 1 API and another for Camera 2 API.
  * This will promote loose coupling, since no code changes will be necessary in the Photo or Video fragments.
+ *
+ * This will contain methods which are Camera 1 and Camera 2 API specific. Those methods that do not have a purpose for a specific API, will need an empty
+ * implementation.
  */
 
  public interface CameraOperations {
@@ -83,4 +88,15 @@ import java.util.List;
     String getFocusModePicture();
     //Fetch flash mode torch
     String getFlashModeTorch();
+    //Get camera info (For Camera 1 API)
+    Camera.CameraInfo getCameraInfo();
+    //Get Camera preview sizes (For Camera 1 API)
+    int[] getPreviewSizes();
+    //Set picture orientation (For Camera 1 API)
+    void setRotation(int rotation);
+    //The below methods are not necessary for camera, but are included for the sake of maintaining loose coupling between Camera 1 & 2 APIs
+    void setPhotoFragmentInstance(PhotoFragment photoFragment);
+    void setPhotoPath(String mediaPath);
+    void setRotation(float rot);
+    void removePreviewCallback();
 }

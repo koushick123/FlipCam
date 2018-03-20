@@ -110,4 +110,7 @@
     <dimen name="noConnMsgLeftAndRightMargin">20dp</dimen>
     //Top and Bottom padding for no connection msg
     <dimen name="noConnMsgTopAndBottomPadding">25dp</dimen>
+    //Height and Width for playcircle for thumbnail
+    <dimen name="microThumbnailHeight">40dp</dimen>
+    <dimen name="microThumbnailWidth">30dp</dimen>
 </resources>

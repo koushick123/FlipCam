@@ -52,6 +52,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         return camera1Manager;
     }
 
+    @Override
     public int[] getPreviewSizes()
     {
         int[] sizes = new int[2];
@@ -60,6 +61,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         return sizes;
     }
 
+    @Override
     public Camera.CameraInfo getCameraInfo()
     {
         return info;
@@ -112,6 +114,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         zoomChangeListener = false;
     }
 
+    @Override
     public void removePreviewCallback()
     {
         mCamera.setPreviewCallback(null);
@@ -170,6 +173,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         mCamera.setParameters(parameters);
     }
 
+    @Override
     public void setRotation(int rotation)
     {
         parameters.setRotation(rotation);
@@ -253,15 +257,18 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         mCamera.setParameters(parameters);
     }
 
+    @Override
     public void setPhotoFragmentInstance(PhotoFragment photoFragment){
         photoFrag = photoFragment;
     }
 
+    @Override
     public void setPhotoPath(String mediaPath)
     {
         photoPath = mediaPath;
     }
 
+    @Override
     public void setRotation(float rot){
         rotation = rot;
     }
@@ -331,25 +338,13 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         }
     }
 
-    public void setTakePic(boolean takePic1)
-    {
-        takePic = takePic1;
-    }
-
     boolean focused=false;
-    boolean takePic=false;
     Camera.AutoFocusCallback autoFocusCallback = new Camera.AutoFocusCallback() {
         @Override
         public void onAutoFocus(boolean success, Camera camera) {
             if(success) {
                 Log.d(TAG,"auto focus set successfully");
                 focused = success;
-                /*if(takePic)
-                {
-                    capture=true;
-                    takePic=false;
-                    camera.takePicture(camera1Manager, null, null, camera1Manager);
-                }*/
             }
         }
     };

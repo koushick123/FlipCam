@@ -2,9 +2,9 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/photoCameraView"
-    android:orientation="vertical"
-    >
+    android:orientation="vertical">
 
     <com.flipcam.view.CameraView
         android:layout_width="match_parent"
@@ -86,16 +86,30 @@
                 android:background="@color/settingsBarColor"
                 android:src="@drawable/video_mode" />
 
-            <ImageView
-                android:id="@+id/photoThumbnail"
+            <FrameLayout
                 android:layout_width="wrap_content"
-                android:layout_height="65dp"
-                android:layout_gravity="center_vertical"
-                android:layout_marginLeft="5dp"
-                android:layout_marginRight="5dp"
-                android:layout_weight="0.06"
-                android:background="@color/settingsBarColor"
-                android:src="@drawable/placeholder" />
+                android:layout_height="wrap_content"
+                android:id="@+id/thumbnailParent">
+
+                <ImageView
+                    android:id="@+id/photoThumbnail"
+                    android:layout_width="wrap_content"
+                    android:layout_height="65dp"
+                    android:layout_gravity="center_vertical"
+                    android:layout_marginLeft="5dp"
+                    android:layout_marginRight="5dp"
+                    android:layout_weight="0.06"
+                    android:background="@color/settingsBarColor"
+                    android:src="@drawable/placeholder" />
+
+                <ImageView
+                    android:id="@+id/microThumbnail"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:visibility="invisible"
+                    app:srcCompat="@drawable/ic_play_circle_thumbnail" />
+            </FrameLayout>
         </LinearLayout>
     </LinearLayout>
 </FrameLayout>

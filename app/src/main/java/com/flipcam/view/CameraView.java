@@ -46,6 +46,7 @@ import android.widget.Toast;
 import com.flipcam.PhotoFragment;
 import com.flipcam.R;
 import com.flipcam.VideoFragment;
+import com.flipcam.camerainterface.CameraOperations;
 import com.flipcam.cameramanager.Camera1Manager;
 import com.flipcam.constants.Constants;
 import com.flipcam.util.GLUtil;
@@ -116,7 +117,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     int frameCount=0;
     volatile int cameraFrameCnt=0;
     volatile int frameCnt=0;
-    Camera1Manager camera1;
+    CameraOperations camera1;
     boolean isFocusModeSupported=false;
     int orientation = -1;
     OrientationEventListener orientationEventListener;
@@ -247,16 +248,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                     rotationAngle = 0f;
                     videoFragment.stopRecordAndSaveFile(true);
                     break;
-                /*case Constants.RECORD_STOP_NO_SD_CARD:
-                    setKeepScreenOn(false);
-                    orientationEventListener.enable();
-                    camera1.disableRecordingHint();
-                    //Reset the RECORD Matrix to be portrait.
-                    System.arraycopy(IDENTITY_MATRIX,0,RECORD_IDENTITY_MATRIX,0,IDENTITY_MATRIX.length);
-                    //Reset Rotation angle
-                    rotationAngle = 0f;
-                    videoFragment.recordStopNoSDCard();
-                    break;*/
             }
         }
     }
@@ -366,7 +357,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         return camera1.zoomInOrOut(progress);
     }
 
-    public Camera1Manager getCameraImplementation(){
+    public CameraOperations getCameraImplementation(){
         return camera1;
     }
 
@@ -892,7 +883,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             measuredWidth = width;
             measuredHeight = height;
             frameCount=0;
-            camera1.setTakePic(false);
             openCameraAndStartPreview();
             if(this.photoFragment!=null && !this.photoFragment.isContinuousAF()) {
                 registerAccelSensor();

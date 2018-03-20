@@ -23,6 +23,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -79,6 +80,8 @@ public class PhotoFragment extends Fragment {
     Button okButton;
     SharedPreferences sharedPreferences;
     boolean sdCardUnavailWarned = false;
+    ImageView microThumbnail;
+    FrameLayout thumbnailParent;
 
     public interface PhotoPermission{
         void askPhotoPermission();
@@ -178,6 +181,8 @@ public class PhotoFragment extends Fragment {
             }
         });
         thumbnail = (ImageView)view.findViewById(R.id.photoThumbnail);
+        microThumbnail = (ImageView)view.findViewById(R.id.microThumbnail);
+        thumbnailParent = (FrameLayout)view.findViewById(R.id.thumbnailParent);
         videoMode = (ImageButton) view.findViewById(R.id.videoMode);
         videoMode.setOnClickListener(new View.OnClickListener(){
             @Override
@@ -344,6 +349,7 @@ public class PhotoFragment extends Fragment {
         switchCamera.setRotation(rotationAngle);
         videoMode.setRotation(rotationAngle);
         flash.setRotation(rotationAngle);
+        microThumbnail.setRotation(rotationAngle);
         if(exifInterface!=null && !filePath.equalsIgnoreCase(""))
         {
             if(isImage(filePath)) {
@@ -475,8 +481,6 @@ public class PhotoFragment extends Fragment {
         } catch (FileNotFoundException e) {
             Log.d(TAG, "Unable to create file... SD Card NOT exists..... "+e.getMessage());
             return null;
-        } catch (IOException e) {
-            e.printStackTrace();
         }
         return sharedPreferences.getString(Constants.SD_CARD_PATH, "");
     }
@@ -524,6 +528,7 @@ public class PhotoFragment extends Fragment {
         Log.d(TAG,"create photo thumbnail");
         Bitmap firstFrame = Bitmap.createScaledBitmap(photo,(int)getResources().getDimension(R.dimen.thumbnailWidth),
                 (int)getResources().getDimension(R.dimen.thumbnailHeight),false);
+        microThumbnail.setVisibility(View.INVISIBLE);
         thumbnail.setImageBitmap(firstFrame);
         thumbnail.setClickable(true);
         thumbnail.setOnClickListener(new View.OnClickListener(){
@@ -575,6 +580,7 @@ public class PhotoFragment extends Fragment {
                     vid = Bitmap.createScaledBitmap(vid, (int) getResources().getDimension(R.dimen.thumbnailWidth),
                             (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
                     thumbnail.setImageBitmap(vid);
+                    microThumbnail.setVisibility(View.VISIBLE);
                     thumbnail.setClickable(true);
                     thumbnail.setOnClickListener(new View.OnClickListener() {
                         @Override
@@ -583,6 +589,7 @@ public class PhotoFragment extends Fragment {
                         }
                     });
                 } else {
+                    //Possible bad file in SD Card. Remove it.
                     deleteFileAndRefreshThumbnail();
                     return;
                 }
@@ -597,6 +604,7 @@ public class PhotoFragment extends Fragment {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+                microThumbnail.setVisibility(View.INVISIBLE);
                 thumbnail.setClickable(true);
                 thumbnail.setOnClickListener(new View.OnClickListener() {
                     @Override

@@ -118,8 +118,6 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
         } catch (FileNotFoundException e) {
             Log.d(TAG, "Unable to create file... SD Card NOT exists..... "+e.getMessage());
             return null;
-        } catch (IOException e) {
-            e.printStackTrace();
         }
         return getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE).getString(Constants.SD_CARD_PATH, "");
     }

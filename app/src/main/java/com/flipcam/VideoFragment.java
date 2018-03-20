@@ -25,6 +25,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -77,6 +78,7 @@ public class VideoFragment extends android.app.Fragment{
     LinearLayout timeElapsedParentLayout;
     LinearLayout memoryConsumedParentLayout;
     LinearLayout.LayoutParams parentLayoutParams;
+    FrameLayout thumbnailParent;
     ExifInterface exifInterface=null;
     View warningMsgRoot;
     Dialog warningMsg;
@@ -86,6 +88,7 @@ public class VideoFragment extends android.app.Fragment{
     Button okButton;
     boolean sdCardUnavailWarned = false;
     SharedPreferences sharedPreferences;
+    ImageView microThumbnail;
     public VideoFragment() {
         // Required empty public constructor
     }
@@ -180,6 +183,8 @@ public class VideoFragment extends android.app.Fragment{
             }
         });
         thumbnail = (ImageView)view.findViewById(R.id.thumbnail);
+        microThumbnail = (ImageView)view.findViewById(R.id.microThumbnail);
+        thumbnailParent = (FrameLayout)view.findViewById(R.id.thumbnailParent);
         photoMode = (ImageButton) view.findViewById(R.id.photoMode);
         photoMode.setOnClickListener(new View.OnClickListener(){
             @Override
@@ -440,6 +445,7 @@ public class VideoFragment extends android.app.Fragment{
         switchCamera.setRotation(rotationAngle);
         photoMode.setRotation(rotationAngle);
         flash.setRotation(rotationAngle);
+        microThumbnail.setRotation(rotationAngle);
         if(exifInterface!=null && !filePath.equalsIgnoreCase(""))
         {
             if(isImage(filePath)) {
@@ -633,7 +639,7 @@ public class VideoFragment extends android.app.Fragment{
         videoBar.addView(switchCamera);
         videoBar.addView(startRecord);
         videoBar.addView(photoMode);
-        videoBar.addView(thumbnail);
+        videoBar.addView(thumbnailParent);
         settingsBar.removeAllViews();
         settingsBar.setWeightSum(0);
         flashParentLayout.removeAllViews();
@@ -787,8 +793,6 @@ public class VideoFragment extends android.app.Fragment{
         } catch (FileNotFoundException e) {
             Log.d(TAG, "Unable to create file... SD Card NOT exists..... "+e.getMessage());
             return null;
-        } catch (IOException e) {
-            e.printStackTrace();
         }
         return sharedPreferences.getString(Constants.SD_CARD_PATH, "");
     }
@@ -867,6 +871,7 @@ public class VideoFragment extends android.app.Fragment{
         }
         showRecordSaved();
         if(!isDetached) {
+            microThumbnail.setVisibility(View.VISIBLE);
             thumbnail.setImageBitmap(firstFrame);
             thumbnail.setClickable(true);
             thumbnail.setOnClickListener(new View.OnClickListener() {
@@ -919,6 +924,7 @@ public class VideoFragment extends android.app.Fragment{
                     vid = Bitmap.createScaledBitmap(vid, (int) getResources().getDimension(R.dimen.thumbnailWidth),
                             (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
                     thumbnail.setImageBitmap(vid);
+                    microThumbnail.setVisibility(View.VISIBLE);
                     Log.d(TAG, "set as image bitmap");
                     thumbnail.setClickable(true);
                     thumbnail.setOnClickListener(new View.OnClickListener() {
@@ -928,6 +934,7 @@ public class VideoFragment extends android.app.Fragment{
                         }
                     });
                 } else {
+                    //Possible bad file in SD Card. Remove it.
                     deleteFileAndRefreshThumbnail();
                     return;
                 }
@@ -942,6 +949,7 @@ public class VideoFragment extends android.app.Fragment{
                 pic = Bitmap.createScaledBitmap(pic, (int) getResources().getDimension(R.dimen.thumbnailWidth),
                         (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
                 thumbnail.setImageBitmap(pic);
+                microThumbnail.setVisibility(View.INVISIBLE);
                 thumbnail.setClickable(true);
                 thumbnail.setOnClickListener(new View.OnClickListener() {
                     @Override
