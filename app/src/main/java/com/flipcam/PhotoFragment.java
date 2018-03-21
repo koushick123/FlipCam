@@ -2,6 +2,7 @@ package com.flipcam;
 
 import android.app.Dialog;
 import android.app.Fragment;
+import android.appwidget.AppWidgetManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -27,6 +28,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.RemoteViews;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -42,6 +44,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Iterator;
 
 import static com.facebook.FacebookSdk.getApplicationContext;
 
@@ -80,8 +84,9 @@ public class PhotoFragment extends Fragment {
     Button okButton;
     SharedPreferences sharedPreferences;
     boolean sdCardUnavailWarned = false;
-    ImageView microThumbnail;
     FrameLayout thumbnailParent;
+    ImageView microThumbnail;
+    AppWidgetManager appWidgetManager;
 
     public interface PhotoPermission{
         void askPhotoPermission();
@@ -131,6 +136,7 @@ public class PhotoFragment extends Fragment {
         mediaFilters = new IntentFilter();
         sdCardEventReceiver = new SDCardEventReceiver();
         sharedPreferences = getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
+        appWidgetManager = (AppWidgetManager)getActivity().getSystemService(Context.APPWIDGET_SERVICE);
     }
 
     @Nullable
@@ -431,6 +437,15 @@ public class PhotoFragment extends Fragment {
     public void hideImagePreview()
     {
         imagePreview.setVisibility(View.INVISIBLE);
+        HashSet<String> widgetIds = (HashSet)sharedPreferences.getStringSet(Constants.WIDGET_IDS, null);
+        if(widgetIds != null && widgetIds.size() > 0){
+            Iterator<String> iterator = widgetIds.iterator();
+            while(iterator.hasNext()){
+                String widgetId = iterator.next();
+                Log.d(TAG, "widgetIds = "+widgetId);
+                updateWidget(Integer.parseInt(widgetId));
+            }
+        }
         if(sharedPreferences.getBoolean(Constants.SAVE_TO_GOOGLE_DRIVE, false)) {
             Log.d(TAG, "Auto uploading to Google Drive");
             //Auto upload to Google Drive enabled
@@ -647,6 +662,52 @@ public class PhotoFragment extends Fragment {
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putBoolean("startCamera",true);
         editor.commit();
+    }
+
+    public void updateWidget(int appWidgetId) {
+        RemoteViews remoteViews = new RemoteViews(getActivity().getPackageName(), R.layout.flipcam_widget);
+        FileMedia[] media = MediaUtil.getMediaList(getActivity());
+        if (media != null && media.length > 0) {
+            String filepath = media[0].getPath();
+            Log.d(TAG, "FilePath = " + filepath);
+            if (filepath.endsWith(getResources().getString(R.string.IMG_EXT))
+                    || filepath.endsWith(getResources().getString(R.string.ANOTHER_IMG_EXT))) {
+                Bitmap latestImage = BitmapFactory.decodeFile(filepath);
+                latestImage = Bitmap.createScaledBitmap(latestImage, (int) getResources().getDimension(R.dimen.thumbnailWidth),
+                        (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
+                Log.d(TAG, "Update Photo thumbnail");
+                remoteViews.setViewVisibility(R.id.playCircleWidget, View.INVISIBLE);
+                remoteViews.setImageViewBitmap(R.id.imageWidget, latestImage);
+            } else {
+                Bitmap vid = null;
+                MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
+                try {
+                    mediaMetadataRetriever.setDataSource(filepath);
+                    vid = mediaMetadataRetriever.getFrameAtTime(Constants.FIRST_SEC_MICRO);
+                } catch (RuntimeException runtime) {
+                    File badFile = new File(filepath);
+                    badFile.delete();
+                    media = MediaUtil.getMediaList(getActivity());
+                    if (media != null && media.length > 0) {
+                        mediaMetadataRetriever.setDataSource(filepath);
+                        vid = mediaMetadataRetriever.getFrameAtTime(Constants.FIRST_SEC_MICRO);
+                    } else {
+                        remoteViews.setImageViewResource(R.id.imageWidget, R.drawable.placeholder);
+                    }
+                }
+                if (vid != null) {
+                    vid = Bitmap.createScaledBitmap(vid, (int) getResources().getDimension(R.dimen.thumbnailWidth),
+                            (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
+                    Log.d(TAG, "Update Video thumbnail");
+                    remoteViews.setViewVisibility(R.id.playCircleWidget, View.VISIBLE);
+                    remoteViews.setImageViewBitmap(R.id.imageWidget, vid);
+                }
+            }
+        } else {
+            remoteViews.setImageViewResource(R.id.imageWidget, R.drawable.placeholder);
+        }
+        Log.d(TAG, "Update FC Widget");
+        appWidgetManager.updateAppWidget(appWidgetId, remoteViews);
     }
 
     @Override

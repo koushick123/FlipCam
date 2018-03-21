@@ -106,6 +106,14 @@
         <activity android:name=".MemoryLimitActivity"
             android:windowSoftInputMode="adjustResize"></activity>
 
+        <receiver android:name=".widget.FlipCamAppWidgetProvider">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider"
+                android:resource="@xml/appwidget_provider" />
+        </receiver>
+
     </application>
 
 </manifest>

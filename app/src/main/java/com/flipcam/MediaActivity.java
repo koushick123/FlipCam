@@ -2,6 +2,7 @@ package com.flipcam;
 
 import android.app.Dialog;
 import android.app.NotificationManager;
+import android.appwidget.AppWidgetManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -40,6 +41,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.RemoteViews;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -68,6 +70,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -130,6 +134,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     SDCardEventReceiver sdCardEventReceiver;
     boolean showVideo;
     boolean mediaLoadedFromCreate = false;
+    AppWidgetManager appWidgetManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -295,6 +300,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         taskInProgressRoot = layoutInflater.inflate(R.layout.task_in_progress, null);
         shareMediaRoot = layoutInflater.inflate(R.layout.share_media, null);
         taskAlert = new Dialog(this);
+        appWidgetManager = (AppWidgetManager)getSystemService(Context.APPWIDGET_SERVICE);
     }
 
     @Override
@@ -412,6 +418,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 previousSelectedFragment = -1;
             }
             medias = MediaUtil.getMediaList(getApplicationContext());
+            updateWidget(position);
             if(medias != null) {
                 runOnUiThread(new Runnable() {
                     @Override
@@ -439,6 +446,70 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                     Toast.makeText(getApplicationContext(),"Unable to delete file",Toast.LENGTH_SHORT).show();
                 }
             });
+        }
+    }
+
+    public void updateWidget(int deletePosition){
+        HashSet<String> widgetIds = (HashSet)sharedPreferences.getStringSet(Constants.WIDGET_IDS, null);
+        if(widgetIds != null && widgetIds.size() > 0){
+            Iterator<String> iterator = widgetIds.iterator();
+            while(iterator.hasNext()){
+                String widgetId = iterator.next();
+                Log.d(TAG, "widgetIds = "+widgetId);
+                updateAppWidget(Integer.parseInt(widgetId), deletePosition);
+            }
+        }
+    }
+
+    public void updateAppWidget(int appWidgetId, int deletePosition) {
+        if(deletePosition == 0) {
+            Log.d(TAG, "Deleted first file");
+            RemoteViews remoteViews = new RemoteViews(this.getPackageName(), R.layout.flipcam_widget);
+//            FileMedia[] media = MediaUtil.getMediaList(this);
+            if (medias != null && medias.length > 0) {
+                String filepath = medias[0].getPath();
+                Log.d(TAG, "FilePath = " + filepath);
+                if (filepath.endsWith(getResources().getString(R.string.IMG_EXT))
+                        || filepath.endsWith(getResources().getString(R.string.ANOTHER_IMG_EXT))) {
+                    Bitmap latestImage = BitmapFactory.decodeFile(filepath);
+                    latestImage = Bitmap.createScaledBitmap(latestImage, (int) getResources().getDimension(R.dimen.thumbnailWidth),
+                            (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
+                    Log.d(TAG, "Update Photo thumbnail");
+                    remoteViews.setViewVisibility(R.id.playCircleWidget, View.INVISIBLE);
+                    remoteViews.setImageViewBitmap(R.id.imageWidget, latestImage);
+                } else {
+                    Bitmap vid = null;
+                    MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
+                    try {
+                        mediaMetadataRetriever.setDataSource(filepath);
+                        vid = mediaMetadataRetriever.getFrameAtTime(Constants.FIRST_SEC_MICRO);
+                    } catch (RuntimeException runtime) {
+                        File badFile = new File(filepath);
+                        badFile.delete();
+                        FileMedia[] media = MediaUtil.getMediaList(this);
+                        if (media != null && media.length > 0) {
+                            mediaMetadataRetriever.setDataSource(filepath);
+                            vid = mediaMetadataRetriever.getFrameAtTime(Constants.FIRST_SEC_MICRO);
+                        } else {
+                            remoteViews.setImageViewResource(R.id.imageWidget, R.drawable.placeholder);
+                        }
+                    }
+                    if (vid != null) {
+                        vid = Bitmap.createScaledBitmap(vid, (int) getResources().getDimension(R.dimen.thumbnailWidth),
+                                (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
+                        Log.d(TAG, "Update Video thumbnail");
+                        remoteViews.setViewVisibility(R.id.playCircleWidget, View.VISIBLE);
+                        remoteViews.setImageViewBitmap(R.id.imageWidget, vid);
+                    }
+                }
+            } else {
+                Log.d(TAG, "List empty");
+                //List is now empty
+                remoteViews.setImageViewResource(R.id.imageWidget, R.drawable.placeholder);
+                remoteViews.setTextViewText(R.id.widgetMsg, getResources().getString(R.string.widgetNoMedia));
+            }
+            Log.d(TAG, "Update FC Widget");
+            appWidgetManager.updateAppWidget(appWidgetId, remoteViews);
         }
     }
 

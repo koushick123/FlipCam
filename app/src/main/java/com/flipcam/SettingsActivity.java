@@ -4,6 +4,7 @@ import android.Manifest;
 import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.app.Dialog;
+import android.appwidget.AppWidgetManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -11,6 +12,9 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.media.MediaMetadataRetriever;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
@@ -28,6 +32,7 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
+import android.widget.RemoteViews;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -39,6 +44,8 @@ import com.dropbox.core.v2.files.CreateFolderResult;
 import com.dropbox.core.v2.files.DbxUserFilesRequests;
 import com.dropbox.core.v2.files.GetMetadataErrorException;
 import com.flipcam.constants.Constants;
+import com.flipcam.media.FileMedia;
+import com.flipcam.util.MediaUtil;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
@@ -127,6 +134,7 @@ public class SettingsActivity extends AppCompatActivity{
     Button okButton;
     SDCardEventReceiver sdCardEventReceiver;
     IntentFilter mediaFilters;
+    AppWidgetManager appWidgetManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -182,6 +190,7 @@ public class SettingsActivity extends AppCompatActivity{
         accesGrantedDropbox = new Dialog(this);
         shareMedia = new Dialog(this);
         accountManager = (AccountManager)getSystemService(Context.ACCOUNT_SERVICE);
+        appWidgetManager = (AppWidgetManager)getSystemService(Context.APPWIDGET_SERVICE);
     }
 
     class SDCardEventReceiver extends BroadcastReceiver{
@@ -365,6 +374,64 @@ public class SettingsActivity extends AppCompatActivity{
         shareMedia.dismiss();
     }
 
+    public void updateWidget(){
+        HashSet<String> widgetIds = (HashSet)settingsPref.getStringSet(Constants.WIDGET_IDS, null);
+        if(widgetIds != null && widgetIds.size() > 0){
+            Iterator<String> iterator = widgetIds.iterator();
+            while(iterator.hasNext()){
+                String widgetId = iterator.next();
+                Log.d(TAG, "widgetIds = "+widgetId);
+                updateAppWidget(Integer.parseInt(widgetId));
+            }
+        }
+    }
+
+    public void updateAppWidget(int appWidgetId) {
+        RemoteViews remoteViews = new RemoteViews(getPackageName(), R.layout.flipcam_widget);
+        FileMedia[] media = MediaUtil.getMediaList(this);
+        if (media != null && media.length > 0) {
+            String filepath = media[0].getPath();
+            Log.d(TAG, "FilePath = " + filepath);
+            if (filepath.endsWith(getResources().getString(R.string.IMG_EXT))
+                    || filepath.endsWith(getResources().getString(R.string.ANOTHER_IMG_EXT))) {
+                Bitmap latestImage = BitmapFactory.decodeFile(filepath);
+                latestImage = Bitmap.createScaledBitmap(latestImage, (int) getResources().getDimension(R.dimen.thumbnailWidth),
+                        (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
+                Log.d(TAG, "Update Photo thumbnail");
+                remoteViews.setViewVisibility(R.id.playCircleWidget, View.INVISIBLE);
+                remoteViews.setImageViewBitmap(R.id.imageWidget, latestImage);
+            } else {
+                Bitmap vid = null;
+                MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
+                try {
+                    mediaMetadataRetriever.setDataSource(filepath);
+                    vid = mediaMetadataRetriever.getFrameAtTime(Constants.FIRST_SEC_MICRO);
+                } catch (RuntimeException runtime) {
+                    File badFile = new File(filepath);
+                    badFile.delete();
+                    media = MediaUtil.getMediaList(this);
+                    if (media != null && media.length > 0) {
+                        mediaMetadataRetriever.setDataSource(filepath);
+                        vid = mediaMetadataRetriever.getFrameAtTime(Constants.FIRST_SEC_MICRO);
+                    } else {
+                        remoteViews.setImageViewResource(R.id.imageWidget, R.drawable.placeholder);
+                    }
+                }
+                if (vid != null) {
+                    vid = Bitmap.createScaledBitmap(vid, (int) getResources().getDimension(R.dimen.thumbnailWidth),
+                            (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
+                    Log.d(TAG, "Update Video thumbnail");
+                    remoteViews.setViewVisibility(R.id.playCircleWidget, View.VISIBLE);
+                    remoteViews.setImageViewBitmap(R.id.imageWidget, vid);
+                }
+            }
+        } else {
+            remoteViews.setImageViewResource(R.id.imageWidget, R.drawable.placeholder);
+        }
+        Log.d(TAG, "Update FC Widget");
+        appWidgetManager.updateAppWidget(appWidgetId, remoteViews);
+    }
+
     public void checkShowMemoryConsumed(View view){
         if(showMemoryConsumed.isChecked()){
             settingsEditor.putBoolean(Constants.SHOW_MEMORY_CONSUMED_MSG, true);
@@ -376,7 +443,6 @@ public class SettingsActivity extends AppCompatActivity{
     }
 
     public String doesSDCardExist(){
-//        File[] storage = new File("/storage").listFiles();
         File[] mediaDirs = getExternalMediaDirs();
         if(mediaDirs != null) {
             Log.d(TAG, "mediaDirs = " + mediaDirs.length);
@@ -403,6 +469,7 @@ public class SettingsActivity extends AppCompatActivity{
                 Log.d(TAG,"Save in phone memory");
                 settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM,true);
                 settingsEditor.commit();
+                updateWidget();
                 phoneMemBtn.setChecked(true);
                 sdCardBtn.setChecked(false);
                 hideSDCardPath();
@@ -432,6 +499,7 @@ public class SettingsActivity extends AppCompatActivity{
                     settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, false);
                     settingsEditor.putString(Constants.SD_CARD_PATH, sdCardPath);
                     settingsEditor.commit();
+                    updateWidget();
                     showSDCardPath(sdCardPath);
                     LinearLayout warningParent = (LinearLayout)warningMsgRoot.findViewById(R.id.warningParent);
                     warningParent.setBackgroundColor(getResources().getColor(R.color.backColorSettingMsg));
