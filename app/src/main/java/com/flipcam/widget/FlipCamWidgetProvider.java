@@ -1,8 +1,10 @@
 package com.flipcam.widget;
 
+import android.app.PendingIntent;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -11,6 +13,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.RemoteViews;
 
+import com.flipcam.MediaGridActivity;
 import com.flipcam.R;
 import com.flipcam.constants.Constants;
 import com.flipcam.media.FileMedia;
@@ -79,6 +82,9 @@ public class FlipCamWidgetProvider extends AppWidgetProvider {
             else{
                 remoteViews.setImageViewResource(R.id.imageWidget, R.drawable.placeholder);
             }
+            Intent mediaIntent = new Intent(context, MediaGridActivity.class);
+            PendingIntent mediaGridIntent = PendingIntent.getActivity(context, 0, mediaIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+            remoteViews.setOnClickPendingIntent(R.id.imageWidget, mediaGridIntent);
             Log.d(TAG, "Update FC Widget");
             appWidgetManager.updateAppWidget(appWidgetId, remoteViews);
         }

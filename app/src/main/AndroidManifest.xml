@@ -34,9 +34,13 @@
         <meta-data
             android:name="com.facebook.sdk.ApplicationId"
             android:value="@string/facebook_app_id" />
+        <meta-data
+            android:name="com.google.android.apps.drive.APP_ID"
+            android:value="790824425492" />
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyDQURBjXfmDmgejVzqOlPjanEsSvL867v0" />
 
-        <meta-data android:name="com.google.android.apps.drive.APP_ID" android:value="790824425492" />
-        <meta-data android:name="com.google.android.geo.API_KEY" android:value="AIzaSyDQURBjXfmDmgejVzqOlPjanEsSvL867v0" />
         <activity
             android:name="com.facebook.FacebookActivity"
             android:configChanges="keyboard|keyboardHidden|screenLayout|screenSize|orientation"
@@ -87,13 +91,12 @@
             android:name=".service.MediaUploadService"
             android:description="@string/mediaService"
             android:exported="false" />
-
         <service
             android:name=".service.GoogleDriveUploadService"
             android:description="@string/googleDriveService"
             android:exported="false" />
-
-        <service android:name=".service.DropboxUploadService"
+        <service
+            android:name=".service.DropboxUploadService"
             android:description="@string/dropboxService"
             android:exported="false" />
 
@@ -102,18 +105,23 @@
             android:configChanges="orientation|screenSize">
             <action android:name="com.google.android.apps.drive.DRIVE" />
         </activity>
-
-        <activity android:name=".MemoryLimitActivity"
-            android:windowSoftInputMode="adjustResize"></activity>
+        <activity
+            android:name=".MemoryLimitActivity"
+            android:windowSoftInputMode="adjustResize" />
 
         <receiver android:name=".widget.FlipCamWidgetProvider">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
-            <meta-data android:name="android.appwidget.provider"
+
+            <meta-data
+                android:name="android.appwidget.provider"
                 android:resource="@xml/appwidget_provider" />
         </receiver>
 
+        <activity
+            android:name=".MediaGridActivity"
+            android:configChanges="orientation|screenSize" />
     </application>
 
 </manifest>
