@@ -5,7 +5,8 @@
     android:layout_gravity="center"
     android:background="@color/mediaControlColor"
     android:gravity="center"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:padding="5dp">
 
     <TextView
         android:id="@+id/textView3"

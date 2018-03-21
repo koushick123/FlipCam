@@ -133,7 +133,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     SharedPreferences sharedPreferences;
     SDCardEventReceiver sdCardEventReceiver;
     boolean showVideo;
-    boolean mediaLoadedFromCreate = false;
     AppWidgetManager appWidgetManager;
 
     @Override
@@ -162,12 +161,10 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             }
             else {
                 medias = MediaUtil.getMediaList(getApplicationContext());
-                mediaLoadedFromCreate = true;
             }
         }
         else {
             medias = MediaUtil.getMediaList(getApplicationContext());
-            mediaLoadedFromCreate = true;
         }
         mPager = (ViewPager) findViewById(R.id.mediaPager);
         mPager.setOffscreenPageLimit(1);
@@ -261,7 +258,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         playCircle = (ImageView)findViewById(R.id.playVideo);
         Log.d(TAG, "savedInstanceState = "+savedInstanceState);
         if(savedInstanceState == null){
-            clearPreferences();
+            clearMediaPreferences();
             controlVisbilityPreference.setHideControl(true);
             reDrawPause();
             reDrawTopMediaControls();
@@ -319,7 +316,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             Log.d(TAG, "Media length before leaving = " + medias.length);
         }
         else{
-            clearPreferences();
+            clearMediaPreferences();
         }
         Log.d(TAG ,"selectedPosition = "+selectedPosition);
         if(hashMapFrags.get(selectedPosition) != null) {
@@ -799,7 +796,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
     }
 
-    public void clearPreferences(){
+    private void clearMediaPreferences(){
         SharedPreferences mediaValues = getSharedPreferences(FC_MEDIA_PREFERENCE,Context.MODE_PRIVATE);
         SharedPreferences.Editor mediaState = null;
         if(mediaValues!=null){
@@ -826,7 +823,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         final SurfaceViewVideoFragment currentFrag = hashMapFrags.get(position);
         Log.d(TAG,"isHideControl = "+controlVisbilityPreference.isHideControl());
         //Reset preferences for every new fragment to be displayed.
-        clearPreferences();
+        clearMediaPreferences();
         if(previousSelectedFragment != -1) {
             SurfaceViewVideoFragment previousFragment = hashMapFrags.get(previousSelectedFragment);
             //If previous fragment had a video, stop the video and tracker thread immediately.
@@ -1066,17 +1063,15 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         mPager.addOnPageChangeListener(this);
         mediaFilters.addAction(Intent.ACTION_MEDIA_UNMOUNTED);
         mediaFilters.addDataScheme("file");
-        if(!mediaLoadedFromCreate) {
-            if (!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)) {
-                if (doesSDCardExist() == null) {
-                    exitMediaAndShowNoSDCard();
-                    return;
-                } else {
-                    refreshMediaFromSource();
-                }
+        if (!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)) {
+            if (doesSDCardExist() == null) {
+                exitMediaAndShowNoSDCard();
+                return;
             } else {
                 refreshMediaFromSource();
             }
+        } else {
+            refreshMediaFromSource();
         }
     }
 
@@ -1102,7 +1097,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             mPagerAdapter.notifyDataSetChanged();
         }
         else{
-            clearPreferences();
+            clearMediaPreferences();
             showNoImagePlaceholder();
         }
     }
@@ -1139,7 +1134,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         super.onPause();
         mPager.removeOnPageChangeListener(this);
         unregisterReceiver(sdCardEventReceiver);
-        mediaLoadedFromCreate = false;
         Log.d(TAG,"onPause");
     }
 
