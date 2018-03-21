@@ -23,7 +23,7 @@ import java.util.HashSet;
  * Created by koushick on 20-Mar-18.
  */
 
-public class FlipCamAppWidgetProvider extends AppWidgetProvider {
+public class FlipCamWidgetProvider extends AppWidgetProvider {
 
     public static final String TAG = "FCAppWidgetProvider";
     @Override

@@ -200,33 +200,37 @@ public class SettingsActivity extends AppCompatActivity{
             if(intent.getAction().equalsIgnoreCase(Intent.ACTION_MEDIA_UNMOUNTED)){
                 //Check if SD Card was selected
                 if(!settingsPref.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
-                    Log.d(TAG, "SD Card Removed");
-                    phoneMemBtn.setChecked(true);
-                    sdCardBtn.setChecked(false);
-                    settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
-                    settingsEditor.commit();
-                    hideSDCardPath();
-                    LinearLayout warningParent = (LinearLayout)warningMsgRoot.findViewById(R.id.warningParent);
-                    warningParent.setBackgroundColor(getResources().getColor(R.color.backColorSettingMsg));
-                    TextView warningTitle = (TextView)warningMsgRoot.findViewById(R.id.warningTitle);
-                    warningTitle.setText(getResources().getString(R.string.sdCardRemovedTitle));
-                    ImageView warningSign = (ImageView)warningMsgRoot.findViewById(R.id.warningSign);
-                    warningSign.setVisibility(View.VISIBLE);
-                    TextView warningText = (TextView)warningMsgRoot.findViewById(R.id.warningText);
-                    warningText.setText(getResources().getString(R.string.sdCardNotPresentForRecord));
-                    okButton = (Button)warningMsgRoot.findViewById(R.id.okButton);
-                    okButton.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View view) {
-                            warningMsg.dismiss();
-                        }
-                    });
-                    warningMsg.setContentView(warningMsgRoot);
-                    warningMsg.setCancelable(false);
-                    warningMsg.show();
+                    showSDCardUnavailMessage();
                 }
             }
         }
+    }
+
+    public void showSDCardUnavailMessage(){
+        Log.d(TAG, "SD Card Removed");
+        phoneMemBtn.setChecked(true);
+        sdCardBtn.setChecked(false);
+        settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
+        settingsEditor.commit();
+        hideSDCardPath();
+        LinearLayout warningParent = (LinearLayout)warningMsgRoot.findViewById(R.id.warningParent);
+        warningParent.setBackgroundColor(getResources().getColor(R.color.backColorSettingMsg));
+        TextView warningTitle = (TextView)warningMsgRoot.findViewById(R.id.warningTitle);
+        warningTitle.setText(getResources().getString(R.string.sdCardRemovedTitle));
+        ImageView warningSign = (ImageView)warningMsgRoot.findViewById(R.id.warningSign);
+        warningSign.setVisibility(View.VISIBLE);
+        TextView warningText = (TextView)warningMsgRoot.findViewById(R.id.warningText);
+        warningText.setText(getResources().getString(R.string.sdCardNotPresentForRecord));
+        okButton = (Button)warningMsgRoot.findViewById(R.id.okButton);
+        okButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                warningMsg.dismiss();
+            }
+        });
+        warningMsg.setContentView(warningMsgRoot);
+        warningMsg.setCancelable(false);
+        warningMsg.show();
     }
 
     public void updateSettingsValues(){
@@ -247,27 +251,7 @@ public class SettingsActivity extends AppCompatActivity{
                     showSDCardPath(settingsPref.getString(Constants.SD_CARD_PATH, ""));
                 }
                 else{
-                    phoneMemBtn.setChecked(true);
-                    sdCardBtn.setChecked(false);
-                    hideSDCardPath();
-                    settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
-                    settingsEditor.commit();
-                    LinearLayout warningParent = (LinearLayout)warningMsgRoot.findViewById(R.id.warningParent);
-                    warningParent.setBackgroundColor(getResources().getColor(R.color.backColorSettingMsg));
-                    TextView warningTitle = (TextView)warningMsgRoot.findViewById(R.id.warningTitle);
-                    warningTitle.setText(getResources().getString(R.string.sdCardRemovedTitle));
-                    TextView warningText = (TextView)warningMsgRoot.findViewById(R.id.warningText);
-                    warningText.setText(getResources().getString(R.string.sdCardNotPresentForRecord));
-                    okButton = (Button)warningMsgRoot.findViewById(R.id.okButton);
-                    okButton.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View view) {
-                            warningMsg.dismiss();
-                        }
-                    });
-                    warningMsg.setContentView(warningMsgRoot);
-                    warningMsg.setCancelable(false);
-                    warningMsg.show();
+                    showSDCardUnavailMessage();
                 }
             }
         }
@@ -400,6 +384,7 @@ public class SettingsActivity extends AppCompatActivity{
                 Log.d(TAG, "Update Photo thumbnail");
                 remoteViews.setViewVisibility(R.id.playCircleWidget, View.INVISIBLE);
                 remoteViews.setImageViewBitmap(R.id.imageWidget, latestImage);
+                remoteViews.setTextViewText(R.id.widgetMsg, getResources().getString(R.string.widgetMediaMsg));
             } else {
                 Bitmap vid = null;
                 MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
@@ -415,6 +400,7 @@ public class SettingsActivity extends AppCompatActivity{
                         vid = mediaMetadataRetriever.getFrameAtTime(Constants.FIRST_SEC_MICRO);
                     } else {
                         remoteViews.setImageViewResource(R.id.imageWidget, R.drawable.placeholder);
+                        remoteViews.setTextViewText(R.id.widgetMsg, getResources().getString(R.string.widgetNoMedia));
                     }
                 }
                 if (vid != null) {
@@ -423,10 +409,12 @@ public class SettingsActivity extends AppCompatActivity{
                     Log.d(TAG, "Update Video thumbnail");
                     remoteViews.setViewVisibility(R.id.playCircleWidget, View.VISIBLE);
                     remoteViews.setImageViewBitmap(R.id.imageWidget, vid);
+                    remoteViews.setTextViewText(R.id.widgetMsg, getResources().getString(R.string.widgetMediaMsg));
                 }
             }
         } else {
             remoteViews.setImageViewResource(R.id.imageWidget, R.drawable.placeholder);
+            remoteViews.setTextViewText(R.id.widgetMsg, getResources().getString(R.string.widgetNoMedia));
         }
         Log.d(TAG, "Update FC Widget");
         appWidgetManager.updateAppWidget(appWidgetId, remoteViews);

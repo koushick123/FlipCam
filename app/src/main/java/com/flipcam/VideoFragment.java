@@ -361,6 +361,7 @@ public class VideoFragment extends android.app.Fragment{
         warningMsg.setContentView(warningMsgRoot);
         warningMsg.setCancelable(false);
         warningMsg.show();
+        updateWidget();
         getLatestFileIfExists();
     }
 
@@ -1028,6 +1029,7 @@ public class VideoFragment extends android.app.Fragment{
                 Log.d(TAG, "Update Photo thumbnail");
                 remoteViews.setViewVisibility(R.id.playCircleWidget, View.INVISIBLE);
                 remoteViews.setImageViewBitmap(R.id.imageWidget, latestImage);
+                remoteViews.setTextViewText(R.id.widgetMsg, getResources().getString(R.string.widgetMediaMsg));
             } else {
                 Bitmap vid = null;
                 MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
@@ -1043,6 +1045,8 @@ public class VideoFragment extends android.app.Fragment{
                         vid = mediaMetadataRetriever.getFrameAtTime(Constants.FIRST_SEC_MICRO);
                     } else {
                         remoteViews.setImageViewResource(R.id.imageWidget, R.drawable.placeholder);
+                        remoteViews.setViewVisibility(R.id.playCircleWidget, View.INVISIBLE);
+                        remoteViews.setTextViewText(R.id.widgetMsg, getResources().getString(R.string.widgetNoMedia));
                     }
                 }
                 if (vid != null) {
@@ -1051,10 +1055,13 @@ public class VideoFragment extends android.app.Fragment{
                     Log.d(TAG, "Update Video thumbnail");
                     remoteViews.setViewVisibility(R.id.playCircleWidget, View.VISIBLE);
                     remoteViews.setImageViewBitmap(R.id.imageWidget, vid);
+                    remoteViews.setTextViewText(R.id.widgetMsg, getResources().getString(R.string.widgetMediaMsg));
                 }
             }
         } else {
             remoteViews.setImageViewResource(R.id.imageWidget, R.drawable.placeholder);
+            remoteViews.setViewVisibility(R.id.playCircleWidget, View.INVISIBLE);
+            remoteViews.setTextViewText(R.id.widgetMsg, getResources().getString(R.string.widgetNoMedia));
         }
         Log.d(TAG, "Update FC Widget");
         appWidgetManager.updateAppWidget(appWidgetId, remoteViews);

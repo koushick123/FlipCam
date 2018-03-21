@@ -323,6 +323,7 @@ public class PhotoFragment extends Fragment {
         warningMsg.setContentView(warningMsgRoot);
         warningMsg.setCancelable(false);
         warningMsg.show();
+        updateWidget();
         getLatestFileIfExists();
     }
 
@@ -437,15 +438,7 @@ public class PhotoFragment extends Fragment {
     public void hideImagePreview()
     {
         imagePreview.setVisibility(View.INVISIBLE);
-        HashSet<String> widgetIds = (HashSet)sharedPreferences.getStringSet(Constants.WIDGET_IDS, null);
-        if(widgetIds != null && widgetIds.size() > 0){
-            Iterator<String> iterator = widgetIds.iterator();
-            while(iterator.hasNext()){
-                String widgetId = iterator.next();
-                Log.d(TAG, "widgetIds = "+widgetId);
-                updateWidget(Integer.parseInt(widgetId));
-            }
-        }
+        updateWidget();
         if(sharedPreferences.getBoolean(Constants.SAVE_TO_GOOGLE_DRIVE, false)) {
             Log.d(TAG, "Auto uploading to Google Drive");
             //Auto upload to Google Drive enabled
@@ -461,6 +454,18 @@ public class PhotoFragment extends Fragment {
             dropboxUploadIntent.putExtra("uploadFile", cameraView.getPhotoMediaPath());
             Log.d(TAG, "Uploading file = "+cameraView.getPhotoMediaPath());
             getActivity().startService(dropboxUploadIntent);
+        }
+    }
+
+    public void updateWidget(){
+        HashSet<String> widgetIds = (HashSet)sharedPreferences.getStringSet(Constants.WIDGET_IDS, null);
+        if(widgetIds != null && widgetIds.size() > 0){
+            Iterator<String> iterator = widgetIds.iterator();
+            while(iterator.hasNext()){
+                String widgetId = iterator.next();
+                Log.d(TAG, "widgetIds = "+widgetId);
+                updateAppWidget(Integer.parseInt(widgetId));
+            }
         }
     }
 
@@ -664,7 +669,7 @@ public class PhotoFragment extends Fragment {
         editor.commit();
     }
 
-    public void updateWidget(int appWidgetId) {
+    public void updateAppWidget(int appWidgetId) {
         RemoteViews remoteViews = new RemoteViews(getActivity().getPackageName(), R.layout.flipcam_widget);
         FileMedia[] media = MediaUtil.getMediaList(getActivity());
         if (media != null && media.length > 0) {
@@ -678,6 +683,7 @@ public class PhotoFragment extends Fragment {
                 Log.d(TAG, "Update Photo thumbnail");
                 remoteViews.setViewVisibility(R.id.playCircleWidget, View.INVISIBLE);
                 remoteViews.setImageViewBitmap(R.id.imageWidget, latestImage);
+                remoteViews.setTextViewText(R.id.widgetMsg, getResources().getString(R.string.widgetMediaMsg));
             } else {
                 Bitmap vid = null;
                 MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
@@ -693,6 +699,8 @@ public class PhotoFragment extends Fragment {
                         vid = mediaMetadataRetriever.getFrameAtTime(Constants.FIRST_SEC_MICRO);
                     } else {
                         remoteViews.setImageViewResource(R.id.imageWidget, R.drawable.placeholder);
+                        remoteViews.setViewVisibility(R.id.playCircleWidget, View.INVISIBLE);
+                        remoteViews.setTextViewText(R.id.widgetMsg, getResources().getString(R.string.widgetNoMedia));
                     }
                 }
                 if (vid != null) {
@@ -701,10 +709,13 @@ public class PhotoFragment extends Fragment {
                     Log.d(TAG, "Update Video thumbnail");
                     remoteViews.setViewVisibility(R.id.playCircleWidget, View.VISIBLE);
                     remoteViews.setImageViewBitmap(R.id.imageWidget, vid);
+                    remoteViews.setTextViewText(R.id.widgetMsg, getResources().getString(R.string.widgetMediaMsg));
                 }
             }
         } else {
             remoteViews.setImageViewResource(R.id.imageWidget, R.drawable.placeholder);
+            remoteViews.setViewVisibility(R.id.playCircleWidget, View.INVISIBLE);
+            remoteViews.setTextViewText(R.id.widgetMsg, getResources().getString(R.string.widgetNoMedia));
         }
         Log.d(TAG, "Update FC Widget");
         appWidgetManager.updateAppWidget(appWidgetId, remoteViews);

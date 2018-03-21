@@ -191,8 +191,8 @@
     <string name="resetMsg">This will reset ALL your settings to default values that were set when FlipCam was installed.\n\nThis cannot be undone.\n\n
     Do you want to proceed?</string>
     <string name="reset">RESET</string>
-    <string name="widgetTitle">FlipCam Latest Click</string>
-    <string name="widgetMsg">Click to see the list of all FlipCam Photos/Videos</string>
+    <string name="widgetTitle">FlipCam</string>
+    <string name="widgetMediaMsg">Click to see the list of all FlipCam Photos/Videos</string>
     <string name="widgetNoMedia">No Photos/Videos</string>
 </resources>
 

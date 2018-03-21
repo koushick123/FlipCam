@@ -477,6 +477,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                     Log.d(TAG, "Update Photo thumbnail");
                     remoteViews.setViewVisibility(R.id.playCircleWidget, View.INVISIBLE);
                     remoteViews.setImageViewBitmap(R.id.imageWidget, latestImage);
+                    remoteViews.setTextViewText(R.id.widgetMsg, getResources().getString(R.string.widgetMediaMsg));
                 } else {
                     Bitmap vid = null;
                     MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
@@ -491,7 +492,9 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                             mediaMetadataRetriever.setDataSource(filepath);
                             vid = mediaMetadataRetriever.getFrameAtTime(Constants.FIRST_SEC_MICRO);
                         } else {
+                            remoteViews.setViewVisibility(R.id.playCircleWidget, View.INVISIBLE);
                             remoteViews.setImageViewResource(R.id.imageWidget, R.drawable.placeholder);
+                            remoteViews.setTextViewText(R.id.widgetMsg, getResources().getString(R.string.widgetNoMedia));
                         }
                     }
                     if (vid != null) {
@@ -500,11 +503,13 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                         Log.d(TAG, "Update Video thumbnail");
                         remoteViews.setViewVisibility(R.id.playCircleWidget, View.VISIBLE);
                         remoteViews.setImageViewBitmap(R.id.imageWidget, vid);
+                        remoteViews.setTextViewText(R.id.widgetMsg, getResources().getString(R.string.widgetMediaMsg));
                     }
                 }
             } else {
                 Log.d(TAG, "List empty");
                 //List is now empty
+                remoteViews.setViewVisibility(R.id.playCircleWidget, View.INVISIBLE);
                 remoteViews.setImageViewResource(R.id.imageWidget, R.drawable.placeholder);
                 remoteViews.setTextViewText(R.id.widgetMsg, getResources().getString(R.string.widgetNoMedia));
             }
@@ -1056,15 +1061,16 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     @Override
     protected void onResume() {
         super.onResume();
-        mPager.addOnPageChangeListener(this);
         Log.d(TAG,"onResume");
+        registerReceiver(sdCardEventReceiver, mediaFilters);
+        mPager.addOnPageChangeListener(this);
         mediaFilters.addAction(Intent.ACTION_MEDIA_UNMOUNTED);
         mediaFilters.addDataScheme("file");
-        registerReceiver(sdCardEventReceiver, mediaFilters);
         if(!mediaLoadedFromCreate) {
             if (!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)) {
                 if (doesSDCardExist() == null) {
                     exitMediaAndShowNoSDCard();
+                    return;
                 } else {
                     refreshMediaFromSource();
                 }
