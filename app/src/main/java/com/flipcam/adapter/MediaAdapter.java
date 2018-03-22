@@ -6,7 +6,6 @@ import android.graphics.Point;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.util.Log;
 import android.view.Display;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -32,8 +31,10 @@ public class MediaAdapter extends ArrayAdapter {
     public static final String TAG = "MediaAdapter";
     public MediaAdapter(Context context, FileMedia[] medias){
         super(context, 0, medias);
+        mediaList = medias;
     }
     Display display;
+    FileMedia[] mediaList;
     WindowManager windowManager = (WindowManager)getContext().getSystemService(Context.WINDOW_SERVICE);
     Point screenSize=new Point();
 
@@ -44,10 +45,14 @@ public class MediaAdapter extends ArrayAdapter {
         ImageView playVideo;
     }
 
+    @Override
+    public int getCount() {
+        return mediaList.length;
+    }
+
     @NonNull
     @Override
     public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
-        Log.d(TAG, "getView = "+position);
         View listItem = convertView;
         ViewHolderImage viewHolderImage;
         FrameLayout.LayoutParams thumbnailParams;
@@ -67,7 +72,6 @@ public class MediaAdapter extends ArrayAdapter {
             viewHolderImage = (ViewHolderImage)listItem.getTag();
         }
         int orientation = getContext().getResources().getConfiguration().orientation;
-        Configuration configuration = getContext().getResources().getConfiguration();
         thumbnailParams = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT);
         if(orientation == Configuration.ORIENTATION_PORTRAIT){
 //            thumbnailParams.width = (int)getContext().getResources().getDimension(R.dimen.gridThumbnailWidth);
@@ -75,9 +79,6 @@ public class MediaAdapter extends ArrayAdapter {
             display.getRealSize(screenSize);
             screenSize.x = screenSize.x - 8;
             screenSize.x = screenSize.x / 4;
-            Log.d(TAG, "Width = "+screenSize.x);
-            Log.d(TAG, "DPI = "+configuration.densityDpi);
-            viewHolderImage.recordedMedia.setLayoutParams(thumbnailParams);
             viewHolderImage.mediaGrid.setNumColumns(4);
         }
         else{
@@ -86,20 +87,18 @@ public class MediaAdapter extends ArrayAdapter {
             display.getRealSize(screenSize);
             screenSize.x = screenSize.x - 14;
             screenSize.x = screenSize.x / 7;
-            Log.d(TAG, "Width LS = "+screenSize.x);
-            Log.d(TAG, "DPI LS = "+configuration.densityDpi);
-            viewHolderImage.recordedMedia.setLayoutParams(thumbnailParams);
             viewHolderImage.mediaGrid.setNumColumns(7);
         }
         thumbnailParams.width = thumbnailParams.height = screenSize.x;
-        FileMedia media = (FileMedia)getItem(position);
-        Log.d(TAG, "Path = "+media.getPath());
+        viewHolderImage.recordedMedia.setLayoutParams(thumbnailParams);
+//        FileMedia media = (FileMedia)getItem(position);
+        FileMedia media = mediaList[position];
         if(!isImage(media.getPath())){
             Uri uri = Uri.fromFile(new File(media.getPath()));
             Glide
                     .with(getContext())
                     .load(uri)
-                    .thumbnail(0.2f)
+                    .thumbnail(0.1f)
                     .into(viewHolderImage.recordedMedia);
             viewHolderImage.playVideo.setVisibility(View.VISIBLE);
             viewHolderImage.playVideo.setImageDrawable(getContext().getResources().getDrawable(R.drawable.ic_play_circle_outline));

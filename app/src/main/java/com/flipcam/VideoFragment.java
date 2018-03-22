@@ -981,6 +981,7 @@ public class VideoFragment extends android.app.Fragment{
             }
         }
         else{
+            microThumbnail.setVisibility(View.INVISIBLE);
             setPlaceholderThumbnail();
         }
     }
@@ -1082,7 +1083,6 @@ public class VideoFragment extends android.app.Fragment{
         }
         orientationEventListener.enable();
         mediaFilters.addAction(Intent.ACTION_MEDIA_UNMOUNTED);
-        mediaFilters.addAction(Intent.ACTION_MEDIA_MOUNTED);
         mediaFilters.addDataScheme("file");
         if(getActivity() != null){
             getActivity().registerReceiver(sdCardEventReceiver, mediaFilters);

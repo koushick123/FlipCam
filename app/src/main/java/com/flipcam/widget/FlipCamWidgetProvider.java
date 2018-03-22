@@ -29,15 +29,18 @@ import java.util.HashSet;
 public class FlipCamWidgetProvider extends AppWidgetProvider {
 
     public static final String TAG = "FCAppWidgetProvider";
+    Context cntxt;
+    RemoteViews remoteViews;
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
         Log.d(TAG, "onUpdate");
+        cntxt = context;
         HashSet<String> widgetIds = new HashSet<>();
         SharedPreferences.Editor editor = context.getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE).edit();
         for(int i=0;i<appWidgetIds.length;i++){
             int appWidgetId = appWidgetIds[i];
             widgetIds.add(appWidgetId+"");
-            RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.layout.flipcam_widget);
+            remoteViews = new RemoteViews(context.getPackageName(), R.layout.flipcam_widget);
             FileMedia[] media = MediaUtil.getMediaList(context);
             if(media != null && media.length > 0){
                 String filepath = media[0].getPath();
@@ -51,6 +54,7 @@ public class FlipCamWidgetProvider extends AppWidgetProvider {
                     Log.d(TAG, "Update Photo thumbnail");
                     remoteViews.setViewVisibility(R.id.playCircleWidget, View.INVISIBLE);
                     remoteViews.setImageViewBitmap(R.id.imageWidget, latestImage);
+                    setPendingIntent();
                 }
                 else{
                     Bitmap vid=null;
@@ -76,20 +80,24 @@ public class FlipCamWidgetProvider extends AppWidgetProvider {
                         Log.d(TAG, "Update Video thumbnail");
                         remoteViews.setViewVisibility(R.id.playCircleWidget, View.VISIBLE);
                         remoteViews.setImageViewBitmap(R.id.imageWidget, vid);
+                        setPendingIntent();
                     }
                 }
             }
             else{
                 remoteViews.setImageViewResource(R.id.imageWidget, R.drawable.placeholder);
             }
-            Intent mediaIntent = new Intent(context, MediaGridActivity.class);
-            PendingIntent mediaGridIntent = PendingIntent.getActivity(context, 0, mediaIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-            remoteViews.setOnClickPendingIntent(R.id.imageWidget, mediaGridIntent);
             Log.d(TAG, "Update FC Widget");
             appWidgetManager.updateAppWidget(appWidgetId, remoteViews);
         }
         editor.putStringSet(Constants.WIDGET_IDS, widgetIds);
         editor.commit();
+    }
+
+    private void setPendingIntent(){
+        Intent mediaIntent = new Intent(cntxt, MediaGridActivity.class);
+        PendingIntent mediaGridIntent = PendingIntent.getActivity(cntxt, 0, mediaIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        remoteViews.setOnClickPendingIntent(R.id.imageWidget, mediaGridIntent);
     }
 
     @Override

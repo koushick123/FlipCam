@@ -194,5 +194,6 @@
     <string name="widgetTitle">FlipCam</string>
     <string name="widgetMediaMsg">Click to see the list of all FlipCam Photos/Videos</string>
     <string name="widgetNoMedia">No Photos/Videos</string>
+    <string name="flipCamGallery">FlipCam Gallery</string>
 </resources>
 

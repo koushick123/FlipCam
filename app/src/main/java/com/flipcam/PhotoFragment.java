@@ -635,6 +635,7 @@ public class PhotoFragment extends Fragment {
             }
         }
         else{
+            microThumbnail.setVisibility(View.INVISIBLE);
             setPlaceholderThumbnail();
         }
     }
