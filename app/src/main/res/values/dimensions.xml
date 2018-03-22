@@ -111,8 +111,8 @@
     //Top and Bottom padding for no connection msg
     <dimen name="noConnMsgTopAndBottomPadding">25dp</dimen>
     //Height and Width for grid thumbnail
-    <dimen name="gridThumbnailWidth">180dp</dimen>
-    <dimen name="gridThumbnailHeight">180dp</dimen>
-    <dimen name="gridThumbnailWidthLandscape">320dp</dimen>
-    <dimen name="gridThumbnailHeightLandscape">320dp</dimen>
+    <dimen name="gridThumbnailWidth">118dp</dimen>
+    <dimen name="gridThumbnailHeight">118dp</dimen>
+    <dimen name="gridThumbnailWidthLandscape">128dp</dimen>
+    <dimen name="gridThumbnailHeightLandscape">128dp</dimen>
 </resources>

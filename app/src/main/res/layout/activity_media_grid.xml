@@ -31,6 +31,8 @@
         android:layout_height="match_parent"
         android:layout_gravity="center"
         android:gravity="center|fill"
+        android:horizontalSpacing="2px"
         android:numColumns="3"
-        android:stretchMode="columnWidth" />
+        android:stretchMode="columnWidth"
+        android:verticalSpacing="2px" />
 </FrameLayout>

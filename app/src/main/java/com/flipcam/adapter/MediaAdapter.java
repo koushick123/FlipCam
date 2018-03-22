@@ -2,13 +2,16 @@ package com.flipcam.adapter;
 
 import android.content.Context;
 import android.content.res.Configuration;
+import android.graphics.Point;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
+import android.view.Display;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.ArrayAdapter;
 import android.widget.FrameLayout;
 import android.widget.GridView;
@@ -30,6 +33,9 @@ public class MediaAdapter extends ArrayAdapter {
     public MediaAdapter(Context context, FileMedia[] medias){
         super(context, 0, medias);
     }
+    Display display;
+    WindowManager windowManager = (WindowManager)getContext().getSystemService(Context.WINDOW_SERVICE);
+    Point screenSize=new Point();
 
     static class ViewHolderImage{
         GridView mediaGrid;
@@ -54,26 +60,38 @@ public class MediaAdapter extends ArrayAdapter {
             viewHolderImage.recordedMedia = (ImageView)listItem.findViewById(R.id.recordedMedia);
             viewHolderImage.playVideo = (ImageView)listItem.findViewById(R.id.playVideo);
             listItem.setTag(viewHolderImage);
+            display = windowManager.getDefaultDisplay();
         }
         else
         {
             viewHolderImage = (ViewHolderImage)listItem.getTag();
         }
         int orientation = getContext().getResources().getConfiguration().orientation;
+        Configuration configuration = getContext().getResources().getConfiguration();
         thumbnailParams = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT);
         if(orientation == Configuration.ORIENTATION_PORTRAIT){
-            thumbnailParams.width = (int)getContext().getResources().getDimension(R.dimen.gridThumbnailWidth);
-            thumbnailParams.height = (int)getContext().getResources().getDimension(R.dimen.gridThumbnailHeight);
+//            thumbnailParams.width = (int)getContext().getResources().getDimension(R.dimen.gridThumbnailWidth);
+//            thumbnailParams.height = (int)getContext().getResources().getDimension(R.dimen.gridThumbnailHeight);
+            display.getRealSize(screenSize);
+            screenSize.x = screenSize.x - 8;
+            screenSize.x = screenSize.x / 4;
+            Log.d(TAG, "Width = "+screenSize.x);
+            Log.d(TAG, "DPI = "+configuration.densityDpi);
             viewHolderImage.recordedMedia.setLayoutParams(thumbnailParams);
             viewHolderImage.mediaGrid.setNumColumns(4);
         }
         else{
-            thumbnailParams.width = (int)getContext().getResources().getDimension(R.dimen.gridThumbnailWidthLandscape);
-            thumbnailParams.height = (int)getContext().getResources().getDimension(R.dimen.gridThumbnailHeightLandscape);
+//            thumbnailParams.width = (int)getContext().getResources().getDimension(R.dimen.gridThumbnailWidthLandscape);
+//            thumbnailParams.height = (int)getContext().getResources().getDimension(R.dimen.gridThumbnailHeightLandscape);
+            display.getRealSize(screenSize);
+            screenSize.x = screenSize.x - 14;
+            screenSize.x = screenSize.x / 7;
+            Log.d(TAG, "Width LS = "+screenSize.x);
+            Log.d(TAG, "DPI LS = "+configuration.densityDpi);
             viewHolderImage.recordedMedia.setLayoutParams(thumbnailParams);
-            viewHolderImage.mediaGrid.setNumColumns(4);
+            viewHolderImage.mediaGrid.setNumColumns(7);
         }
-        viewHolderImage.mediaGrid.setVerticalSpacing(1);
+        thumbnailParams.width = thumbnailParams.height = screenSize.x;
         FileMedia media = (FileMedia)getItem(position);
         Log.d(TAG, "Path = "+media.getPath());
         if(!isImage(media.getPath())){
