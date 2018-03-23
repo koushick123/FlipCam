@@ -17,6 +17,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.AbsListView;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.GridView;
 import android.widget.ImageView;
@@ -50,6 +51,7 @@ public class MediaGridActivity extends AppCompatActivity {
     SDCardEventReceiver sdCardEventReceiver;
     boolean sdCardUnavailWarned = false;
     TextView mediaCount;
+    ControlVisbilityPreference controlVisbilityPreference;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,17 +67,18 @@ public class MediaGridActivity extends AppCompatActivity {
         warningMsg = new Dialog(this);
         sharedPreferences = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
         mediaCount = (TextView)findViewById(R.id.mediaCount);
+        mediaGrid = (GridView) findViewById(R.id.mediaGrid);
+        controlVisbilityPreference = (ControlVisbilityPreference)getApplicationContext();
     }
 
     private void updateMediaGridFromSource(){
         ImageView noImage = (ImageView) findViewById(R.id.noImage);
-        noImage.setVisibility(View.GONE);
         TextView noImageText = (TextView) findViewById(R.id.noImageText);
-        noImageText.setVisibility(View.GONE);
         FileMedia[] mediaList = MediaUtil.getMediaList(getApplicationContext());
         if(mediaList != null && mediaList.length > 0) {
+            noImage.setVisibility(View.GONE);
+            noImageText.setVisibility(View.GONE);
             mediaCount.setText(getResources().getString(R.string.galleryCount, MediaUtil.getPhotosCount(), MediaUtil.getVideosCount()));
-            mediaGrid = (GridView) findViewById(R.id.mediaGrid);
             MediaAdapter mediaAdapter = new MediaAdapter(getApplicationContext(), mediaList);
             mediaGrid.setAdapter(mediaAdapter);
             mediaGrid.setOnScrollListener(new AbsListView.OnScrollListener() {
@@ -89,6 +92,20 @@ public class MediaGridActivity extends AppCompatActivity {
                     scrollPosition = firstVisibleItem;
                 }
             });
+            mediaGrid.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
+                    Log.d(TAG, "onItemSelected = "+position);
+                    Intent mediaAct = new Intent(getApplicationContext(), MediaActivity.class);
+                    mediaAct.putExtra("mediaPosition",position);
+                    mediaAct.putExtra("fromGallery",true);
+                    startActivity(mediaAct);
+                }
+            });
+            Log.d(TAG, "selectedMedia Pos = "+controlVisbilityPreference.getMediaSelectedPosition());
+            if(controlVisbilityPreference.getMediaSelectedPosition() != -1){
+                mediaGrid.setSelection(controlVisbilityPreference.getMediaSelectedPosition());
+            }
         }
         else{
             mediaCount.setText(getResources().getString(R.string.galleryCount, 0, 0));

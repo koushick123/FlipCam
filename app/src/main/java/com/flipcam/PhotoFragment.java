@@ -650,7 +650,7 @@ public class PhotoFragment extends Fragment {
     {
         setCameraClose();
         Intent intent = new Intent(getActivity().getApplicationContext(), MediaActivity.class);
-        intent.putExtra("showVideo",false);
+        intent.putExtra("fromGallery",false);
         startActivity(intent);
     }
 

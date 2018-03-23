@@ -520,6 +520,13 @@ MediaPlayer.OnErrorListener, Serializable{
         playCircle.setVisibility(View.GONE);
     }
 
+    public void removeVideoControls(){
+        pause.setVisibility(View.INVISIBLE);
+        startTime.setVisibility(View.INVISIBLE);
+        endTime.setVisibility(View.INVISIBLE);
+        videoSeek.setVisibility(View.INVISIBLE);
+    }
+
     public void resetMediaPlayer(){
         Log.d(TAG,"getCurrentPosition = "+mediaPlayer.getCurrentPosition());
             mediaPlayer.seekTo(100);
@@ -699,6 +706,11 @@ MediaPlayer.OnErrorListener, Serializable{
                     Log.d(TAG, "show controls onResume");
                     topBar.setVisibility(View.VISIBLE);
                     videoControls.setVisibility(View.VISIBLE);
+                    //Do NOT remove below method call.
+                    //When user navigates here directly from Gallery,
+                    //this is necessary to hide the video controls for an image,
+                    //since onPageSelected is not called.
+                    removeVideoControls();
                 }
                 else{
                     Log.d(TAG,"hide controls onResume");

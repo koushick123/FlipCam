@@ -132,7 +132,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     IntentFilter mediaFilters;
     SharedPreferences sharedPreferences;
     SDCardEventReceiver sdCardEventReceiver;
-    boolean showVideo;
     AppWidgetManager appWidgetManager;
 
     @Override
@@ -140,7 +139,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         super.onCreate(savedInstanceState);
         Log.d(TAG,"onCreate");
         setContentView(R.layout.activity_media);
-        showVideo = getIntent().getExtras().getBoolean("showVideo");
         DisplayMetrics displayMetrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
         WindowManager windowManager = (WindowManager)getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
@@ -155,6 +153,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         layoutInflater = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         warningMsgRoot = layoutInflater.inflate(R.layout.warning_message, null);
         sharedPreferences = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
+        videoControls = (LinearLayout)findViewById(R.id.videoControls);
         if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
             if(doesSDCardExist() == null){
                 exitMediaAndShowNoSDCard();
@@ -170,6 +169,19 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         mPager.setOffscreenPageLimit(1);
         mPagerAdapter = new MediaSlidePager(getSupportFragmentManager());
         mPager.setAdapter(mPagerAdapter);
+        if(getIntent().getExtras().getBoolean("fromGallery")) {
+            int mediaPos = getIntent().getExtras().getInt("mediaPosition");
+            Log.d(TAG, "Intent extra = " +mediaPos);
+            mPager.setCurrentItem(mediaPos);
+            selectedPosition = previousSelectedFragment = mediaPos;
+            Log.d(TAG, "Current Item = "+medias[mediaPos].getPath());
+            if(isImage(medias[mediaPos].getPath())){
+                videoControls.setVisibility(View.INVISIBLE);
+            }
+            else{
+                videoControls.setVisibility(View.VISIBLE);
+            }
+        }
         deleteMedia = (ImageButton)findViewById(R.id.deleteMedia);
         deleteAlert = new Dialog(this);
         deleteMedia.setOnClickListener(new View.OnClickListener(){
@@ -191,7 +203,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             }
         });
         noConnAlert = new Dialog(this);
-        videoControls = (LinearLayout)findViewById(R.id.videoControls);
         pause = (ImageButton) findViewById(R.id.playButton);
         shareMedia = (ImageButton)findViewById(R.id.shareMedia);
         shareToFBAlert = new Dialog(this);
@@ -420,7 +431,9 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
+                        Log.d(TAG, "BEFORE notifyDataSetChanged");
                         mPagerAdapter.notifyDataSetChanged();
+                        Log.d(TAG, "AFTER notifyDataSetChanged");
                         taskAlert.dismiss();
                     }
                 });
@@ -1103,10 +1116,9 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     }
 
     public void exitMediaAndShowNoSDCard(){
-        Log.d(TAG, "exitMediaAndShowNoSDCard = "+showVideo);
+        Log.d(TAG, "exitMediaAndShowNoSDCard");
         Intent camera = new Intent(this,CameraActivity.class);
         camera.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_NEW_TASK);
-        camera.putExtra("showVideo",showVideo);
         startActivity(camera);
         finish();
     }
@@ -1135,6 +1147,9 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         mPager.removeOnPageChangeListener(this);
         unregisterReceiver(sdCardEventReceiver);
         Log.d(TAG,"onPause");
+        if(getIntent().getExtras().getBoolean("fromGallery")) {
+            controlVisbilityPreference.setMediaSelectedPosition(selectedPosition);
+        }
     }
 
     public boolean isImage(String path)

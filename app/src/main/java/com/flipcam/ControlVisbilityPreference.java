@@ -11,6 +11,15 @@ import java.io.Serializable;
 public class ControlVisbilityPreference extends Application implements Serializable{
 
     private boolean hideControl;
+    private int mediaSelectedPosition;
+
+    public int getMediaSelectedPosition() {
+        return mediaSelectedPosition;
+    }
+
+    public void setMediaSelectedPosition(int mediaSelectedPosition) {
+        this.mediaSelectedPosition = mediaSelectedPosition;
+    }
 
     public boolean isHideControl() {
         return hideControl;
