@@ -81,4 +81,29 @@ public class MediaUtil {
         }
         return false;
     }
+
+    public static int getPhotosCount(){
+        int count = 0;
+        if(mediaList != null && mediaList.length > 0){
+            for(int i=0;i<mediaList.length;i++){
+                if(mediaList[i].getPath().endsWith(appContext.getResources().getString(R.string.IMG_EXT)) ||
+                        mediaList[i].getPath().endsWith(appContext.getResources().getString(R.string.ANOTHER_IMG_EXT))){
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    public static int getVideosCount() {
+        int count = 0;
+        if (mediaList != null && mediaList.length > 0) {
+            for (int i = 0; i < mediaList.length; i++) {
+                if (mediaList[i].getPath().endsWith(appContext.getResources().getString(R.string.VID_EXT))) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
 }

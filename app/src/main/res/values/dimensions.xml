@@ -110,9 +110,9 @@
     <dimen name="noConnMsgLeftAndRightMargin">20dp</dimen>
     //Top and Bottom padding for no connection msg
     <dimen name="noConnMsgTopAndBottomPadding">25dp</dimen>
-    //Height and Width for grid thumbnail
-    <dimen name="gridThumbnailWidth">118dp</dimen>
-    <dimen name="gridThumbnailHeight">118dp</dimen>
-    <dimen name="gridThumbnailWidthLandscape">128dp</dimen>
-    <dimen name="gridThumbnailHeightLandscape">128dp</dimen>
+    //Vertical Spacing
+    <dimen name="verticalSpace">3px</dimen>
+    //Margins for FlipCam gallery
+    <dimen name="fcGalleryTextTopAndBottomMargin">15dp</dimen>
+    <dimen name="fcGalleryTextLeftMargin">15dp</dimen>
 </resources>

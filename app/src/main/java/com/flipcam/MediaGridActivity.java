@@ -49,6 +49,7 @@ public class MediaGridActivity extends AppCompatActivity {
     IntentFilter mediaFilters;
     SDCardEventReceiver sdCardEventReceiver;
     boolean sdCardUnavailWarned = false;
+    TextView mediaCount;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,6 +64,7 @@ public class MediaGridActivity extends AppCompatActivity {
         warningMsgRoot = layoutInflater.inflate(R.layout.warning_message, null);
         warningMsg = new Dialog(this);
         sharedPreferences = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
+        mediaCount = (TextView)findViewById(R.id.mediaCount);
     }
 
     private void updateMediaGridFromSource(){
@@ -72,6 +74,7 @@ public class MediaGridActivity extends AppCompatActivity {
         noImageText.setVisibility(View.GONE);
         FileMedia[] mediaList = MediaUtil.getMediaList(getApplicationContext());
         if(mediaList != null && mediaList.length > 0) {
+            mediaCount.setText(getResources().getString(R.string.galleryCount, MediaUtil.getPhotosCount(), MediaUtil.getVideosCount()));
             mediaGrid = (GridView) findViewById(R.id.mediaGrid);
             MediaAdapter mediaAdapter = new MediaAdapter(getApplicationContext(), mediaList);
             mediaGrid.setAdapter(mediaAdapter);
@@ -88,6 +91,7 @@ public class MediaGridActivity extends AppCompatActivity {
             });
         }
         else{
+            mediaCount.setText(getResources().getString(R.string.galleryCount, 0, 0));
             noImage.setVisibility(View.VISIBLE);
             noImageText.setVisibility(View.VISIBLE);
         }

@@ -37,6 +37,10 @@ public class MediaAdapter extends ArrayAdapter {
     FileMedia[] mediaList;
     WindowManager windowManager = (WindowManager)getContext().getSystemService(Context.WINDOW_SERVICE);
     Point screenSize=new Point();
+    //A 180px X 180px size for a thumbnail would look ideal on most devices.
+    int thumbnailResolution = 180;
+    int numOfCols = 3;
+    int thumbnailWidthAndHeight = 180;
 
     static class ViewHolderImage{
         GridView mediaGrid;
@@ -74,24 +78,15 @@ public class MediaAdapter extends ArrayAdapter {
         int orientation = getContext().getResources().getConfiguration().orientation;
         thumbnailParams = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT);
         if(orientation == Configuration.ORIENTATION_PORTRAIT){
-//            thumbnailParams.width = (int)getContext().getResources().getDimension(R.dimen.gridThumbnailWidth);
-//            thumbnailParams.height = (int)getContext().getResources().getDimension(R.dimen.gridThumbnailHeight);
-            display.getRealSize(screenSize);
-            screenSize.x = screenSize.x - 8;
-            screenSize.x = screenSize.x / 4;
-            viewHolderImage.mediaGrid.setNumColumns(4);
+            calculateThumbnailSizeAndCols();
+            viewHolderImage.mediaGrid.setNumColumns(numOfCols);
         }
         else{
-//            thumbnailParams.width = (int)getContext().getResources().getDimension(R.dimen.gridThumbnailWidthLandscape);
-//            thumbnailParams.height = (int)getContext().getResources().getDimension(R.dimen.gridThumbnailHeightLandscape);
-            display.getRealSize(screenSize);
-            screenSize.x = screenSize.x - 14;
-            screenSize.x = screenSize.x / 7;
-            viewHolderImage.mediaGrid.setNumColumns(7);
+            calculateThumbnailSizeAndCols();
+            viewHolderImage.mediaGrid.setNumColumns(numOfCols);
         }
-        thumbnailParams.width = thumbnailParams.height = screenSize.x;
+        thumbnailParams.width = thumbnailParams.height = thumbnailWidthAndHeight;
         viewHolderImage.recordedMedia.setLayoutParams(thumbnailParams);
-//        FileMedia media = (FileMedia)getItem(position);
         FileMedia media = mediaList[position];
         if(!isImage(media.getPath())){
             Uri uri = Uri.fromFile(new File(media.getPath()));
@@ -111,11 +106,21 @@ public class MediaAdapter extends ArrayAdapter {
         return listItem;
     }
 
-    public boolean isImage(String path)
+    boolean isImage(String path)
     {
         if(path.endsWith(getContext().getResources().getString(R.string.IMG_EXT)) || path.endsWith(getContext().getResources().getString(R.string.ANOTHER_IMG_EXT))){
             return true;
         }
         return false;
+    }
+
+    void calculateThumbnailSizeAndCols(){
+        display.getRealSize(screenSize);
+        numOfCols = screenSize.x / thumbnailResolution;
+//        Log.d(TAG, "numofCols = "+numOfCols);
+        int verticalSpace = (int)getContext().getResources().getDimension(R.dimen.verticalSpace);
+        int totalVerticalSpace = numOfCols * verticalSpace;
+        thumbnailWidthAndHeight = (screenSize.x - totalVerticalSpace) / numOfCols;
+//        Log.d(TAG, "thumbnailWidthAndHeight = "+thumbnailWidthAndHeight);
     }
 }

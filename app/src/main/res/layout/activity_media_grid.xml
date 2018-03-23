@@ -25,14 +25,30 @@
         android:textSize="@dimen/noImageTextSize"
         android:visibility="gone" />
 
-    <GridView
-        android:id="@+id/mediaGrid"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_gravity="center"
-        android:gravity="center|fill"
-        android:horizontalSpacing="2px"
-        android:numColumns="3"
-        android:stretchMode="columnWidth"
-        android:verticalSpacing="2px" />
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/mediaCount"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/fcGalleryTextTopAndBottomMargin"
+            android:layout_marginLeft="@dimen/fcGalleryTextLeftMargin"
+            android:layout_marginTop="@dimen/fcGalleryTextTopAndBottomMargin"
+            android:text="TextView"
+            android:textColor="@color/turqoise" />
+
+        <GridView
+            android:id="@+id/mediaGrid"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:gravity="center|fill"
+            android:horizontalSpacing="4px"
+            android:numColumns="3"
+            android:stretchMode="columnWidth"
+            android:verticalSpacing="4px" />
+    </LinearLayout>
 </FrameLayout>

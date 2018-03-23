@@ -195,5 +195,6 @@
     <string name="widgetMediaMsg">Click to see the list of all FlipCam Photos/Videos</string>
     <string name="widgetNoMedia">No Photos/Videos</string>
     <string name="flipCamGallery">FlipCam Gallery</string>
+    <string name="galleryCount">%1$d Photos, %2$d Videos</string>
 </resources>
 
