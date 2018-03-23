@@ -237,7 +237,6 @@ public class MediaGridActivity extends AppCompatActivity {
     }
 
     public void updateAppWidget(int appWidgetId) {
-        Log.d(TAG, "Deleted first file");
         RemoteViews remoteViews = new RemoteViews(this.getPackageName(), R.layout.flipcam_widget);
         FileMedia[] medias = MediaUtil.getMediaList(this);
         if (medias != null && medias.length > 0) {

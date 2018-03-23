@@ -156,7 +156,8 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         videoControls = (LinearLayout)findViewById(R.id.videoControls);
         if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
             if(doesSDCardExist() == null){
-                exitMediaAndShowNoSDCard();
+                exitToPreviousActivity();
+                return;
             }
             else {
                 medias = MediaUtil.getMediaList(getApplicationContext());
@@ -174,13 +175,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             Log.d(TAG, "Intent extra = " +mediaPos);
             mPager.setCurrentItem(mediaPos);
             selectedPosition = previousSelectedFragment = mediaPos;
-            Log.d(TAG, "Current Item = "+medias[mediaPos].getPath());
-            if(isImage(medias[mediaPos].getPath())){
-                videoControls.setVisibility(View.INVISIBLE);
-            }
-            else{
-                videoControls.setVisibility(View.VISIBLE);
-            }
         }
         deleteMedia = (ImageButton)findViewById(R.id.deleteMedia);
         deleteAlert = new Dialog(this);
@@ -237,7 +231,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                             Log.d(TAG, "Start activity to choose");
                             if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
                                 if(doesSDCardExist() == null){
-                                    exitMediaAndShowNoSDCard();
+                                    exitToPreviousActivity();
                                     return;
                                 }
                             }
@@ -360,6 +354,15 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         shareToFacebook();
     }
 
+    void exitToPreviousActivity(){
+        if(getIntent().getExtras().getBoolean("fromGallery")) {
+            exitMediaAndShowNoSDCardInGallery();
+        }
+        else {
+            exitMediaAndShowNoSDCard();
+        }
+    }
+
     public void cancelShare(View view){
         shareAlert.dismiss();
     }
@@ -412,7 +415,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
             if(doesSDCardExist() == null){
                 taskAlert.dismiss();
-                exitMediaAndShowNoSDCard();
+                exitToPreviousActivity();
                 return;
             }
         }
@@ -827,7 +830,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
             String sdCard = doesSDCardExist();
             if(sdCard == null){
-                exitMediaAndShowNoSDCard();
+                exitToPreviousActivity();
                 return;
             }
         }
@@ -1078,7 +1081,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         mediaFilters.addDataScheme("file");
         if (!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)) {
             if (doesSDCardExist() == null) {
-                exitMediaAndShowNoSDCard();
+                exitToPreviousActivity();
                 return;
             } else {
                 refreshMediaFromSource();
@@ -1120,6 +1123,14 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         Intent camera = new Intent(this,CameraActivity.class);
         camera.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(camera);
+        finish();
+    }
+
+    void exitMediaAndShowNoSDCardInGallery(){
+        Log.d(TAG, "exitMediaAndShowNoSDCardInGallery");
+        Intent mediaGrid = new Intent(this,MediaGridActivity.class);
+        mediaGrid.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(mediaGrid);
         finish();
     }
 
