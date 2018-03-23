@@ -71,6 +71,13 @@ public class MediaGridActivity extends AppCompatActivity {
         controlVisbilityPreference = (ControlVisbilityPreference)getApplicationContext();
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        Log.d(TAG, "onDestroy");
+        controlVisbilityPreference.setMediaSelectedPosition(0);
+    }
+
     private void updateMediaGridFromSource(){
         ImageView noImage = (ImageView) findViewById(R.id.noImage);
         TextView noImageText = (TextView) findViewById(R.id.noImageText);
@@ -103,7 +110,7 @@ public class MediaGridActivity extends AppCompatActivity {
                 }
             });
             Log.d(TAG, "selectedMedia Pos = "+controlVisbilityPreference.getMediaSelectedPosition());
-            if(controlVisbilityPreference.getMediaSelectedPosition() != -1){
+            if(controlVisbilityPreference.getMediaSelectedPosition() != -1 && controlVisbilityPreference.getMediaSelectedPosition() < mediaList.length){
                 mediaGrid.setSelection(controlVisbilityPreference.getMediaSelectedPosition());
             }
         }

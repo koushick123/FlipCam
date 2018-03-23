@@ -135,6 +135,7 @@ public class SettingsActivity extends AppCompatActivity{
     SDCardEventReceiver sdCardEventReceiver;
     IntentFilter mediaFilters;
     AppWidgetManager appWidgetManager;
+    ControlVisbilityPreference controlVisbilityPreference;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -191,6 +192,7 @@ public class SettingsActivity extends AppCompatActivity{
         shareMedia = new Dialog(this);
         accountManager = (AccountManager)getSystemService(Context.ACCOUNT_SERVICE);
         appWidgetManager = (AppWidgetManager)getSystemService(Context.APPWIDGET_SERVICE);
+        controlVisbilityPreference = (ControlVisbilityPreference)getApplicationContext();
     }
 
     class SDCardEventReceiver extends BroadcastReceiver{
@@ -461,6 +463,7 @@ public class SettingsActivity extends AppCompatActivity{
                 phoneMemBtn.setChecked(true);
                 sdCardBtn.setChecked(false);
                 hideSDCardPath();
+                controlVisbilityPreference.setMediaSelectedPosition(0);
                 break;
             case R.id.sdCardbutton:
                 Log.d(TAG,"Save in sd card");
@@ -497,6 +500,7 @@ public class SettingsActivity extends AppCompatActivity{
                     warningTitle.setText(getResources().getString(R.string.sdCardDetectTitle));
                     TextView warningText = (TextView)warningMsgRoot.findViewById(R.id.warningText);
                     warningText.setText(getResources().getString(R.string.sdCardDetectMessage, sdCardPath));
+                    controlVisbilityPreference.setMediaSelectedPosition(0);
                 }
                 warningMsg.setContentView(warningMsgRoot);
                 warningMsg.setCancelable(false);
