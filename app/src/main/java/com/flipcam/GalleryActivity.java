@@ -36,9 +36,9 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Iterator;
 
-public class MediaGridActivity extends AppCompatActivity {
+public class GalleryActivity extends AppCompatActivity {
 
-    public static final String TAG = "MediaGridActivity";
+    public static final String TAG = "GalleryActivity";
     GridView mediaGrid;
     int scrollPosition = 0;
     SharedPreferences sharedPreferences;

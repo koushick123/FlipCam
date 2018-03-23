@@ -119,7 +119,7 @@
                 android:resource="@xml/appwidget_provider" />
         </receiver>
         <activity
-            android:name=".MediaGridActivity"
+            android:name=".GalleryActivity"
             android:configChanges="orientation|screenSize" />
     </application>
 

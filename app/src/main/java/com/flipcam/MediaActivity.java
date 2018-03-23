@@ -1128,7 +1128,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
 
     void exitMediaAndShowNoSDCardInGallery(){
         Log.d(TAG, "exitMediaAndShowNoSDCardInGallery");
-        Intent mediaGrid = new Intent(this,MediaGridActivity.class);
+        Intent mediaGrid = new Intent(this,GalleryActivity.class);
         mediaGrid.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(mediaGrid);
         finish();

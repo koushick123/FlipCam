@@ -13,7 +13,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.RemoteViews;
 
-import com.flipcam.MediaGridActivity;
+import com.flipcam.GalleryActivity;
 import com.flipcam.R;
 import com.flipcam.constants.Constants;
 import com.flipcam.media.FileMedia;
@@ -95,7 +95,7 @@ public class FlipCamWidgetProvider extends AppWidgetProvider {
     }
 
     private void setPendingIntent(){
-        Intent mediaIntent = new Intent(cntxt, MediaGridActivity.class);
+        Intent mediaIntent = new Intent(cntxt, GalleryActivity.class);
         PendingIntent mediaGridIntent = PendingIntent.getActivity(cntxt, 0, mediaIntent, PendingIntent.FLAG_UPDATE_CURRENT);
         remoteViews.setOnClickPendingIntent(R.id.imageWidget, mediaGridIntent);
     }
