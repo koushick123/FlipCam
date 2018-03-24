@@ -3,6 +3,7 @@ package com.flipcam;
 import android.app.Dialog;
 import android.appwidget.AppWidgetManager;
 import android.content.BroadcastReceiver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -14,6 +15,7 @@ import android.graphics.Typeface;
 import android.hardware.SensorManager;
 import android.media.ExifInterface;
 import android.media.MediaMetadataRetriever;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.StatFs;
@@ -36,6 +38,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.flipcam.constants.Constants;
+import com.flipcam.data.MediaTableConstants;
 import com.flipcam.media.FileMedia;
 import com.flipcam.service.DropboxUploadService;
 import com.flipcam.service.GoogleDriveUploadService;
@@ -530,6 +533,7 @@ public class VideoFragment extends android.app.Fragment{
             thresholdDialog.setCancelable(false);
             thresholdDialog.show();
             updateWidget();
+            addMediaToDB();
         }
         else {
             if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
@@ -890,6 +894,7 @@ public class VideoFragment extends android.app.Fragment{
             isDetached=true;
         }
         showRecordSaved();
+        addMediaToDB();
         if(!isDetached) {
             updateWidget();
             microThumbnail.setVisibility(View.VISIBLE);
@@ -910,6 +915,14 @@ public class VideoFragment extends android.app.Fragment{
             return true;
         }
         return false;
+    }
+
+    public void addMediaToDB(){
+        ContentValues mediaContent = new ContentValues();
+        mediaContent.put("filename", cameraView.getMediaPath());
+        mediaContent.put("memoryStorage", (sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true) ? "1" : "0"));
+        Log.d(TAG, "Adding to Media DB");
+        getActivity().getContentResolver().insert(Uri.parse(MediaTableConstants.BASE_CONTENT_URI+"/addMedia"),mediaContent);
     }
 
     public void deleteFileAndRefreshThumbnail(){

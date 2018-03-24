@@ -56,6 +56,7 @@ import com.facebook.HttpMethod;
 import com.facebook.login.LoginManager;
 import com.facebook.login.LoginResult;
 import com.flipcam.constants.Constants;
+import com.flipcam.data.MediaTableConstants;
 import com.flipcam.media.FileMedia;
 import com.flipcam.service.MediaUploadService;
 import com.flipcam.util.MediaUtil;
@@ -421,7 +422,10 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         }
         Log.d(TAG,"Length before delete = "+medias.length);
         Log.d(TAG,"Deleting file = "+medias[position].getPath());
+        String deletePath = medias[position].getPath();
         if(MediaUtil.deleteFile(medias[position])) {
+            Log.d(TAG, "deletePath = "+deletePath);
+            getContentResolver().delete(Uri.parse(MediaTableConstants.BASE_CONTENT_URI + "/deleteMedia"), null, new String[]{deletePath});
             itemCount = 0;
             isDelete = true;
             if(position == medias.length - 1){

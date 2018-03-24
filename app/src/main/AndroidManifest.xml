@@ -121,6 +121,9 @@
         <activity
             android:name=".GalleryActivity"
             android:configChanges="orientation|screenSize" />
+        <provider
+            android:authorities="@string/content_authority"
+            android:name=".data.MediaProvider"
+            />
     </application>
-
 </manifest>

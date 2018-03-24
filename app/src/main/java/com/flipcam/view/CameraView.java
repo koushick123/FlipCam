@@ -1,6 +1,7 @@
 package com.flipcam.view;
 
 import android.Manifest;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -155,6 +156,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     long lowestMemory = lowestThreshold * (long)Constants.MEGA_BYTE;
     boolean isPhoneMemory = true;
     StatFs availableStatFs = new StatFs(Environment.getDataDirectory().getPath());
+    ContentValues mediaContent = new ContentValues();
 
     public CameraView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -231,6 +233,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                     showMemoryConsumed();
                     break;
                 case Constants.RECORD_COMPLETE:
+                    mediaContent = null;
                     Log.d(TAG,"Update thumbnail now");
                     videoFragment.createAndShowThumbnail(getMediaPath());
                     break;
@@ -931,6 +934,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 if(!memoryPrefs.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
                     if(videoFragment.doesSDCardExist() != null){
                         recordStop.what = Constants.RECORD_STOP;
+                        /*Log.d(TAG, "Adding to Media DB");
+                        videoFragment.getActivity().getContentResolver().insert(Uri.parse(MediaTableConstants.BASE_CONTENT_URI+"/addMedia"),mediaContent);*/
                     }
                     else{
                         recordStop.what = Constants.RECORD_STOP_NO_SD_CARD;
@@ -942,6 +947,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 }
                 else{
                     recordStop.what = Constants.RECORD_STOP;
+                    /*Log.d(TAG, "Adding to Media DB");
+                    videoFragment.getActivity().getContentResolver().insert(Uri.parse(MediaTableConstants.BASE_CONTENT_URI+"/addMedia"),mediaContent);*/
                 }
                 cameraHandler.sendMessageAtFrontOfQueue(recordStop);
                 Log.d(TAG,"Recording STOPPED");
@@ -1151,6 +1158,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 e.printStackTrace();
             }
             encoderSurface = prepareWindowSurface(mediaRecorder.getSurface());
+            mediaContent = new ContentValues();
+            mediaContent.put("filename", mNextVideoAbsolutePath);
+            mediaContent.put("memoryStorage", (memoryPrefs.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true) ? "1" : "0"));
         }
 
         public String getFilePath(boolean video) {

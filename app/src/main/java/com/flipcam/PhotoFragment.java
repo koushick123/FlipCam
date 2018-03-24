@@ -4,6 +4,7 @@ import android.app.Dialog;
 import android.app.Fragment;
 import android.appwidget.AppWidgetManager;
 import android.content.BroadcastReceiver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -14,6 +15,7 @@ import android.graphics.BitmapFactory;
 import android.hardware.SensorManager;
 import android.media.ExifInterface;
 import android.media.MediaMetadataRetriever;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.util.Log;
@@ -34,6 +36,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.flipcam.constants.Constants;
+import com.flipcam.data.MediaTableConstants;
 import com.flipcam.media.FileMedia;
 import com.flipcam.service.DropboxUploadService;
 import com.flipcam.service.GoogleDriveUploadService;
@@ -439,6 +442,11 @@ public class PhotoFragment extends Fragment {
     {
         imagePreview.setVisibility(View.INVISIBLE);
         updateWidget();
+        ContentValues mediaContent = new ContentValues();
+        mediaContent.put("filename", cameraView.getPhotoMediaPath());
+        mediaContent.put("memoryStorage", (sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true) ? "1" : "0"));
+        Log.d(TAG, "Adding to Media DB");
+        getActivity().getContentResolver().insert(Uri.parse(MediaTableConstants.BASE_CONTENT_URI+"/addMedia"),mediaContent);
         if(sharedPreferences.getBoolean(Constants.SAVE_TO_GOOGLE_DRIVE, false)) {
             Log.d(TAG, "Auto uploading to Google Drive");
             //Auto upload to Google Drive enabled
