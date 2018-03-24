@@ -37,10 +37,6 @@
         <meta-data
             android:name="com.google.android.apps.drive.APP_ID"
             android:value="790824425492" />
-        <meta-data
-            android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyDQURBjXfmDmgejVzqOlPjanEsSvL867v0" />
-
         <activity
             android:name="com.facebook.FacebookActivity"
             android:configChanges="keyboard|keyboardHidden|screenLayout|screenSize|orientation"
