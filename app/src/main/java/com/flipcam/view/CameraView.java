@@ -994,6 +994,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             EGL14.eglMakeCurrent(mEGLDisplay, surface, surface, mEGLContext);
         }
         /**
+         * Copyright 2014 Google Inc. All rights reserved.
+         Borrowed from Grafika project. This is NOT an official Google Project,
+         and has an Open Source license.
          * Creates a texture object suitable for use with this program.
          * <p>
          * On exit, the texture will be bound.
@@ -1036,6 +1039,11 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             return surface1;
         }
 
+        /*
+        Copyright 2014 Google Inc. All rights reserved.
+         Borrowed from Grafika project. This is NOT an official Google Project,
+         and has an Open Source license.
+         */
         void createSurfaceTexture()
         {
             eglSurface = prepareWindowSurface(camSurfHolder.getSurface());
@@ -1054,6 +1062,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             surfaceTexture = new SurfaceTexture(mTextureId);
         }
         /**
+         * Copyright 2014 Google Inc. All rights reserved.
+         Borrowed from Grafika project. This is NOT an official Google Project,
+         and has an Open Source license.
+
          * Issues the draw call.  Does the full setup on every call.
          *
          * @param mvpMatrix The 4x4 projection matrix.

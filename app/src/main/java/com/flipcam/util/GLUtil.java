@@ -13,6 +13,11 @@ import java.nio.FloatBuffer;
 
 public class GLUtil {
     public static final String TAG = "GLUtil";
+    /*
+    Copyright 2014 Google Inc. All rights reserved.
+    Borrowed from Grafika project. This is NOT an official Google Project,
+    and has an Open Source license.
+     */
     // Simple vertex shader, used for all programs.
     public static final String VERTEX_SHADER =
             "uniform mat4 uMVPMatrix;\n" +
