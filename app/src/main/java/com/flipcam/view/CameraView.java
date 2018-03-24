@@ -997,6 +997,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
          * Copyright 2014 Google Inc. All rights reserved.
          Borrowed from Grafika project. This is NOT an official Google Project,
          and has an Open Source license.
+         https://github.com/google/grafika
          * Creates a texture object suitable for use with this program.
          * <p>
          * On exit, the texture will be bound.
@@ -1043,6 +1044,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         Copyright 2014 Google Inc. All rights reserved.
          Borrowed from Grafika project. This is NOT an official Google Project,
          and has an Open Source license.
+         https://github.com/google/grafika
          */
         void createSurfaceTexture()
         {
@@ -1065,6 +1067,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
          * Copyright 2014 Google Inc. All rights reserved.
          Borrowed from Grafika project. This is NOT an official Google Project,
          and has an Open Source license.
+         https://github.com/google/grafika
 
          * Issues the draw call.  Does the full setup on every call.
          *

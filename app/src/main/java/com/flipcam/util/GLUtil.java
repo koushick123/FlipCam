@@ -17,6 +17,7 @@ public class GLUtil {
     Copyright 2014 Google Inc. All rights reserved.
     Borrowed from Grafika project. This is NOT an official Google Project,
     and has an Open Source license.
+    https://github.com/google/grafika
      */
     // Simple vertex shader, used for all programs.
     public static final String VERTEX_SHADER =
