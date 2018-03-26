@@ -19,14 +19,15 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight=".05"
-            android:src="@mipmap/ic_launcher" />
+            android:src="@mipmap/ic_launcher"
+            android:contentDescription="@string/flipCamContentDescription"/>
 
         <TextView
             android:id="@+id/warningTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:paddingLeft="10dp"
+            android:paddingStart="10dp"
             android:text="@string/noConnectionTitle"
             android:textAlignment="center"
             android:textColor="@color/mediaControlColor"
@@ -38,7 +39,8 @@
             android:layout_height="wrap_content"
             android:layout_weight=".05"
             android:visibility="invisible"
-            app:srcCompat="@drawable/placeholder" />
+            app:srcCompat="@drawable/placeholder"
+            android:contentDescription="@string/placeholderContentDescription"/>
 
     </LinearLayout>
 
@@ -51,18 +53,19 @@
             android:id="@+id/warningSign"
             android:layout_width="70dp"
             android:layout_height="60dp"
-            android:layout_marginLeft="20dp"
+            android:layout_marginStart="20dp"
             android:layout_marginTop="25dp"
             android:layout_weight="0.20"
-            app:srcCompat="@drawable/ic_warning" />
+            app:srcCompat="@drawable/ic_warning"
+            android:contentDescription="@string/warningSymbol"/>
 
         <TextView
             android:id="@+id/warningText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:layout_marginLeft="@dimen/noConnMsgLeftAndRightMargin"
-            android:layout_marginRight="@dimen/noConnMsgLeftAndRightMargin"
+            android:layout_marginStart="@dimen/noConnMsgLeftAndRightMargin"
+            android:layout_marginEnd="@dimen/noConnMsgLeftAndRightMargin"
             android:layout_weight="1"
             android:paddingBottom="@dimen/noConnMsgTopAndBottomPadding"
             android:paddingTop="@dimen/noConnMsgTopAndBottomPadding"
@@ -82,8 +85,8 @@
             android:id="@+id/okButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="@dimen/okBtnLeftAndRightMargin"
-            android:layout_marginRight="@dimen/okBtnLeftAndRightMargin"
+            android:layout_marginStart="@dimen/okBtnLeftAndRightMargin"
+            android:layout_marginEnd="@dimen/okBtnLeftAndRightMargin"
             android:layout_weight="0.5"
             android:background="@color/thumbnailPlaceholder"
             android:onClick="okToClose"

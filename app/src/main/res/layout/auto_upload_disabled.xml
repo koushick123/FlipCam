@@ -19,14 +19,15 @@
             android:id="@+id/flipCamIcon"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@mipmap/ic_launcher" />
+            android:src="@mipmap/ic_launcher"
+            android:contentDescription="@string/flipCamContentDescription"/>
 
         <TextView
             android:id="@+id/autoUploadDisabledTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:paddingLeft="10dp"
+            android:paddingStart="10dp"
             android:text="@string/autoUploadDisabled"
             android:textAlignment="center"
             android:textColor="@color/mediaControlColor"
@@ -36,7 +37,8 @@
             android:id="@+id/placeHolderIconAutoUploadDisabled"
             android:layout_width="64dp"
             android:layout_height="50dp"
-            app:srcCompat="@drawable/placeholder" />
+            app:srcCompat="@drawable/placeholder"
+            android:contentDescription="@string/placeholderContentDescription"/>
 
     </LinearLayout>
 
@@ -45,8 +47,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="20dp"
-        android:layout_marginLeft="20dp"
-        android:layout_marginRight="20dp"
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp"
         android:layout_marginTop="20dp"
         android:text="@string/signoutcloud"
         android:textAlignment="center"
@@ -63,8 +65,8 @@
             android:id="@+id/disableOk"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="20dp"
-            android:layout_marginRight="10dp"
+            android:layout_marginStart="20dp"
+            android:layout_marginEnd="10dp"
             android:onClick="closeAutoUploadDisabled"
             android:text="@string/okToDelete" />
 

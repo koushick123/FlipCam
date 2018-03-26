@@ -11,7 +11,8 @@
         android:layout_height="match_parent"
         android:background="@color/mediaControlColor"
         android:src="@drawable/ic_no_media"
-        android:visibility="gone" />
+        android:visibility="gone"
+        android:contentDescription="@string/noImage"/>
 
     <TextView
         android:id="@+id/noImageText"
@@ -36,7 +37,8 @@
         android:layout_height="84dp"
         android:layout_gravity="center"
         android:visibility="invisible"
-        app:srcCompat="@drawable/ic_play_circle_outline" />
+        app:srcCompat="@drawable/ic_play_circle_outline"
+        android:contentDescription="@string/playVideoCircle"/>
 
     <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
         android:id="@+id/topMediaControls"
@@ -53,7 +55,8 @@
             android:layout_height="wrap_content"
             android:layout_weight="0.5"
             android:background="@color/mediaControlColor"
-            android:src="@drawable/ic_delete" />
+            android:src="@drawable/ic_delete"
+            android:contentDescription="@string/deleteMedia" />
 
         <ImageButton
             android:id="@+id/shareMedia"
@@ -61,7 +64,8 @@
             android:layout_height="wrap_content"
             android:layout_weight="0.5"
             android:background="@color/mediaControlColor"
-            android:src="@drawable/ic_share" />
+            android:src="@drawable/ic_share"
+            android:contentDescription="@string/shareMedia"/>
 
     </LinearLayout>
 
@@ -84,7 +88,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="0.5"
-                android:gravity="left"
+                android:gravity="start"
                 android:text="@string/START_TIME"
                 android:textColor="@color/turqoise"
                 android:textStyle="bold" />
@@ -94,7 +98,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="0.5"
-                android:gravity="right"
+                android:gravity="end"
                 android:textColor="@color/turqoise"
                 android:textStyle="bold" />
         </LinearLayout>
@@ -123,7 +127,8 @@
                 android:layout_weight="0.1"
                 android:background="@color/mediaControlColor"
                 android:scaleType="centerCrop"
-                android:src="@drawable/ic_play_arrow" />
+                android:src="@drawable/ic_play_arrow"
+                android:contentDescription="@string/playVideo"/>
         </LinearLayout>
     </LinearLayout>
 </FrameLayout>

@@ -23,7 +23,8 @@
                 android:id="@+id/flipCamIcon"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:src="@mipmap/ic_launcher" />
+                android:src="@mipmap/ic_launcher"
+                android:contentDescription="@string/flipCamContentDescription"/>
 
             <TextView
                 android:id="@+id/autoUploadTitle"
@@ -39,7 +40,8 @@
                 android:id="@+id/placeHolderIconAutoUpload"
                 android:layout_width="64dp"
                 android:layout_height="50dp"
-                app:srcCompat="@drawable/placeholder" />
+                app:srcCompat="@drawable/placeholder"
+                android:contentDescription="@string/placeholderContentDescription"/>
 
         </LinearLayout>
 
@@ -47,8 +49,8 @@
             android:id="@+id/uploadFirstMsg"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="20dp"
-            android:layout_marginRight="20dp"
+            android:layout_marginStart="20dp"
+            android:layout_marginEnd="20dp"
             android:layout_marginTop="20dp"
             android:text="@string/uploadFolderFound"
             android:textAlignment="center"
@@ -57,8 +59,8 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="20dp"
-            android:layout_marginRight="20dp"
+            android:layout_marginStart="20dp"
+            android:layout_marginEnd="20dp"
             android:layout_marginTop="20dp"
             android:gravity="center_vertical"
             android:orientation="horizontal">
@@ -68,7 +70,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                app:srcCompat="@drawable/ic_folder" />
+                app:srcCompat="@drawable/ic_folder"
+                android:contentDescription="@string/uploadFolderDesc"/>
 
             <TextView
                 android:id="@+id/folderName"
@@ -86,8 +89,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="20dp"
-            android:layout_marginLeft="20dp"
-            android:layout_marginRight="20dp"
+            android:layout_marginStart="20dp"
+            android:layout_marginEnd="20dp"
             android:layout_marginTop="20dp"
             android:text="@string/autouploadFolderCreated"
             android:textAlignment="center"
@@ -104,8 +107,8 @@
                 android:id="@+id/enableOk"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginLeft="20dp"
-                android:layout_marginRight="10dp"
+                android:layout_marginStart="20dp"
+                android:layout_marginEnd="10dp"
                 android:onClick="closeAutoUpload"
                 android:text="@string/okToDelete" />
 

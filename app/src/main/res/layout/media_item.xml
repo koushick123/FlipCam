@@ -12,13 +12,15 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_gravity="center"
-        android:scaleType="fitXY" />
+        android:scaleType="fitXY"
+        android:contentDescription="@string/thumbnail"/>
 
     <ImageView
         android:id="@+id/playVideo"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        app:srcCompat="@drawable/ic_play_circle_outline" />
+        app:srcCompat="@drawable/ic_play_circle_outline"
+        android:contentDescription="@string/playVideoCircle"/>
 
 </FrameLayout>

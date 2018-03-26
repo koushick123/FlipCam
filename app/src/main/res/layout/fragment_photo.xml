@@ -19,6 +19,7 @@
         android:id="@+id/imagePreview"
         android:visibility="invisible"
         android:background="@color/transparentBar"
+        android:contentDescription="@string/imagePreview"
         />
 
     <LinearLayout
@@ -52,39 +53,43 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_vertical"
-                android:layout_marginLeft="5dp"
+                android:layout_marginStart="5dp"
                 android:background="@color/settingsBarColor"
-                android:src="@drawable/placeholder" />
+                android:src="@drawable/placeholder"
+                android:contentDescription=""/>
 
             <ImageButton
                 android:id="@+id/photoSwitchCamera"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_vertical"
-                android:layout_marginLeft="15dp"
+                android:layout_marginStart="15dp"
                 android:background="@color/settingsBarColor"
-                android:src="@drawable/switch_camera" />
+                android:src="@drawable/switch_camera"
+                android:contentDescription="@string/switchCamera"/>
 
             <ImageButton
                 android:id="@+id/cameraCapture"
                 android:layout_width="67dp"
                 android:layout_height="76dp"
                 android:layout_gravity="center"
-                android:layout_marginLeft="15dp"
-                android:layout_marginRight="5dp"
+                android:layout_marginStart="15dp"
+                android:layout_marginEnd="5dp"
                 android:background="@color/settingsBarColor"
                 android:scaleType="centerCrop"
-                android:src="@drawable/capture_picture" />
+                android:src="@drawable/capture_picture"
+                android:contentDescription="@string/clickCamera"/>
 
             <ImageButton
                 android:id="@+id/videoMode"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_vertical"
-                android:layout_marginLeft="10dp"
-                android:layout_marginRight="10dp"
+                android:layout_marginStart="10dp"
+                android:layout_marginEnd="10dp"
                 android:background="@color/settingsBarColor"
-                android:src="@drawable/video_mode" />
+                android:src="@drawable/video_mode"
+                android:contentDescription="@string/videoMode"/>
 
             <FrameLayout
                 android:layout_width="wrap_content"
@@ -96,11 +101,12 @@
                     android:layout_width="wrap_content"
                     android:layout_height="65dp"
                     android:layout_gravity="center_vertical"
-                    android:layout_marginLeft="5dp"
-                    android:layout_marginRight="5dp"
+                    android:layout_marginStart="5dp"
+                    android:layout_marginEnd="5dp"
                     android:layout_weight="0.06"
                     android:background="@color/settingsBarColor"
-                    android:src="@drawable/placeholder" />
+                    android:src="@drawable/placeholder"
+                    android:contentDescription="@string/thumbnail"/>
 
                 <ImageView
                     android:id="@+id/microThumbnail"
@@ -108,7 +114,8 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
                     android:visibility="invisible"
-                    app:srcCompat="@drawable/ic_play_circle_thumbnail" />
+                    app:srcCompat="@drawable/ic_play_circle_thumbnail"
+                    android:contentDescription="@string/playVideoCircle"/>
             </FrameLayout>
         </LinearLayout>
     </LinearLayout>

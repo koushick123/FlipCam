@@ -18,14 +18,15 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight=".05"
-            android:src="@mipmap/ic_launcher" />
+            android:src="@mipmap/ic_launcher"
+            android:contentDescription="@string/flipCamContentDescription"/>
 
         <TextView
             android:id="@+id/thresholdExceedHeader"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:paddingLeft="10dp"
+            android:paddingStart="10dp"
             android:text="@string/thresholdLimitExceededTitle"
             android:textAlignment="center"
             android:textColor="@color/mediaControlColor"
@@ -37,7 +38,8 @@
             android:layout_height="wrap_content"
             android:layout_weight=".05"
             android:visibility="invisible"
-            app:srcCompat="@drawable/placeholder" />
+            app:srcCompat="@drawable/placeholder"
+            android:contentDescription="@string/placeholderContentDescription"/>
 
     </LinearLayout>
 
@@ -55,9 +57,10 @@
                 android:id="@+id/imageView2"
                 android:layout_width="match_parent"
                 android:layout_height="60dp"
-                android:layout_marginLeft="20dp"
+                android:layout_marginStart="20dp"
                 android:layout_weight="0.20"
-                app:srcCompat="@drawable/ic_warning" />
+                app:srcCompat="@drawable/ic_warning"
+                android:contentDescription="@string/warningSymbol"/>
         </LinearLayout>
 
         <TextView
@@ -65,8 +68,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:layout_marginLeft="20dp"
-            android:layout_marginRight="20dp"
+            android:layout_marginStart="20dp"
+            android:layout_marginEnd="20dp"
             android:layout_weight="1"
             android:paddingBottom="25dp"
             android:paddingTop="25dp"
@@ -103,8 +106,8 @@
             android:id="@+id/okButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="@dimen/okBtnLeftAndRightMargin"
-            android:layout_marginRight="@dimen/okBtnLeftAndRightMargin"
+            android:layout_marginStart="@dimen/okBtnLeftAndRightMargin"
+            android:layout_marginEnd="@dimen/okBtnLeftAndRightMargin"
             android:layout_weight="0.5"
             android:background="@color/thumbnailPlaceholder"
             android:onClick="okToClose"

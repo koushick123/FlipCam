@@ -197,5 +197,32 @@
     <string name="flipCamGallery">FlipCam Gallery</string>
     <string name="galleryCount">%1$d Photos, %2$d Videos</string>
     <string name="content_authority">com.flipcam.data</string>
+    <string name="flashModeNotSupported">Flash Mode %1$s not supported by this camera.</string>
+    <string name="noFrontFaceCamera">Front facing camera not available in this device.</string>
+    <string name="flipCamContentDescription">FlipCam Icon</string>
+    <string name="placeholderContentDescription">Plcaeholder Icon</string>
+    <string name="uploadFolderDesc">Upload Folder</string>
+    <string name="dropboxContentDescription">Dropbox Icon</string>
+    <string name="flashOn">Flash On</string>
+    <string name="settings">Settings</string>
+    <string name="noImage">No Photos/Videos</string>
+    <string name="playVideoCircle">Play inside circle</string>
+    <string name="deleteMedia">Delete Photo/Video</string>
+    <string name="shareMedia">Share Photo/Video</string>
+    <string name="playVideo">Play Video</string>
+    <string name="greenArrow">Navigate to Memory Threshold Activity</string>
+    <string name="folderCreated">Folder Created Successfully.</string>
+    <string name="imageWidget">Image Widget for Latest Photo/Video.</string>
+    <string name="imagePreview">Camera Preview</string>
+    <string name="thumbnail">Photo/Video Thumbnail</string>
+    <string name="switchCamera">Switch Camera</string>
+    <string name="clickCamera">Camera Click</string>
+    <string name="videoMode">Switch to Video</string>
+    <string name="recordedImage">Captured Image</string>
+    <string name="recordVideo">Record Video</string>
+    <string name="photoMode">Switch to Photo</string>
+    <string name="shareFB">Share to Facebook</string>
+    <string name="googleDriveDesc">Google Drive Icon</string>
+    <string name="warningSymbol">Warning Message</string>
 </resources>
 

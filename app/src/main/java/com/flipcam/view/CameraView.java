@@ -574,7 +574,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         }
         camera1.openCamera(backCamera);
         if(!camera1.isCameraReady()){
-            Toast.makeText(getContext(),"Front facing camera not available in this device.",Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(),getResources().getString(R.string.noFrontFaceCamera),Toast.LENGTH_SHORT).show();
             return;
         }
         camera1.setResolution(measuredWidth, measuredHeight);
@@ -633,7 +633,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                     }
                 } else {
                     if (flashMode != null && !flashMode.equalsIgnoreCase(camera1.getFlashModeOff())) {
-                        Toast.makeText(getContext(), "Flash Mode " + flashMode + " not supported by this camera.", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getContext(), getResources().getString(R.string.flashModeNotSupported, flashMode), Toast.LENGTH_SHORT).show();
                     }
                     flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_on));
                 }
@@ -667,7 +667,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                     }
                 } else {
                     if (flashMode != null && !flashMode.equalsIgnoreCase(camera1.getFlashModeOff())) {
-                        Toast.makeText(getContext(), "Flash Mode " + flashMode + " not supported by this camera.", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getContext(), getResources().getString(R.string.flashModeNotSupported, flashMode), Toast.LENGTH_SHORT).show();
                     }
                     flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_on));
                 }

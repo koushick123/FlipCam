@@ -1,11 +1,13 @@
 package com.flipcam;
 
 import android.app.Dialog;
+import android.app.LoaderManager;
 import android.appwidget.AppWidgetManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.Loader;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
@@ -25,6 +27,7 @@ import android.widget.RemoteViews;
 import android.widget.TextView;
 
 import com.flipcam.adapter.MediaAdapter;
+import com.flipcam.adapter.MediaLoader;
 import com.flipcam.constants.Constants;
 import com.flipcam.media.FileMedia;
 import com.flipcam.util.MediaUtil;
@@ -36,7 +39,7 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Iterator;
 
-public class GalleryActivity extends AppCompatActivity {
+public class GalleryActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<FileMedia[]>{
 
     public static final String TAG = "GalleryActivity";
     GridView mediaGrid;
@@ -52,6 +55,7 @@ public class GalleryActivity extends AppCompatActivity {
     boolean sdCardUnavailWarned = false;
     TextView mediaCount;
     ControlVisbilityPreference controlVisbilityPreference;
+    FileMedia[] medias;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,12 +85,12 @@ public class GalleryActivity extends AppCompatActivity {
     private void updateMediaGridFromSource(){
         ImageView noImage = (ImageView) findViewById(R.id.noImage);
         TextView noImageText = (TextView) findViewById(R.id.noImageText);
-        FileMedia[] mediaList = MediaUtil.getMediaList(getApplicationContext());
-        if(mediaList != null && mediaList.length > 0) {
+//        medias = MediaUtil.getMediaList(getApplicationContext());
+        if(medias != null && medias.length > 0) {
             noImage.setVisibility(View.GONE);
             noImageText.setVisibility(View.GONE);
             mediaCount.setText(getResources().getString(R.string.galleryCount, MediaUtil.getPhotosCount(), MediaUtil.getVideosCount()));
-            MediaAdapter mediaAdapter = new MediaAdapter(getApplicationContext(), mediaList);
+            MediaAdapter mediaAdapter = new MediaAdapter(getApplicationContext(), medias);
             mediaGrid.setAdapter(mediaAdapter);
             mediaGrid.setOnScrollListener(new AbsListView.OnScrollListener() {
                 @Override
@@ -110,7 +114,7 @@ public class GalleryActivity extends AppCompatActivity {
                 }
             });
             Log.d(TAG, "selectedMedia Pos = "+controlVisbilityPreference.getMediaSelectedPosition());
-            if(controlVisbilityPreference.getMediaSelectedPosition() != -1 && controlVisbilityPreference.getMediaSelectedPosition() < mediaList.length){
+            if(controlVisbilityPreference.getMediaSelectedPosition() != -1 && controlVisbilityPreference.getMediaSelectedPosition() < medias.length){
                 mediaGrid.setSelection(controlVisbilityPreference.getMediaSelectedPosition());
             }
         }
@@ -119,6 +123,7 @@ public class GalleryActivity extends AppCompatActivity {
             noImage.setVisibility(View.VISIBLE);
             noImageText.setVisibility(View.VISIBLE);
         }
+        updateWidget();
     }
 
     @Override
@@ -142,15 +147,32 @@ public class GalleryActivity extends AppCompatActivity {
                 settingsEditor.commit();
                 sdCardUnavailWarned = true;
                 showSDCardUnavailMessage();
-                updateMediaGridFromSource();
-                updateWidget();
+                getLoaderManager().initLoader(1, null, this).forceLoad();
             } else {
-                updateMediaGridFromSource();
+                getLoaderManager().initLoader(1, null, this).forceLoad();
             }
         }
         else{
-            updateMediaGridFromSource();
+            getLoaderManager().initLoader(1, null, this).forceLoad();
         }
+    }
+
+    @Override
+    public Loader<FileMedia[]> onCreateLoader(int i, Bundle bundle) {
+        Log.d(TAG, "onCreateLoader");
+        return new MediaLoader(getApplicationContext());
+    }
+
+    @Override
+    public void onLoadFinished(Loader<FileMedia[]> loader, FileMedia[] fileMedias) {
+        Log.d(TAG, "onLoadFinished");
+        medias = fileMedias;
+        updateMediaGridFromSource();
+    }
+
+    @Override
+    public void onLoaderReset(Loader<FileMedia[]> loader) {
+
     }
 
     class SDCardEventReceiver extends BroadcastReceiver {
@@ -167,7 +189,6 @@ public class GalleryActivity extends AppCompatActivity {
                     sdCardUnavailWarned = true;
                     showSDCardUnavailMessage();
                     updateMediaGridFromSource();
-                    updateWidget();
                 }
             }
         }
@@ -238,7 +259,7 @@ public class GalleryActivity extends AppCompatActivity {
 
     public void updateAppWidget(int appWidgetId) {
         RemoteViews remoteViews = new RemoteViews(this.getPackageName(), R.layout.flipcam_widget);
-        FileMedia[] medias = MediaUtil.getMediaList(this);
+        medias = MediaUtil.getMediaList(this);
         if (medias != null && medias.length > 0) {
             String filepath = medias[0].getPath();
             Log.d(TAG, "FilePath = " + filepath);
@@ -260,8 +281,8 @@ public class GalleryActivity extends AppCompatActivity {
                 } catch (RuntimeException runtime) {
                     File badFile = new File(filepath);
                     badFile.delete();
-                    FileMedia[] media = MediaUtil.getMediaList(this);
-                    if (media != null && media.length > 0) {
+                    medias = MediaUtil.getMediaList(this);
+                    if (medias != null && medias.length > 0) {
                         mediaMetadataRetriever.setDataSource(filepath);
                         vid = mediaMetadataRetriever.getFrameAtTime(Constants.FIRST_SEC_MICRO);
                     } else {

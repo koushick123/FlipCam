@@ -23,7 +23,8 @@
             android:id="@+id/imageWidget"
             android:layout_width="@dimen/thumbnailWidth"
             android:layout_height="@dimen/thumbnailHeight"
-            android:layout_gravity="center" />
+            android:layout_gravity="center"
+            android:contentDescription="@string/imageWidget"/>
 
         <ImageView
             android:id="@+id/playCircleWidget"
@@ -31,7 +32,8 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:src="@drawable/ic_play_circle_thumbnail"
-            android:visibility="invisible" />
+            android:visibility="invisible"
+            android:contentDescription="@string/playVideoCircle"/>
 
     </FrameLayout>
 

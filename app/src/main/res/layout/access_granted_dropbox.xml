@@ -23,7 +23,8 @@
                 android:id="@+id/flipCamIcon"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:src="@mipmap/ic_launcher" />
+                android:src="@mipmap/ic_launcher"
+                android:contentDescription="@string/flipCamContentDescription" />
 
             <TextView
                 android:id="@+id/autoUploadTitle"
@@ -39,8 +40,9 @@
                 android:id="@+id/placeHolderIconAutoUpload"
                 android:layout_width="64dp"
                 android:layout_height="50dp"
-                android:paddingLeft="10dp"
-                app:srcCompat="@drawable/dropbox" />
+                android:paddingStart="10dp"
+                app:srcCompat="@drawable/dropbox"
+                android:contentDescription="@string/dropboxContentDescription"/>
 
         </LinearLayout>
 
@@ -49,8 +51,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="@dimen/headTextTopMargin"
-            android:layout_marginLeft="@dimen/headTextLeftMargin"
-            android:layout_marginRight="@dimen/headTextLeftMargin"
+            android:layout_marginStart="@dimen/headTextLeftMargin"
+            android:layout_marginEnd="@dimen/headTextLeftMargin"
             android:layout_marginTop="20dp"
             android:text="@string/autouploadFolderUpdated"
             android:textAlignment="center"
@@ -62,8 +64,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="@dimen/headTextTopMargin"
-            android:layout_marginLeft="@dimen/headTextLeftMargin"
-            android:layout_marginRight="@dimen/headTextLeftMargin"
+            android:layout_marginStart="@dimen/headTextLeftMargin"
+            android:layout_marginEnd="@dimen/headTextLeftMargin"
             android:layout_marginTop="@dimen/headTextTopMargin"
             android:layout_weight="1"
             android:checked="false"

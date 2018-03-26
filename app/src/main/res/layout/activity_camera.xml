@@ -25,11 +25,12 @@
             android:layout_width="@dimen/flashOnWidth"
             android:layout_height="@dimen/flashOnHeight"
             android:layout_gravity="center"
-            android:layout_marginLeft="@dimen/flashOnLeftMargin"
+            android:layout_marginStart="@dimen/flashOnLeftMargin"
             android:layout_weight="0.5"
             android:background="@color/settingsBarColor"
             android:scaleType="fitCenter"
-            android:src="@drawable/camera_flash_on" />
+            android:src="@drawable/camera_flash_on"
+            android:contentDescription="@string/flashOn"/>
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -56,11 +57,12 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:layout_marginBottom="@dimen/settingsTopAndBottomMargin"
-            android:layout_marginRight="@dimen/settingRightMargin"
+            android:layout_marginEnd="@dimen/settingRightMargin"
             android:layout_marginTop="@dimen/settingsTopAndBottomMargin"
             android:layout_weight="0.5"
             android:background="@color/settingsBarColor"
             android:onClick="goToSettings"
-            android:src="@drawable/settings" />
+            android:src="@drawable/settings"
+            android:contentDescription="@string/settings"/>
     </LinearLayout>
 </FrameLayout>
