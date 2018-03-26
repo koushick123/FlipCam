@@ -37,17 +37,18 @@ public class MemoryLimitActivity extends AppCompatActivity {
     StatFs storageStat;
     String memorymetric;
     String memory;
+    boolean VERBOSE = false;
 
     @Override
     protected void onPause() {
         super.onPause();
-        Log.d(TAG, "onPause");
+        if(VERBOSE)Log.d(TAG, "onPause");
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.d(TAG, "onCreate = "+savedInstanceState);
+        if(VERBOSE)Log.d(TAG, "onCreate = "+savedInstanceState);
         storageStat = new StatFs(Environment.getDataDirectory().getPath());
         setContentView(R.layout.activity_memory_limit);
         getSupportActionBar().setTitle(getResources().getString(R.string.phoneMemoryLimitHeading));
@@ -99,9 +100,9 @@ public class MemoryLimitActivity extends AppCompatActivity {
         }
         else{
             //Fetch saved values and populate
-            Log.d(TAG, "Memory = "+savedInstanceState.getString("memory"));
-            Log.d(TAG, "Metric = "+savedInstanceState.getBoolean("memoryMetric"));
-            Log.d(TAG, "Disable check = "+savedInstanceState.getBoolean("memoryThresholdCheck"));
+            if(VERBOSE)Log.d(TAG, "Memory = "+savedInstanceState.getString("memory"));
+            if(VERBOSE)Log.d(TAG, "Metric = "+savedInstanceState.getBoolean("memoryMetric"));
+            if(VERBOSE)Log.d(TAG, "Disable check = "+savedInstanceState.getBoolean("memoryThresholdCheck"));
             memoryThresholdText.setText(savedInstanceState.getString("memory"));
             if(savedInstanceState.getBoolean("memoryMetric")){
                 mbButton.setChecked(true);
@@ -126,26 +127,26 @@ public class MemoryLimitActivity extends AppCompatActivity {
         if(storageStat.getTotalBytes() > GIGA_BYTE){
             double gbs = (storageStat.getTotalBytes() / GIGA_BYTE);
             gbs = (Math.ceil(gbs * 100.0))/100.0;
-            Log.d(TAG,"GBs = "+gbs);
+            if(VERBOSE)Log.d(TAG,"GBs = "+gbs);
             totalPhoneMemory.setText(gbs+" GB");
         }
         else{
             double mbs = (storageStat.getTotalBytes() / MEGA_BYTE);
             mbs = (Math.ceil(mbs * 100.0))/100.0;
-            Log.d(TAG,"MBs = "+mbs);
+            if(VERBOSE)Log.d(TAG,"MBs = "+mbs);
             totalPhoneMemory.setText(mbs+" MB");
         }
         //Convert free memory to better readable format.
         if(storageStat.getAvailableBytes() > GIGA_BYTE){
             double gbs = (storageStat.getAvailableBytes() / GIGA_BYTE);
             gbs = (Math.ceil(gbs * 100.0))/100.0;
-            Log.d(TAG,"GBs = "+gbs);
+            if(VERBOSE)Log.d(TAG,"GBs = "+gbs);
             freeMemory.setText(gbs+" GB");
         }
         else{
             double mbs = (storageStat.getAvailableBytes() / MEGA_BYTE);
             mbs = (Math.ceil(mbs * 100.0))/100.0;
-            Log.d(TAG,"MBs = "+mbs);
+            if(VERBOSE)Log.d(TAG,"MBs = "+mbs);
             freeMemory.setText(mbs+" MB");
         }
     }
@@ -178,7 +179,7 @@ public class MemoryLimitActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        Log.d(TAG,"onResume");
+        if(VERBOSE)Log.d(TAG,"onResume");
         if(!disablethresholdCheck.isChecked()){
             enableThresholdElements();
         }
@@ -197,7 +198,7 @@ public class MemoryLimitActivity extends AppCompatActivity {
                 Integer.parseInt(threshold);
                 return true;
             } catch (NumberFormatException formatException) {
-                Log.d(TAG, "NumberFormatException");
+                if(VERBOSE)Log.d(TAG, "NumberFormatException");
                 return false;
             }
         }
@@ -216,20 +217,20 @@ public class MemoryLimitActivity extends AppCompatActivity {
     }
 
     public boolean calculateIfThresholdIsWithinInternalMemory(){
-        Log.d(TAG,"Available size = "+storageStat.getAvailableBytes());
+        if(VERBOSE)Log.d(TAG,"Available size = "+storageStat.getAvailableBytes());
         long availableMem = storageStat.getAvailableBytes();
 
         if(availableMem > GIGA_BYTE){
             double gbs = (availableMem / GIGA_BYTE);
             gbs = (Math.ceil(gbs * 100.0))/100.0;
-            Log.d(TAG,"GBs = "+gbs);
+            if(VERBOSE)Log.d(TAG,"GBs = "+gbs);
             memory = gbs+"";
             memorymetric = "GB";
         }
         else{
             double mbs = (availableMem / MEGA_BYTE);
             mbs = (Math.ceil(mbs * 100.0))/100.0;
-            Log.d(TAG,"MBs = "+mbs);
+            if(VERBOSE)Log.d(TAG,"MBs = "+mbs);
             memory = mbs+"";
             memorymetric = "MB";
         }
@@ -237,11 +238,11 @@ public class MemoryLimitActivity extends AppCompatActivity {
         long thresholdMem;
         if(mbButton.isChecked()){
             thresholdMem = (long)MEGA_BYTE * threshold;
-            Log.d(TAG,"thresholdMem MB = "+thresholdMem );
+            if(VERBOSE)Log.d(TAG,"thresholdMem MB = "+thresholdMem );
         }
         else{
             thresholdMem = (long)GIGA_BYTE * threshold;
-            Log.d(TAG,"thresholdMem GB = "+thresholdMem );
+            if(VERBOSE)Log.d(TAG,"thresholdMem GB = "+thresholdMem );
         }
         if(thresholdMem > storageStat.getAvailableBytes()){
             return false;
@@ -257,11 +258,11 @@ public class MemoryLimitActivity extends AppCompatActivity {
         long thresholdMem;
         if(mbButton.isChecked()){
             thresholdMem = (long)MEGA_BYTE * threshold;
-            Log.d(TAG,"checkIfHigherThanDefault MB = "+thresholdMem );
+            if(VERBOSE)Log.d(TAG,"checkIfHigherThanDefault MB = "+thresholdMem );
         }
         else{
             thresholdMem = (long)GIGA_BYTE * threshold;
-            Log.d(TAG,"checkIfHigherThanDefault GB = "+thresholdMem );
+            if(VERBOSE)Log.d(TAG,"checkIfHigherThanDefault GB = "+thresholdMem );
         }
         if(thresholdMem < (defaultThreshold * MEGA_BYTE)){
             return false;
@@ -273,7 +274,7 @@ public class MemoryLimitActivity extends AppCompatActivity {
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
-        Log.d(TAG, "onSaveInstanceState");
+        if(VERBOSE)Log.d(TAG, "onSaveInstanceState");
         outState.putBoolean("memoryMetric",mbSelect);
         outState.putString("memory",memoryThresholdText.getText().toString());
         outState.putBoolean("memoryThresholdCheck",disablethresholdCheck.isChecked());

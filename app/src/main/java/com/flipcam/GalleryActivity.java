@@ -56,11 +56,12 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
     TextView mediaCount;
     ControlVisbilityPreference controlVisbilityPreference;
     FileMedia[] medias;
+    boolean VERBOSE = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.d(TAG, "onCreate");
+        if(VERBOSE)Log.d(TAG, "onCreate");
         setContentView(R.layout.activity_media_grid);
         sdCardEventReceiver = new SDCardEventReceiver();
         mediaFilters = new IntentFilter();
@@ -78,7 +79,7 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        Log.d(TAG, "onDestroy");
+        if(VERBOSE)Log.d(TAG, "onDestroy");
         controlVisbilityPreference.setMediaSelectedPosition(0);
     }
 
@@ -106,14 +107,14 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
             mediaGrid.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 @Override
                 public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
-                    Log.d(TAG, "onItemSelected = "+position);
+                    if(VERBOSE)Log.d(TAG, "onItemSelected = "+position);
                     Intent mediaAct = new Intent(getApplicationContext(), MediaActivity.class);
                     mediaAct.putExtra("mediaPosition",position);
                     mediaAct.putExtra("fromGallery",true);
                     startActivity(mediaAct);
                 }
             });
-            Log.d(TAG, "selectedMedia Pos = "+controlVisbilityPreference.getMediaSelectedPosition());
+            if(VERBOSE)Log.d(TAG, "selectedMedia Pos = "+controlVisbilityPreference.getMediaSelectedPosition());
             if(controlVisbilityPreference.getMediaSelectedPosition() != -1 && controlVisbilityPreference.getMediaSelectedPosition() < medias.length){
                 mediaGrid.setSelection(controlVisbilityPreference.getMediaSelectedPosition());
             }
@@ -129,14 +130,14 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
     @Override
     protected void onPause() {
         super.onPause();
-        Log.d(TAG, "onPause");
+        if(VERBOSE)Log.d(TAG, "onPause");
         unregisterReceiver(sdCardEventReceiver);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        Log.d(TAG, "onResume");
+        if(VERBOSE)Log.d(TAG, "onResume");
         mediaFilters.addAction(Intent.ACTION_MEDIA_UNMOUNTED);
         mediaFilters.addDataScheme("file");
         registerReceiver(sdCardEventReceiver, mediaFilters);
@@ -159,13 +160,13 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
 
     @Override
     public Loader<FileMedia[]> onCreateLoader(int i, Bundle bundle) {
-        Log.d(TAG, "onCreateLoader");
+        if(VERBOSE)Log.d(TAG, "onCreateLoader");
         return new MediaLoader(getApplicationContext());
     }
 
     @Override
     public void onLoadFinished(Loader<FileMedia[]> loader, FileMedia[] fileMedias) {
-        Log.d(TAG, "onLoadFinished");
+        if(VERBOSE)Log.d(TAG, "onLoadFinished");
         medias = fileMedias;
         updateMediaGridFromSource();
     }
@@ -178,12 +179,12 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
     class SDCardEventReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context ctx, Intent intent) {
-            Log.d(TAG, "onReceive = " + intent.getAction());
+            if(VERBOSE)Log.d(TAG, "onReceive = " + intent.getAction());
             if (intent.getAction().equalsIgnoreCase(Intent.ACTION_MEDIA_UNMOUNTED)) {
                 //Check if SD Card was selected
                 SharedPreferences.Editor settingsEditor = sharedPreferences.edit();
                 if (!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true) && !sdCardUnavailWarned) {
-                    Log.d(TAG, "SD Card Removed");
+                    if(VERBOSE)Log.d(TAG, "SD Card Removed");
                     settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
                     settingsEditor.commit();
                     sdCardUnavailWarned = true;
@@ -197,7 +198,7 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        Log.d(TAG, "scrollPos = "+scrollPosition);
+        if(VERBOSE)Log.d(TAG, "scrollPos = "+scrollPosition);
         mediaGrid.setSelection(scrollPosition);
     }
 
@@ -208,12 +209,12 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
             sdcardpath += filename;
             final String sdCardFilePath = sdcardpath;
             final FileOutputStream createTestFile = new FileOutputStream(sdcardpath);
-            Log.d(TAG, "Able to create file... SD Card exists");
+            if(VERBOSE)Log.d(TAG, "Able to create file... SD Card exists");
             File testfile = new File(sdCardFilePath);
             createTestFile.close();
             testfile.delete();
         } catch (FileNotFoundException e) {
-            Log.d(TAG, "Unable to create file... SD Card NOT exists..... "+e.getMessage());
+            if(VERBOSE)Log.d(TAG, "Unable to create file... SD Card NOT exists..... "+e.getMessage());
             return null;
         } catch (IOException e) {
             e.printStackTrace();
@@ -251,7 +252,7 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
             Iterator<String> iterator = widgetIds.iterator();
             while(iterator.hasNext()){
                 String widgetId = iterator.next();
-                Log.d(TAG, "widgetIds = "+widgetId);
+                if(VERBOSE)Log.d(TAG, "widgetIds = "+widgetId);
                 updateAppWidget(Integer.parseInt(widgetId));
             }
         }
@@ -262,13 +263,13 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
         medias = MediaUtil.getMediaList(this);
         if (medias != null && medias.length > 0) {
             String filepath = medias[0].getPath();
-            Log.d(TAG, "FilePath = " + filepath);
+            if(VERBOSE)Log.d(TAG, "FilePath = " + filepath);
             if (filepath.endsWith(getResources().getString(R.string.IMG_EXT))
                     || filepath.endsWith(getResources().getString(R.string.ANOTHER_IMG_EXT))) {
                 Bitmap latestImage = BitmapFactory.decodeFile(filepath);
                 latestImage = Bitmap.createScaledBitmap(latestImage, (int) getResources().getDimension(R.dimen.thumbnailWidth),
                         (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
-                Log.d(TAG, "Update Photo thumbnail");
+                if(VERBOSE)Log.d(TAG, "Update Photo thumbnail");
                 remoteViews.setViewVisibility(R.id.playCircleWidget, View.INVISIBLE);
                 remoteViews.setImageViewBitmap(R.id.imageWidget, latestImage);
                 remoteViews.setTextViewText(R.id.widgetMsg, getResources().getString(R.string.widgetMediaMsg));
@@ -294,20 +295,20 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
                 if (vid != null) {
                     vid = Bitmap.createScaledBitmap(vid, (int) getResources().getDimension(R.dimen.thumbnailWidth),
                             (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
-                    Log.d(TAG, "Update Video thumbnail");
+                    if(VERBOSE)Log.d(TAG, "Update Video thumbnail");
                     remoteViews.setViewVisibility(R.id.playCircleWidget, View.VISIBLE);
                     remoteViews.setImageViewBitmap(R.id.imageWidget, vid);
                     remoteViews.setTextViewText(R.id.widgetMsg, getResources().getString(R.string.widgetMediaMsg));
                 }
             }
         } else {
-            Log.d(TAG, "List empty");
+            if(VERBOSE)Log.d(TAG, "List empty");
             //List is now empty
             remoteViews.setImageViewResource(R.id.imageWidget, R.drawable.placeholder);
             remoteViews.setViewVisibility(R.id.playCircleWidget, View.INVISIBLE);
             remoteViews.setTextViewText(R.id.widgetMsg, getResources().getString(R.string.widgetNoMedia));
         }
-        Log.d(TAG, "Update FC Widget");
+        if(VERBOSE)Log.d(TAG, "Update FC Widget");
         appWidgetManager.updateAppWidget(appWidgetId, remoteViews);
     }
 }

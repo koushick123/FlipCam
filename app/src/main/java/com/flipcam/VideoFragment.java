@@ -97,6 +97,7 @@ public class VideoFragment extends android.app.Fragment{
     SharedPreferences sharedPreferences;
     ImageView microThumbnail;
     AppWidgetManager appWidgetManager;
+    boolean VERBOSE = false;
 
     public static VideoFragment newInstance() {
         VideoFragment fragment = new VideoFragment();
@@ -153,11 +154,11 @@ public class VideoFragment extends android.app.Fragment{
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_video, container, false);
 
-        Log.d(TAG,"Inside video fragment");
+        if(VERBOSE)Log.d(TAG,"Inside video fragment");
         substitute = (ImageView)view.findViewById(R.id.substitute);
         substitute.setVisibility(View.INVISIBLE);
         cameraView = (CameraView)view.findViewById(R.id.cameraSurfaceView);
-        Log.d(TAG,"cameraview onresume visibility= "+cameraView.getWindowVisibility());
+        if(VERBOSE)Log.d(TAG,"cameraview onresume visibility= "+cameraView.getWindowVisibility());
         zoombar = (SeekBar)view.findViewById(R.id.zoomBar);
         zoombar.setProgressTintList(ColorStateList.valueOf(getResources().getColor(R.color.progressFill)));
         cameraView.setSeekBar(zoombar);
@@ -165,10 +166,10 @@ public class VideoFragment extends android.app.Fragment{
         zoombar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                //Log.d(TAG, "progress = " + progress);
+                //if(VERBOSE)Log.d(TAG, "progress = " + progress);
                 if(cameraView.isCameraReady()) {
                     if (cameraView.isSmoothZoomSupported()) {
-                        //Log.d(TAG, "Smooth zoom supported");
+                        //if(VERBOSE)Log.d(TAG, "Smooth zoom supported");
                         cameraView.smoothZoomInOrOut(progress);
                     } else if (cameraView.isZoomSupported()) {
                         cameraView.zoomInAndOut(progress);
@@ -234,7 +235,7 @@ public class VideoFragment extends android.app.Fragment{
                     StringBuilder minimumThreshold = new StringBuilder(lowestThreshold+"");
                     minimumThreshold.append(" ");
                     minimumThreshold.append(getResources().getString(R.string.MEM_PF_MB));
-                    Log.d(TAG, "minimumThreshold = "+minimumThreshold);
+                    if(VERBOSE)Log.d(TAG, "minimumThreshold = "+minimumThreshold);
                     memoryLimitMsg.setText(getResources().getString(R.string.minimumThresholdExceeded, minimumThreshold));
                     CheckBox disableThreshold = (CheckBox)thresholdExceededRoot.findViewById(R.id.disableThreshold);
                     disableThreshold.setVisibility(View.GONE);
@@ -277,7 +278,7 @@ public class VideoFragment extends android.app.Fragment{
                 }
             }
         });
-        Log.d(TAG,"passing videofragment to cameraview");
+        if(VERBOSE)Log.d(TAG,"passing videofragment to cameraview");
         cameraView.setFragmentInstance(this);
         cameraView.setPhotoFragmentInstance(null);
         imagePreview = (ImageView)view.findViewById(R.id.imagePreview);
@@ -302,12 +303,12 @@ public class VideoFragment extends android.app.Fragment{
     class SDCardEventReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context ctx, Intent intent) {
-            Log.d(TAG, "onReceive = "+intent.getAction());
+            if(VERBOSE)Log.d(TAG, "onReceive = "+intent.getAction());
             if(intent.getAction().equalsIgnoreCase(Intent.ACTION_MEDIA_UNMOUNTED)){
                 //Check if SD Card was selected
                 SharedPreferences.Editor settingsEditor = sharedPreferences.edit();
                 if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true) && !sdCardUnavailWarned){
-                    Log.d(TAG, "SD Card Removed");
+                    if(VERBOSE)Log.d(TAG, "SD Card Removed");
                     settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
                     settingsEditor.commit();
                     showSDCardUnavailableMessage();
@@ -366,11 +367,11 @@ public class VideoFragment extends android.app.Fragment{
     }
 
     public void checkForSDCard(){
-        Log.d(TAG, "getActivity = "+getActivity());
+        if(VERBOSE)Log.d(TAG, "getActivity = "+getActivity());
         SharedPreferences.Editor settingsEditor = sharedPreferences.edit();
         if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
             if(doesSDCardExist() == null) {
-                Log.d(TAG, "SD Card Removed");
+                if(VERBOSE)Log.d(TAG, "SD Card Removed");
                 settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
                 settingsEditor.commit();
                 showSDCardUnavailableMessage();
@@ -409,8 +410,8 @@ public class VideoFragment extends android.app.Fragment{
                 metric = "GB";
                 break;
         }
-        Log.d(TAG, "memory value = "+memoryValue);
-        Log.d(TAG, "Avail mem = "+storageStat.getAvailableBytes());
+        if(VERBOSE)Log.d(TAG, "memory value = "+memoryValue);
+        if(VERBOSE)Log.d(TAG, "Avail mem = "+storageStat.getAvailableBytes());
         if(storageStat.getAvailableBytes() < memoryValue){
             LayoutInflater layoutInflater = (LayoutInflater)getActivity().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
             View thresholdExceededRoot = layoutInflater.inflate(R.layout.threshold_exceeded, null);
@@ -421,7 +422,7 @@ public class VideoFragment extends android.app.Fragment{
             okButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    Log.d(TAG, "disableThreshold.isChecked = "+disableThreshold.isChecked());
+                    if(VERBOSE)Log.d(TAG, "disableThreshold.isChecked = "+disableThreshold.isChecked());
                     if(disableThreshold.isChecked()){
                         editor.remove(Constants.PHONE_MEMORY_LIMIT);
                         editor.remove(Constants.PHONE_MEMORY_METRIC);
@@ -436,7 +437,7 @@ public class VideoFragment extends android.app.Fragment{
             StringBuilder memThreshold = new StringBuilder(memoryThreshold+"");
             memThreshold.append(" ");
             memThreshold.append(metric);
-            Log.d(TAG, "memory threshold for display = "+memThreshold);
+            if(VERBOSE)Log.d(TAG, "memory threshold for display = "+memThreshold);
             memoryLimitMsg.setText(getActivity().getResources().getString(R.string.thresholdLimitExceededMsg, memThreshold.toString()));
             thresholdDialog.setContentView(thresholdExceededRoot);
             thresholdDialog.setCancelable(false);
@@ -564,19 +565,19 @@ public class VideoFragment extends android.app.Fragment{
         stopRecord.setClickable(true);
         switchCamera.setClickable(true);
         if(sharedPreferences.getBoolean(Constants.SAVE_TO_GOOGLE_DRIVE, false) && !noSdCard) {
-            Log.d(TAG, "Auto uploading to Google Drive");
+            if(VERBOSE)Log.d(TAG, "Auto uploading to Google Drive");
             //Auto upload to Google Drive enabled.
             Intent googleDriveUploadIntent = new Intent(getApplicationContext(), GoogleDriveUploadService.class);
             googleDriveUploadIntent.putExtra("uploadFile", cameraView.getMediaPath());
-            Log.d(TAG, "Uploading file = "+cameraView.getMediaPath());
+            if(VERBOSE)Log.d(TAG, "Uploading file = "+cameraView.getMediaPath());
             getActivity().startService(googleDriveUploadIntent);
         }
         if(sharedPreferences.getBoolean(Constants.SAVE_TO_DROPBOX, false) && !noSdCard){
-            Log.d(TAG, "Auto upload to Dropbox");
+            if(VERBOSE)Log.d(TAG, "Auto upload to Dropbox");
             //Auto upload to Dropbox enabled
             Intent dropboxUploadIntent = new Intent(getApplicationContext(), DropboxUploadService.class);
             dropboxUploadIntent.putExtra("uploadFile", cameraView.getMediaPath());
-            Log.d(TAG, "Uploading file = "+cameraView.getMediaPath());
+            if(VERBOSE)Log.d(TAG, "Uploading file = "+cameraView.getMediaPath());
             getActivity().startService(dropboxUploadIntent);
         }
     }
@@ -587,7 +588,7 @@ public class VideoFragment extends android.app.Fragment{
             Iterator<String> iterator = widgetIds.iterator();
             while(iterator.hasNext()){
                 String widgetId = iterator.next();
-                Log.d(TAG, "widgetIds = "+widgetId);
+                if(VERBOSE)Log.d(TAG, "widgetIds = "+widgetId);
                 updateAppWidget(Integer.parseInt(widgetId));
             }
         }
@@ -776,19 +777,19 @@ public class VideoFragment extends android.app.Fragment{
         //File[] storage = new File("/storage").listFiles();
         /*File[] mediaDirs = getApplicationContext().getExternalMediaDirs();
         if(mediaDirs != null) {
-            Log.d(TAG, "mediaDirs = " + mediaDirs.length);
+            if(VERBOSE)Log.d(TAG, "mediaDirs = " + mediaDirs.length);
         }
         for(int i=0;i<mediaDirs.length;i++){
-            Log.d(TAG, "external media dir = "+mediaDirs[i]);
+            if(VERBOSE)Log.d(TAG, "external media dir = "+mediaDirs[i]);
             if(mediaDirs[i] != null){
                 try{
                     if(Environment.isExternalStorageRemovable(mediaDirs[i])){
-                        Log.d(TAG, "Removable storage = "+mediaDirs[i]);
+                        if(VERBOSE)Log.d(TAG, "Removable storage = "+mediaDirs[i]);
                         return mediaDirs[i].getPath();
                     }
                 }
                 catch(IllegalArgumentException illegal) {
-                    Log.d(TAG, "Not a valid storage device");
+                    if(VERBOSE)Log.d(TAG, "Not a valid storage device");
                 }
             }
         }*/
@@ -798,7 +799,7 @@ public class VideoFragment extends android.app.Fragment{
             sdcardpath += filename;
             final String sdCardFilePath = sdcardpath;
             final FileOutputStream createTestFile = new FileOutputStream(sdcardpath);
-            Log.d(TAG, "Able to create file... SD Card exists");
+            if(VERBOSE)Log.d(TAG, "Able to create file... SD Card exists");
             new Thread(new Runnable() {
                 @Override
                 public void run() {
@@ -812,7 +813,7 @@ public class VideoFragment extends android.app.Fragment{
                 }
             }).start();
         } catch (FileNotFoundException e) {
-            Log.d(TAG, "Unable to create file... SD Card NOT exists..... "+e.getMessage());
+            if(VERBOSE)Log.d(TAG, "Unable to create file... SD Card NOT exists..... "+e.getMessage());
             return null;
         }
         return sharedPreferences.getString(Constants.SD_CARD_PATH, "");
@@ -823,7 +824,7 @@ public class VideoFragment extends android.app.Fragment{
     {
         if(!flashOn)
         {
-            Log.d(TAG,"Flash on");
+            if(VERBOSE)Log.d(TAG,"Flash on");
             if(cameraView.isFlashModeSupported(cameraView.getCameraImplementation().getFlashModeTorch())) {
                 flashOn = true;
                 flash.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_off));
@@ -834,7 +835,7 @@ public class VideoFragment extends android.app.Fragment{
         }
         else
         {
-            Log.d(TAG,"Flash off");
+            if(VERBOSE)Log.d(TAG,"Flash off");
             flashOn = false;
             flash.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_on));
         }
@@ -853,16 +854,16 @@ public class VideoFragment extends android.app.Fragment{
 
     public void askForPermissionAgain()
     {
-        Log.d(TAG,"permissionInterface = "+permissionInterface);
+        if(VERBOSE)Log.d(TAG,"permissionInterface = "+permissionInterface);
         permissionInterface.askPermission();
     }
 
     public void deleteLatestBadFile(){
-        Log.d(TAG, "Deleting bad file.. "+cameraView.getMediaPath());
+        if(VERBOSE)Log.d(TAG, "Deleting bad file.. "+cameraView.getMediaPath());
         File badFile = new File(cameraView.getMediaPath());
         if(badFile.exists()) {
             if(badFile.delete()) {
-                Log.d(TAG, "Bad file removed");
+                if(VERBOSE)Log.d(TAG, "Bad file removed");
             }
         }
     }
@@ -877,17 +878,17 @@ public class VideoFragment extends android.app.Fragment{
         Bitmap firstFrame = mediaMetadataRetriever.getFrameAtTime(Constants.FIRST_SEC_MICRO);
         if(firstFrame == null){
             if(video != null && video.delete()){
-                Log.d(TAG,"Removed file = "+mediaPath);
+                if(VERBOSE)Log.d(TAG,"Removed file = "+mediaPath);
             }
         }
-        Log.d(TAG,"width = "+firstFrame.getWidth()+" , height = "+firstFrame.getHeight());
+        if(VERBOSE)Log.d(TAG,"width = "+firstFrame.getWidth()+" , height = "+firstFrame.getHeight());
         boolean isDetached=false;
         try {
             firstFrame = Bitmap.createScaledBitmap(firstFrame, (int) getResources().getDimension(R.dimen.thumbnailWidth),
                     (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
         }
         catch (IllegalStateException illegal){
-            Log.d(TAG,"video fragment is already detached. ");
+            if(VERBOSE)Log.d(TAG,"video fragment is already detached. ");
             isDetached=true;
         }
         showRecordSaved();
@@ -918,14 +919,14 @@ public class VideoFragment extends android.app.Fragment{
         ContentValues mediaContent = new ContentValues();
         mediaContent.put("filename", cameraView.getMediaPath());
         mediaContent.put("memoryStorage", (sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true) ? "1" : "0"));
-        Log.d(TAG, "Adding to Media DB");
+        if(VERBOSE)Log.d(TAG, "Adding to Media DB");
         getActivity().getContentResolver().insert(Uri.parse(MediaTableConstants.BASE_CONTENT_URI+"/addMedia"),mediaContent);
     }
 
     public void deleteFileAndRefreshThumbnail(){
         File badFile = new File(filePath);
         badFile.delete();
-        Log.d(TAG, "Bad file removed...."+filePath);
+        if(VERBOSE)Log.d(TAG, "Bad file removed...."+filePath);
         getLatestFileIfExists();
     }
 
@@ -934,14 +935,14 @@ public class VideoFragment extends android.app.Fragment{
     {
         FileMedia[] medias = MediaUtil.getMediaList(getActivity().getApplicationContext());
         if (medias != null && medias.length > 0) {
-            Log.d(TAG, "Latest file is = " + medias[0].getPath());
+            if(VERBOSE)Log.d(TAG, "Latest file is = " + medias[0].getPath());
             filePath = medias[0].getPath();
             if (!isImage(filePath)) {
                 MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
                 try {
                     mediaMetadataRetriever.setDataSource(filePath);
                 }catch(RuntimeException runtime){
-                    Log.d(TAG, "RuntimeException "+runtime.getMessage());
+                    if(VERBOSE)Log.d(TAG, "RuntimeException "+runtime.getMessage());
                     if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
                         //Possible bad file in SD Card. Remove it.
                         deleteFileAndRefreshThumbnail();
@@ -949,14 +950,14 @@ public class VideoFragment extends android.app.Fragment{
                     }
                 }
                 Bitmap vid = mediaMetadataRetriever.getFrameAtTime(Constants.FIRST_SEC_MICRO);
-                Log.d(TAG, "Vid = "+vid);
+                if(VERBOSE)Log.d(TAG, "Vid = "+vid);
                 //If video cannot be played for whatever reason
                 if (vid != null) {
                     vid = Bitmap.createScaledBitmap(vid, (int) getResources().getDimension(R.dimen.thumbnailWidth),
                             (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
                     thumbnail.setImageBitmap(vid);
                     microThumbnail.setVisibility(View.VISIBLE);
-                    Log.d(TAG, "set as image bitmap");
+                    if(VERBOSE)Log.d(TAG, "set as image bitmap");
                     thumbnail.setClickable(true);
                     thumbnail.setOnClickListener(new View.OnClickListener() {
                         @Override
@@ -975,7 +976,7 @@ public class VideoFragment extends android.app.Fragment{
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                Log.d(TAG, "TAG_ORIENTATION = "+exifInterface.getAttribute(ExifInterface.TAG_ORIENTATION));
+                if(VERBOSE)Log.d(TAG, "TAG_ORIENTATION = "+exifInterface.getAttribute(ExifInterface.TAG_ORIENTATION));
                 Bitmap pic = BitmapFactory.decodeFile(filePath);
                 pic = Bitmap.createScaledBitmap(pic, (int) getResources().getDimension(R.dimen.thumbnailWidth),
                         (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
@@ -1031,13 +1032,13 @@ public class VideoFragment extends android.app.Fragment{
         FileMedia[] media = MediaUtil.getMediaList(getActivity());
         if (media != null && media.length > 0) {
             String filepath = media[0].getPath();
-            Log.d(TAG, "FilePath = " + filepath);
+            if(VERBOSE)Log.d(TAG, "FilePath = " + filepath);
             if (filepath.endsWith(getResources().getString(R.string.IMG_EXT))
                     || filepath.endsWith(getResources().getString(R.string.ANOTHER_IMG_EXT))) {
                 Bitmap latestImage = BitmapFactory.decodeFile(filepath);
                 latestImage = Bitmap.createScaledBitmap(latestImage, (int) getResources().getDimension(R.dimen.thumbnailWidth),
                         (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
-                Log.d(TAG, "Update Photo thumbnail");
+                if(VERBOSE)Log.d(TAG, "Update Photo thumbnail");
                 remoteViews.setViewVisibility(R.id.playCircleWidget, View.INVISIBLE);
                 remoteViews.setImageViewBitmap(R.id.imageWidget, latestImage);
                 remoteViews.setTextViewText(R.id.widgetMsg, getResources().getString(R.string.widgetMediaMsg));
@@ -1063,7 +1064,7 @@ public class VideoFragment extends android.app.Fragment{
                 if (vid != null) {
                     vid = Bitmap.createScaledBitmap(vid, (int) getResources().getDimension(R.dimen.thumbnailWidth),
                             (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
-                    Log.d(TAG, "Update Video thumbnail");
+                    if(VERBOSE)Log.d(TAG, "Update Video thumbnail");
                     remoteViews.setViewVisibility(R.id.playCircleWidget, View.VISIBLE);
                     remoteViews.setImageViewBitmap(R.id.imageWidget, vid);
                     remoteViews.setTextViewText(R.id.widgetMsg, getResources().getString(R.string.widgetMediaMsg));
@@ -1074,20 +1075,20 @@ public class VideoFragment extends android.app.Fragment{
             remoteViews.setViewVisibility(R.id.playCircleWidget, View.INVISIBLE);
             remoteViews.setTextViewText(R.id.widgetMsg, getResources().getString(R.string.widgetNoMedia));
         }
-        Log.d(TAG, "Update FC Widget");
+        if(VERBOSE)Log.d(TAG, "Update FC Widget");
         appWidgetManager.updateAppWidget(appWidgetId, remoteViews);
     }
 
     @Override
     public void onDetach() {
         super.onDetach();
-        Log.d(TAG,"Detached");
+        if(VERBOSE)Log.d(TAG,"Detached");
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        Log.d(TAG,"onResume");
+        if(VERBOSE)Log.d(TAG,"onResume");
         if(cameraView!=null){
             cameraView.setVisibility(View.VISIBLE);
         }
@@ -1103,23 +1104,23 @@ public class VideoFragment extends android.app.Fragment{
 
     @Override
     public void onDestroy() {
-        Log.d(TAG,"Fragment destroy...app is being minimized");
+        if(VERBOSE)Log.d(TAG,"Fragment destroy...app is being minimized");
         setCameraClose();
         super.onDestroy();
     }
 
     @Override
     public void onStop() {
-        Log.d(TAG,"Fragment stop...app is out of focus");
+        if(VERBOSE)Log.d(TAG,"Fragment stop...app is out of focus");
         super.onStop();
     }
 
     @Override
     public void onPause() {
-        Log.d(TAG,"Fragment pause....app is being quit");
+        if(VERBOSE)Log.d(TAG,"Fragment pause....app is being quit");
         setCameraQuit();
         if(cameraView!=null){
-            Log.d(TAG,"cameraview onpause visibility= "+cameraView.getWindowVisibility());
+            if(VERBOSE)Log.d(TAG,"cameraview onpause visibility= "+cameraView.getWindowVisibility());
             if(cameraView.getWindowVisibility() == View.VISIBLE){
                 cameraView.setVisibility(View.GONE);
             }

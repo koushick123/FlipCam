@@ -23,6 +23,7 @@ public class MediaProvider extends ContentProvider {
     private static MediaDBHelper mediaDBHelper;
     private static SQLiteDatabase writeMediaDatabase;
 //    private int MEDIA_ID = 1000;
+    static boolean VERBOSE = false;
 
     @Override
     public int update(@NonNull Uri uri, @Nullable ContentValues contentValues, @Nullable String s, @Nullable String[] strings) {
@@ -63,7 +64,7 @@ public class MediaProvider extends ContentProvider {
             {
                 writeMediaDatabase = mediaDBHelper.getWritableDatabase();
             }
-            Log.d(TAG,"DB Path == "+writeMediaDatabase.getPath());
+            if(VERBOSE)Log.d(TAG,"DB Path == "+writeMediaDatabase.getPath());
         }
         return writeMediaDatabase;
     }
@@ -85,17 +86,17 @@ public class MediaProvider extends ContentProvider {
         int match = sUriMatcher.match(uri);
         switch (match){
             case DELETE_MEDIA:
-                Log.d(TAG,"deleting Media = "+selection[0]);
+                if(VERBOSE)Log.d(TAG,"deleting Media = "+selection[0]);
                 try {
                     getWriteMediaDatabase().beginTransaction();
                     String deleteMed = "DELETE FROM MEDIA WHERE FILE_NAME = ?";
                     SQLiteStatement sqLiteStatement = getWriteMediaDatabase().compileStatement(deleteMed);
                     sqLiteStatement.bindString(1, selection[0]);
                     if(sqLiteStatement.executeUpdateDelete() != 0){
-                        Log.d(TAG, "DELETED = "+selection[0]);
+                        if(VERBOSE)Log.d(TAG, "DELETED = "+selection[0]);
                     }
                     else{
-                        Log.d(TAG, "No Data deleted");
+                        if(VERBOSE)Log.d(TAG, "No Data deleted");
                     }
                 }
                 finally {
@@ -114,7 +115,7 @@ public class MediaProvider extends ContentProvider {
         switch (match)
         {
             case INSERT_MEDIA:
-                Log.d(TAG,"inserting Media");
+                if(VERBOSE)Log.d(TAG,"inserting Media");
                 getMedia = SQLiteQueryBuilder.buildQueryString(false,MediaTableConstants.MEDIA_TABLE + " media1 ",null,null,null,null,MediaTableConstants.ID,null );
                 Cursor media_exist = getWriteMediaDatabase().rawQuery(getMedia, null);
                 try {
@@ -128,9 +129,9 @@ public class MediaProvider extends ContentProvider {
                     sqLiteStatement.bindLong(3, contentValues.getAsLong("memoryStorage"));
                     if (sqLiteStatement.executeInsert() == -1) {
                         error = true;
-                        Log.d(TAG, "not inserted...some error");
+                        if(VERBOSE)Log.d(TAG, "not inserted...some error");
                     } else {
-                        Log.d(TAG, "inserted!!== > " + contentValues.getAsString("filename"));
+                        if(VERBOSE)Log.d(TAG, "inserted!!== > " + contentValues.getAsString("filename"));
                     }
                     sqLiteStatement.close();
                     if(!error){

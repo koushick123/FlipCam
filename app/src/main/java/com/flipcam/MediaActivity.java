@@ -134,11 +134,12 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     SharedPreferences sharedPreferences;
     SDCardEventReceiver sdCardEventReceiver;
     AppWidgetManager appWidgetManager;
+    boolean VERBOSE = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.d(TAG,"onCreate");
+        if(VERBOSE)Log.d(TAG,"onCreate");
         setContentView(R.layout.activity_media);
         DisplayMetrics displayMetrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
@@ -173,7 +174,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         mPager.setAdapter(mPagerAdapter);
         if(getIntent().getExtras().getBoolean("fromGallery")) {
             int mediaPos = getIntent().getExtras().getInt("mediaPosition");
-            Log.d(TAG, "Intent extra = " +mediaPos);
+            if(VERBOSE)Log.d(TAG, "Intent extra = " +mediaPos);
             mPager.setCurrentItem(mediaPos);
             selectedPosition = previousSelectedFragment = mediaPos;
         }
@@ -184,7 +185,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             public void onClick(View view) {
                 medias = MediaUtil.getMediaList(getApplicationContext());
                 if(medias != null) {
-                    Log.d(TAG, "Delete position = " + selectedPosition);
+                    if(VERBOSE)Log.d(TAG, "Delete position = " + selectedPosition);
                     TextView deleteMsg = (TextView) deleteMediaRoot.findViewById(R.id.deleteMsg);
                     if (isImage(medias[selectedPosition].getPath())) {
                         deleteMsg.setText(getResources().getString(R.string.deleteMessage, getResources().getString(R.string.photo)));
@@ -210,7 +211,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             public void onClick(View view) {
                 medias = MediaUtil.getMediaList(getApplicationContext());
                 if(medias != null) {
-                    Log.d(TAG, "Share position = " + selectedPosition);
+                    if(VERBOSE)Log.d(TAG, "Share position = " + selectedPosition);
                     Uri mediaUri = Uri.fromFile(new File(medias[selectedPosition].getPath()));
                     Intent shareIntent = new Intent();
                     shareIntent.setAction(Intent.ACTION_SEND);
@@ -221,7 +222,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                         shareIntent.setType("video/mp4");
                     }
                     if (doesAppExistForIntent(shareIntent)) {
-                        Log.d(TAG, "Apps exists");
+                        if(VERBOSE)Log.d(TAG, "Apps exists");
                         Intent chooser;
                         if (isImage(medias[selectedPosition].getPath())) {
                             chooser = Intent.createChooser(shareIntent, getResources().getString(R.string.chooserTitleImage));
@@ -229,7 +230,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                             chooser = Intent.createChooser(shareIntent, getResources().getString(R.string.chooserTitleVideo));
                         }
                         if (shareIntent.resolveActivity(getPackageManager()) != null) {
-                            Log.d(TAG, "Start activity to choose");
+                            if(VERBOSE)Log.d(TAG, "Start activity to choose");
                             if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
                                 if(doesSDCardExist() == null){
                                     exitToPreviousActivity();
@@ -262,20 +263,20 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         noImage = (ImageView)findViewById(R.id.noImage);
         noImageText = (TextView)findViewById(R.id.noImageText);
         playCircle = (ImageView)findViewById(R.id.playVideo);
-        Log.d(TAG, "savedInstanceState = "+savedInstanceState);
+        if(VERBOSE)Log.d(TAG, "savedInstanceState = "+savedInstanceState);
         if(savedInstanceState == null){
             clearMediaPreferences();
             controlVisbilityPreference.setHideControl(true);
             reDrawPause();
             reDrawTopMediaControls();
             if(isImage(medias[0].getPath())) {
-                Log.d(TAG, "Hide PlayForVideo");
+                if(VERBOSE)Log.d(TAG, "Hide PlayForVideo");
                 removeVideoControls();
                 hidePlayForVideo();
             }
             else{
                 if(!controlVisbilityPreference.isHideControl()) {
-                    Log.d(TAG, "Show PlayForVideo");
+                    if(VERBOSE)Log.d(TAG, "Show PlayForVideo");
                     setupPlayForVideo(0);
                     showPlayForVideo();
                 }
@@ -283,7 +284,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         }
         else{
             selectedPosition = savedInstanceState.getInt("selectedPosition");
-            Log.d(TAG, "get selectedPosition = "+selectedPosition);
+            if(VERBOSE)Log.d(TAG, "get selectedPosition = "+selectedPosition);
             if(isImage(medias[selectedPosition].getPath())) {
                 removeVideoControls();
                 hidePlayForVideo();
@@ -309,7 +310,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     @Override
     protected void onStop() {
         super.onStop();
-        Log.d(TAG,"onStop");
+        if(VERBOSE)Log.d(TAG,"onStop");
         if(medias != null) {
             SharedPreferences.Editor mediaState = sharedPreferences.edit();
             if(sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)) {
@@ -319,12 +320,12 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 mediaState.putInt(Constants.MEDIA_COUNT_SD_CARD, medias.length);
             }
             mediaState.commit();
-            Log.d(TAG, "Media length before leaving = " + medias.length);
+            if(VERBOSE)Log.d(TAG, "Media length before leaving = " + medias.length);
         }
         else{
             clearMediaPreferences();
         }
-        Log.d(TAG ,"selectedPosition = "+selectedPosition);
+        if(VERBOSE)Log.d(TAG ,"selectedPosition = "+selectedPosition);
         if(hashMapFrags.get(selectedPosition) != null) {
             hashMapFrags.get(selectedPosition).getMediaView().setVisibility(View.INVISIBLE);
         }
@@ -332,7 +333,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
 
     @Override
     protected void onDestroy() {
-        Log.d(TAG,"onDestroy");
+        if(VERBOSE)Log.d(TAG,"onDestroy");
         super.onDestroy();
     }
 
@@ -386,7 +387,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        Log.d(TAG,"onConfigurationChanged = "+display.getRotation());
+        if(VERBOSE)Log.d(TAG,"onConfigurationChanged = "+display.getRotation());
         reDrawPause();
         reDrawTopMediaControls();
     }
@@ -398,12 +399,12 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             sdcardpath += filename;
             final String sdCardFilePath = sdcardpath;
             final FileOutputStream createTestFile = new FileOutputStream(sdcardpath);
-            Log.d(TAG, "Able to create file... SD Card exists");
+            if(VERBOSE)Log.d(TAG, "Able to create file... SD Card exists");
             File testfile = new File(sdCardFilePath);
             testfile.delete();
             createTestFile.close();
         } catch (FileNotFoundException e) {
-            Log.d(TAG, "Unable to create file... SD Card NOT exists..... "+e.getMessage());
+            if(VERBOSE)Log.d(TAG, "Unable to create file... SD Card NOT exists..... "+e.getMessage());
             return null;
         } catch (IOException e) {
             e.printStackTrace();
@@ -420,11 +421,11 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 return;
             }
         }
-        Log.d(TAG,"Length before delete = "+medias.length);
-        Log.d(TAG,"Deleting file = "+medias[position].getPath());
+        if(VERBOSE)Log.d(TAG,"Length before delete = "+medias.length);
+        if(VERBOSE)Log.d(TAG,"Deleting file = "+medias[position].getPath());
         String deletePath = medias[position].getPath();
         if(MediaUtil.deleteFile(medias[position])) {
-            Log.d(TAG, "deletePath = "+deletePath);
+            if(VERBOSE)Log.d(TAG, "deletePath = "+deletePath);
             getContentResolver().delete(Uri.parse(MediaTableConstants.BASE_CONTENT_URI + "/deleteMedia"), null, new String[]{deletePath});
             itemCount = 0;
             isDelete = true;
@@ -438,9 +439,9 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        Log.d(TAG, "BEFORE notifyDataSetChanged");
+                        if(VERBOSE)Log.d(TAG, "BEFORE notifyDataSetChanged");
                         mPagerAdapter.notifyDataSetChanged();
-                        Log.d(TAG, "AFTER notifyDataSetChanged");
+                        if(VERBOSE)Log.d(TAG, "AFTER notifyDataSetChanged");
                         taskAlert.dismiss();
                     }
                 });
@@ -472,7 +473,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             Iterator<String> iterator = widgetIds.iterator();
             while(iterator.hasNext()){
                 String widgetId = iterator.next();
-                Log.d(TAG, "widgetIds = "+widgetId);
+                if(VERBOSE)Log.d(TAG, "widgetIds = "+widgetId);
                 updateAppWidget(Integer.parseInt(widgetId), deletePosition);
             }
         }
@@ -480,18 +481,18 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
 
     public void updateAppWidget(int appWidgetId, int deletePosition) {
         if(deletePosition == 0) {
-            Log.d(TAG, "Deleted first file");
+            if(VERBOSE)Log.d(TAG, "Deleted first file");
             RemoteViews remoteViews = new RemoteViews(this.getPackageName(), R.layout.flipcam_widget);
 //            FileMedia[] media = MediaUtil.getMediaList(this);
             if (medias != null && medias.length > 0) {
                 String filepath = medias[0].getPath();
-                Log.d(TAG, "FilePath = " + filepath);
+                if(VERBOSE)Log.d(TAG, "FilePath = " + filepath);
                 if (filepath.endsWith(getResources().getString(R.string.IMG_EXT))
                         || filepath.endsWith(getResources().getString(R.string.ANOTHER_IMG_EXT))) {
                     Bitmap latestImage = BitmapFactory.decodeFile(filepath);
                     latestImage = Bitmap.createScaledBitmap(latestImage, (int) getResources().getDimension(R.dimen.thumbnailWidth),
                             (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
-                    Log.d(TAG, "Update Photo thumbnail");
+                    if(VERBOSE)Log.d(TAG, "Update Photo thumbnail");
                     remoteViews.setViewVisibility(R.id.playCircleWidget, View.INVISIBLE);
                     remoteViews.setImageViewBitmap(R.id.imageWidget, latestImage);
                     remoteViews.setTextViewText(R.id.widgetMsg, getResources().getString(R.string.widgetMediaMsg));
@@ -517,20 +518,20 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                     if (vid != null) {
                         vid = Bitmap.createScaledBitmap(vid, (int) getResources().getDimension(R.dimen.thumbnailWidth),
                                 (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
-                        Log.d(TAG, "Update Video thumbnail");
+                        if(VERBOSE)Log.d(TAG, "Update Video thumbnail");
                         remoteViews.setViewVisibility(R.id.playCircleWidget, View.VISIBLE);
                         remoteViews.setImageViewBitmap(R.id.imageWidget, vid);
                         remoteViews.setTextViewText(R.id.widgetMsg, getResources().getString(R.string.widgetMediaMsg));
                     }
                 }
             } else {
-                Log.d(TAG, "List empty");
+                if(VERBOSE)Log.d(TAG, "List empty");
                 //List is now empty
                 remoteViews.setViewVisibility(R.id.playCircleWidget, View.INVISIBLE);
                 remoteViews.setImageViewResource(R.id.imageWidget, R.drawable.placeholder);
                 remoteViews.setTextViewText(R.id.widgetMsg, getResources().getString(R.string.widgetNoMedia));
             }
-            Log.d(TAG, "Update FC Widget");
+            if(VERBOSE)Log.d(TAG, "Update FC Widget");
             appWidgetManager.updateAppWidget(appWidgetId, remoteViews);
         }
     }
@@ -538,12 +539,12 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        Log.d(TAG, "onSaveInstanceState = "+selectedPosition);
+        if(VERBOSE)Log.d(TAG, "onSaveInstanceState = "+selectedPosition);
         outState.putInt("selectedPosition",selectedPosition);
     }
 
     public void setupPlayForVideo(final int videoPos){
-        Log.d(TAG, "setupPlayForVideo");
+        if(VERBOSE)Log.d(TAG, "setupPlayForVideo");
         playCircle.setClickable(true);
         playCircle.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -552,9 +553,9 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 if (currentFrag.isPlayCompleted()) {
                     currentFrag.setIsPlayCompleted(false);
                 }
-                Log.d(TAG,"Set PLAY using Circle");
+                if(VERBOSE)Log.d(TAG,"Set PLAY using Circle");
                 currentFrag.playInProgress = true;
-                Log.d(TAG,"Duration of video = "+currentFrag.mediaPlayer.getDuration()+" , path = "+
+                if(VERBOSE)Log.d(TAG,"Duration of video = "+currentFrag.mediaPlayer.getDuration()+" , path = "+
                         currentFrag.path.substring(currentFrag.path.lastIndexOf("/"),currentFrag.path.length()));
                 currentFrag.mediaPlayer.start();
                 pause.setVisibility(View.VISIBLE);
@@ -576,7 +577,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     public boolean doesAppExistForIntent(Intent shareIntent){
         PackageManager packageManager = getPackageManager();
         List activities = packageManager.queryIntentActivities(shareIntent, PackageManager.MATCH_DEFAULT_ONLY);
-        Log.d(TAG, "No of activities that can share = "+activities.size());
+        if(VERBOSE)Log.d(TAG, "No of activities that can share = "+activities.size());
         boolean isIntentSafe = activities.size() > 0;
         return isIntentSafe;
     }
@@ -586,7 +587,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     }
 
     public void delete(View view){
-        Log.d(TAG,"DELETE");
+        if(VERBOSE)Log.d(TAG,"DELETE");
         deleteAlert.dismiss();
         TextView savetocloudtitle = (TextView)taskInProgressRoot.findViewById(R.id.savetocloudtitle);
         TextView signInText = (TextView)taskInProgressRoot.findViewById(R.id.signInText);
@@ -607,7 +608,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     }
 
     public void cancel(View view){
-        Log.d(TAG,"CANCEL");
+        if(VERBOSE)Log.d(TAG,"CANCEL");
         deleteAlert.dismiss();
     }
 
@@ -623,7 +624,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
 
     public void shareToFacebook(){
             boolean loggedIn = AccessToken.getCurrentAccessToken() != null;
-            Log.d(TAG,"Access token = "+loggedIn);
+            if(VERBOSE)Log.d(TAG,"Access token = "+loggedIn);
             if(!loggedIn) {
                 permissionFB.setContentView(R.layout.permission_facebook);
                 permissionFB.setCancelable(true);
@@ -656,24 +657,24 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 @Override
                 public void onSuccess(LoginResult loginResult) {
                     // App code
-                    Log.d(TAG, "onSuccess = " + loginResult.toString());
+                    if(VERBOSE)Log.d(TAG, "onSuccess = " + loginResult.toString());
                     AccessToken accessToken = loginResult.getAccessToken();
                     Set<String> grantedPermissions = loginResult.getRecentlyGrantedPermissions();
-                    Log.d(TAG, "access token = " + accessToken);
-                    Log.d(TAG, "granted perm = " + grantedPermissions.size());
+                    if(VERBOSE)Log.d(TAG, "access token = " + accessToken);
+                    if(VERBOSE)Log.d(TAG, "granted perm = " + grantedPermissions.size());
                     showFacebookShareScreen();
                 }
 
                 @Override
                 public void onCancel() {
                     // App code
-                    Log.d(TAG, "onCancel");
+                    if(VERBOSE)Log.d(TAG, "onCancel");
                 }
 
                 @Override
                 public void onError(FacebookException exception) {
                     // App code
-                    Log.d(TAG, "onError");
+                    if(VERBOSE)Log.d(TAG, "onError");
                     exception.printStackTrace();
                 }
             });
@@ -759,7 +760,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
 
     public void logoutOfFacebook(View view){
         LoginManager.getInstance().logOut();
-        Log.d(TAG,"Logout DONE");
+        if(VERBOSE)Log.d(TAG,"Logout DONE");
         shareToFBAlert.dismiss();
         logoutFB.setContentView(R.layout.logout_facebook);
         logoutFB.setCancelable(true);
@@ -824,7 +825,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             if(mediaState!=null){
                 mediaState.clear();
                 mediaState.commit();
-                Log.d(TAG,"CLEAR ALL");
+                if(VERBOSE)Log.d(TAG,"CLEAR ALL");
             }
         }
     }
@@ -838,43 +839,43 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 return;
             }
         }
-        Log.d(TAG,"onPageSelected = "+position+", previousSelectedFragment = "+previousSelectedFragment);
+        if(VERBOSE)Log.d(TAG,"onPageSelected = "+position+", previousSelectedFragment = "+previousSelectedFragment);
         selectedPosition = position;
         final SurfaceViewVideoFragment currentFrag = hashMapFrags.get(position);
-        Log.d(TAG,"isHideControl = "+controlVisbilityPreference.isHideControl());
+        if(VERBOSE)Log.d(TAG,"isHideControl = "+controlVisbilityPreference.isHideControl());
         //Reset preferences for every new fragment to be displayed.
         clearMediaPreferences();
         if(previousSelectedFragment != -1) {
             SurfaceViewVideoFragment previousFragment = hashMapFrags.get(previousSelectedFragment);
             //If previous fragment had a video, stop the video and tracker thread immediately.
-            Log.d(TAG, "medias length = "+medias.length);
+            if(VERBOSE)Log.d(TAG, "medias length = "+medias.length);
             if (!isImage(medias[previousSelectedFragment].getPath())) {
-                Log.d(TAG, "Stop previous tracker thread = " + previousFragment.path);
+                if(VERBOSE)Log.d(TAG, "Stop previous tracker thread = " + previousFragment.path);
                 previousFragment.stopTrackerThread();
                 if (previousFragment.mediaPlayer.isPlaying()) {
-                    Log.d(TAG, "Pause previous playback");
+                    if(VERBOSE)Log.d(TAG, "Pause previous playback");
                     previousFragment.mediaPlayer.pause();
                 }
             }
         }
         //Display controls based on image/video
         if(isImage(medias[position].getPath())){
-            Log.d(TAG,"HIDE VIDEO");
+            if(VERBOSE)Log.d(TAG,"HIDE VIDEO");
             hidePlayForVideo();
             removeVideoControls();
         }
         else{
             if(controlVisbilityPreference.isHideControl()) {
-                Log.d(TAG,"show controls");
+                if(VERBOSE)Log.d(TAG,"show controls");
                 showControls();
             }
             else{
-                Log.d(TAG,"hide controls");
+                if(VERBOSE)Log.d(TAG,"hide controls");
                 removeVideoControls();
             }
             setupVideo(currentFrag,position);
             currentFrag.previousPos = 0;
-            Log.d(TAG,"Has VIDEO TRACKER STARTED? = "+currentFrag.isStartTracker());
+            if(VERBOSE)Log.d(TAG,"Has VIDEO TRACKER STARTED? = "+currentFrag.isStartTracker());
             if(!currentFrag.isStartTracker()){
                 currentFrag.startTrackerThread();
             }
@@ -901,7 +902,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         mediaMetadataRetriever.setDataSource(medias[position].getPath());
         duration = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
         calculateAndDisplayEndTime(Integer.parseInt(duration), true, position);
-        Log.d(TAG,"Set MEDIA = "+medias[position].getPath());
+        if(VERBOSE)Log.d(TAG,"Set MEDIA = "+medias[position].getPath());
         //Include tracker and reset position to start playing from start.
         videoControls.removeAllViews();
         videoControls.addView(timeControls);
@@ -952,7 +953,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         currentFrag.mediaPlayer.setOnErrorListener(new MediaPlayer.OnErrorListener() {
             @Override
             public boolean onError(MediaPlayer mediaPlayer, int what, int extra) {
-                Log.d(TAG,"CATCH onError = "+extra);
+                if(VERBOSE)Log.d(TAG,"CATCH onError = "+extra);
                 if(extra == MediaPlayer.MEDIA_ERROR_IO){
                     //Possible file not found since SD Card removed
                     if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
@@ -984,16 +985,16 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                     if (currentFrag.isPlayCompleted()) {
                         currentFrag.setIsPlayCompleted(false);
                     }
-                    Log.d(TAG,"Set PLAY");
+                    if(VERBOSE)Log.d(TAG,"Set PLAY");
                     currentFrag.playInProgress = true;
-                    Log.d(TAG,"Duration of video = "+currentFrag.mediaPlayer.getDuration()+" , path = "+
+                    if(VERBOSE)Log.d(TAG,"Duration of video = "+currentFrag.mediaPlayer.getDuration()+" , path = "+
                             currentFrag.path.substring(currentFrag.path.lastIndexOf("/"),currentFrag.path.length()));
                     currentFrag.mediaPlayer.start();
                     pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause));
                     playCircle.setVisibility(View.GONE);
                     currentFrag.play = true;
                 } else {
-                    Log.d(TAG,"Set PAUSE");
+                    if(VERBOSE)Log.d(TAG,"Set PAUSE");
                     currentFrag.mediaPlayer.pause();
                     pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow));
                     currentFrag.play = false;
@@ -1065,7 +1066,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     class SDCardEventReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context ctx, Intent intent) {
-            Log.d(TAG, "onReceive = "+intent.getAction());
+            if(VERBOSE)Log.d(TAG, "onReceive = "+intent.getAction());
             if(intent.getAction().equalsIgnoreCase(Intent.ACTION_MEDIA_UNMOUNTED)){
                 //Check if SD Card was selected
                 if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
@@ -1078,7 +1079,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     @Override
     protected void onResume() {
         super.onResume();
-        Log.d(TAG,"onResume");
+        if(VERBOSE)Log.d(TAG,"onResume");
         registerReceiver(sdCardEventReceiver, mediaFilters);
         mPager.addOnPageChangeListener(this);
         mediaFilters.addAction(Intent.ACTION_MEDIA_UNMOUNTED);
@@ -1107,11 +1108,11 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         medias = MediaUtil.getMediaList(getApplicationContext());
         if(medias != null) {
             if (medias.length < oldLength) {
-                Log.d(TAG, "Possible deletions outside of App");
+                if(VERBOSE)Log.d(TAG, "Possible deletions outside of App");
                 isDelete = true;
                 previousSelectedFragment = -1;
             } else {
-                Log.d(TAG, "Files added or no change");
+                if(VERBOSE)Log.d(TAG, "Files added or no change");
             }
             hideNoImagePlaceholder();
             mPagerAdapter.notifyDataSetChanged();
@@ -1123,7 +1124,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     }
 
     public void exitMediaAndShowNoSDCard(){
-        Log.d(TAG, "exitMediaAndShowNoSDCard");
+        if(VERBOSE)Log.d(TAG, "exitMediaAndShowNoSDCard");
         Intent camera = new Intent(this,CameraActivity.class);
         camera.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(camera);
@@ -1131,7 +1132,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     }
 
     void exitMediaAndShowNoSDCardInGallery(){
-        Log.d(TAG, "exitMediaAndShowNoSDCardInGallery");
+        if(VERBOSE)Log.d(TAG, "exitMediaAndShowNoSDCardInGallery");
         Intent mediaGrid = new Intent(this,GalleryActivity.class);
         mediaGrid.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(mediaGrid);
@@ -1161,7 +1162,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         super.onPause();
         mPager.removeOnPageChangeListener(this);
         unregisterReceiver(sdCardEventReceiver);
-        Log.d(TAG,"onPause");
+        if(VERBOSE)Log.d(TAG,"onPause");
         if(getIntent().getExtras().getBoolean("fromGallery")) {
             controlVisbilityPreference.setMediaSelectedPosition(selectedPosition);
         }
@@ -1184,17 +1185,17 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
 
         @Override
         public Fragment getItem(int position) {
-            Log.d(TAG,"getItem = "+position);
+            if(VERBOSE)Log.d(TAG,"getItem = "+position);
             SurfaceViewVideoFragment surfaceViewVideoFragment;
             if(isDelete) {
                 isDelete = false;
                 surfaceViewVideoFragment = SurfaceViewVideoFragment.newInstance(position, true);
                 if(surfaceViewVideoFragment.getUserVisibleHint()) {
                     if (isImage(medias[position].getPath())) {
-                        Log.d(TAG, "IS image");
+                        if(VERBOSE)Log.d(TAG, "IS image");
                         removeVideoControls();
                     } else {
-                        Log.d(TAG, "IS video");
+                        if(VERBOSE)Log.d(TAG, "IS video");
                         showControls();
                         setupVideoControls(position);
                     }
@@ -1220,20 +1221,20 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         @Override
         public int getItemPosition(Object object) {
             SurfaceViewVideoFragment fragment = (SurfaceViewVideoFragment)object;
-            Log.d(TAG,"getItemPos = "+fragment.getPath()+", POS = "+fragment.getFramePosition()+", Uservisible? = "+fragment.getUserVisibleHint());
+            if(VERBOSE)Log.d(TAG,"getItemPos = "+fragment.getPath()+", POS = "+fragment.getFramePosition()+", Uservisible? = "+fragment.getUserVisibleHint());
             itemCount++;
             if(MediaUtil.doesPathExist(fragment.getPath())){
                 if(deletePosition != -1) {
                     if (deletePosition < medias.length) {
                         if(fragment.getFramePosition() == (deletePosition + 1) || fragment.getFramePosition() == (deletePosition + 2)) {
-                            Log.d(TAG, "Recreate the next fragment as well");
+                            if(VERBOSE)Log.d(TAG, "Recreate the next fragment as well");
                             if(itemCount == 3) {
                                 deletePosition = -1;
                             }
                         }
                         return POSITION_NONE;
                     } else if (deletePosition == medias.length - 1 && fragment.getFramePosition() == (deletePosition - 1)) {
-                        Log.d(TAG, "Recreate the previous fragment as well");
+                        if(VERBOSE)Log.d(TAG, "Recreate the previous fragment as well");
                         deletePosition = -1;
                         return POSITION_NONE;
                     }

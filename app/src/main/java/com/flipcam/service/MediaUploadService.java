@@ -54,6 +54,7 @@ public class MediaUploadService extends Service {
     double uploadedSize = 0;
     Bitmap notifyIcon;
     Uri uploadNotification;
+    boolean VERBOSE = false;
 
     @Nullable
     @Override
@@ -63,7 +64,7 @@ public class MediaUploadService extends Service {
 
     @Override
     public void onCreate() {
-        Log.i(TAG,"onCreate");
+        if(VERBOSE)Log.i(TAG,"onCreate");
         notifyIcon = BitmapFactory.decodeResource(getApplicationContext().getResources(),R.drawable.ic_launcher);
         mNotificationManager = (NotificationManager) getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
         mBuilder = new NotificationCompat.Builder(getApplicationContext())
@@ -81,10 +82,10 @@ public class MediaUploadService extends Service {
         //SimpleDateFormat sdf = new SimpleDateFormat(getResources().getString(R.string.DATE_FORMAT_FOR_UPLOAD_PROCESS));
         String randomNo = Math.random()+"";
         String startID = randomNo.substring(randomNo.length() - 5, randomNo.length());
-        Log.i(TAG,"onStartCommand = "+startID);
+        if(VERBOSE)Log.i(TAG,"onStartCommand = "+startID);
         final String uploadfilepath = (String)intent.getExtras().get("uploadFile");
         userId = (String)intent.getExtras().get("userId");
-        Log.i(TAG,"Upload file = "+uploadfilepath);
+        if(VERBOSE)Log.i(TAG,"Upload file = "+uploadfilepath);
         mediaUploadHandler = new MediaUploadHandler(this);
         new MediaUploadTask().execute(uploadfilepath, startID);
         return Service.START_NOT_STICKY;
@@ -92,13 +93,13 @@ public class MediaUploadService extends Service {
 
     @Override
     public void onDestroy() {
-        Log.i(TAG,"onDestroy");
+        if(VERBOSE)Log.i(TAG,"onDestroy");
         super.onDestroy();
     }
 
     @Override
     public void onLowMemory() {
-        Log.i(TAG,"onLowMemory");
+        if(VERBOSE)Log.i(TAG,"onLowMemory");
         super.onLowMemory();
     }
 
@@ -112,17 +113,17 @@ public class MediaUploadService extends Service {
         public void handleMessage(Message msg) {
             switch(msg.what){
                 case Constants.UPLOAD_PROGRESS:
-                    Log.i(TAG,"upload id = "+uploadId);
+                    if(VERBOSE)Log.i(TAG,"upload id = "+uploadId);
                     if(!isImage(uploadFile)) {
                         Double maxSize = (Double) msg.getData().get("maxSize");
                         Double uploadSize = (Double) msg.getData().get("uploadSize");
-                        Log.i(TAG, "max size = " + maxSize);
-                        Log.i(TAG, "upload size = " + uploadSize);
+                        if(VERBOSE)Log.i(TAG, "max size = " + maxSize);
+                        if(VERBOSE)Log.i(TAG, "upload size = " + uploadSize);
                         uploadedSize += uploadSize.doubleValue();
                         mBuilder.setProgress((int) maxSize.doubleValue(), (int) uploadedSize, false);
                         mBuilder.setContentTitle(getResources().getString(R.string.uploadInProgressTitle));
                         double roundOffPercent = (Math.floor((uploadedSize / maxSize.intValue()) * 100.0) * 100.0) / 100.0;
-                        Log.i(TAG, "Percent done = " + roundOffPercent);
+                        if(VERBOSE)Log.i(TAG, "Percent done = " + roundOffPercent);
                         mBuilder.setColor(getResources().getColor(R.color.uploadColor));
                         if((int)roundOffPercent < 100.0d) {
                             mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText((int) roundOffPercent + "% Completed of " + convertFileSize(maxSize)
@@ -130,7 +131,7 @@ public class MediaUploadService extends Service {
                                     + "\n" + "File "+filename));
                         }
                         else if(roundOffPercent == 100.0d){
-                            Log.i(TAG,"Upload finished");
+                            if(VERBOSE)Log.i(TAG,"Upload finished");
                             mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.uploadFinish)
                                     + "\n" + "File "+filename));
                         }
@@ -155,7 +156,7 @@ public class MediaUploadService extends Service {
 
         @Override
         protected void onPostExecute(Boolean aBoolean) {
-            Log.i(TAG,"onPostExecute = "+uploadId);
+            if(VERBOSE)Log.i(TAG,"onPostExecute = "+uploadId);
             uploadedSize = 0;
             if(success){
                 mBuilder.setColor(getResources().getColor(R.color.uploadColor));
@@ -167,7 +168,7 @@ public class MediaUploadService extends Service {
                 mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
             }
             NO_OF_REQUESTS--;
-            Log.i(TAG,"No of requests = "+NO_OF_REQUESTS);
+            if(VERBOSE)Log.i(TAG,"No of requests = "+NO_OF_REQUESTS);
             if(NO_OF_REQUESTS > 0) {
                 stopSelf(Integer.parseInt(uploadId));
             }
@@ -183,13 +184,13 @@ public class MediaUploadService extends Service {
 
         @Override
         protected void onCancelled() {
-            Log.i(TAG,"onCancelled");
+            if(VERBOSE)Log.i(TAG,"onCancelled");
             super.onCancelled();
         }
 
         @Override
         protected void onPreExecute() {
-            Log.i(TAG,"onPreExecute");
+            if(VERBOSE)Log.i(TAG,"onPreExecute");
             NO_OF_REQUESTS++;
             TOTAL_REQUESTS++;
         }
@@ -200,7 +201,7 @@ public class MediaUploadService extends Service {
             uploadId = params[1];
             filename = uploadFile.substring(uploadFile.lastIndexOf("/") + 1,uploadFile.length());
             startUpload(uploadId);
-            Log.i(TAG,"EXIT Thread");
+            if(VERBOSE)Log.i(TAG,"EXIT Thread");
             return success;
         }
     }
@@ -218,7 +219,7 @@ public class MediaUploadService extends Service {
                     params.putString("upload_phase", "start");
                     params.putString("file_size", randomAccessFile.length() + "");
                     params.putString("uploadID", uploadid);
-                    Log.i(TAG, "file size = " + randomAccessFile.length());
+                    if(VERBOSE)Log.i(TAG, "file size = " + randomAccessFile.length());
                     callback = postVideoCallback;
                     url += "/videos";
                 } else {
@@ -226,7 +227,7 @@ public class MediaUploadService extends Service {
                     ByteArrayOutputStream baosBitmap = new ByteArrayOutputStream();
                     bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baosBitmap);
                     params.putByteArray("source", baosBitmap.toByteArray());
-                    Log.i(TAG, "Upload image size = " + baosBitmap.size());
+                    if(VERBOSE)Log.i(TAG, "Upload image size = " + baosBitmap.size());
                     baosBitmap.close();
                     bitmap.recycle();
                     callback = postPhotoCallback;
@@ -235,7 +236,7 @@ public class MediaUploadService extends Service {
                 }
                 postReq = new GraphRequest(AccessToken.getCurrentAccessToken(), url, params, HttpMethod.POST, callback);
                 postReq.executeAndWait();
-                Log.i(TAG, "Request sent");
+                if(VERBOSE)Log.i(TAG, "Request sent");
             }
             else{
                 success = false;
@@ -255,7 +256,7 @@ public class MediaUploadService extends Service {
 
     public String convertFileSize(double fileSize){
         if(fileSize >= Constants.MEGA_BYTE && fileSize < Constants.GIGA_BYTE){
-            Log.i(TAG,"MB = "+fileSize);
+            if(VERBOSE)Log.i(TAG,"MB = "+fileSize);
             double mbconsumed = fileSize/Constants.MEGA_BYTE;
             int mbytes = (int) ((Math.floor(mbconsumed * 100.0))/100.0);
             return mbytes+" "+getResources().getString(R.string.MEM_PF_MB);
@@ -304,10 +305,10 @@ public class MediaUploadService extends Service {
     GraphRequest.Callback postPhotoCallback = new GraphRequest.Callback() {
         @Override
         public void onCompleted(GraphResponse response) {
-            Log.i(TAG,"onCompleted response = "+response);
+            if(VERBOSE)Log.i(TAG,"onCompleted response = "+response);
             if(response.getError() != null){
                 if(retryCount > 0){
-                    Log.i(TAG,"Retrying...."+retryCount);
+                    if(VERBOSE)Log.i(TAG,"Retrying...."+retryCount);
                     mBuilder.setColor(getResources().getColor(R.color.uploadError));
                     mBuilder.setContentText(getResources().getString(R.string.connectionRetryLess));
                     mBuilder.setContentTitle(getResources().getString(R.string.errorTitle));
@@ -330,7 +331,7 @@ public class MediaUploadService extends Service {
                 else if(retryCount == 0){
                     retryCount = Constants.RETRY_COUNT;
                     success = false;
-                    Log.i(TAG, "Show Photo ERROR = "+uploadId);
+                    if(VERBOSE)Log.i(TAG, "Show Photo ERROR = "+uploadId);
                     showUploadErrorNotification();
                 }
             }
@@ -345,7 +346,7 @@ public class MediaUploadService extends Service {
                         success = true;
                     }
                     else{
-                        Log.i(TAG,"No id....");
+                        if(VERBOSE)Log.i(TAG,"No id....");
                         success = false;
                         showUploadErrorNotification();
                     }
@@ -359,15 +360,15 @@ public class MediaUploadService extends Service {
     GraphRequest.Callback postVideoCallback = new GraphRequest.Callback() {
         @Override
         public void onCompleted(GraphResponse response) {
-            Log.i(TAG, "response = " + response.getRawResponse());
+            if(VERBOSE)Log.i(TAG, "response = " + response.getRawResponse());
             if (response.getError() != null) {
-                Log.i(TAG, "Error code = " + response.getError().getErrorCode());
-                Log.i(TAG, "Error user msg = "+response.getError().getErrorUserMessage());
-                Log.i(TAG, "Error subcode = " + response.getError().getSubErrorCode());
-                Log.i(TAG, "FB exception = "+response.getError().getException());
+                if(VERBOSE)Log.i(TAG, "Error code = " + response.getError().getErrorCode());
+                if(VERBOSE)Log.i(TAG, "Error user msg = "+response.getError().getErrorUserMessage());
+                if(VERBOSE)Log.i(TAG, "Error subcode = " + response.getError().getSubErrorCode());
+                if(VERBOSE)Log.i(TAG, "FB exception = "+response.getError().getException());
                 subErrorCode = response.getError().getSubErrorCode();
                 if(retryCount > 0){
-                    Log.i(TAG,"Retrying...."+retryCount);
+                    if(VERBOSE)Log.i(TAG,"Retrying...."+retryCount);
                     mBuilder.setColor(getResources().getColor(R.color.uploadError));
                     mBuilder.setContentText(getResources().getString(R.string.connectionRetryLess));
                     mBuilder.setContentTitle(getResources().getString(R.string.errorTitle));
@@ -390,7 +391,7 @@ public class MediaUploadService extends Service {
                 else if(retryCount == 0){
                     retryCount = Constants.RETRY_COUNT;
                     success = false;
-                    Log.i(TAG, "Show Video ERROR = "+uploadId);
+                    if(VERBOSE)Log.i(TAG, "Show Video ERROR = "+uploadId);
                     showUploadErrorNotification();
                 }
             }
@@ -412,7 +413,7 @@ public class MediaUploadService extends Service {
                             randomAccessFile.seek(Long.parseLong(start_offset));
                             if (Long.parseLong(start_offset) != Long.parseLong(end_offset)) {
                                 Bundle params = new Bundle();
-                                Log.i(TAG, "Upload from " + start_offset + " to " + end_offset);
+                                if(VERBOSE)Log.i(TAG, "Upload from " + start_offset + " to " + end_offset);
                                 params.putString("upload_phase", "transfer");
                                 params.putString("upload_session_id", upload_session_id);
                                 params.putString("start_offset", start_offset);
@@ -430,7 +431,7 @@ public class MediaUploadService extends Service {
                                 postReq.executeAndWait();
                             } else {
                                 Bundle params = new Bundle();
-                                Log.i(TAG, "Complete UPLOAD");
+                                if(VERBOSE)Log.i(TAG, "Complete UPLOAD");
                                 params.putString("upload_phase", "finish");
                                 params.putString("upload_session_id", upload_session_id);
                                 GraphRequest postReq = new GraphRequest(AccessToken.getCurrentAccessToken(), "/" + userId + "/videos", params, HttpMethod.POST, postVideoCallback);
@@ -438,14 +439,14 @@ public class MediaUploadService extends Service {
                             }
                         }
                         else{
-                            Log.i(TAG,"ABORT Upload!!!!!");
+                            if(VERBOSE)Log.i(TAG,"ABORT Upload!!!!!");
                             success = false;
                             showFileErrorNotification();
                         }
                     } else {
                         if (jsonObject.has("success")) {
                             success = (Boolean) jsonObject.get("success");
-                            Log.i(TAG, "success = " + success);
+                            if(VERBOSE)Log.i(TAG, "success = " + success);
                         }
                     }
                 } catch (JSONException e) {

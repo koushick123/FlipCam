@@ -21,10 +21,11 @@ public class MediaView extends SurfaceView implements SurfaceHolder.Callback {
     MediaPlayer mPlayer;
     String mediaPath;
     SurfaceViewVideoFragment surfaceViewVideoFragment;
+    boolean VERBOSE = false;
 
     public MediaView(Context context, AttributeSet attrs) {
         super(context, attrs);
-        Log.d(TAG,"start mediaView");
+        if(VERBOSE)Log.d(TAG,"start mediaView");
         getHolder().addCallback(this);
     }
 
@@ -36,15 +37,15 @@ public class MediaView extends SurfaceView implements SurfaceHolder.Callback {
 
     @Override
     public void surfaceCreated(SurfaceHolder surfaceHolder) {
-        Log.d(TAG,"surfaceCreated = "+mediaPath);
+        if(VERBOSE)Log.d(TAG,"surfaceCreated = "+mediaPath);
         if(!isImage()){
             mPlayer.setDisplay(surfaceHolder);
             try {
                 mPlayer.setDataSource("file://"+mediaPath);
                 mPlayer.prepare();
-                Log.d(TAG,"MP prepared");
+                if(VERBOSE)Log.d(TAG,"MP prepared");
                 if(surfaceViewVideoFragment.getUserVisibleHint()) {
-                    Log.d(TAG, "SAVED VIDEO for min = " + surfaceViewVideoFragment.savedVideo);
+                    if(VERBOSE)Log.d(TAG, "SAVED VIDEO for min = " + surfaceViewVideoFragment.savedVideo);
                     if (surfaceViewVideoFragment.savedVideo != null) {
                         surfaceViewVideoFragment.reConstructVideo(surfaceViewVideoFragment.savedVideo);
                     }
@@ -66,10 +67,10 @@ public class MediaView extends SurfaceView implements SurfaceHolder.Callback {
 
     @Override
     public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
-        Log.d(TAG,"surfaceDestroyed = "+mediaPath);
+        if(VERBOSE)Log.d(TAG,"surfaceDestroyed = "+mediaPath);
         if(!isImage()){
             if(surfaceViewVideoFragment.getUserVisibleHint()) {
-                Log.d(TAG, "Reset");
+                if(VERBOSE)Log.d(TAG, "Reset");
                 surfaceViewVideoFragment.stopTrackerThread();
                 try {
                     if(surfaceViewVideoFragment.videoTracker!=null) {
