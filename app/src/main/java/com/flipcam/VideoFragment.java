@@ -180,7 +180,7 @@ public class VideoFragment extends android.app.Fragment{
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
                 if(!cameraView.isSmoothZoomSupported() && !cameraView.isZoomSupported()) {
-                    makeText(getActivity().getApplicationContext(), "Zoom not supported for this camera.", Toast.LENGTH_SHORT).show();
+                    makeText(getActivity().getApplicationContext(), getResources().getString(R.string.zoomNotSupported), Toast.LENGTH_SHORT).show();
                 }
             }
 
@@ -830,7 +830,7 @@ public class VideoFragment extends android.app.Fragment{
                 flash.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_off));
             }
             else{
-                makeText(getActivity().getApplicationContext(),"Flash Mode " + cameraView.getCameraImplementation().getFlashModeTorch() + " not supported by this camera.",Toast.LENGTH_SHORT).show();
+                makeText(getActivity().getApplicationContext(),getResources().getString(R.string.flashModeNotSupported, cameraView.getCameraImplementation().getFlashModeTorch()),Toast.LENGTH_SHORT).show();
             }
         }
         else

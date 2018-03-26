@@ -461,7 +461,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 @Override
                 public void run() {
                     taskAlert.dismiss();
-                    Toast.makeText(getApplicationContext(),"Unable to delete file",Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(),getResources().getString(R.string.unableToDelete),Toast.LENGTH_SHORT).show();
                 }
             });
         }
