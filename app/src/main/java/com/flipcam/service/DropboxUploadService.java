@@ -61,6 +61,7 @@ public class DropboxUploadService extends Service {
     DbxRequestConfig dbxRequestConfig;
     DbxClientV2 dbxClientV2;
     String folderName;
+    boolean VERBOSE = false;
 
     class DropboxUploadHandler extends Handler {
         WeakReference<DropboxUploadService> serviceWeakReference;
@@ -75,14 +76,14 @@ public class DropboxUploadService extends Service {
                 case Constants.UPLOAD_PROGRESS:
                     Long maxSize = (Long) msg.getData().get("maxSize");
                     Long uploadSize = (Long) msg.getData().get("uploadSize");
-                    Log.i(TAG, "max size = " + maxSize);
-                    Log.i(TAG, "upload size = " + uploadSize);
+                    if(VERBOSE)Log.i(TAG, "max size = " + maxSize);
+                    if(VERBOSE)Log.i(TAG, "upload size = " + uploadSize);
                     uploadedSize += uploadSize.longValue();
-                    Log.i(TAG, "Total uploaded size = "+uploadedSize);
+                    if(VERBOSE)Log.i(TAG, "Total uploaded size = "+uploadedSize);
                     mBuilder.setProgress((int) maxSize.longValue(), (int) uploadedSize, false);
                     mBuilder.setContentTitle(getResources().getString(R.string.autoUploadInProgressTitle, getResources().getString(R.string.dropbox)));
                     double roundOffPercent = (Math.floor((uploadedSize / maxSize.longValue()) * 100.0) * 100.0) / 100.0;
-                    Log.i(TAG, "Percent done = " + roundOffPercent);
+                    if(VERBOSE)Log.i(TAG, "Percent done = " + roundOffPercent);
                     mBuilder.setColor(getResources().getColor(R.color.uploadColor));
                     if((int)roundOffPercent < 100.0d) {
                         if(!isImage(uploadFile)){
@@ -99,7 +100,7 @@ public class DropboxUploadService extends Service {
                         }
                     }
                     else if(roundOffPercent == 100.0d){
-                        Log.i(TAG,"Upload finished");
+                        if(VERBOSE)Log.i(TAG,"Upload finished");
                         mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.uploadFinish)
                                 + "\n" + "File "+filename));
                     }
@@ -111,7 +112,7 @@ public class DropboxUploadService extends Service {
 
     @Override
     public void onCreate() {
-        Log.i(TAG, "onCreate");
+        if(VERBOSE)Log.i(TAG, "onCreate");
         notifyIcon = BitmapFactory.decodeResource(getApplicationContext().getResources(), R.drawable.ic_launcher);
         mNotificationManager = (NotificationManager) getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
         mBuilder = new NotificationCompat.Builder(getApplicationContext())
@@ -127,7 +128,7 @@ public class DropboxUploadService extends Service {
         }
         folderName = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE).getString(Constants.DROPBOX_FOLDER,"");
         dropboxUploadHandler = new DropboxUploadHandler(this);
-        Log.i(TAG, "folder name = "+folderName);
+        if(VERBOSE)Log.i(TAG, "folder name = "+folderName);
     }
 
     @Nullable
@@ -140,9 +141,9 @@ public class DropboxUploadService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         String randomNo = Math.random()+"";
         String startID = randomNo.substring(randomNo.length() - 5, randomNo.length());
-        Log.i(TAG,"onStartCommand = "+startID);
+        if(VERBOSE)Log.i(TAG,"onStartCommand = "+startID);
         final String uploadfilepath = (String)intent.getExtras().get("uploadFile");
-        Log.i(TAG,"Upload file = "+uploadfilepath);
+        if(VERBOSE)Log.i(TAG,"Upload file = "+uploadfilepath);
         new DropboxUploadTask().execute(uploadfilepath,startID);
         return Service.START_NOT_STICKY;
     }
@@ -150,20 +151,20 @@ public class DropboxUploadService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        Log.i(TAG,"onDestroy");
+        if(VERBOSE)Log.i(TAG,"onDestroy");
     }
 
     class DropboxUploadTask extends AsyncTask<String, Void, Boolean>{
         Boolean success = null;
         @Override
         protected void onPreExecute() {
-            Log.i(TAG,"onPreExecute");
+            if(VERBOSE)Log.i(TAG,"onPreExecute");
             NO_OF_REQUESTS++;
         }
 
         @Override
         protected void onPostExecute(Boolean aBoolean) {
-            Log.i(TAG,"onPostExecute = "+uploadId+", success = "+success);
+            if(VERBOSE)Log.i(TAG,"onPostExecute = "+uploadId+", success = "+success);
             uploadedSize = 0;
             if(success){
                 mNotificationManager.cancel(Integer.parseInt(uploadId));
@@ -176,7 +177,7 @@ public class DropboxUploadService extends Service {
                 mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
             }
             NO_OF_REQUESTS--;
-            Log.i(TAG,"No of requests = "+NO_OF_REQUESTS);
+            if(VERBOSE)Log.i(TAG,"No of requests = "+NO_OF_REQUESTS);
             if(NO_OF_REQUESTS > 0) {
                 stopSelf(Integer.parseInt(uploadId));
             }
@@ -187,7 +188,7 @@ public class DropboxUploadService extends Service {
 
         @Override
         protected Boolean doInBackground(String... params) {
-            Log.i(TAG, "doInBackground = "+params[1]);
+            if(VERBOSE)Log.i(TAG, "doInBackground = "+params[1]);
             uploadFile = params[0];
             uploadId = params[1];
             filename = uploadFile.substring(uploadFile.lastIndexOf("/") + 1,uploadFile.length());
@@ -212,20 +213,20 @@ public class DropboxUploadService extends Service {
                 long bytesUploaded = 0;
                 UploadSessionCursor uploadSessionCursor = null;
                 while ((readSize = bufferedInputStream.read(cache, 0, cache.length)) != -1) {
-                    Log.i(TAG, "Read " + readSize + " bytes");
+                    if(VERBOSE)Log.i(TAG, "Read " + readSize + " bytes");
                     if (sessionId == null) {
                         uploadSessionStartUploader = dbxUserFilesRequests.uploadSessionStart(false);
                         uploadSessionStartResult = uploadSessionStartUploader.uploadAndFinish(new ByteArrayInputStream(cache), readSize);
                         sessionId = uploadSessionStartResult.getSessionId();
-                        Log.i(TAG, "Obtained session id = " + sessionId);
+                        if(VERBOSE)Log.i(TAG, "Obtained session id = " + sessionId);
                         bytesUploaded = readSize;
-                        Log.i(TAG, "Uploaded " + readSize + " bytes");
+                        if(VERBOSE)Log.i(TAG, "Uploaded " + readSize + " bytes");
                     } else {
                         uploadSessionAppendV2Uploader = dbxUserFilesRequests.uploadSessionAppendV2(uploadSessionCursor, false);
-                        Log.i(TAG, "Appended session");
+                        if(VERBOSE)Log.i(TAG, "Appended session");
                         uploadSessionAppendV2Uploader.uploadAndFinish(new ByteArrayInputStream(cache), readSize);
                         bytesUploaded += readSize;
-                        Log.i(TAG, "Uploaded " + bytesUploaded + " bytes");
+                        if(VERBOSE)Log.i(TAG, "Uploaded " + bytesUploaded + " bytes");
                     }
                     uploadSessionCursor = new UploadSessionCursor(sessionId, bytesUploaded);
                     Bundle bundle = new Bundle();
@@ -250,23 +251,23 @@ public class DropboxUploadService extends Service {
                     } else {
                         path = "/" + filename;
                     }
-                    Log.i(TAG, "Path = " + path);
+                    if(VERBOSE)Log.i(TAG, "Path = " + path);
                     CommitInfo.Builder builder = CommitInfo.newBuilder(path);
                     builder.withAutorename(true);
                     builder.withMode(WriteMode.ADD);
                     builder.withMute(false);
                     UploadSessionFinishUploader uploadSessionFinishUploader = dbxUserFilesRequests.uploadSessionFinish(uploadSessionCursor, builder.build());
-                    Log.i(TAG, "Upload session finished");
+                    if(VERBOSE)Log.i(TAG, "Upload session finished");
                     FileMetadata fileMetadata = uploadSessionFinishUploader.uploadAndFinish(fileToUpload, bytesUploaded);
-                    Log.i(TAG, "Uploaded file MD getPathDisplay = " + fileMetadata.getPathDisplay());
-                    Log.i(TAG, "Uploaded file MD getId = " + fileMetadata.getId());
-                    Log.i(TAG, "Uploaded file MD getName = " + fileMetadata.getName());
-                    Log.i(TAG, "Uploaded file MD getSize = " + fileMetadata.getSize());
-                    Log.i(TAG, "Upload done");
+                    if(VERBOSE)Log.i(TAG, "Uploaded file MD getPathDisplay = " + fileMetadata.getPathDisplay());
+                    if(VERBOSE)Log.i(TAG, "Uploaded file MD getId = " + fileMetadata.getId());
+                    if(VERBOSE)Log.i(TAG, "Uploaded file MD getName = " + fileMetadata.getName());
+                    if(VERBOSE)Log.i(TAG, "Uploaded file MD getSize = " + fileMetadata.getSize());
+                    if(VERBOSE)Log.i(TAG, "Upload done");
                     success = true;
                 }
             } catch (DbxException e) {
-                Log.i(TAG, "DbxException = " + e.getMessage());
+                if(VERBOSE)Log.i(TAG, "DbxException = " + e.getMessage());
                 if (e.getMessage().contains("Unable to resolve host")) {
                     showUploadErrorNotification();
                 }
@@ -278,11 +279,11 @@ public class DropboxUploadService extends Service {
                 }
                 success = false;
             } catch (FileNotFoundException e) {
-                Log.i(TAG ,"FileNotFoundException = "+e.getMessage());
+                if(VERBOSE)Log.i(TAG ,"FileNotFoundException = "+e.getMessage());
                 success = false;
                 showFileErrorNotification();
             } catch (IOException e) {
-                Log.i(TAG, "IOException = " + e.getMessage());
+                if(VERBOSE)Log.i(TAG, "IOException = " + e.getMessage());
                 success = false;
             } finally {
                 if(uploadSessionStartUploader != null) {
@@ -318,13 +319,13 @@ public class DropboxUploadService extends Service {
 
     public String convertFileSize(double fileSize){
         if(fileSize >= Constants.MEGA_BYTE && fileSize < Constants.GIGA_BYTE){
-            Log.i(TAG,"MB = "+fileSize);
+            if(VERBOSE)Log.i(TAG,"MB = "+fileSize);
             double mbconsumed = fileSize/Constants.MEGA_BYTE;
             int mbytes = (int) ((Math.floor(mbconsumed * 100.0))/100.0);
             return mbytes+" "+getResources().getString(R.string.MEM_PF_MB);
         }
         else {
-            Log.i(TAG,"GB = "+fileSize);
+            if(VERBOSE)Log.i(TAG,"GB = "+fileSize);
             double gbconsumed = fileSize/Constants.GIGA_BYTE;
             int gbytes = (int) ((Math.floor(gbconsumed * 100.0))/100.0);
             return gbytes+" "+getResources().getString(R.string.MEM_PF_GB);

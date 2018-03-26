@@ -31,9 +31,10 @@ public class FlipCamWidgetProvider extends AppWidgetProvider {
     public static final String TAG = "FCAppWidgetProvider";
     Context cntxt;
     RemoteViews remoteViews;
+    boolean VERBOSE = false;
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
-        Log.d(TAG, "onUpdate");
+        if(VERBOSE)Log.d(TAG, "onUpdate");
         cntxt = context;
         HashSet<String> widgetIds = new HashSet<>();
         SharedPreferences.Editor editor = context.getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE).edit();
@@ -44,14 +45,14 @@ public class FlipCamWidgetProvider extends AppWidgetProvider {
             FileMedia[] media = MediaUtil.getMediaList(context);
             if(media != null && media.length > 0){
                 String filepath = media[0].getPath();
-                Log.d(TAG, "FilePath = "+filepath);
+                if(VERBOSE)Log.d(TAG, "FilePath = "+filepath);
                 if(filepath.endsWith(context.getResources().getString(R.string.IMG_EXT))
                         || filepath.endsWith(context.getResources().getString(R.string.ANOTHER_IMG_EXT)))
                 {
                     Bitmap latestImage = BitmapFactory.decodeFile(filepath);
                     latestImage = Bitmap.createScaledBitmap(latestImage,(int)context.getResources().getDimension(R.dimen.thumbnailWidth),
                             (int)context.getResources().getDimension(R.dimen.thumbnailHeight), false);
-                    Log.d(TAG, "Update Photo thumbnail");
+                    if(VERBOSE)Log.d(TAG, "Update Photo thumbnail");
                     remoteViews.setViewVisibility(R.id.playCircleWidget, View.INVISIBLE);
                     remoteViews.setImageViewBitmap(R.id.imageWidget, latestImage);
                     setPendingIntent();
@@ -77,7 +78,7 @@ public class FlipCamWidgetProvider extends AppWidgetProvider {
                     if(vid != null){
                         vid = Bitmap.createScaledBitmap(vid, (int)context.getResources().getDimension(R.dimen.thumbnailWidth),
                                 (int)context.getResources().getDimension(R.dimen.thumbnailHeight), false);
-                        Log.d(TAG, "Update Video thumbnail");
+                        if(VERBOSE)Log.d(TAG, "Update Video thumbnail");
                         remoteViews.setViewVisibility(R.id.playCircleWidget, View.VISIBLE);
                         remoteViews.setImageViewBitmap(R.id.imageWidget, vid);
                         setPendingIntent();
@@ -87,7 +88,7 @@ public class FlipCamWidgetProvider extends AppWidgetProvider {
             else{
                 remoteViews.setImageViewResource(R.id.imageWidget, R.drawable.placeholder);
             }
-            Log.d(TAG, "Update FC Widget");
+            if(VERBOSE)Log.d(TAG, "Update FC Widget");
             appWidgetManager.updateAppWidget(appWidgetId, remoteViews);
         }
         editor.putStringSet(Constants.WIDGET_IDS, widgetIds);
@@ -102,7 +103,7 @@ public class FlipCamWidgetProvider extends AppWidgetProvider {
 
     @Override
     public void onDisabled(Context context) {
-        Log.d(TAG, "Removed ALL Widgets");
+        if(VERBOSE)Log.d(TAG, "Removed ALL Widgets");
         SharedPreferences.Editor editor = context.getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE).edit();
         editor.putStringSet(Constants.WIDGET_IDS, null);
         editor.commit();

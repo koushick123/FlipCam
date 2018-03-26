@@ -24,6 +24,7 @@ public class MediaUtil {
     public static final String TAG = "MediaUtil";
     private static FileMedia[] mediaList;
     private static Context appContext;
+    static boolean VERBOSE = false;
     public static FileMedia[] getMediaList(Context ctx){
         appContext = ctx;
         sortAsPerLatest();
@@ -38,7 +39,7 @@ public class MediaUtil {
         }
         else{
             dcimFc = new File(sharedPreferences.getString(Constants.SD_CARD_PATH, ""));
-            Log.d(TAG, "SD card path = "+sharedPreferences.getString(Constants.SD_CARD_PATH, ""));
+            if(VERBOSE) Log.d(TAG, "SD card path = "+sharedPreferences.getString(Constants.SD_CARD_PATH, ""));
         }
         if (dcimFc.exists() && dcimFc.isDirectory() && dcimFc.listFiles().length > 0) {
             File[] mediaFiles = dcimFc.listFiles(new FileFilter() {

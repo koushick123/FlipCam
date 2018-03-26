@@ -136,11 +136,12 @@ public class SettingsActivity extends AppCompatActivity{
     IntentFilter mediaFilters;
     AppWidgetManager appWidgetManager;
     ControlVisbilityPreference controlVisbilityPreference;
+    boolean VERBOSE = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.d(TAG,"onCreate");
+        if(VERBOSE)if(VERBOSE)Log.d(TAG,"onCreate");
         setContentView(R.layout.activity_settings);
         mediaFilters = new IntentFilter();
         sdCardEventReceiver = new SDCardEventReceiver();
@@ -159,7 +160,7 @@ public class SettingsActivity extends AppCompatActivity{
         getSupportActionBar().setTitle(getResources().getString(R.string.settingTitle));
         settingsPref = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
         settingsEditor = settingsPref.edit();
-        Log.d(TAG,"SD Card Path onCreate = "+settingsPref.getString(Constants.SD_CARD_PATH,""));
+        if(VERBOSE)if(VERBOSE)Log.d(TAG,"SD Card Path onCreate = "+settingsPref.getString(Constants.SD_CARD_PATH,""));
         if(settingsPref.contains(Constants.SD_CARD_PATH) && !settingsPref.getString(Constants.SD_CARD_PATH,"").equals("")) {
             String sdcardpath = settingsPref.getString(Constants.SD_CARD_PATH, "");
             showSDCardPath(sdcardpath);
@@ -198,7 +199,7 @@ public class SettingsActivity extends AppCompatActivity{
     class SDCardEventReceiver extends BroadcastReceiver{
         @Override
         public void onReceive(Context ctx, Intent intent) {
-            Log.d(TAG, "onReceive = "+intent.getAction());
+            if(VERBOSE)Log.d(TAG, "onReceive = "+intent.getAction());
             if(intent.getAction().equalsIgnoreCase(Intent.ACTION_MEDIA_UNMOUNTED)){
                 //Check if SD Card was selected
                 if(!settingsPref.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
@@ -209,7 +210,7 @@ public class SettingsActivity extends AppCompatActivity{
     }
 
     public void showSDCardUnavailMessage(){
-        Log.d(TAG, "SD Card Removed");
+        if(VERBOSE)Log.d(TAG, "SD Card Removed");
         phoneMemBtn.setChecked(true);
         sdCardBtn.setChecked(false);
         settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
@@ -238,15 +239,15 @@ public class SettingsActivity extends AppCompatActivity{
     public void updateSettingsValues(){
         //Update Save Media in
         if(settingsPref.contains(Constants.SAVE_MEDIA_PHONE_MEM)){
-            Log.d(TAG,"Phone memory exists");
+            if(VERBOSE)Log.d(TAG,"Phone memory exists");
             if(settingsPref.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
-                Log.d(TAG,"Phone memory is true");
+                if(VERBOSE)Log.d(TAG,"Phone memory is true");
                 phoneMemBtn.setChecked(true);
                 sdCardBtn.setChecked(false);
                 hideSDCardPath();
             }
             else{
-                Log.d(TAG,"Phone memory is false");
+                if(VERBOSE)Log.d(TAG,"Phone memory is false");
                 if(doesSDCardExist() != null) {
                     phoneMemBtn.setChecked(false);
                     sdCardBtn.setChecked(true);
@@ -258,7 +259,7 @@ public class SettingsActivity extends AppCompatActivity{
             }
         }
         else{
-            Log.d(TAG,"Phone memory NOT exists");
+            if(VERBOSE)Log.d(TAG,"Phone memory NOT exists");
             phoneMemBtn.setChecked(true);
             sdCardBtn.setChecked(false);
         }
@@ -366,7 +367,7 @@ public class SettingsActivity extends AppCompatActivity{
             Iterator<String> iterator = widgetIds.iterator();
             while(iterator.hasNext()){
                 String widgetId = iterator.next();
-                Log.d(TAG, "widgetIds = "+widgetId);
+                if(VERBOSE)Log.d(TAG, "widgetIds = "+widgetId);
                 updateAppWidget(Integer.parseInt(widgetId));
             }
         }
@@ -377,13 +378,13 @@ public class SettingsActivity extends AppCompatActivity{
         FileMedia[] media = MediaUtil.getMediaList(this);
         if (media != null && media.length > 0) {
             String filepath = media[0].getPath();
-            Log.d(TAG, "FilePath = " + filepath);
+            if(VERBOSE)Log.d(TAG, "FilePath = " + filepath);
             if (filepath.endsWith(getResources().getString(R.string.IMG_EXT))
                     || filepath.endsWith(getResources().getString(R.string.ANOTHER_IMG_EXT))) {
                 Bitmap latestImage = BitmapFactory.decodeFile(filepath);
                 latestImage = Bitmap.createScaledBitmap(latestImage, (int) getResources().getDimension(R.dimen.thumbnailWidth),
                         (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
-                Log.d(TAG, "Update Photo thumbnail");
+                if(VERBOSE)Log.d(TAG, "Update Photo thumbnail");
                 remoteViews.setViewVisibility(R.id.playCircleWidget, View.INVISIBLE);
                 remoteViews.setImageViewBitmap(R.id.imageWidget, latestImage);
                 remoteViews.setTextViewText(R.id.widgetMsg, getResources().getString(R.string.widgetMediaMsg));
@@ -408,7 +409,7 @@ public class SettingsActivity extends AppCompatActivity{
                 if (vid != null) {
                     vid = Bitmap.createScaledBitmap(vid, (int) getResources().getDimension(R.dimen.thumbnailWidth),
                             (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
-                    Log.d(TAG, "Update Video thumbnail");
+                    if(VERBOSE)Log.d(TAG, "Update Video thumbnail");
                     remoteViews.setViewVisibility(R.id.playCircleWidget, View.VISIBLE);
                     remoteViews.setImageViewBitmap(R.id.imageWidget, vid);
                     remoteViews.setTextViewText(R.id.widgetMsg, getResources().getString(R.string.widgetMediaMsg));
@@ -418,7 +419,7 @@ public class SettingsActivity extends AppCompatActivity{
             remoteViews.setImageViewResource(R.id.imageWidget, R.drawable.placeholder);
             remoteViews.setTextViewText(R.id.widgetMsg, getResources().getString(R.string.widgetNoMedia));
         }
-        Log.d(TAG, "Update FC Widget");
+        if(VERBOSE)Log.d(TAG, "Update FC Widget");
         appWidgetManager.updateAppWidget(appWidgetId, remoteViews);
     }
 
@@ -435,18 +436,18 @@ public class SettingsActivity extends AppCompatActivity{
     public String doesSDCardExist(){
         File[] mediaDirs = getExternalMediaDirs();
         if(mediaDirs != null) {
-            Log.d(TAG, "mediaDirs = " + mediaDirs.length);
+            if(VERBOSE)Log.d(TAG, "mediaDirs = " + mediaDirs.length);
         }
         for(int i=0;i<mediaDirs.length;i++){
-            Log.d(TAG, "external media dir = "+mediaDirs[i]);
+            if(VERBOSE)Log.d(TAG, "external media dir = "+mediaDirs[i]);
             if(mediaDirs[i] != null) {
                 try {
                     if (Environment.isExternalStorageRemovable(mediaDirs[i])) {
-                        Log.d(TAG, "Removable storage = " + mediaDirs[i]);
+                        if(VERBOSE)Log.d(TAG, "Removable storage = " + mediaDirs[i]);
                         return mediaDirs[i].getPath();
                     }
                 } catch (IllegalArgumentException illegal) {
-                    Log.d(TAG, "Not a valid storage device");
+                    if(VERBOSE)Log.d(TAG, "Not a valid storage device");
                 }
             }
         }
@@ -456,7 +457,7 @@ public class SettingsActivity extends AppCompatActivity{
     public void selectSaveMedia(View view){
         switch (view.getId()){
             case R.id.phoneMemButton:
-                Log.d(TAG,"Save in phone memory");
+                if(VERBOSE)Log.d(TAG,"Save in phone memory");
                 settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM,true);
                 settingsEditor.commit();
                 updateWidget();
@@ -466,12 +467,12 @@ public class SettingsActivity extends AppCompatActivity{
                 controlVisbilityPreference.setMediaSelectedPosition(0);
                 break;
             case R.id.sdCardbutton:
-                Log.d(TAG,"Save in sd card");
+                if(VERBOSE)Log.d(TAG,"Save in sd card");
                 phoneMemBtn.setChecked(false);
                 sdCardBtn.setChecked(true);
                 String sdCardPath = doesSDCardExist();
                 if(sdCardPath == null){
-                    Log.d(TAG, "No SD Card");
+                    if(VERBOSE)Log.d(TAG, "No SD Card");
                     phoneMemBtn.setChecked(true);
                     sdCardBtn.setChecked(false);
                     settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
@@ -607,10 +608,10 @@ public class SettingsActivity extends AppCompatActivity{
         try {
             PackageInfo info = pm.getPackageInfo(targetPackage, PackageManager.GET_META_DATA);
             if(info != null) {
-                Log.d(TAG, "package name= " + info.packageName);
+                if(VERBOSE)Log.d(TAG, "package name= " + info.packageName);
             }
         } catch (PackageManager.NameNotFoundException e) {
-            Log.d(TAG,"Package "+targetPackage+" does NOT exist");
+            if(VERBOSE)Log.d(TAG,"Package "+targetPackage+" does NOT exist");
             return false;
         }
         return true;
@@ -679,12 +680,12 @@ public class SettingsActivity extends AppCompatActivity{
     public void accountsPermission(View view){
         switch (view.getId()){
             case R.id.yesPermission:
-                Log.d(TAG,"yesPermission");
+                if(VERBOSE)Log.d(TAG,"yesPermission");
                 permissionAccount.dismiss();
                 ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.GET_ACCOUNTS}, GET_ACCOUNTS_PERM);
                 break;
             case R.id.noPermission:
-                Log.d(TAG,"noPermission");
+                if(VERBOSE)Log.d(TAG,"noPermission");
                 if(cloud == Constants.GOOGLE_DRIVE_CLOUD) {
                     switchOnDrive.setChecked(false);
                 }
@@ -705,11 +706,11 @@ public class SettingsActivity extends AppCompatActivity{
     @Override
     protected void onPause() {
         super.onPause();
-        Log.d(TAG,"onPause");
+        if(VERBOSE)Log.d(TAG,"onPause");
         try {
             unregisterReceiver(sdCardEventReceiver);
         }catch (IllegalArgumentException illegal){
-            Log.d(TAG, "Receiver was never registered");
+            if(VERBOSE)Log.d(TAG, "Receiver was never registered");
         }
     }
 
@@ -723,12 +724,12 @@ public class SettingsActivity extends AppCompatActivity{
         updateSettingsValues();
         if (signInProgress) {
             signInProgressDialog.dismiss();
-            Log.d(TAG, "Reset signinprogess");
+            if(VERBOSE)Log.d(TAG, "Reset signinprogess");
             signInProgress = false;
         }
         if(goToDropbox) {
             goToDropbox = false;
-            Log.d(TAG, "Access token = " + Auth.getOAuth2Token());
+            if(VERBOSE)Log.d(TAG, "Access token = " + Auth.getOAuth2Token());
             if(Auth.getOAuth2Token() == null){
                 Toast.makeText(getApplicationContext(),getResources().getString(R.string.signInDropboxFail),Toast.LENGTH_LONG).show();
                 switchOnDropbox.setChecked(false);
@@ -767,16 +768,16 @@ public class SettingsActivity extends AppCompatActivity{
     @Override
     protected void onStart() {
         super.onStart();
-        Log.d(TAG,"onStart");
+        if(VERBOSE)Log.d(TAG,"onStart");
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        Log.d(TAG,"onStop");
+        if(VERBOSE)Log.d(TAG,"onStop");
         if(signInProgress){
             signInProgressDialog.dismiss();
-            Log.d(TAG,"Reset signinprogess");
+            if(VERBOSE)Log.d(TAG,"Reset signinprogess");
             signInProgress = false;
         }
     }
@@ -796,18 +797,18 @@ public class SettingsActivity extends AppCompatActivity{
         Account[] googleAccount = accountManager.getAccountsByType("com.google");
         if (googleAccount != null && googleAccount.length > 0) {
             if(googleAccount.length > 0){
-                Log.d(TAG, "Acc name = " + googleAccount[0].name);
+                if(VERBOSE)Log.d(TAG, "Acc name = " + googleAccount[0].name);
                 accName = googleAccount[0].name;
             }
         } else {
-            Log.d(TAG, "No google account");
+            if(VERBOSE)Log.d(TAG, "No google account");
         }
         if ((googleAccount != null && googleAccount.length > 0) && signInAccount != null && signInAccount.getGrantedScopes().containsAll(requiredScopes)) {
             getDriveClient(signInAccount);
             signedInDrive = true;
             checkIfFolderCreatedInDrive();
         } else {
-            Log.d(TAG,"startActivity");
+            if(VERBOSE)Log.d(TAG,"startActivity");
             signInProgress = true;
             TextView signInText = (TextView)signInProgressRoot.findViewById(R.id.signInText);
             TextView signInprogressTitle = (TextView)signInProgressRoot.findViewById(R.id.savetocloudtitle);
@@ -848,7 +849,7 @@ public class SettingsActivity extends AppCompatActivity{
         uploadFolderCheck.setCancelable(false);
         uploadFolderCheck.show();
         final String folderName = settingsPref.getString(Constants.DROPBOX_FOLDER, "");
-        Log.d(TAG, "saved folderName = "+folderName);
+        if(VERBOSE)Log.d(TAG, "saved folderName = "+folderName);
         if (folderName != null && !folderName.equals("")) {
             new Thread(new Runnable() {
                 @Override
@@ -856,10 +857,10 @@ public class SettingsActivity extends AppCompatActivity{
                     try {
                         Thread.sleep(3000);
                         com.dropbox.core.v2.files.Metadata metadata = dbxClientV2.files().getMetadata("/"+folderName);
-                        Log.d(TAG, "dropbox path display = "+metadata.getPathDisplay());
-                        Log.d(TAG, "multiline = "+metadata.toStringMultiline());
+                        if(VERBOSE)Log.d(TAG, "dropbox path display = "+metadata.getPathDisplay());
+                        if(VERBOSE)Log.d(TAG, "multiline = "+metadata.toStringMultiline());
                         if(!metadata.getName().equals("")) {
-                            Log.d(TAG, "Save folder name in setting");
+                            if(VERBOSE)Log.d(TAG, "Save folder name in setting");
                             ImageView placeholdericon = (ImageView) autoUploadEnabledRoot.findViewById(R.id.placeHolderIconAutoUpload);
                             placeholdericon.setImageDrawable(getResources().getDrawable(R.drawable.dropbox));
                             TextView autoUploadMsg = (TextView) autoUploadEnabledRoot.findViewById(R.id.autoUploadMsg);
@@ -888,7 +889,7 @@ public class SettingsActivity extends AppCompatActivity{
                         }
                     }
                     catch(GetMetadataErrorException metadataerror){
-                        Log.d(TAG, "Folder not present = "+metadataerror.getMessage());
+                        if(VERBOSE)Log.d(TAG, "Folder not present = "+metadataerror.getMessage());
                         TextView signInText = (TextView)signInProgressRoot.findViewById(R.id.signInText);
                         TextView signInprogressTitle = (TextView)signInProgressRoot.findViewById(R.id.savetocloudtitle);
                         signInprogressTitle.setText(getResources().getString(R.string.uploadFolderNotExist));
@@ -950,13 +951,13 @@ public class SettingsActivity extends AppCompatActivity{
         uploadFolderCheck.setCancelable(false);
         uploadFolderCheck.show();
         final String folderName = settingsPref.getString(Constants.GOOGLE_DRIVE_FOLDER, "");
-        Log.d(TAG, "saved folderName = "+folderName);
+        if(VERBOSE)Log.d(TAG, "saved folderName = "+folderName);
         if (folderName != null && !folderName.equals("")) {
             mDriveClient.requestSync()
                     .addOnSuccessListener(this, new OnSuccessListener<Void>() {
                         @Override
                         public void onSuccess(Void aVoid) {
-                            Log.d(TAG, "sync success");
+                            if(VERBOSE)Log.d(TAG, "sync success");
                             try {
                                 Thread.sleep(1100);
                             } catch (InterruptedException e) {
@@ -976,7 +977,7 @@ public class SettingsActivity extends AppCompatActivity{
                                 googleSignInClient.signOut();
                             }
                             else if(e.getMessage().contains(String.valueOf(DriveStatusCodes.DRIVE_RATE_LIMIT_EXCEEDED))){
-                                Log.d(TAG, "sync already done");
+                                if(VERBOSE)Log.d(TAG, "sync already done");
                                 //Continue as is, since already synced.
                                 try {
                                     Thread.sleep(1100);
@@ -1016,15 +1017,15 @@ public class SettingsActivity extends AppCompatActivity{
                 .addOnSuccessListener(new OnSuccessListener<MetadataBuffer>() {
                     @Override
                     public void onSuccess(MetadataBuffer metadatas) {
-                        Log.d(TAG, "result metadata = " + metadatas);
+                        if(VERBOSE)Log.d(TAG, "result metadata = " + metadatas);
                         Iterator<Metadata> iterator = metadatas.iterator();
                         if (metadatas.getCount() > 0 && iterator.hasNext()) {
                             Metadata metadata = iterator.next();
                             final String driveFolderName = metadata.getTitle();
-                            Log.d(TAG, "MD title = " + metadata.getTitle());
-                            Log.d(TAG, "MD created date = " + metadata.getCreatedDate());
-                            Log.d(TAG, "MD drive id = " + metadata.getDriveId());
-                            Log.d(TAG, "MD resource id = " + metadata.getDriveId().getResourceId());
+                            if(VERBOSE)Log.d(TAG, "MD title = " + metadata.getTitle());
+                            if(VERBOSE)Log.d(TAG, "MD created date = " + metadata.getCreatedDate());
+                            if(VERBOSE)Log.d(TAG, "MD drive id = " + metadata.getDriveId());
+                            if(VERBOSE)Log.d(TAG, "MD resource id = " + metadata.getDriveId().getResourceId());
                             mDriveClient.getDriveId(metadata.getDriveId().getResourceId())
                                     .addOnSuccessListener(new OnSuccessListener<DriveId>() {
                                         @Override
@@ -1059,7 +1060,7 @@ public class SettingsActivity extends AppCompatActivity{
                                         }
                                     });
                         } else {
-                            Log.d(TAG, "No folder exists with name = " + folder);
+                            if(VERBOSE)Log.d(TAG, "No folder exists with name = " + folder);
                             uploadFolderCheck.dismiss();
                             createUploadFolder();
                         }
@@ -1069,7 +1070,7 @@ public class SettingsActivity extends AppCompatActivity{
                 .addOnFailureListener(new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception e) {
-                        Log.d(TAG, "Failure = " + e.getMessage());
+                        if(VERBOSE)Log.d(TAG, "Failure = " + e.getMessage());
                         if(!isConnectedToInternet()) {
                             Toast.makeText(getApplicationContext(),getResources().getString(R.string.noConnectionMessage),Toast.LENGTH_SHORT).show();
                         }
@@ -1090,12 +1091,12 @@ public class SettingsActivity extends AppCompatActivity{
             case GET_ACCOUNTS_PERM:
                 if(permissions != null && permissions.length > 0) {
                     if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                        Log.d(TAG,"permission given");
+                        if(VERBOSE)Log.d(TAG,"permission given");
                         if(cloud == Constants.GOOGLE_DRIVE_CLOUD) {
                             continueToGoogleDrive();
                         }
                     } else {
-                        Log.d(TAG,"permission rational");
+                        if(VERBOSE)Log.d(TAG,"permission rational");
                         saveToCloud.dismiss();
                         if(cloud == Constants.GOOGLE_DRIVE_CLOUD) {
                             switchOnDrive.setChecked(false);
@@ -1116,7 +1117,7 @@ public class SettingsActivity extends AppCompatActivity{
             case REQUEST_CODE_SIGN_IN:
                 if (resultCode != RESULT_OK) {
                     //Sign in failed due to connection problem or user cancelled it.
-                    Log.d(TAG, "Sign-in failed.");
+                    if(VERBOSE)Log.d(TAG, "Sign-in failed.");
                     Toast.makeText(getApplicationContext(),getResources().getString(R.string.signinfail),Toast.LENGTH_LONG).show();
                     if(cloud == Constants.GOOGLE_DRIVE_CLOUD) {
                         switchOnDrive.setChecked(false);
@@ -1127,12 +1128,12 @@ public class SettingsActivity extends AppCompatActivity{
                 }
                 Task<GoogleSignInAccount> getAccountTask = GoogleSignIn.getSignedInAccountFromIntent(data);
                 if (getAccountTask.isSuccessful()) {
-                    Log.d(TAG,"isSuccessful");
+                    if(VERBOSE)Log.d(TAG,"isSuccessful");
                     getDriveClient(getAccountTask.getResult());
                     signedInDrive = true;
                     //Check For Connectivity again.
                     if(!isConnectedToInternet()){
-                        Log.d(TAG,"NO Internet");
+                        if(VERBOSE)Log.d(TAG,"NO Internet");
                         Toast.makeText(getApplicationContext(),getResources().getString(R.string.noConnectionMessage),Toast.LENGTH_SHORT).show();
                         switchOnDrive.setChecked(false);
                         disableGoogleDriveInSetting();
@@ -1165,10 +1166,10 @@ public class SettingsActivity extends AppCompatActivity{
     }
 
     private void getDriveClient(GoogleSignInAccount signInAccount) {
-        Log.d(TAG,"getDriveClient");
+        if(VERBOSE)Log.d(TAG,"getDriveClient");
         mDriveClient = Drive.getDriveClient(getApplicationContext(), signInAccount);
         mDriveResourceClient = Drive.getDriveResourceClient(getApplicationContext(), signInAccount);
-        Log.d(TAG, "Sign-in SUCCESS.");
+        if(VERBOSE)Log.d(TAG, "Sign-in SUCCESS.");
     }
 
     EditText folderNameText;
@@ -1186,7 +1187,7 @@ public class SettingsActivity extends AppCompatActivity{
             uploadFolderTitle.setText(getResources().getString(R.string.uploadFolderTitle));
             uploadDestIcon.setImageDrawable(getResources().getDrawable(R.drawable.dropbox));
         }
-        Log.d(TAG,"Open cloud upload dialog");
+        if(VERBOSE)Log.d(TAG,"Open cloud upload dialog");
         cloudUpload.setContentView(cloudUploadRoot);
         cloudUpload.setCancelable(false);
         cloudUpload.show();
@@ -1194,7 +1195,7 @@ public class SettingsActivity extends AppCompatActivity{
         folderNameText.setOnFocusChangeListener(new View.OnFocusChangeListener() {
             @Override
             public void onFocusChange(View view, boolean hasFocus) {
-                Log.d(TAG,"hasFocus = "+hasFocus);
+                if(VERBOSE)Log.d(TAG,"hasFocus = "+hasFocus);
                 if(hasFocus){
                     cloudUpload.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
                 }
@@ -1244,7 +1245,7 @@ public class SettingsActivity extends AppCompatActivity{
                                                 .setMimeType(DriveFolder.MIME_TYPE)
                                                 .setCustomProperty(ownerKey, accName)
                                                 .build();
-                                        Log.d(TAG,"Creating folder in Drive");
+                                        if(VERBOSE)Log.d(TAG,"Creating folder in Drive");
                                         return mDriveResourceClient.createFolder(parentFolder, changeSet);
                                     }
                                 })
@@ -1270,7 +1271,7 @@ public class SettingsActivity extends AppCompatActivity{
                                     @Override
                                     public void onFailure(@NonNull Exception e) {
                                         signInProgressDialog.dismiss();
-                                        Log.d(TAG, "Unable to create folder", e);
+                                        if(VERBOSE)Log.d(TAG, "Unable to create folder", e);
                                         Toast.makeText(getApplicationContext(),
                                                 getResources().getString(R.string.foldercreateErrorGoogleDrive, getResources().getString(R.string.googleDrive)),
                                                 Toast.LENGTH_SHORT).show();
@@ -1318,10 +1319,10 @@ public class SettingsActivity extends AppCompatActivity{
                                                     switchOnDropbox.setChecked(true);
                                                 }
                                             });
-                                            Log.d(TAG, "getPathDisplay = " + createFolderResult.getMetadata().getPathDisplay());
+                                            if(VERBOSE)Log.d(TAG, "getPathDisplay = " + createFolderResult.getMetadata().getPathDisplay());
                                             updateDropboxInSetting(createFolderResult.getMetadata().getName(), true);
                                         } else {
-                                            Log.d(TAG, "Unable to create folder");
+                                            if(VERBOSE)Log.d(TAG, "Unable to create folder");
                                             runOnUiThread(new Runnable() {
                                                 @Override
                                                 public void run() {
@@ -1336,7 +1337,7 @@ public class SettingsActivity extends AppCompatActivity{
                                             updateDropboxInSetting("", false);
                                         }
                                     } catch (DbxException e) {
-                                        Log.d(TAG, "Error in creating folder = "+e.getMessage());
+                                        if(VERBOSE)Log.d(TAG, "Error in creating folder = "+e.getMessage());
                                         e.printStackTrace();
                                         runOnUiThread(new Runnable() {
                                             @Override
@@ -1403,7 +1404,7 @@ public class SettingsActivity extends AppCompatActivity{
             public void run() {
                 try {
                     dbxClientV2.auth().tokenRevoke();
-                    Log.d(TAG, "Token revoked");
+                    if(VERBOSE)Log.d(TAG, "Token revoked");
                 } catch (DbxException e) {
                     e.printStackTrace();
                 }
@@ -1444,7 +1445,7 @@ public class SettingsActivity extends AppCompatActivity{
     }
 
     public void updateGoogleDriveInSetting(String folderName, boolean saveTo, String accname){
-        Log.d(TAG, "Saving folder = "+folderName);
+        if(VERBOSE)Log.d(TAG, "Saving folder = "+folderName);
         settingsEditor.putString(Constants.GOOGLE_DRIVE_FOLDER,folderName);
         settingsEditor.putBoolean(Constants.SAVE_TO_GOOGLE_DRIVE, saveTo);
         settingsEditor.putString(Constants.GOOGLE_DRIVE_ACC_NAME, accname);
@@ -1452,7 +1453,7 @@ public class SettingsActivity extends AppCompatActivity{
     }
 
     public void updateDropboxInSetting(String folderName, boolean saveTo){
-        Log.d(TAG, "Saving DB folder = "+folderName);
+        if(VERBOSE)Log.d(TAG, "Saving DB folder = "+folderName);
         settingsEditor.putString(Constants.DROPBOX_FOLDER,folderName);
         settingsEditor.putBoolean(Constants.SAVE_TO_DROPBOX, saveTo);
         settingsEditor.commit();

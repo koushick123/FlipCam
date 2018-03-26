@@ -83,6 +83,7 @@ MediaPlayer.OnErrorListener, Serializable{
     transient int imageHeight;
     transient int imageWidth;
     transient FrameLayout mediaPlaceholder;
+    boolean VERBOSE = false;
 
     public static SurfaceViewVideoFragment newInstance(int pos,boolean recreate){
         SurfaceViewVideoFragment surfaceViewVideoFragment = new SurfaceViewVideoFragment();
@@ -96,16 +97,16 @@ MediaPlayer.OnErrorListener, Serializable{
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        Log.d(TAG,"onActivityCreated = "+path);
+        if(VERBOSE)Log.d(TAG,"onActivityCreated = "+path);
         topBar = (LinearLayout)getActivity().findViewById(R.id.topMediaControls);
         videoControls = (LinearLayout)getActivity().findViewById(R.id.videoControls);
         pause = (ImageButton) getActivity().findViewById(R.id.playButton);
         startTime = (TextView)getActivity().findViewById(R.id.startTime);
-        Log.d(TAG, "startTime = "+startTime);
+        if(VERBOSE)Log.d(TAG, "startTime = "+startTime);
         endTime = (TextView)getActivity().findViewById(R.id.endTime);
-        Log.d(TAG, "endTime = "+endTime);
+        if(VERBOSE)Log.d(TAG, "endTime = "+endTime);
         videoSeek = (SeekBar)getActivity().findViewById(R.id.videoSeek);
-        Log.d(TAG, "videoSeek = "+videoSeek);
+        if(VERBOSE)Log.d(TAG, "videoSeek = "+videoSeek);
         parentMedia = (LinearLayout)getActivity().findViewById(R.id.parentMedia);
         frameMedia = (FrameLayout)getActivity().findViewById(R.id.frameMedia);
         controlVisbilityPreference = (ControlVisbilityPreference) getActivity().getApplicationContext();
@@ -124,7 +125,7 @@ MediaPlayer.OnErrorListener, Serializable{
                     }
                     if(recreate){
                         recreate = false;
-                        Log.d(TAG,"recreate video");
+                        if(VERBOSE)Log.d(TAG,"recreate video");
                         newVideo = new Media();
                         newVideo.setMediaActualDuration(duration);
                         newVideo.setMediaCompleted(false);
@@ -136,7 +137,7 @@ MediaPlayer.OnErrorListener, Serializable{
                     }
                 }
                 else{
-                    Log.d(TAG,"setup video");
+                    if(VERBOSE)Log.d(TAG,"setup video");
                     newVideo = new Media();
                     newVideo.setMediaActualDuration(duration);
                     newVideo.setMediaCompleted(false);
@@ -146,7 +147,7 @@ MediaPlayer.OnErrorListener, Serializable{
                     newVideo.setMediaPreviousPos(0);
                     newVideo.setSeekDuration(Integer.parseInt(duration));
                 }
-                Log.d(TAG, "Set Seek BAR");
+                if(VERBOSE)Log.d(TAG, "Set Seek BAR");
                 reConstructVideo(newVideo);
                 showTimeElapsed();
                 calculateAndDisplayEndTime(Integer.parseInt(duration), true);
@@ -158,17 +159,17 @@ MediaPlayer.OnErrorListener, Serializable{
         videoSeek.setMax(savedVideo.getSeekDuration());
         //videoSeek.setThumb(getResources().getDrawable(R.drawable.turqoise));
         videoSeek.setProgressTintList(ColorStateList.valueOf(getResources().getColor(R.color.turqoise)));
-        Log.d(TAG, "Retrieve media completed == " + savedVideo.isMediaCompleted());
+        if(VERBOSE)Log.d(TAG, "Retrieve media completed == " + savedVideo.isMediaCompleted());
         if (savedVideo.isMediaCompleted()) {
             //mediaPlayer.seekTo(100);
             videoSeek.setProgress(0);
             isCompleted = true;
         } else {
-            Log.d(TAG,"Set SEEK to = "+savedVideo.getMediaPosition());
+            if(VERBOSE)Log.d(TAG,"Set SEEK to = "+savedVideo.getMediaPosition());
             mediaPlayer.seekTo(savedVideo.getMediaPosition());
             videoSeek.setProgress(savedVideo.getMediaPosition());
         }
-        Log.d(TAG, "Retrieve media playing = " + savedVideo.isMediaPlaying());
+        if(VERBOSE)Log.d(TAG, "Retrieve media playing = " + savedVideo.isMediaPlaying());
         if (savedVideo.isMediaPlaying()) {
             pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause));
             play = true;
@@ -184,14 +185,14 @@ MediaPlayer.OnErrorListener, Serializable{
                     if (isCompleted) {
                         isCompleted = false;
                     }
-                    Log.d(TAG, "Set PLAY post rotate");
+                    if(VERBOSE)Log.d(TAG, "Set PLAY post rotate");
                     mediaPlayer.start();
                     playInProgress = true;
                     pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause));
                     playCircle.setVisibility(View.GONE);
                     play = true;
                 } else {
-                    Log.d(TAG, "Set PAUSE post rotate");
+                    if(VERBOSE)Log.d(TAG, "Set PAUSE post rotate");
                     mediaPlayer.pause();
                     pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow));
                     play = false;
@@ -205,7 +206,7 @@ MediaPlayer.OnErrorListener, Serializable{
                     if (isCompleted) {
                         isCompleted = false;
                     }
-                    Log.d(TAG, "Set PLAY Circle post rotate");
+                    if(VERBOSE)Log.d(TAG, "Set PLAY Circle post rotate");
                     mediaPlayer.start();
                     playInProgress = true;
                     pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause));
@@ -215,7 +216,7 @@ MediaPlayer.OnErrorListener, Serializable{
             }
         });
         //Get SAVED MEDIA CONTROLS VIEW STATE
-        Log.d(TAG, "Retrieve media controls hide = " + savedVideo.isMediaControlsHide());
+        if(VERBOSE)Log.d(TAG, "Retrieve media controls hide = " + savedVideo.isMediaControlsHide());
         if (savedVideo.isMediaControlsHide()) {
             showAllControls();
         } else {
@@ -224,16 +225,16 @@ MediaPlayer.OnErrorListener, Serializable{
         controlVisbilityPreference.setHideControl(savedVideo.isMediaControlsHide());
 
         //Get MEDIA DURATION
-        Log.d(TAG, "Retrieve media duration = " + savedVideo.getMediaActualDuration());
+        if(VERBOSE)Log.d(TAG, "Retrieve media duration = " + savedVideo.getMediaActualDuration());
         duration = savedVideo.getMediaActualDuration();
 
         //Get SAVED PREVIOUS TIME
-        Log.d(TAG, "Retrieve media previous time = " + savedVideo.getMediaPreviousPos());
+        if(VERBOSE)Log.d(TAG, "Retrieve media previous time = " + savedVideo.getMediaPreviousPos());
         previousPos = savedVideo.getMediaPreviousPos();
 
         //Get CURRENT TIME
-        //Log.d(TAG, "Retrieve current time = " + savedInstanceState.getString(MEDIA_CURRENT_TIME));
-        Log.d(TAG, "Retrieve current time = " +savedVideo.getMediaPosition() / 1000);
+        //if(VERBOSE)Log.d(TAG, "Retrieve current time = " + savedInstanceState.getString(MEDIA_CURRENT_TIME));
+        if(VERBOSE)Log.d(TAG, "Retrieve current time = " +savedVideo.getMediaPosition() / 1000);
         if(!isCompleted) {
             seconds = savedVideo.getMediaPosition() / 1000;
             if(seconds < 60){
@@ -297,10 +298,10 @@ MediaPlayer.OnErrorListener, Serializable{
         super.onCreate(savedInstanceState);
         framePosition = getArguments().getInt("position");
         recreate = getArguments().getBoolean("recreate");
-        //Log.d(TAG,"framePosition = "+framePosition);
+        //if(VERBOSE)Log.d(TAG,"framePosition = "+framePosition);
         images = MediaUtil.getMediaList(getContext());
         path = images[framePosition].getPath();
-        Log.d(TAG,"media is == "+path+", recreate = "+recreate);
+        if(VERBOSE)Log.d(TAG,"media is == "+path+", recreate = "+recreate);
         setRetainInstance(true);
     }
 
@@ -325,10 +326,10 @@ MediaPlayer.OnErrorListener, Serializable{
         display = windowManager.getDefaultDisplay();
         Point screenSize=new Point();
         display.getRealSize(screenSize);
-        //Log.d(TAG,"Rotation = "+display.getRotation());
-        Log.d(TAG,"onCreateView = "+path);
+        //if(VERBOSE)Log.d(TAG,"Rotation = "+display.getRotation());
+        if(VERBOSE)Log.d(TAG,"onCreateView = "+path);
         if(isImage()) {
-            Log.d(TAG,"show image");
+            if(VERBOSE)Log.d(TAG,"show image");
             videoView.setData(null,path,this);
             videoView.setVisibility(View.GONE);
             Bitmap image = BitmapFactory.decodeFile(path);
@@ -339,7 +340,7 @@ MediaPlayer.OnErrorListener, Serializable{
             GlideApp.with(getContext()).load(uri).into(picture);
         }
         else {
-            Log.d(TAG,"show video");
+            if(VERBOSE)Log.d(TAG,"show video");
             picture.setVisibility(View.GONE);
             mediaPlayer = new MediaPlayer();
             mediaPlayer.setOnCompletionListener(this);
@@ -364,29 +365,29 @@ MediaPlayer.OnErrorListener, Serializable{
         Point screenSize=new Point();
         display.getRealSize(screenSize);
         double screenAR = (double)screenSize.x / (double)screenSize.y;
-        Log.d(TAG, "screenSize = "+screenSize.x+" X "+screenSize.y);
+        if(VERBOSE)Log.d(TAG, "screenSize = "+screenSize.x+" X "+screenSize.y);
         double imageAR = (double)imageWidth / (double)imageHeight;
-        Log.d(TAG, "imageSize = "+imageWidth+" X "+imageHeight);
-        Log.d(TAG,"imageAR = "+imageAR);
-        Log.d(TAG,"screenAR = "+screenAR);
+        if(VERBOSE)Log.d(TAG, "imageSize = "+imageWidth+" X "+imageHeight);
+        if(VERBOSE)Log.d(TAG,"imageAR = "+imageAR);
+        if(VERBOSE)Log.d(TAG,"screenAR = "+screenAR);
         FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
         if (display.getRotation() == Surface.ROTATION_0) {
             if(Math.abs(screenAR - imageAR) < 0.1) {
-                Log.d(TAG,"Portrait");
+                if(VERBOSE)Log.d(TAG,"Portrait");
                 layoutParams.width = screenSize.x;
                 layoutParams.height = screenSize.y;
             }
-            Log.d(TAG,"1111 layoutParams.width = "+layoutParams.width);
-            Log.d(TAG,"layoutParams.height = "+layoutParams.height);
+            if(VERBOSE)Log.d(TAG,"1111 layoutParams.width = "+layoutParams.width);
+            if(VERBOSE)Log.d(TAG,"layoutParams.height = "+layoutParams.height);
         }
         else if (display.getRotation() == Surface.ROTATION_90 || display.getRotation() == Surface.ROTATION_270) {
             if (Math.abs(screenAR - imageAR) < 0.1) {
-                Log.d(TAG,"Landscape");
+                if(VERBOSE)Log.d(TAG,"Landscape");
                 layoutParams.width = screenSize.x;
                 layoutParams.height = screenSize.y;
             }
-            Log.d(TAG,"2222 layoutParams.width = "+layoutParams.width);
-            Log.d(TAG,"layoutParams.height = "+layoutParams.height);
+            if(VERBOSE)Log.d(TAG,"2222 layoutParams.width = "+layoutParams.width);
+            if(VERBOSE)Log.d(TAG,"layoutParams.height = "+layoutParams.height);
         }
         picture.setLayoutParams(layoutParams);
     }
@@ -431,8 +432,8 @@ MediaPlayer.OnErrorListener, Serializable{
     @Override
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        Log.d(TAG,"onSaveInstanceState = "+path+" , "+playInProgress);
-        Log.d(TAG,"getUserVisibleHint ? ="+getUserVisibleHint());
+        if(VERBOSE)Log.d(TAG,"onSaveInstanceState = "+path+" , "+playInProgress);
+        if(VERBOSE)Log.d(TAG,"getUserVisibleHint ? ="+getUserVisibleHint());
         if(!isImage()) {
             outState.putBoolean("videoPlayed", playInProgress);
             if (getUserVisibleHint()) {
@@ -447,8 +448,8 @@ MediaPlayer.OnErrorListener, Serializable{
                 media.setMediaCompleted(isCompleted);
                 media.setMediaPreviousPos(previousPos);
                 outState.putParcelable("currentVideo",media);
-                Log.d(TAG,"saving isplaying = "+media.isMediaPlaying());
-                Log.d(TAG,"saving seek to = "+media.getMediaPosition());
+                if(VERBOSE)Log.d(TAG,"saving isplaying = "+media.isMediaPlaying());
+                if(VERBOSE)Log.d(TAG,"saving seek to = "+media.getMediaPosition());
                 getActivity().getIntent().putExtra("saveVideoForMinimize",media);
                 if(mediaPlayer.isPlaying()){
                     mediaPlayer.pause();
@@ -474,8 +475,8 @@ MediaPlayer.OnErrorListener, Serializable{
     public void showMediaControls()
     {
         if(isImage()) {
-            Log.d(TAG,"hide = "+controlVisbilityPreference.isHideControl());
-            Log.d(TAG, "videoControls = "+videoControls.getVisibility());
+            if(VERBOSE)Log.d(TAG,"hide = "+controlVisbilityPreference.isHideControl());
+            if(VERBOSE)Log.d(TAG, "videoControls = "+videoControls.getVisibility());
             if (controlVisbilityPreference.isHideControl()) {
                 controlVisbilityPreference.setHideControl(false);
                 topBar.setVisibility(View.GONE);
@@ -487,7 +488,7 @@ MediaPlayer.OnErrorListener, Serializable{
             }
         }
         else{
-            Log.d(TAG,"hide = "+controlVisbilityPreference.isHideControl());
+            if(VERBOSE)Log.d(TAG,"hide = "+controlVisbilityPreference.isHideControl());
             if (controlVisbilityPreference.isHideControl()) {
                 controlVisbilityPreference.setHideControl(false);
                 hideAllControls();
@@ -528,7 +529,7 @@ MediaPlayer.OnErrorListener, Serializable{
     }
 
     public void resetMediaPlayer(){
-        Log.d(TAG,"getCurrentPosition = "+mediaPlayer.getCurrentPosition());
+        if(VERBOSE)Log.d(TAG,"getCurrentPosition = "+mediaPlayer.getCurrentPosition());
             mediaPlayer.seekTo(100);
     }
 
@@ -645,7 +646,7 @@ MediaPlayer.OnErrorListener, Serializable{
 
     @Override
     public void onCompletion(MediaPlayer mediaPlayer) {
-        Log.d(TAG,"Video Completed == "+path);
+        if(VERBOSE)Log.d(TAG,"Video Completed == "+path);
         showAllControls();
         controlVisbilityPreference.setHideControl(true);
         isCompleted = true;
@@ -658,7 +659,7 @@ MediaPlayer.OnErrorListener, Serializable{
 
     @Override
     public void onPrepared(MediaPlayer mediaPlayer) {
-        Log.d(TAG,"onPrepared = "+path);
+        if(VERBOSE)Log.d(TAG,"onPrepared = "+path);
         if(savedVideo == null) {
             mediaPlayer.seekTo(100);
         }
@@ -666,7 +667,7 @@ MediaPlayer.OnErrorListener, Serializable{
 
     @Override
     public boolean onError(MediaPlayer mediaPlayer, int what, int extra) {
-        Log.d(TAG,"onError = "+path);
+        if(VERBOSE)Log.d(TAG,"onError = "+path);
         return true;
     }
 
@@ -693,17 +694,17 @@ MediaPlayer.OnErrorListener, Serializable{
     @Override
     public void onResume() {
         super.onResume();
-        Log.d(TAG,"onResume, visible? ="+getUserVisibleHint());
-        Log.d(TAG,"Path = "+images[framePosition].getPath());
+        if(VERBOSE)Log.d(TAG,"onResume, visible? ="+getUserVisibleHint());
+        if(VERBOSE)Log.d(TAG,"Path = "+images[framePosition].getPath());
         if(!isImage()){
             previousPos = 0;
             savedVideo = getActivity().getIntent().getParcelableExtra("saveVideoForMinimize");
-            Log.d(TAG,"SAVED VIDEO = "+savedVideo);
+            if(VERBOSE)Log.d(TAG,"SAVED VIDEO = "+savedVideo);
         }
         if(getUserVisibleHint()){
             if(isImage()) {
                 if(controlVisbilityPreference.isHideControl()) {
-                    Log.d(TAG, "show controls onResume");
+                    if(VERBOSE)Log.d(TAG, "show controls onResume");
                     topBar.setVisibility(View.VISIBLE);
                     videoControls.setVisibility(View.VISIBLE);
                     //Do NOT remove below method call.
@@ -713,7 +714,7 @@ MediaPlayer.OnErrorListener, Serializable{
                     removeVideoControls();
                 }
                 else{
-                    Log.d(TAG,"hide controls onResume");
+                    if(VERBOSE)Log.d(TAG,"hide controls onResume");
                     topBar.setVisibility(View.GONE);
                     videoControls.setVisibility(View.GONE);
                 }
@@ -727,10 +728,10 @@ MediaPlayer.OnErrorListener, Serializable{
     @Override
     public void onPause() {
         super.onPause();
-        Log.d(TAG,"onPause, visible? ="+getUserVisibleHint());
-        Log.d(TAG,"Path = "+images[framePosition].getPath());
+        if(VERBOSE)Log.d(TAG,"onPause, visible? ="+getUserVisibleHint());
+        if(VERBOSE)Log.d(TAG,"Path = "+images[framePosition].getPath());
         if (videoView != null) {
-            Log.d(TAG, "Save media state hide = "+controlVisbilityPreference.isHideControl());
+            if(VERBOSE)Log.d(TAG, "Save media state hide = "+controlVisbilityPreference.isHideControl());
             //stopTrackerThread();
         }
         if(!isImage()) {
@@ -746,7 +747,7 @@ MediaPlayer.OnErrorListener, Serializable{
         String showSec = "0";
         String showMin = "0";
         String showHr = "0";
-        //Log.d(TAG,"seconds = "+seconds);
+        //if(VERBOSE)Log.d(TAG,"seconds = "+seconds);
         if(seconds < 10){
             showSec += seconds;
         }
@@ -781,7 +782,7 @@ MediaPlayer.OnErrorListener, Serializable{
         videoTracker.start();
         if(play){
             isTrackerReady = false;
-            Log.d(TAG,"MAIN WAIT...");
+            if(VERBOSE)Log.d(TAG,"MAIN WAIT...");
             synchronized (trackerSync){
                 while(!isTrackerReady) {
                     try {
@@ -791,7 +792,7 @@ MediaPlayer.OnErrorListener, Serializable{
                     }
                 }
             }
-            Log.d(TAG,"Continue video..");
+            if(VERBOSE)Log.d(TAG,"Continue video..");
             mediaPlayer.start();
         }
         else{
@@ -801,7 +802,7 @@ MediaPlayer.OnErrorListener, Serializable{
 
     public void stopTrackerThread()
     {
-        Log.d(TAG,"Stopping TRACKER NOW...");
+        if(VERBOSE)Log.d(TAG,"Stopping TRACKER NOW...");
         startTracker = false;
     }
 
@@ -820,7 +821,7 @@ MediaPlayer.OnErrorListener, Serializable{
                     trackerSync.notify();
                 }
             }
-            Log.d(TAG,"Video Tracker STARTED..."+path);
+            if(VERBOSE)Log.d(TAG,"Video Tracker STARTED..."+path);
             while(startTracker){
                 try {
                     while (mediaPlayer.isPlaying() && !isCompleted) {
@@ -840,7 +841,7 @@ MediaPlayer.OnErrorListener, Serializable{
                                     seconds = 0;
                                     hours++;
                                 }
-                                //Log.d(TAG,"seconds 1111 == "+seconds);
+                                //if(VERBOSE)Log.d(TAG,"seconds 1111 == "+seconds);
                                 mediaHandler.sendEmptyMessage(VIDEO_SEEK_UPDATE);
                             } else {
                                 if (Math.abs(previousPos - latestPos) >= 1000) {
@@ -855,7 +856,7 @@ MediaPlayer.OnErrorListener, Serializable{
                                         seconds = 0;
                                         hours++;
                                     }
-                                    //Log.d(TAG,"seconds == "+seconds);
+                                    //if(VERBOSE)Log.d(TAG,"seconds == "+seconds);
                                     if(seconds > Integer.parseInt(duration) / 1000){
                                         break;
                                     }
@@ -872,11 +873,11 @@ MediaPlayer.OnErrorListener, Serializable{
                     }
                 }
                 catch(IllegalStateException illegal){
-                    Log.d(TAG,"Catching ILLEGALSTATEEXCEPTION. EXIT Tracker = "+path);
+                    if(VERBOSE)Log.d(TAG,"Catching ILLEGALSTATEEXCEPTION. EXIT Tracker = "+path);
                     startTracker = false;
                 }
             }
-            Log.d(TAG,"Video Tracker thread EXITING..."+path);
+            if(VERBOSE)Log.d(TAG,"Video Tracker thread EXITING..."+path);
         }
     }
 }

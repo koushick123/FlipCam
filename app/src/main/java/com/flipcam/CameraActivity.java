@@ -47,10 +47,11 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
     LayoutInflater layoutInflater;
     AppWidgetManager appWidgetManager;
     SharedPreferences sharedPreferences;
+    boolean VERBOSE = false;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.d(TAG,"onCreate");
+        if(VERBOSE)Log.d(TAG,"onCreate");
         setContentView(R.layout.activity_camera);
         getSupportActionBar().hide();
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
@@ -94,25 +95,25 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
             Iterator<String> iterator = widgetIds.iterator();
             while(iterator.hasNext()){
                 String widgetId = iterator.next();
-                Log.d(TAG, "widgetIds = "+widgetId);
+                if(VERBOSE)Log.d(TAG, "widgetIds = "+widgetId);
                 updateAppWidget(Integer.parseInt(widgetId));
             }
         }
     }
 
     public void updateAppWidget(int appWidgetId) {
-        Log.d(TAG, "Deleted first file");
+        if(VERBOSE)Log.d(TAG, "Deleted first file");
         RemoteViews remoteViews = new RemoteViews(this.getPackageName(), R.layout.flipcam_widget);
             FileMedia[] medias = MediaUtil.getMediaList(this);
         if (medias != null && medias.length > 0) {
             String filepath = medias[0].getPath();
-            Log.d(TAG, "FilePath = " + filepath);
+            if(VERBOSE)Log.d(TAG, "FilePath = " + filepath);
             if (filepath.endsWith(getResources().getString(R.string.IMG_EXT))
                     || filepath.endsWith(getResources().getString(R.string.ANOTHER_IMG_EXT))) {
                 Bitmap latestImage = BitmapFactory.decodeFile(filepath);
                 latestImage = Bitmap.createScaledBitmap(latestImage, (int) getResources().getDimension(R.dimen.thumbnailWidth),
                         (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
-                Log.d(TAG, "Update Photo thumbnail");
+                if(VERBOSE)Log.d(TAG, "Update Photo thumbnail");
                 remoteViews.setViewVisibility(R.id.playCircleWidget, View.INVISIBLE);
                 remoteViews.setImageViewBitmap(R.id.imageWidget, latestImage);
                 remoteViews.setTextViewText(R.id.widgetMsg, getResources().getString(R.string.widgetMediaMsg));
@@ -138,20 +139,20 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
                 if (vid != null) {
                     vid = Bitmap.createScaledBitmap(vid, (int) getResources().getDimension(R.dimen.thumbnailWidth),
                             (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
-                    Log.d(TAG, "Update Video thumbnail");
+                    if(VERBOSE)Log.d(TAG, "Update Video thumbnail");
                     remoteViews.setViewVisibility(R.id.playCircleWidget, View.VISIBLE);
                     remoteViews.setImageViewBitmap(R.id.imageWidget, vid);
                     remoteViews.setTextViewText(R.id.widgetMsg, getResources().getString(R.string.widgetMediaMsg));
                 }
             }
         } else {
-            Log.d(TAG, "List empty");
+            if(VERBOSE)Log.d(TAG, "List empty");
             //List is now empty
             remoteViews.setImageViewResource(R.id.imageWidget, R.drawable.placeholder);
             remoteViews.setViewVisibility(R.id.playCircleWidget, View.INVISIBLE);
             remoteViews.setTextViewText(R.id.widgetMsg, getResources().getString(R.string.widgetNoMedia));
         }
-        Log.d(TAG, "Update FC Widget");
+        if(VERBOSE)Log.d(TAG, "Update FC Widget");
         appWidgetManager.updateAppWidget(appWidgetId, remoteViews);
     }
 
@@ -159,18 +160,18 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
 //        File[] storage = new File("/storage").listFiles();
         /*File[] mediaDirs = getExternalMediaDirs();
         if(mediaDirs != null) {
-            Log.d(TAG, "mediaDirs = " + mediaDirs.length);
+            if(VERBOSE)Log.d(TAG, "mediaDirs = " + mediaDirs.length);
         }
         for(int i=0;i<mediaDirs.length;i++){
-            Log.d(TAG, "external media dir = "+mediaDirs[i]);
+            if(VERBOSE)Log.d(TAG, "external media dir = "+mediaDirs[i]);
             if(mediaDirs[i] != null) {
                 try {
                     if (Environment.isExternalStorageRemovable(mediaDirs[i])) {
-                        Log.d(TAG, "Removable storage = " + mediaDirs[i]);
+                        if(VERBOSE)Log.d(TAG, "Removable storage = " + mediaDirs[i]);
                         return mediaDirs[i].getPath();
                     }
                 } catch (IllegalArgumentException illegal) {
-                    Log.d(TAG, "Not a valid storage device");
+                    if(VERBOSE)Log.d(TAG, "Not a valid storage device");
                 }
             }
         }
@@ -181,7 +182,7 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
             sdcardpath += filename;
             final String sdCardFilePath = sdcardpath;
             final FileOutputStream createTestFile = new FileOutputStream(sdcardpath);
-            Log.d(TAG, "Able to create file... SD Card exists");
+            if(VERBOSE)Log.d(TAG, "Able to create file... SD Card exists");
             new Thread(new Runnable() {
                 @Override
                 public void run() {
@@ -195,7 +196,7 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
                 }
             }).start();
         } catch (FileNotFoundException e) {
-            Log.d(TAG, "Unable to create file... SD Card NOT exists..... "+e.getMessage());
+            if(VERBOSE)Log.d(TAG, "Unable to create file... SD Card NOT exists..... "+e.getMessage());
             return null;
         }
         return sharedPreferences.getString(Constants.SD_CARD_PATH, "");
@@ -220,17 +221,17 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
     public void showVideoFragment()
     {
         if(videoFragment == null) {
-            Log.d(TAG,"creating videofragment");
+            if(VERBOSE)Log.d(TAG,"creating videofragment");
             videoFragment = VideoFragment.newInstance();
         }
         FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
         if(photoFragment!=null) {
             fragmentTransaction.replace(R.id.cameraPreview, videoFragment).commit();
-            Log.d(TAG,"photofragment removed");
+            if(VERBOSE)Log.d(TAG,"photofragment removed");
         }
         else{
             fragmentTransaction.add(R.id.cameraPreview, videoFragment, VIDEO).commit();
-            Log.d(TAG,"videofragment added");
+            if(VERBOSE)Log.d(TAG,"videofragment added");
         }
     }
 
@@ -238,11 +239,11 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
     {
         FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
         if(photoFragment == null) {
-            Log.d(TAG,"creating photofragment");
+            if(VERBOSE)Log.d(TAG,"creating photofragment");
             photoFragment = PhotoFragment.newInstance();
         }
         fragmentTransaction.replace(R.id.cameraPreview, photoFragment).commit();
-        Log.d(TAG,"photofragment added");
+        if(VERBOSE)Log.d(TAG,"photofragment added");
         SharedPreferences.Editor settingsEditor = sharedPreferences.edit();
         if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
             //Check if SD Card exists
@@ -283,8 +284,8 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
                     metric = "GB";
                     break;
             }
-            Log.d(TAG, "memory value = " + memoryValue);
-            Log.d(TAG, "Avail mem = " + storageStat.getAvailableBytes());
+            if(VERBOSE)Log.d(TAG, "memory value = " + memoryValue);
+            if(VERBOSE)Log.d(TAG, "Avail mem = " + storageStat.getAvailableBytes());
             if (storageStat.getAvailableBytes() < memoryValue) {
                 LayoutInflater layoutInflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
                 View thresholdExceededRoot = layoutInflater.inflate(R.layout.threshold_exceeded, null);
@@ -295,7 +296,7 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
                 okButton.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
-                        Log.d(TAG, "disableThreshold.isChecked = " + disableThreshold.isChecked());
+                        if(VERBOSE)Log.d(TAG, "disableThreshold.isChecked = " + disableThreshold.isChecked());
                         if (disableThreshold.isChecked()) {
                             editor.remove(Constants.PHONE_MEMORY_LIMIT);
                             editor.remove(Constants.PHONE_MEMORY_METRIC);
@@ -309,7 +310,7 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
                 StringBuilder memThreshold = new StringBuilder(memoryThreshold + "");
                 memThreshold.append(" ");
                 memThreshold.append(metric);
-                Log.d(TAG, "memory threshold for display = " + memThreshold);
+                if(VERBOSE)Log.d(TAG, "memory threshold for display = " + memThreshold);
                 memoryLimitMsg.setText(getResources().getString(R.string.thresholdLimitExceededMsg, memThreshold.toString()));
                 thresholdDialog.setContentView(thresholdExceededRoot);
                 thresholdDialog.setCancelable(false);
@@ -323,8 +324,8 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
             StatFs storageStat = new StatFs(Environment.getDataDirectory().getPath());
             int lowestThreshold = getResources().getInteger(R.integer.minimumMemoryWarning);
             long lowestMemory = lowestThreshold * (long)Constants.MEGA_BYTE;
-            Log.d(TAG, "lowestMemory = "+lowestMemory);
-            Log.d(TAG, "avail mem = "+storageStat.getAvailableBytes());
+            if(VERBOSE)Log.d(TAG, "lowestMemory = "+lowestMemory);
+            if(VERBOSE)Log.d(TAG, "avail mem = "+storageStat.getAvailableBytes());
             if(storageStat.getAvailableBytes() < lowestMemory){
                 return true;
             }
@@ -350,31 +351,31 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
     @Override
     protected void onStart() {
         super.onStart();
-        Log.d(TAG,"onStart");
+        if(VERBOSE)Log.d(TAG,"onStart");
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        Log.d(TAG,"onStop");
+        if(VERBOSE)Log.d(TAG,"onStop");
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        Log.d(TAG,"onDestroy");
+        if(VERBOSE)Log.d(TAG,"onDestroy");
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        Log.d(TAG,"onResume");
+        if(VERBOSE)Log.d(TAG,"onResume");
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        Log.d(TAG,"onPause");
+        if(VERBOSE)Log.d(TAG,"onPause");
     }
 
     @Override
@@ -388,7 +389,7 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
     }
 
     public void askCameraPermission(){
-        Log.d(TAG,"start permission act to get permissions");
+        if(VERBOSE)Log.d(TAG,"start permission act to get permissions");
         Intent permission = new Intent(this,PermissionActivity.class);
         permission.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(permission);

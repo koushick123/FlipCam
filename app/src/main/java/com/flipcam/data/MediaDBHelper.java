@@ -16,11 +16,12 @@ public class MediaDBHelper extends SQLiteOpenHelper {
     private static int DATABASE_VERSION = 1;
     public static String DB_PATH = "/data/data/com.flipcam/databases/";
     private final Context myContext;
+    boolean VERBOSE = false;
 
     @Override
     public void onUpgrade(SQLiteDatabase sqLiteDatabase, int oldVersion, int newVersion)
     {
-        Log.w(TAG, "Upgrading database from version " + oldVersion + " to " +
+        if(VERBOSE)Log.d(TAG, "Upgrading database from version " + oldVersion + " to " +
                 newVersion + ". OLD DATA WILL BE DESTROYED");
 
         // Drop the table
@@ -42,7 +43,7 @@ public class MediaDBHelper extends SQLiteOpenHelper {
                 MediaTableConstants.FILE_NAME + " TEXT , "+
                 MediaTableConstants.MEMORY_STORAGE + " INTEGER "+
                 " ); ";
-        Log.d(TAG, CREATE_TABLE);
+        if(VERBOSE)Log.d(TAG, CREATE_TABLE);
         sqLiteDatabase.execSQL(CREATE_TABLE);
     }
 }

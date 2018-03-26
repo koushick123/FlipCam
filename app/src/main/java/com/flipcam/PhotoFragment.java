@@ -90,6 +90,7 @@ public class PhotoFragment extends Fragment {
     FrameLayout thumbnailParent;
     ImageView microThumbnail;
     AppWidgetManager appWidgetManager;
+    boolean VERBOSE = false;
 
     public interface PhotoPermission{
         void askPhotoPermission();
@@ -113,7 +114,7 @@ public class PhotoFragment extends Fragment {
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        Log.d(TAG,"onActivityCreated");
+        if(VERBOSE)Log.d(TAG,"onActivityCreated");
         if(cameraView!=null) {
             cameraView.setWindowManager(getActivity().getWindowManager());
         }
@@ -148,7 +149,7 @@ public class PhotoFragment extends Fragment {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_photo, container, false);
 
-        Log.d(TAG,"Inside photo fragment");
+        if(VERBOSE)Log.d(TAG,"Inside photo fragment");
         substitute = (ImageView)view.findViewById(R.id.photoSubstitute);
         substitute.setVisibility(View.INVISIBLE);
         cameraView = (CameraView)view.findViewById(R.id.photocameraSurfaceView);
@@ -159,7 +160,7 @@ public class PhotoFragment extends Fragment {
         zoombar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                //Log.d(TAG, "progress = " + progress);
+                //if(VERBOSE)Log.d(TAG, "progress = " + progress);
                 if(!isContinuousAF()) {
                     if (progress > 0) {
                         cameraView.unregisterAccelSensor();
@@ -169,7 +170,7 @@ public class PhotoFragment extends Fragment {
                 }
                 if(cameraView.isCameraReady()) {
                     if (cameraView.isSmoothZoomSupported()) {
-                        //Log.d(TAG, "Smooth zoom supported");
+                        //if(VERBOSE)Log.d(TAG, "Smooth zoom supported");
                         cameraView.smoothZoomInOrOut(progress);
                     } else if (cameraView.isZoomSupported()) {
                         cameraView.zoomInAndOut(progress);
@@ -216,7 +217,7 @@ public class PhotoFragment extends Fragment {
                     StringBuilder minimumThreshold = new StringBuilder(lowestThreshold+"");
                     minimumThreshold.append(" ");
                     minimumThreshold.append(getResources().getString(R.string.MEM_PF_MB));
-                    Log.d(TAG, "minimumThreshold = "+minimumThreshold);
+                    if(VERBOSE)Log.d(TAG, "minimumThreshold = "+minimumThreshold);
                     memoryLimitMsg.setText(getResources().getString(R.string.minimumThresholdExceeded, minimumThreshold));
                     CheckBox disableThreshold = (CheckBox)thresholdExceededRoot.findViewById(R.id.disableThreshold);
                     disableThreshold.setVisibility(View.GONE);
@@ -272,7 +273,7 @@ public class PhotoFragment extends Fragment {
         });
 
         photoBar = (LinearLayout)view.findViewById(R.id.photoFunctions);
-        Log.d(TAG,"passing photofragment to cameraview");
+        if(VERBOSE)Log.d(TAG,"passing photofragment to cameraview");
         cameraView.setPhotoFragmentInstance(this);
         cameraView.setFragmentInstance(null);
         imagePreview = (ImageView)view.findViewById(R.id.imagePreview);
@@ -292,7 +293,7 @@ public class PhotoFragment extends Fragment {
     class SDCardEventReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context ctx, Intent intent) {
-            Log.d(TAG, "onReceive = "+intent.getAction());
+            if(VERBOSE)Log.d(TAG, "onReceive = "+intent.getAction());
             if(intent.getAction().equalsIgnoreCase(Intent.ACTION_MEDIA_UNMOUNTED)){
                 //Check if SD Card was selected
                 if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true) && !sdCardUnavailWarned){
@@ -304,7 +305,7 @@ public class PhotoFragment extends Fragment {
     }
 
     public void showSDCardUnavailMessage(){
-        Log.d(TAG, "SD Card Removed");
+        if(VERBOSE)Log.d(TAG, "SD Card Removed");
         SharedPreferences.Editor settingsEditor = sharedPreferences.edit();
         settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
         settingsEditor.commit();
@@ -445,22 +446,22 @@ public class PhotoFragment extends Fragment {
         ContentValues mediaContent = new ContentValues();
         mediaContent.put("filename", cameraView.getPhotoMediaPath());
         mediaContent.put("memoryStorage", (sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true) ? "1" : "0"));
-        Log.d(TAG, "Adding to Media DB");
+        if(VERBOSE)Log.d(TAG, "Adding to Media DB");
         getActivity().getContentResolver().insert(Uri.parse(MediaTableConstants.BASE_CONTENT_URI+"/addMedia"),mediaContent);
         if(sharedPreferences.getBoolean(Constants.SAVE_TO_GOOGLE_DRIVE, false)) {
-            Log.d(TAG, "Auto uploading to Google Drive");
+            if(VERBOSE)Log.d(TAG, "Auto uploading to Google Drive");
             //Auto upload to Google Drive enabled
             Intent googleDriveUploadIntent = new Intent(getApplicationContext(), GoogleDriveUploadService.class);
             googleDriveUploadIntent.putExtra("uploadFile", cameraView.getPhotoMediaPath());
-            Log.d(TAG, "Uploading file = "+cameraView.getPhotoMediaPath());
+            if(VERBOSE)Log.d(TAG, "Uploading file = "+cameraView.getPhotoMediaPath());
             getActivity().startService(googleDriveUploadIntent);
         }
         if(sharedPreferences.getBoolean(Constants.SAVE_TO_DROPBOX, false)){
-            Log.d(TAG, "Auto upload to Dropbox");
+            if(VERBOSE)Log.d(TAG, "Auto upload to Dropbox");
             //Auto upload to Dropbox enabled
             Intent dropboxUploadIntent = new Intent(getApplicationContext(), DropboxUploadService.class);
             dropboxUploadIntent.putExtra("uploadFile", cameraView.getPhotoMediaPath());
-            Log.d(TAG, "Uploading file = "+cameraView.getPhotoMediaPath());
+            if(VERBOSE)Log.d(TAG, "Uploading file = "+cameraView.getPhotoMediaPath());
             getActivity().startService(dropboxUploadIntent);
         }
     }
@@ -471,14 +472,14 @@ public class PhotoFragment extends Fragment {
             Iterator<String> iterator = widgetIds.iterator();
             while(iterator.hasNext()){
                 String widgetId = iterator.next();
-                Log.d(TAG, "widgetIds = "+widgetId);
+                if(VERBOSE)Log.d(TAG, "widgetIds = "+widgetId);
                 updateAppWidget(Integer.parseInt(widgetId));
             }
         }
     }
 
     public void checkForSDCard(){
-        Log.d(TAG, "getActivity = "+getActivity());
+        if(VERBOSE)Log.d(TAG, "getActivity = "+getActivity());
         if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
             if(doesSDCardExist() == null) {
                 showSDCardUnavailMessage();
@@ -493,7 +494,7 @@ public class PhotoFragment extends Fragment {
             sdcardpath += filename;
             final String sdCardFilePath = sdcardpath;
             final FileOutputStream createTestFile = new FileOutputStream(sdcardpath);
-            Log.d(TAG, "Able to create file... SD Card exists");
+            if(VERBOSE)Log.d(TAG, "Able to create file... SD Card exists");
             new Thread(new Runnable() {
                 @Override
                 public void run() {
@@ -507,7 +508,7 @@ public class PhotoFragment extends Fragment {
                 }
             }).start();
         } catch (FileNotFoundException e) {
-            Log.d(TAG, "Unable to create file... SD Card NOT exists..... "+e.getMessage());
+            if(VERBOSE)Log.d(TAG, "Unable to create file... SD Card NOT exists..... "+e.getMessage());
             return null;
         }
         return sharedPreferences.getString(Constants.SD_CARD_PATH, "");
@@ -518,7 +519,7 @@ public class PhotoFragment extends Fragment {
     {
         if(!flashOn)
         {
-            Log.d(TAG,"Flash on");
+            if(VERBOSE)Log.d(TAG,"Flash on");
             if(cameraView.isFlashModeSupported(cameraView.getCameraImplementation().getFlashModeTorch())) {
                 flashOn = true;
                 flash.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_off));
@@ -529,7 +530,7 @@ public class PhotoFragment extends Fragment {
         }
         else
         {
-            Log.d(TAG,"Flash off");
+            if(VERBOSE)Log.d(TAG,"Flash off");
             flashOn=false;
             flash.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_on));
         }
@@ -547,13 +548,13 @@ public class PhotoFragment extends Fragment {
 
     public void askForPermissionAgain()
     {
-        Log.d(TAG,"permissionInterface = "+photoPermission);
+        if(VERBOSE)Log.d(TAG,"permissionInterface = "+photoPermission);
         photoPermission.askPhotoPermission();
     }
 
     public void createAndShowPhotoThumbnail(Bitmap photo)
     {
-        Log.d(TAG,"create photo thumbnail");
+        if(VERBOSE)Log.d(TAG,"create photo thumbnail");
         Bitmap firstFrame = Bitmap.createScaledBitmap(photo,(int)getResources().getDimension(R.dimen.thumbnailWidth),
                 (int)getResources().getDimension(R.dimen.thumbnailHeight),false);
         microThumbnail.setVisibility(View.INVISIBLE);
@@ -580,7 +581,7 @@ public class PhotoFragment extends Fragment {
     public void deleteFileAndRefreshThumbnail(){
         File badFile = new File(filePath);
         badFile.delete();
-        Log.d(TAG, "Bad file removed...."+filePath);
+        if(VERBOSE)Log.d(TAG, "Bad file removed...."+filePath);
         getLatestFileIfExists();
     }
 
@@ -588,14 +589,14 @@ public class PhotoFragment extends Fragment {
     {
         FileMedia[] medias = MediaUtil.getMediaList(getActivity().getApplicationContext());
         if (medias != null && medias.length > 0) {
-            Log.d(TAG, "Latest file is = " + medias[0].getPath());
+            if(VERBOSE)Log.d(TAG, "Latest file is = " + medias[0].getPath());
             filePath = medias[0].getPath();
             if (!isImage(filePath)) {
                 MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
                 try {
                     mediaMetadataRetriever.setDataSource(filePath);
                 } catch (RuntimeException runtime){
-                    Log.d(TAG, "RuntimeException "+runtime.getMessage());
+                    if(VERBOSE)Log.d(TAG, "RuntimeException "+runtime.getMessage());
                     if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
                         //Possible bad file in SD Card. Remove it.
                         deleteFileAndRefreshThumbnail();
@@ -624,7 +625,7 @@ public class PhotoFragment extends Fragment {
             } else {
                 try {
                     exifInterface = new ExifInterface(filePath);
-                    Log.d(TAG, "TAG_ORIENTATION = "+exifInterface.getAttribute(ExifInterface.TAG_ORIENTATION));
+                    if(VERBOSE)Log.d(TAG, "TAG_ORIENTATION = "+exifInterface.getAttribute(ExifInterface.TAG_ORIENTATION));
                     Bitmap pic = BitmapFactory.decodeFile(filePath);
                     pic = Bitmap.createScaledBitmap(pic, (int) getResources().getDimension(R.dimen.thumbnailWidth),
                             (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
@@ -683,13 +684,13 @@ public class PhotoFragment extends Fragment {
         FileMedia[] media = MediaUtil.getMediaList(getActivity());
         if (media != null && media.length > 0) {
             String filepath = media[0].getPath();
-            Log.d(TAG, "FilePath = " + filepath);
+            if(VERBOSE)Log.d(TAG, "FilePath = " + filepath);
             if (filepath.endsWith(getResources().getString(R.string.IMG_EXT))
                     || filepath.endsWith(getResources().getString(R.string.ANOTHER_IMG_EXT))) {
                 Bitmap latestImage = BitmapFactory.decodeFile(filepath);
                 latestImage = Bitmap.createScaledBitmap(latestImage, (int) getResources().getDimension(R.dimen.thumbnailWidth),
                         (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
-                Log.d(TAG, "Update Photo thumbnail");
+                if(VERBOSE)Log.d(TAG, "Update Photo thumbnail");
                 remoteViews.setViewVisibility(R.id.playCircleWidget, View.INVISIBLE);
                 remoteViews.setImageViewBitmap(R.id.imageWidget, latestImage);
                 remoteViews.setTextViewText(R.id.widgetMsg, getResources().getString(R.string.widgetMediaMsg));
@@ -715,7 +716,7 @@ public class PhotoFragment extends Fragment {
                 if (vid != null) {
                     vid = Bitmap.createScaledBitmap(vid, (int) getResources().getDimension(R.dimen.thumbnailWidth),
                             (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
-                    Log.d(TAG, "Update Video thumbnail");
+                    if(VERBOSE)Log.d(TAG, "Update Video thumbnail");
                     remoteViews.setViewVisibility(R.id.playCircleWidget, View.VISIBLE);
                     remoteViews.setImageViewBitmap(R.id.imageWidget, vid);
                     remoteViews.setTextViewText(R.id.widgetMsg, getResources().getString(R.string.widgetMediaMsg));
@@ -726,21 +727,21 @@ public class PhotoFragment extends Fragment {
             remoteViews.setViewVisibility(R.id.playCircleWidget, View.INVISIBLE);
             remoteViews.setTextViewText(R.id.widgetMsg, getResources().getString(R.string.widgetNoMedia));
         }
-        Log.d(TAG, "Update FC Widget");
+        if(VERBOSE)Log.d(TAG, "Update FC Widget");
         appWidgetManager.updateAppWidget(appWidgetId, remoteViews);
     }
 
     @Override
     public void onDetach() {
         super.onDetach();
-        Log.d(TAG,"Detached");
+        if(VERBOSE)Log.d(TAG,"Detached");
     }
 
     @Override
     public void onResume() {
         super.onResume();
         orientationEventListener.enable();
-        Log.d(TAG,"onResume");
+        if(VERBOSE)Log.d(TAG,"onResume");
         mediaFilters.addAction(Intent.ACTION_MEDIA_UNMOUNTED);
         mediaFilters.addDataScheme("file");
         if(getActivity() != null){
@@ -751,20 +752,20 @@ public class PhotoFragment extends Fragment {
 
     @Override
     public void onDestroy() {
-        Log.d(TAG,"Fragment destroy...app is being minimized");
+        if(VERBOSE)Log.d(TAG,"Fragment destroy...app is being minimized");
         setCameraClose();
         super.onDestroy();
     }
 
     @Override
     public void onStop() {
-        Log.d(TAG,"Fragment stop...app is out of focus");
+        if(VERBOSE)Log.d(TAG,"Fragment stop...app is out of focus");
         super.onStop();
     }
 
     @Override
     public void onPause() {
-        Log.d(TAG,"Fragment pause....app is being quit");
+        if(VERBOSE)Log.d(TAG,"Fragment pause....app is being quit");
         setCameraQuit();
         orientationEventListener.disable();
         if(getActivity() != null){

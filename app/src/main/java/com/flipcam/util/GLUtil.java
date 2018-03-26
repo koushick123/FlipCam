@@ -13,6 +13,7 @@ import java.nio.FloatBuffer;
 
 public class GLUtil {
     public static final String TAG = "GLUtil";
+    static boolean VERBOSE = false;
     /*
     Copyright 2014 Google Inc. All rights reserved.
     Borrowed from Grafika project. This is NOT an official Google Project,
@@ -90,7 +91,7 @@ public class GLUtil {
         int program = GLES20.glCreateProgram();
         checkGlError("glCreateProgram");
         if (program == 0) {
-            Log.e(TAG, "Could not create program");
+            if(VERBOSE)Log.e(TAG, "Could not create program");
         }
         GLES20.glAttachShader(program, vertexShader);
         checkGlError("glAttachShader");
@@ -100,8 +101,8 @@ public class GLUtil {
         int[] linkStatus = new int[1];
         GLES20.glGetProgramiv(program, GLES20.GL_LINK_STATUS, linkStatus, 0);
         if (linkStatus[0] != GLES20.GL_TRUE) {
-            Log.e(TAG, "Could not link program: ");
-            Log.e(TAG, GLES20.glGetProgramInfoLog(program));
+            if(VERBOSE)Log.e(TAG, "Could not link program: ");
+            if(VERBOSE)Log.e(TAG, GLES20.glGetProgramInfoLog(program));
             GLES20.glDeleteProgram(program);
             program = 0;
         }
@@ -121,8 +122,8 @@ public class GLUtil {
         int[] compiled = new int[1];
         GLES20.glGetShaderiv(shader, GLES20.GL_COMPILE_STATUS, compiled, 0);
         if (compiled[0] == 0) {
-            Log.e(TAG, "Could not compile shader " + shaderType + ":");
-            Log.e(TAG, " " + GLES20.glGetShaderInfoLog(shader));
+            if(VERBOSE)Log.e(TAG, "Could not compile shader " + shaderType + ":");
+            if(VERBOSE)Log.e(TAG, " " + GLES20.glGetShaderInfoLog(shader));
             GLES20.glDeleteShader(shader);
             shader = 0;
         }
@@ -136,7 +137,7 @@ public class GLUtil {
         int error = GLES20.glGetError();
         if (error != GLES20.GL_NO_ERROR) {
             String msg = op + ": glError 0x" + Integer.toHexString(error);
-            Log.e(TAG, msg);
+            if(VERBOSE)Log.e(TAG, msg);
             throw new RuntimeException(msg);
         }
     }

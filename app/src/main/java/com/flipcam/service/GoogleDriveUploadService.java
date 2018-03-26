@@ -89,6 +89,7 @@ public class GoogleDriveUploadService extends Service {
     String folderName;
     String accountName;
     DriveFolder uploadToFolder;
+    boolean VERBOSE = false;
 
     class GoogleUploadHandler extends Handler {
         WeakReference<GoogleDriveUploadService> serviceWeakReference;
@@ -101,7 +102,7 @@ public class GoogleDriveUploadService extends Service {
         public void handleMessage(Message msg) {
             switch(msg.what){
                 case Constants.UPLOAD_PROGRESS:
-                    Log.i(TAG,"upload id = "+uploadId);
+                    if(VERBOSE)Log.i(TAG,"upload id = "+uploadId);
                     if(!isImage(uploadFile)) {
                         mBuilder.setContentTitle(getResources().getString(R.string.autoUploadInProgressTitle, getResources().getString(R.string.googleDrive)));
                         mBuilder.setColor(getResources().getColor(R.color.uploadColor));
@@ -142,7 +143,7 @@ public class GoogleDriveUploadService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        Log.i(TAG, "onCreate");
+        if(VERBOSE)Log.i(TAG, "onCreate");
         notifyIcon = BitmapFactory.decodeResource(getApplicationContext().getResources(),R.drawable.ic_launcher);
         mNotificationManager = (NotificationManager) getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
         mBuilder = new NotificationCompat.Builder(getApplicationContext())
@@ -160,13 +161,13 @@ public class GoogleDriveUploadService extends Service {
         googleAccount = accountManager.getAccountsByType("com.google");
         if (googleAccount != null && googleAccount.length > 0) {
             for (int i = 0; i < googleAccount.length; i++) {
-                Log.i(TAG, "Acc name = " + googleAccount[i].name);
+                if(VERBOSE)Log.i(TAG, "Acc name = " + googleAccount[i].name);
             }
         } else {
-            Log.i(TAG, "No google account");
+            if(VERBOSE)Log.i(TAG, "No google account");
         }
 
-        Log.i(TAG, "Upload folder name = "+getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE).getString(Constants.GOOGLE_DRIVE_FOLDER,""));
+        if(VERBOSE)Log.i(TAG, "Upload folder name = "+getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE).getString(Constants.GOOGLE_DRIVE_FOLDER,""));
         folderName = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE).getString(Constants.GOOGLE_DRIVE_FOLDER,"");
         accountName = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE).getString(Constants.GOOGLE_DRIVE_ACC_NAME,"");
         googleUploadHandler = new GoogleUploadHandler(this);
@@ -188,9 +189,9 @@ public class GoogleDriveUploadService extends Service {
         //SimpleDateFormat sdf = new SimpleDateFormat(getResources().getString(R.string.DATE_FORMAT_FOR_UPLOAD_PROCESS));
         String randomNo = Math.random()+"";
         String startID = randomNo.substring(randomNo.length() - 5, randomNo.length());
-        Log.i(TAG,"onStartCommand = "+startID);
+        if(VERBOSE)Log.i(TAG,"onStartCommand = "+startID);
         final String uploadfilepath = (String)intent.getExtras().get("uploadFile");
-        Log.i(TAG,"Upload file = "+uploadfilepath);
+        if(VERBOSE)Log.i(TAG,"Upload file = "+uploadfilepath);
         new GoogleDriveUploadTask().execute(uploadfilepath, startID);
         return Service.START_NOT_STICKY;
     }
@@ -198,20 +199,20 @@ public class GoogleDriveUploadService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        Log.i(TAG, "onDestroy");
+        if(VERBOSE)Log.i(TAG, "onDestroy");
     }
 
     class GoogleDriveUploadTask extends AsyncTask<String,Void,Boolean>{
         Boolean success = null;
         @Override
         protected void onPreExecute() {
-            Log.i(TAG,"onPreExecute");
+            if(VERBOSE)Log.i(TAG,"onPreExecute");
             NO_OF_REQUESTS++;
         }
 
         @Override
         protected void onPostExecute(Boolean aBoolean) {
-            Log.i(TAG,"onPostExecute = "+uploadId+", success = "+success);
+            if(VERBOSE)Log.i(TAG,"onPostExecute = "+uploadId+", success = "+success);
             uploadedSize = 0;
             if(success){
                 mNotificationManager.cancel(Integer.parseInt(uploadId));
@@ -224,7 +225,7 @@ public class GoogleDriveUploadService extends Service {
                 mNotificationManager.notify(Integer.parseInt(uploadId),mBuilder.build());
             }
             NO_OF_REQUESTS--;
-            Log.i(TAG,"No of requests = "+NO_OF_REQUESTS);
+            if(VERBOSE)Log.i(TAG,"No of requests = "+NO_OF_REQUESTS);
             if(NO_OF_REQUESTS > 0) {
                 stopSelf(Integer.parseInt(uploadId));
             }
@@ -235,7 +236,7 @@ public class GoogleDriveUploadService extends Service {
 
         @Override
         protected Boolean doInBackground(String... params) {
-            Log.i(TAG, "doInBackground = "+params[1]);
+            if(VERBOSE)Log.i(TAG, "doInBackground = "+params[1]);
             uploadFile = params[0];
             uploadId = params[1];
             filename = uploadFile.substring(uploadFile.lastIndexOf("/") + 1,uploadFile.length());
@@ -244,8 +245,8 @@ public class GoogleDriveUploadService extends Service {
                     .addOnFailureListener(new OnFailureListener(){
                         @Override
                         public void onFailure(@NonNull Exception e) {
-                            Log.i(TAG,"Unable to sync = ");
-                            Log.i(TAG,"Message = "+e.getMessage());
+                            if(VERBOSE)Log.i(TAG,"Unable to sync = ");
+                            if(VERBOSE)Log.i(TAG,"Message = "+e.getMessage());
                             if(e.getMessage().contains(String.valueOf(DriveStatusCodes.DRIVE_RATE_LIMIT_EXCEEDED))){
                                 //Continue as is, since already synced.
                                 CustomPropertyKey customPropertyKey = new CustomPropertyKey("owner", CustomPropertyKey.PUBLIC);
@@ -259,22 +260,22 @@ public class GoogleDriveUploadService extends Service {
                                         .addOnSuccessListener(new OnSuccessListener<MetadataBuffer>() {
                                             @Override
                                             public void onSuccess(MetadataBuffer metadatas) {
-                                                Log.i(TAG, "result metadata = "+metadatas);
+                                                if(VERBOSE)Log.i(TAG, "result metadata = "+metadatas);
                                                 Iterator<Metadata> iterator = metadatas.iterator();
                                                 if(metadatas.getCount() > 0) {
                                                     while (iterator.hasNext()) {
                                                         Metadata temp = iterator.next();
-                                                        Log.i(TAG, "MD title = " + temp.getTitle());
-                                                        Log.i(TAG, "MD created date = " + temp.getCreatedDate());
-                                                        Log.i(TAG, "MD drive id = " + temp.getDriveId());
-                                                        Log.i(TAG, "MD resource id = " + temp.getDriveId().getResourceId());
+                                                        if(VERBOSE)Log.i(TAG, "MD title = " + temp.getTitle());
+                                                        if(VERBOSE)Log.i(TAG, "MD created date = " + temp.getCreatedDate());
+                                                        if(VERBOSE)Log.i(TAG, "MD drive id = " + temp.getDriveId());
+                                                        if(VERBOSE)Log.i(TAG, "MD resource id = " + temp.getDriveId().getResourceId());
                                                         mDriveClient.getDriveId(temp.getDriveId().getResourceId())
                                                                 .addOnSuccessListener(new OnSuccessListener<DriveId>() {
                                                                     @Override
                                                                     public void onSuccess(DriveId driveId) {
                                                                         uploadToFolder = driveId.asDriveFolder();
-                                                                        Log.i(TAG, "New Drive id = " + uploadToFolder.getDriveId());
-                                                                        Log.i(TAG, "startUpload");
+                                                                        if(VERBOSE)Log.i(TAG, "New Drive id = " + uploadToFolder.getDriveId());
+                                                                        if(VERBOSE)Log.i(TAG, "startUpload");
                                                                         mDriveResourceClient.createContents()
                                                                                 .continueWithTask(new Continuation<DriveContents, Task<DriveFile>>() {
                                                                                     @Override
@@ -293,9 +294,9 @@ public class GoogleDriveUploadService extends Service {
                                                                                                     outputStream.write(cache, 0, data);
                                                                                                     writeLength += data;
                                                                                                 }
-                                                                                                Log.i(TAG, "Data size = " + writeLength);
+                                                                                                if(VERBOSE)Log.i(TAG, "Data size = " + writeLength);
                                                                                             } catch (IOException e1) {
-                                                                                                Log.i(TAG, "Unable to write video file contents.");
+                                                                                                if(VERBOSE)Log.i(TAG, "Unable to write video file contents.");
                                                                                             } finally {
                                                                                                 outputStream.close();
                                                                                             }
@@ -305,16 +306,16 @@ public class GoogleDriveUploadService extends Service {
                                                                                                     .build();
                                                                                         }
                                                                                         else{
-                                                                                            Log.i(TAG, "Send IMAGE file");
+                                                                                            if(VERBOSE)Log.i(TAG, "Send IMAGE file");
                                                                                             Bitmap image = BitmapFactory.decodeFile(uploadFile);
                                                                                             ByteArrayOutputStream bitmapStream = new ByteArrayOutputStream();
                                                                                             image.compress(Bitmap.CompressFormat.JPEG, 100, bitmapStream);
                                                                                             try {
-                                                                                                Log.i(TAG, "Writing image to contents");
+                                                                                                if(VERBOSE)Log.i(TAG, "Writing image to contents");
                                                                                                 outputStream.write(bitmapStream.toByteArray());
                                                                                             }
                                                                                             catch (IOException e1) {
-                                                                                                Log.i(TAG, "Unable to write image file contents.");
+                                                                                                if(VERBOSE)Log.i(TAG, "Unable to write image file contents.");
                                                                                             } finally {
                                                                                                 outputStream.close();
                                                                                             }
@@ -358,7 +359,7 @@ public class GoogleDriveUploadService extends Service {
                                                                 .addOnFailureListener(new OnFailureListener() {
                                                                     @Override
                                                                     public void onFailure(@NonNull Exception e) {
-                                                                        Log.i(TAG, "unable to get driveid = " + e.getMessage());
+                                                                        if(VERBOSE)Log.i(TAG, "unable to get driveid = " + e.getMessage());
                                                                         success = false;
                                                                         showFolderNotExistErrorNotification();
                                                                     }
@@ -368,7 +369,7 @@ public class GoogleDriveUploadService extends Service {
                                                 else{
                                                     success = false;
                                                     showFolderNotExistErrorNotification();
-                                                    Log.i(TAG, "No folder exists with name = "+folderName);
+                                                    if(VERBOSE)Log.i(TAG, "No folder exists with name = "+folderName);
                                                 }
                                                 metadatas.release();
                                             }
@@ -376,7 +377,7 @@ public class GoogleDriveUploadService extends Service {
                                         .addOnFailureListener(new OnFailureListener() {
                                             @Override
                                             public void onFailure(@NonNull Exception e) {
-                                                Log.i(TAG, "Failure = "+e.getMessage());
+                                                if(VERBOSE)Log.i(TAG, "Failure = "+e.getMessage());
                                                 success = false;
                                                 if(!isConnectedToInternet()) {
                                                     showUploadErrorNotification();
@@ -403,7 +404,7 @@ public class GoogleDriveUploadService extends Service {
                     .addOnSuccessListener(new OnSuccessListener<Void>() {
                         @Override
                         public void onSuccess(Void aVoid) {
-                            Log.i(TAG,"Metadata upto date");
+                            if(VERBOSE)Log.i(TAG,"Metadata upto date");
                             CustomPropertyKey customPropertyKey = new CustomPropertyKey("owner", CustomPropertyKey.PUBLIC);
                             Query query = new Query.Builder()
                                     .addFilter(Filters.eq(SearchableField.TITLE, folderName))
@@ -415,22 +416,22 @@ public class GoogleDriveUploadService extends Service {
                                     .addOnSuccessListener(new OnSuccessListener<MetadataBuffer>() {
                                         @Override
                                         public void onSuccess(MetadataBuffer metadatas) {
-                                            Log.i(TAG, "result metadata = "+metadatas);
+                                            if(VERBOSE)Log.i(TAG, "result metadata = "+metadatas);
                                             Iterator<Metadata> iterator = metadatas.iterator();
                                             if(metadatas.getCount() > 0) {
                                                 while (iterator.hasNext()) {
                                                     Metadata temp = iterator.next();
-                                                    Log.i(TAG, "MD title = " + temp.getTitle());
-                                                    Log.i(TAG, "MD created date = " + temp.getCreatedDate());
-                                                    Log.i(TAG, "MD drive id = " + temp.getDriveId());
-                                                    Log.i(TAG, "MD resource id = " + temp.getDriveId().getResourceId());
+                                                    if(VERBOSE)Log.i(TAG, "MD title = " + temp.getTitle());
+                                                    if(VERBOSE)Log.i(TAG, "MD created date = " + temp.getCreatedDate());
+                                                    if(VERBOSE)Log.i(TAG, "MD drive id = " + temp.getDriveId());
+                                                    if(VERBOSE)Log.i(TAG, "MD resource id = " + temp.getDriveId().getResourceId());
                                                     mDriveClient.getDriveId(temp.getDriveId().getResourceId())
                                                             .addOnSuccessListener(new OnSuccessListener<DriveId>() {
                                                                 @Override
                                                                 public void onSuccess(DriveId driveId) {
                                                                     uploadToFolder = driveId.asDriveFolder();
-                                                                    Log.i(TAG, "New Drive id = " + uploadToFolder.getDriveId());
-                                                                    Log.i(TAG, "startUpload");
+                                                                    if(VERBOSE)Log.i(TAG, "New Drive id = " + uploadToFolder.getDriveId());
+                                                                    if(VERBOSE)Log.i(TAG, "startUpload");
                                                                     mDriveResourceClient.createContents()
                                                                             .continueWithTask(new Continuation<DriveContents, Task<DriveFile>>() {
                                                                                 @Override
@@ -450,9 +451,9 @@ public class GoogleDriveUploadService extends Service {
                                                                                                     outputStream.write(cache, 0, data);
                                                                                                     writeLength += data;
                                                                                                 }
-                                                                                                Log.i(TAG, "Data size = " + writeLength);
+                                                                                                if(VERBOSE)Log.i(TAG, "Data size = " + writeLength);
                                                                                             } catch (IOException e1) {
-                                                                                                Log.i(TAG, "Unable to write video file contents.");
+                                                                                                if(VERBOSE)Log.i(TAG, "Unable to write video file contents.");
                                                                                             } finally {
                                                                                                 outputStream.close();
                                                                                             }
@@ -461,15 +462,15 @@ public class GoogleDriveUploadService extends Service {
                                                                                                     .setMimeType("video/mp4")
                                                                                                     .build();
                                                                                         } else {
-                                                                                            Log.i(TAG, "Send IMAGE file");
+                                                                                            if(VERBOSE)Log.i(TAG, "Send IMAGE file");
                                                                                             Bitmap image = BitmapFactory.decodeFile(uploadFile);
                                                                                             ByteArrayOutputStream bitmapStream = new ByteArrayOutputStream();
                                                                                             image.compress(Bitmap.CompressFormat.JPEG, 100, bitmapStream);
                                                                                             try {
-                                                                                                Log.i(TAG, "Writing image to contents");
+                                                                                                if(VERBOSE)Log.i(TAG, "Writing image to contents");
                                                                                                 outputStream.write(bitmapStream.toByteArray());
                                                                                             } catch (IOException e1) {
-                                                                                                Log.i(TAG, "Unable to write image file contents.");
+                                                                                                if(VERBOSE)Log.i(TAG, "Unable to write image file contents.");
                                                                                             } finally {
                                                                                                 outputStream.close();
                                                                                             }
@@ -486,7 +487,7 @@ public class GoogleDriveUploadService extends Service {
                                                                                         }
                                                                                     }
                                                                                     else{
-                                                                                        Log.i(TAG, "File not found exception");
+                                                                                        if(VERBOSE)Log.i(TAG, "File not found exception");
                                                                                         success = false;
                                                                                         showFileErrorNotification();
                                                                                         stopSelf(Integer.parseInt(uploadId));
@@ -519,7 +520,7 @@ public class GoogleDriveUploadService extends Service {
                                                             .addOnFailureListener(new OnFailureListener() {
                                                                 @Override
                                                                 public void onFailure(@NonNull Exception e) {
-                                                                    Log.i(TAG, "unable to get driveid = " + e.getMessage());
+                                                                    if(VERBOSE)Log.i(TAG, "unable to get driveid = " + e.getMessage());
                                                                     success = false;
                                                                     showFolderNotExistErrorNotification();
                                                                 }
@@ -529,7 +530,7 @@ public class GoogleDriveUploadService extends Service {
                                             else{
                                                 success = false;
                                                 showFolderNotExistErrorNotification();
-                                                Log.i(TAG, "No folder exists with name = "+folderName);
+                                                if(VERBOSE)Log.i(TAG, "No folder exists with name = "+folderName);
                                             }
                                             metadatas.release();
                                         }
@@ -537,7 +538,7 @@ public class GoogleDriveUploadService extends Service {
                                     .addOnFailureListener(new OnFailureListener() {
                                         @Override
                                         public void onFailure(@NonNull Exception e) {
-                                            Log.i(TAG, "Failure = "+e.getMessage());
+                                            if(VERBOSE)Log.i(TAG, "Failure = "+e.getMessage());
                                             success = false;
                                             if(!isConnectedToInternet()) {
                                                 showUploadErrorNotification();
@@ -549,7 +550,7 @@ public class GoogleDriveUploadService extends Service {
             while(success == null){
 
             }
-            Log.i(TAG,"EXIT Thread");
+            if(VERBOSE)Log.i(TAG,"EXIT Thread");
             return success;
         }
     }
@@ -560,10 +561,10 @@ public class GoogleDriveUploadService extends Service {
     }
 
     private void getDriveClient(GoogleSignInAccount signInAccount) {
-        Log.i(TAG,"getDriveClient");
+        if(VERBOSE)Log.i(TAG,"getDriveClient");
         mDriveClient = Drive.getDriveClient(getApplicationContext(), signInAccount);
         mDriveResourceClient = Drive.getDriveResourceClient(getApplicationContext(), signInAccount);
-        Log.i(TAG, "Sign-in SUCCESS.");
+        if(VERBOSE)Log.i(TAG, "Sign-in SUCCESS.");
     }
 
     public boolean isImage(String path)

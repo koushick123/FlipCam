@@ -32,12 +32,13 @@ public class PermissionActivity extends AppCompatActivity {
     DialogInterface.OnClickListener exitListener;
     AlertDialog.Builder alertDialog;
     private static SharedPreferences sharedPreferences;
+    boolean VERBOSE = false;
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         if (requestCode == ALL_PERMISSIONS) {
             if (permissions != null && permissions.length > 0) {
-                Log.d(TAG, "For camera == "+permissions[0]);
+                if(VERBOSE)Log.d(TAG, "For camera == "+permissions[0]);
                 if (permissions[0].equalsIgnoreCase(CAMERA_PERMISSION) && permissions[1].equalsIgnoreCase(AUDIO_PERMISSION) &&
                         permissions[2].equalsIgnoreCase(STORAGE_PERMISSIONS)) {
                     if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED && grantResults[1] == PackageManager.PERMISSION_GRANTED
@@ -59,12 +60,12 @@ public class PermissionActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.d(TAG,"onCreate");
+        if(VERBOSE)Log.d(TAG,"onCreate");
         setContentView(R.layout.activity_permission);
-        Log.d(TAG,"saved instance state == "+savedInstanceState);
+        if(VERBOSE)Log.d(TAG,"saved instance state == "+savedInstanceState);
         if(savedInstanceState!=null) {
-            Log.d(TAG, "saved instance state restart == " + savedInstanceState.getBoolean("restart"));
-            Log.d(TAG, "saved instance state quit == " + savedInstanceState.getBoolean("quit"));
+            if(VERBOSE)Log.d(TAG, "saved instance state restart == " + savedInstanceState.getBoolean("restart"));
+            if(VERBOSE)Log.d(TAG, "saved instance state quit == " + savedInstanceState.getBoolean("quit"));
         }
         sharedPreferences = getSharedPreferences(FC_SHARED_PREFERENCE, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
@@ -87,51 +88,51 @@ public class PermissionActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        Log.d(TAG,"onDestroy");
+        if(VERBOSE)Log.d(TAG,"onDestroy");
         super.onDestroy();
     }
 
     @Override
     protected void onStart() {
-        Log.d(TAG,"onStart");
+        if(VERBOSE)Log.d(TAG,"onStart");
         super.onStart();
     }
 
     @Override
     protected void onStop() {
-        Log.d(TAG,"onStop");
+        if(VERBOSE)Log.d(TAG,"onStop");
         super.onStop();
     }
 
     @Override
     protected void onPause() {
-        Log.d(TAG,"onPause");
+        if(VERBOSE)Log.d(TAG,"onPause");
         super.onPause();
     }
 
     @Override
     protected void onResume() {
-        Log.d(TAG,"onResume");
+        if(VERBOSE)Log.d(TAG,"onResume");
         super.onResume();
         SharedPreferences sharedPreferences = getSharedPreferences();
         if(sharedPreferences.getBoolean("startCamera",false)){
-            Log.d(TAG,"Quit the app");
+            if(VERBOSE)Log.d(TAG,"Quit the app");
             finish();
         }
         else if(!showMessage){
-            Log.d(TAG,"Check permissions and Start camera = "+showPermission);
+            if(VERBOSE)Log.d(TAG,"Check permissions and Start camera = "+showPermission);
             int camerapermission = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.CAMERA);
             int audiopermission = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.RECORD_AUDIO);
             int storagepermission = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE);
             if (camerapermission == PackageManager.PERMISSION_GRANTED && audiopermission == PackageManager.PERMISSION_GRANTED &&
                     storagepermission == PackageManager.PERMISSION_GRANTED) {
-                Log.d(TAG, "ALL permissions obtained.");
+                if(VERBOSE)Log.d(TAG, "ALL permissions obtained.");
                 cameraPermission = true;
                 audioPermission = true;
                 storagePermission= true;
                 openCameraFragment();
             } else if(!showPermission){
-                Log.d(TAG, "Permissions not obtained. Obtain explicitly");
+                if(VERBOSE)Log.d(TAG, "Permissions not obtained. Obtain explicitly");
                 ActivityCompat.requestPermissions(this,
                         new String[]{Manifest.permission.CAMERA,Manifest.permission.RECORD_AUDIO,Manifest.permission.WRITE_EXTERNAL_STORAGE},
                         ALL_PERMISSIONS);
@@ -155,32 +156,32 @@ public class PermissionActivity extends AppCompatActivity {
 
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
-        Log.d(TAG,"Restore state = "+savedInstanceState);
+        if(VERBOSE)Log.d(TAG,"Restore state = "+savedInstanceState);
         if(savedInstanceState!=null && savedInstanceState.getBoolean("quit")) {
             //The activity was restarted because of possible low memory situation.
-            Log.d(TAG, "Quit app");
+            if(VERBOSE)Log.d(TAG, "Quit app");
             finish();
         }
         else if(savedInstanceState!= null && savedInstanceState.getBoolean("showPermission")){
             showPermission = savedInstanceState.getBoolean("showPermission");
-            Log.d(TAG,"show permission = "+showPermission);
+            if(VERBOSE)Log.d(TAG,"show permission = "+showPermission);
         }
         super.onRestoreInstanceState(savedInstanceState);
     }
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
-        Log.d(TAG,"Save before restart");
+        if(VERBOSE)Log.d(TAG,"Save before restart");
         if(showMessage) {
             outState.putBoolean("restart", true);
             outState.putBoolean("quit",false);
-            Log.d(TAG, "Saved restart");
+            if(VERBOSE)Log.d(TAG, "Saved restart");
         }
         else if(cameraPermission && audioPermission && storagePermission){
             //The activity could be destroyed because of low memory. Keep a flag to quit the activity when you navigate back here.
             outState.putBoolean("quit",true);
             outState.putBoolean("restart",false);
-            Log.d(TAG, "Safe to quit");
+            if(VERBOSE)Log.d(TAG, "Safe to quit");
         }
         outState.putBoolean("showPermission",showPermission);
         super.onSaveInstanceState(outState);

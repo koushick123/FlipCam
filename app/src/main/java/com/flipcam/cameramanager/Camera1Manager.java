@@ -44,6 +44,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     float rotation;
     private static Camera1Manager camera1Manager;
     Bitmap photo;
+    boolean VERBOSE = false;
     public static Camera1Manager getInstance()
     {
         if(camera1Manager == null){
@@ -81,7 +82,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
             if(backCamera) {
                 if (info.facing == Camera.CameraInfo.CAMERA_FACING_BACK) {
                     mCamera = Camera.open(i);
-                    Log.d(TAG,"Open back facing camera");
+                    if(VERBOSE)Log.d(TAG,"Open back facing camera");
                     cameraId = i;
                     break;
                 }
@@ -89,7 +90,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
             else{
                 if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
                     mCamera = Camera.open(i);
-                    Log.d(TAG,"Open front facing camera");
+                    if(VERBOSE)Log.d(TAG,"Open front facing camera");
                     cameraId = i;
                     break;
                 }
@@ -99,7 +100,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
             parameters = mCamera.getParameters();
             parameters.setExposureCompensation((parameters.getMaxExposureCompensation()-6) > 0 ? parameters.getMaxExposureCompensation()-6 : 0);
             mCamera.setParameters(parameters);
-            Log.d(TAG,"exp comp set = "+parameters.getExposureCompensation());
+            if(VERBOSE)Log.d(TAG,"exp comp set = "+parameters.getExposureCompensation());
             mCamera.setPreviewCallback(this);
         }
         else{
@@ -134,7 +135,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
                 MAX_FPS = frames[1];
             }
         }
-        Log.d(TAG,"Setting min and max Fps  == "+MIN_FPS+" , "+MAX_FPS);
+        if(VERBOSE)Log.d(TAG,"Setting min and max Fps  == "+MIN_FPS+" , "+MAX_FPS);
         parameters.setPreviewFpsRange(MIN_FPS,MAX_FPS);
         mCamera.setParameters(parameters);
     }
@@ -146,12 +147,12 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
 
     @Override
     public void setResolution(int width, int height) {
-        Log.d(TAG,"Set Width = "+width);
-        Log.d(TAG,"Set Height = "+height);
+        if(VERBOSE)Log.d(TAG,"Set Width = "+width);
+        if(VERBOSE)Log.d(TAG,"Set Height = "+height);
 
         //Aspect ratio needs to be reversed, if orientation is portrait.
         double screenAspectRatio = 1.0f / ((double)width/(double)height);
-        Log.d(TAG,"SCREEN Aspect Ratio = "+screenAspectRatio);
+        if(VERBOSE)Log.d(TAG,"SCREEN Aspect Ratio = "+screenAspectRatio);
         List<Camera.Size> previewSizes = parameters.getSupportedPreviewSizes();
 
         //If none of the camera preview size will (closely) match with screen resolution, default it to take the first preview size value.
@@ -160,7 +161,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         for(int i = 0;i<previewSizes.size();i++)
         {
             double ar = (double)previewSizes.get(i).width/(double)previewSizes.get(i).height;
-            Log.d(TAG,"Aspect ratio for "+previewSizes.get(i).width+" / "+previewSizes.get(i).height+" is = "+ar);
+            if(VERBOSE)Log.d(TAG,"Aspect ratio for "+previewSizes.get(i).width+" / "+previewSizes.get(i).height+" is = "+ar);
             if(Math.abs(screenAspectRatio - ar) <= 0.2){
                 //Best match for camera preview!!
                 VIDEO_HEIGHT = previewSizes.get(i).height;
@@ -168,7 +169,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
                 break;
             }
         }
-        Log.d(TAG,"HEIGTH == "+VIDEO_HEIGHT+", WIDTH == "+VIDEO_WIDTH);
+        if(VERBOSE)Log.d(TAG,"HEIGTH == "+VIDEO_HEIGHT+", WIDTH == "+VIDEO_WIDTH);
         parameters.setPreviewSize(VIDEO_WIDTH, VIDEO_HEIGHT);
         mCamera.setParameters(parameters);
     }
@@ -192,10 +193,10 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
 
     @Override
     public boolean zoomInOrOut(int zoomInOrOut) {
-        Log.d(TAG,"Current zoom = "+zoomInOrOut);
+        if(VERBOSE)Log.d(TAG,"Current zoom = "+zoomInOrOut);
         if(isZoomSupported() && zoomInOrOut >= 0 && zoomInOrOut <= parameters.getMaxZoom())
         {
-            Log.d(TAG,"Set Current zoom = "+zoomInOrOut);
+            if(VERBOSE)Log.d(TAG,"Set Current zoom = "+zoomInOrOut);
             parameters.setZoom(zoomInOrOut);
             mCamera.setParameters(parameters);
             return true;
@@ -209,7 +210,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     boolean zoomChangeListener = false;
     public boolean isSmoothZoomSupported()
     {
-        Log.d(TAG,"smooth zoom = "+parameters.isSmoothZoomSupported());
+        if(VERBOSE)Log.d(TAG,"smooth zoom = "+parameters.isSmoothZoomSupported());
         //Add a zoomchangelistener flag so that it is not set every time this is called
         if(parameters.isSmoothZoomSupported() && !zoomChangeListener)
         {
@@ -249,7 +250,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     public void capturePicture() {
         photo=null;
         int zoomedVal = photoFrag.getZoomBar().getProgress();
-        Log.d(TAG,"take pic");
+        if(VERBOSE)Log.d(TAG,"take pic");
         capture=true;
         Camera.Parameters parameters = mCamera.getParameters();
         parameters.setZoom(zoomedVal);
@@ -276,7 +277,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     Bitmap pic;
     @Override
     public void onPictureTaken(byte[] data, Camera camera) {
-        Log.d(TAG, "Picture wil be saved at loc = " + photoPath);
+        if(VERBOSE)Log.d(TAG, "Picture wil be saved at loc = " + photoPath);
         try {
             picture = new FileOutputStream(photoPath);
             picture.write(data);
@@ -294,7 +295,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
                 setFlashOnOff(false);
             }
             //Start the preview no matter if photo is saved or not.
-            Log.d(TAG, "photo is ready");
+            if(VERBOSE)Log.d(TAG, "photo is ready");
             camera.startPreview();
             photoFrag.getCapturePic().setClickable(true);
             photoFrag.hideImagePreview();
@@ -304,7 +305,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
 
     @Override
     public void onShutter() {
-        Log.d(TAG,"Photo captured");
+        if(VERBOSE)Log.d(TAG,"Photo captured");
     }
 
     @Override
@@ -343,7 +344,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         @Override
         public void onAutoFocus(boolean success, Camera camera) {
             if(success) {
-                Log.d(TAG,"auto focus set successfully");
+                if(VERBOSE)Log.d(TAG,"auto focus set successfully");
                 focused = success;
             }
         }
@@ -454,7 +455,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         {
             try {
                 capture = false;
-                Log.d(TAG, "inside onpreviewframe");
+                if(VERBOSE)Log.d(TAG, "inside onpreviewframe");
                 int previewWidth = camera.getParameters().getPreviewSize().width;
                 int previewHeight = camera.getParameters().getPreviewSize().height;
                 YuvImage yuvImage = new YuvImage(bytes, ImageFormat.NV21, previewWidth, previewHeight, null);
@@ -464,10 +465,10 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
                 baos.close();
                 Matrix rotate = new Matrix();
                 rotate.setRotate(rotation);
-                Log.d(TAG,"rotation = "+rotation);
+                if(VERBOSE)Log.d(TAG,"rotation = "+rotation);
                 thumb = Bitmap.createBitmap(thumb, 0, 0, previewWidth, previewHeight, rotate, false);
                 photoFrag.createAndShowPhotoThumbnail(thumb);
-                Log.d(TAG, "photo thumbnail created");
+                if(VERBOSE)Log.d(TAG, "photo thumbnail created");
             } catch (IOException e) {
                 e.printStackTrace();
             }
