@@ -274,6 +274,7 @@ public class MemoryLimitActivity extends AppCompatActivity {
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
         if(VERBOSE)Log.d(TAG, "onSaveInstanceState");
         outState.putBoolean("memoryMetric",mbSelect);
         outState.putString("memory",memoryThresholdText.getText().toString());
@@ -298,7 +299,8 @@ public class MemoryLimitActivity extends AppCompatActivity {
                         settingsEditor.putBoolean(Constants.PHONE_MEMORY_DISABLE, false);
                         settingsEditor.commit();
                         overridePendingTransition(R.anim.slide_from_left, R.anim.slide_to_right);
-                        Toast.makeText(getApplicationContext(), getResources().getString(R.string.thresholdSaved, memoryThresholdText.getText().toString(), mbSelect ? "MB" : "GB"),
+                        Toast.makeText(getApplicationContext(), getResources().getString(R.string.thresholdSaved, memoryThresholdText.getText().toString(),
+                                mbSelect ? getResources().getString(R.string.MEM_PF_MB) : getResources().getString(R.string.MEM_PF_GB)),
                                 Toast.LENGTH_SHORT).show();
                     }
                     else{

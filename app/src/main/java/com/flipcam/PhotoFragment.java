@@ -181,7 +181,7 @@ public class PhotoFragment extends Fragment {
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
                 if(!cameraView.isSmoothZoomSupported() && !cameraView.isZoomSupported()) {
-                    Toast.makeText(getActivity().getApplicationContext(), "Zoom not supported for this camera.", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getActivity().getApplicationContext(), getResources().getString(R.string.zoomNotSupported), Toast.LENGTH_SHORT).show();
                 }
             }
 
