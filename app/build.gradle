@@ -1,15 +1,15 @@
 apply plugin: 'com.android.application'
 // Load keystore
-def keystorePropertiesFile = rootProject.file("keystore.properties");
+def keystorePropertiesFile = rootProject.file("app/src/main/keystore.properties");
 def keystoreProperties = new Properties()
 keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 android {
     signingConfigs {
         FC_Release {
-            storeFile file('flipCam.keystore')
-            storePassword 'Platinum56'
-            keyAlias 'fckey'
-            keyPassword 'Kings&Queens56'
+            keyAlias keystoreProperties['keyAlias']
+            keyPassword keystoreProperties['keyPassword']
+            storeFile file(keystoreProperties['storeFile'])
+            storePassword keystoreProperties['storePassword']
         }
     }
     compileSdkVersion 25
