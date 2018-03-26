@@ -97,9 +97,6 @@ public class VideoFragment extends android.app.Fragment{
     SharedPreferences sharedPreferences;
     ImageView microThumbnail;
     AppWidgetManager appWidgetManager;
-    public VideoFragment() {
-        // Required empty public constructor
-    }
 
     public static VideoFragment newInstance() {
         VideoFragment fragment = new VideoFragment();

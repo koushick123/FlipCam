@@ -14,11 +14,6 @@
         android:name="android.hardware.camera"
         android:required="true" />
 
-    <provider
-        android:name="com.facebook.FacebookContentProvider"
-        android:authorities="com.facebook.app.FacebookContentProvider308890512940081"
-        android:exported="true" />
-
     <meta-data
         android:name="com.facebook.sdk.AutoLogAppEventsEnabled"
         android:value="false" />
@@ -31,6 +26,10 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+        <provider
+            android:name="com.facebook.FacebookContentProvider"
+            android:authorities="com.facebook.app.FacebookContentProvider308890512940081"
+            android:exported="true" />
         <meta-data
             android:name="com.facebook.sdk.ApplicationId"
             android:value="@string/facebook_app_id" />

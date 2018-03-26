@@ -1,6 +1,17 @@
 apply plugin: 'com.android.application'
-
+// Load keystore
+def keystorePropertiesFile = rootProject.file("keystore.properties");
+def keystoreProperties = new Properties()
+keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 android {
+    signingConfigs {
+        FC_Release {
+            storeFile file('flipCam.keystore')
+            storePassword 'Platinum56'
+            keyAlias 'fckey'
+            keyPassword 'Kings&Queens56'
+        }
+    }
     compileSdkVersion 25
     buildToolsVersion "25.0.3"
     defaultConfig {
@@ -17,6 +28,7 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.FC_Release
         }
     }
     productFlavors {
