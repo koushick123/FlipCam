@@ -1,7 +1,6 @@
 package com.flipcam;
 
 import android.Manifest;
-import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.app.Dialog;
 import android.appwidget.AppWidgetManager;
@@ -51,7 +50,6 @@ import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.api.CommonStatusCodes;
-import com.google.android.gms.common.api.Scope;
 import com.google.android.gms.drive.Drive;
 import com.google.android.gms.drive.DriveClient;
 import com.google.android.gms.drive.DriveFolder;
@@ -73,7 +71,6 @@ import com.google.android.gms.tasks.Task;
 import java.io.File;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Set;
 
 public class SettingsActivity extends AppCompatActivity{
 
@@ -717,6 +714,7 @@ public class SettingsActivity extends AppCompatActivity{
     @Override
     protected void onResume() {
         super.onResume();
+        Log.d(TAG, "onResume");
         mediaFilters.addAction(Intent.ACTION_MEDIA_UNMOUNTED);
         mediaFilters.addAction(Intent.ACTION_MEDIA_MOUNTED);
         mediaFilters.addDataScheme("file");
@@ -790,39 +788,20 @@ public class SettingsActivity extends AppCompatActivity{
             return;
         }
         initializeGoogleSignIn();
-        Set<Scope> requiredScopes = new HashSet<>(2);
-        requiredScopes.add(Drive.SCOPE_FILE);
-        requiredScopes.add(Drive.SCOPE_APPFOLDER);
-        GoogleSignInAccount signInAccount = GoogleSignIn.getLastSignedInAccount(this);
-        Account[] googleAccount = accountManager.getAccountsByType("com.google");
-        if (googleAccount != null && googleAccount.length > 0) {
-            if(googleAccount.length > 0){
-                if(VERBOSE)Log.d(TAG, "Acc name = " + googleAccount[0].name);
-                accName = googleAccount[0].name;
-            }
-        } else {
-            if(VERBOSE)Log.d(TAG, "No google account");
+        if(VERBOSE)Log.d(TAG,"startActivity");
+        signInProgress = true;
+        TextView signInText = (TextView)signInProgressRoot.findViewById(R.id.signInText);
+        TextView signInprogressTitle = (TextView)signInProgressRoot.findViewById(R.id.savetocloudtitle);
+        if(cloud == Constants.GOOGLE_DRIVE_CLOUD) {
+            signInprogressTitle.setText(getResources().getString(R.string.signInProgressTitle, getResources().getString(R.string.googleDrive)));
+            signInText.setText(getResources().getString(R.string.signInProgress, getResources().getString(R.string.googleDrive)));
+            ImageView signInImage = (ImageView) signInProgressRoot.findViewById(R.id.signInImage);
+            signInImage.setImageDrawable(getResources().getDrawable(R.drawable.google_drive));
         }
-        if ((googleAccount != null && googleAccount.length > 0) && signInAccount != null && signInAccount.getGrantedScopes().containsAll(requiredScopes)) {
-            getDriveClient(signInAccount);
-            signedInDrive = true;
-            checkIfFolderCreatedInDrive();
-        } else {
-            if(VERBOSE)Log.d(TAG,"startActivity");
-            signInProgress = true;
-            TextView signInText = (TextView)signInProgressRoot.findViewById(R.id.signInText);
-            TextView signInprogressTitle = (TextView)signInProgressRoot.findViewById(R.id.savetocloudtitle);
-            if(cloud == Constants.GOOGLE_DRIVE_CLOUD) {
-                signInprogressTitle.setText(getResources().getString(R.string.signInProgressTitle, getResources().getString(R.string.googleDrive)));
-                signInText.setText(getResources().getString(R.string.signInProgress, getResources().getString(R.string.googleDrive)));
-                ImageView signInImage = (ImageView) signInProgressRoot.findViewById(R.id.signInImage);
-                signInImage.setImageDrawable(getResources().getDrawable(R.drawable.google_drive));
-            }
-            signInProgressDialog.setContentView(signInProgressRoot);
-            signInProgressDialog.setCancelable(false);
-            signInProgressDialog.show();
-            startActivityForResult(googleSignInClient.getSignInIntent(), REQUEST_CODE_SIGN_IN);
-        }
+        signInProgressDialog.setContentView(signInProgressRoot);
+        signInProgressDialog.setCancelable(false);
+        signInProgressDialog.show();
+        startActivityForResult(googleSignInClient.getSignInIntent(), REQUEST_CODE_SIGN_IN);
     }
 
     public boolean isConnectedToInternet(){
@@ -1113,6 +1092,7 @@ public class SettingsActivity extends AppCompatActivity{
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        Log.d(TAG, "resultCode = "+resultCode);
         switch (requestCode) {
             case REQUEST_CODE_SIGN_IN:
                 if (resultCode != RESULT_OK) {
@@ -1130,6 +1110,8 @@ public class SettingsActivity extends AppCompatActivity{
                 if (getAccountTask.isSuccessful()) {
                     if(VERBOSE)Log.d(TAG,"isSuccessful");
                     getDriveClient(getAccountTask.getResult());
+                    accName = getAccountTask.getResult().getDisplayName();
+                    if(VERBOSE)Log.d(TAG, "getAccountTask.getResult().getDisplayName() = "+getAccountTask.getResult().getDisplayName());
                     signedInDrive = true;
                     //Check For Connectivity again.
                     if(!isConnectedToInternet()){
