@@ -14,4 +14,5 @@ It provides the following features
   </ul>
  
  FlipCam is now available on the Google Play Store.
+ <br>
  https://play.google.com/store/apps/details?id=com.flipcam
