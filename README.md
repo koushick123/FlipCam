@@ -1,4 +1,5 @@
-# FlipCam
+![logotype a-06](https://user-images.githubusercontent.com/36028424/39978128-50b7e3ca-5771-11e8-9b03-b699b5eb6bf8.png)
+
 An android app that records using front and back camera in the same video file.
 
 This app is available for use from Android version Lollipop to Nougat.
