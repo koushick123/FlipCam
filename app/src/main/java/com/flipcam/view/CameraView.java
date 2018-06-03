@@ -11,6 +11,7 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.media.AudioManager;
 import android.media.CamcorderProfile;
 import android.media.MediaRecorder;
 import android.opengl.EGL14;
@@ -108,7 +109,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     MainHandler mainHandler;
     Object renderObj = new Object();
     volatile boolean isReady=false;
-    boolean VERBOSE=false;
+    boolean VERBOSE=true;
+    boolean FRAME_VERBOSE=false;
     //Keep in portrait by default.
     boolean portrait=true;
     float rotationAngle = 0.0f;
@@ -141,6 +143,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     double mBDelimiter = Constants.MEGA_BYTE;
     double gBDelimiter = Constants.GIGA_BYTE;
     private final SensorManager mSensorManager;
+    private AudioManager audioManager;
     private final Sensor mAccelerometer;
     float diff[] = new float[3];
     boolean focusNow = false;
@@ -167,6 +170,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         flashMode = camera1.getFlashModeOff();
         mSensorManager = (SensorManager)getContext().getSystemService(SENSOR_SERVICE);
         mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        audioManager = (AudioManager)getContext().getSystemService(Context.AUDIO_SERVICE);
+        audioManager.
     }
 
     @Override
@@ -273,10 +278,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
 
     @Override
     public void onFrameAvailable(SurfaceTexture surfaceTexture) {
-        if(VERBOSE)Log.d(TAG,"FRAME Available now");
-        if(VERBOSE)Log.d(TAG,"is Record = "+isRecord);
+        if(FRAME_VERBOSE)Log.d(TAG,"FRAME Available now");
+        if(FRAME_VERBOSE)Log.d(TAG,"is Record = "+isRecord);
         if(isRecord){
-            if(VERBOSE)Log.d(TAG,"Frame avail cnt = "+(++cameraFrameCnt));
+            if(FRAME_VERBOSE)Log.d(TAG,"Frame avail cnt = "+(++cameraFrameCnt));
         }
         cameraHandler.sendEmptyMessage(Constants.FRAME_AVAILABLE);
     }
@@ -877,10 +882,12 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             this.videoFragment.showRecordAndThumbnail();
             this.videoFragment.getLatestFileIfExists();
             camera1.setPhotoFragmentInstance(null);
+            camera1.setVideoFragmentInstance(this.videoFragment);
         }
         else{
             this.photoFragment.getLatestFileIfExists();
             camera1.setPhotoFragmentInstance(this.photoFragment);
+            camera1.setVideoFragmentInstance(null);
         }
         if(!camera1.isCameraReady()) {
             measuredWidth = width;
@@ -1164,7 +1171,14 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             mediaRecorder.setOutputFile(mNextVideoAbsolutePath);
             mediaRecorder.setVideoEncodingBitRate(camcorderProfile.videoBitRate);
             mediaRecorder.setVideoFrameRate(camcorderProfile.videoFrameRate);
-            mediaRecorder.setVideoSize(VIDEO_WIDTH, VIDEO_HEIGHT);
+            if(VERBOSE)Log.d(TAG, "camcorderProfile.videoFrameWidth = "+camcorderProfile.videoFrameWidth);
+            if(VERBOSE)Log.d(TAG, "camcorderProfile.videoFrameHeight = "+camcorderProfile.videoFrameHeight);
+            if(portrait){
+                mediaRecorder.setVideoSize(camcorderProfile.videoFrameHeight, camcorderProfile.videoFrameWidth);
+            }
+            else{
+                mediaRecorder.setVideoSize(camcorderProfile.videoFrameWidth, camcorderProfile.videoFrameHeight);
+            }
             mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
             mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
             try {
@@ -1237,7 +1251,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         {
             if(mEGLConfig!=null && camera1.isCameraReady()) {
                 makeCurrent(eglSurface);
-                if(VERBOSE) Log.d(TAG,"made current");
+                if(FRAME_VERBOSE) Log.d(TAG,"made current");
                 //Get next frame from camera
                 surfaceTexture.updateTexImage();
                 surfaceTexture.getTransformMatrix(mTmpMatrix);
@@ -1246,27 +1260,27 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 int viewWidth = getWidth();
                 int viewHeight = getHeight();
                 if (frameCount == 0) {
-                    if(VERBOSE)Log.d(TAG, "FRAME Count = "+frameCount);
-                    if(VERBOSE)Log.d(TAG,"SV Width == "+viewWidth+", SV Height == "+viewHeight);
+                    if(FRAME_VERBOSE)Log.d(TAG, "FRAME Count = "+frameCount);
+                    if(FRAME_VERBOSE)Log.d(TAG,"SV Width == "+viewWidth+", SV Height == "+viewHeight);
                 }
                 GLES20.glViewport(0, 0, viewWidth, viewHeight);
                 draw(IDENTITY_MATRIX, createFloatBuffer(GLUtil.FULL_RECTANGLE_COORDS), 0, (GLUtil.FULL_RECTANGLE_COORDS.length / 2), 2, 2 * SIZEOF_FLOAT, mTmpMatrix,
                         createFloatBuffer(GLUtil.FULL_RECTANGLE_TEX_COORDS), mTextureId, 2 * SIZEOF_FLOAT);
 
-                if(VERBOSE)Log.d(TAG, "Draw on screen...."+isRecording);
+                if(FRAME_VERBOSE)Log.d(TAG, "Draw on screen...."+isRecording);
                 //Calls eglSwapBuffers.  Use this to "publish" the current frame.
                 EGL14.eglSwapBuffers(mEGLDisplay, eglSurface);
 
                 if(isRecording) {
                     makeCurrent(encoderSurface);
-                    if (VERBOSE) Log.d(TAG, "Made encoder surface current");
+                    if (FRAME_VERBOSE) Log.d(TAG, "Made encoder surface current");
                     GLES20.glViewport(0, 0, VIDEO_WIDTH, VIDEO_HEIGHT);
                     draw(RECORD_IDENTITY_MATRIX, createFloatBuffer(GLUtil.FULL_RECTANGLE_COORDS), 0, (GLUtil.FULL_RECTANGLE_COORDS.length / 2), 2, 2 * SIZEOF_FLOAT, mTmpMatrix,
                             createFloatBuffer(GLUtil.FULL_RECTANGLE_TEX_COORDS), mTextureId, 2 * SIZEOF_FLOAT);
-                    if (VERBOSE) Log.d(TAG, "Populated to encoder");
+                    if (FRAME_VERBOSE) Log.d(TAG, "Populated to encoder");
 
                     if(Math.abs(System.currentTimeMillis() - previousTime) >= 1000){
-                        if(VERBOSE)Log.d(TAG,"difference of 1 sec");
+                        if(FRAME_VERBOSE)Log.d(TAG,"difference of 1 sec");
                         previousTime = System.currentTimeMillis();
                         if(recordStop == 1) {
                             if(!stopButton.isEnabled()) {
@@ -1292,8 +1306,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             frameCount++;
             availableStatFs.restat(Environment.getDataDirectory().getPath());
             if(isRecord && isPhoneMemory && (availableStatFs.getAvailableBytes() < lowestMemory)) {
-                if(VERBOSE)Log.d(TAG, "lowestMemory = "+lowestMemory);
-                if(VERBOSE)Log.d(TAG, "avail mem = "+availableStatFs.getAvailableBytes());
+                if(FRAME_VERBOSE)Log.d(TAG, "lowestMemory = "+lowestMemory);
+                if(FRAME_VERBOSE)Log.d(TAG, "avail mem = "+availableStatFs.getAvailableBytes());
                 isRecord=false;
                 stopTimerThread();
                 isRecording = false;
@@ -1303,15 +1317,15 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                     mediaRecorder.stop();
                 }
                 catch(RuntimeException runtime){
-                    if(VERBOSE)Log.d(TAG,"Video data not received... delete file = "+videoFile.getPath());
+                    if(FRAME_VERBOSE)Log.d(TAG,"Video data not received... delete file = "+videoFile.getPath());
                     if(videoFile.delete()){
-                        if(VERBOSE)Log.d(TAG,"File deleted");
+                        if(FRAME_VERBOSE)Log.d(TAG,"File deleted");
                     }
                     cameraHandler.setRecordIncomplete(true);
                 }
                 mediaRecorder.release();
                 mediaRecorder = null;
-                if(VERBOSE)Log.d(TAG,"stop isRecording == "+isRecording);
+                if(FRAME_VERBOSE)Log.d(TAG,"stop isRecording == "+isRecording);
                 if(!cameraHandler.isRecordIncomplete()){
                     mainHandler.sendEmptyMessage(Constants.RECORD_COMPLETE);
                 }
@@ -1357,11 +1371,11 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         cameraRenderer.shutdown();
                         break;
                     case Constants.FRAME_AVAILABLE:
-                        if(VERBOSE)Log.d(TAG,"send to FRAME_AVAILABLE");
+                        if(FRAME_VERBOSE)Log.d(TAG,"send to FRAME_AVAILABLE");
                         cameraRenderer.drawFrame();
-                        if(VERBOSE)Log.d(TAG,"Record = "+isRecord);
+                        if(FRAME_VERBOSE)Log.d(TAG,"Record = "+isRecord);
                         if(isRecord){
-                            if(VERBOSE)Log.d(TAG,"render frame = "+(++frameCnt));
+                            if(FRAME_VERBOSE)Log.d(TAG,"render frame = "+(++frameCnt));
                         }
                         break;
                     case Constants.RECORD_START:

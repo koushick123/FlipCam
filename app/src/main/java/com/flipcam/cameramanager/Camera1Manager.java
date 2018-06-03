@@ -14,7 +14,9 @@ import android.util.Log;
 
 import com.flipcam.PermissionActivity;
 import com.flipcam.PhotoFragment;
+import com.flipcam.VideoFragment;
 import com.flipcam.camerainterface.CameraOperations;
+import com.flipcam.constants.Constants;
 
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
@@ -22,6 +24,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
+import java.util.StringTokenizer;
 
 /**
  * Created by Koushick on 02-08-2017.
@@ -36,15 +39,16 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     //Safe to assume every camera would support 15 fps.
     int MIN_FPS = 15;
     int MAX_FPS = 15;
-    int cameraId;
+    int cameraId = -1;
     Camera.Parameters parameters;
     Camera.CameraInfo info = new Camera.CameraInfo();
     private PhotoFragment photoFrag;
+    private VideoFragment videoFrag;
     String photoPath;
     float rotation;
     private static Camera1Manager camera1Manager;
     Bitmap photo;
-    boolean VERBOSE = false;
+    boolean VERBOSE = true;
     public static Camera1Manager getInstance()
     {
         if(camera1Manager == null){
@@ -75,7 +79,6 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
 
     @Override
     public void openCamera(boolean backCamera) {
-        int cameraId = -1;
         for(int i=0;i<Camera.getNumberOfCameras();i++)
         {
             Camera.getCameraInfo(i, info);
@@ -98,7 +101,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         }
         if(cameraId != -1) {
             parameters = mCamera.getParameters();
-            parameters.setExposureCompensation((parameters.getMaxExposureCompensation()-6) > 0 ? parameters.getMaxExposureCompensation()-6 : 0);
+            parameters.setExposureCompensation((parameters.getMaxExposureCompensation()/2) > 0 ? parameters.getMaxExposureCompensation()/2 : 0);
             mCamera.setParameters(parameters);
             if(VERBOSE)Log.d(TAG,"exp comp set = "+parameters.getExposureCompensation());
             mCamera.setPreviewCallback(this);
@@ -150,26 +153,51 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         if(VERBOSE)Log.d(TAG,"Set Width = "+width);
         if(VERBOSE)Log.d(TAG,"Set Height = "+height);
 
-        //Aspect ratio needs to be reversed, if orientation is portrait.
-        double screenAspectRatio = 1.0f / ((double)width/(double)height);
-        if(VERBOSE)Log.d(TAG,"SCREEN Aspect Ratio = "+screenAspectRatio);
-        List<Camera.Size> previewSizes = parameters.getSupportedPreviewSizes();
-
-        //If none of the camera preview size will (closely) match with screen resolution, default it to take the first preview size value.
-        VIDEO_HEIGHT = previewSizes.get(0).height;
-        VIDEO_WIDTH = previewSizes.get(0).width;
-        for(int i = 0;i<previewSizes.size();i++)
-        {
-            double ar = (double)previewSizes.get(i).width/(double)previewSizes.get(i).height;
-            if(VERBOSE)Log.d(TAG,"Aspect ratio for "+previewSizes.get(i).width+" / "+previewSizes.get(i).height+" is = "+ar);
-            if(Math.abs(screenAspectRatio - ar) <= 0.2){
-                //Best match for camera preview!!
-                VIDEO_HEIGHT = previewSizes.get(i).height;
-                VIDEO_WIDTH = previewSizes.get(i).width;
-                break;
-            }
+        SharedPreferences sharedPreferences;
+        SharedPreferences.Editor editor;
+        if(photoFrag != null) {
+            sharedPreferences = photoFrag.getActivity().getSharedPreferences(PermissionActivity.FC_SHARED_PREFERENCE, Context.MODE_PRIVATE);
         }
-        if(VERBOSE)Log.d(TAG,"HEIGTH == "+VIDEO_HEIGHT+", WIDTH == "+VIDEO_WIDTH);
+        else{
+            sharedPreferences = videoFrag.getActivity().getSharedPreferences(PermissionActivity.FC_SHARED_PREFERENCE, Context.MODE_PRIVATE);
+        }
+        //Obtain preview resolution from Preferences if already set, else measure as below.
+        String savedPreview = sharedPreferences.getString(Constants.PREVIEW_RESOLUTION, null);
+        if(savedPreview != null && !savedPreview.equals("")){
+            StringTokenizer tokenizer = new StringTokenizer(savedPreview,",");
+            VIDEO_WIDTH = Integer.parseInt(tokenizer.nextToken());
+            if(VERBOSE)Log.d(TAG, "Saved VIDEO_WIDTH = "+VIDEO_WIDTH );
+            VIDEO_HEIGHT = Integer.parseInt(tokenizer.nextToken());
+            if(VERBOSE)Log.d(TAG, "Saved VIDEO_HEIGHT = "+VIDEO_HEIGHT );
+        }
+        else {
+            //Aspect ratio needs to be reversed, if orientation is portrait.
+            double screenAspectRatio = 1.0f / ((double) width / (double) height);
+            if (VERBOSE) Log.d(TAG, "SCREEN Aspect Ratio = " + screenAspectRatio);
+            List<Camera.Size> previewSizes = parameters.getSupportedPreviewSizes();
+
+            //If none of the camera preview size will (closely) match with screen resolution, default it to take the first preview size value.
+            VIDEO_HEIGHT = previewSizes.get(0).height;
+            VIDEO_WIDTH = previewSizes.get(0).width;
+            for (int i = 0; i < previewSizes.size(); i++) {
+                double ar = (double) previewSizes.get(i).width / (double) previewSizes.get(i).height;
+                if (VERBOSE) Log.d(TAG, "Aspect ratio for " + previewSizes.get(i).width + " / " + previewSizes.get(i).height + " is = " + ar);
+                int widthDiff = Math.abs(width - previewSizes.get(i).height);
+                int heightDiff = Math.abs(height - previewSizes.get(i).width);
+                if (VERBOSE) Log.d(TAG, "Width diff = " + widthDiff + ", Height diff = " + heightDiff);
+                if (Math.abs(screenAspectRatio - ar) <= 0.2 && (widthDiff <= 105 && heightDiff <= 105)) {
+                    //Best match for camera preview!!
+                    VIDEO_HEIGHT = previewSizes.get(i).height;
+                    VIDEO_WIDTH = previewSizes.get(i).width;
+                    break;
+                }
+            }
+            editor = sharedPreferences.edit();
+            StringBuffer resolutions = new StringBuffer();
+            editor.putString(Constants.PREVIEW_RESOLUTION, resolutions.append(String.valueOf(VIDEO_WIDTH)).append(",").append(String.valueOf(VIDEO_HEIGHT)).toString());
+            editor.commit();
+        }
+        if(VERBOSE)Log.d(TAG,"HEIGHT == "+VIDEO_HEIGHT+", WIDTH == "+VIDEO_WIDTH);
         parameters.setPreviewSize(VIDEO_WIDTH, VIDEO_HEIGHT);
         mCamera.setParameters(parameters);
     }
@@ -264,6 +292,11 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     }
 
     @Override
+    public void setVideoFragmentInstance(VideoFragment videoFragment) {
+        videoFrag = videoFragment;
+    }
+
+    @Override
     public void setPhotoPath(String mediaPath)
     {
         photoPath = mediaPath;
@@ -274,7 +307,6 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         rotation = rot;
     }
 
-    Bitmap pic;
     @Override
     public void onPictureTaken(byte[] data, Camera camera) {
         if(VERBOSE)Log.d(TAG, "Picture wil be saved at loc = " + photoPath);
