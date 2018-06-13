@@ -13,9 +13,11 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Typeface;
 import android.hardware.SensorManager;
+import android.media.AudioManager;
 import android.media.ExifInterface;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.StatFs;
@@ -380,6 +382,16 @@ public class VideoFragment extends android.app.Fragment{
     }
 
     public void prepareAndStartRecord(){
+        AudioManager audioManager = cameraView.getAudioManager();
+        Log.d(TAG, "isMusicActive = "+audioManager.isMusicActive());
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && Build.VERSION.SDK_INT < Build.VERSION_CODES.M){
+            Log.d(TAG, "setStreamMute");
+            audioManager.setStreamMute(AudioManager.STREAM_MUSIC, true);
+        }
+        else{
+            Log.d(TAG, "adjustStreamVolume");
+            audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_MUTE, 0);
+        }
         startRecord.setClickable(true);
         photoMode.setClickable(true);
         thumbnail.setClickable(true);

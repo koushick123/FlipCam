@@ -171,7 +171,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         mSensorManager = (SensorManager)getContext().getSystemService(SENSOR_SERVICE);
         mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         audioManager = (AudioManager)getContext().getSystemService(Context.AUDIO_SERVICE);
-        audioManager.
     }
 
     @Override
@@ -538,12 +537,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         }
     }
 
-    public boolean isRecord() {
-        return isRecord;
-    }
-
-    public void setRecord(boolean record) {
-        isRecord = record;
+    public AudioManager getAudioManager(){
+        return audioManager;
     }
 
     public boolean isFlashModeSupported(String flashMode)
