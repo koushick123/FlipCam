@@ -517,6 +517,15 @@ public class VideoFragment extends android.app.Fragment{
         boolean noSdCard = false;
         stopRecord.setClickable(false);
         switchCamera.setClickable(false);
+        Log.d(TAG, "Unmute audio stopRec");
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && Build.VERSION.SDK_INT < Build.VERSION_CODES.M){
+            Log.d(TAG, "setStreamUnMute");
+            cameraView.getAudioManager().setStreamMute(AudioManager.STREAM_MUSIC, false);
+        }
+        else{
+            Log.d(TAG, "adjustStreamVolumeUnMute");
+            cameraView.getAudioManager().adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_UNMUTE, 0);
+        }
         if(lowMemory){
             LayoutInflater layoutInflater = (LayoutInflater)getActivity().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
             View thresholdExceededRoot = layoutInflater.inflate(R.layout.threshold_exceeded, null);

@@ -23,6 +23,7 @@ import android.opengl.EGLSurface;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import android.opengl.Matrix;
+import android.os.Build;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
@@ -926,6 +927,15 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             releaseProgram();
             releaseEGLContext();
             if(isRecord) {
+                Log.d(TAG, "Unmute audio");
+                if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && Build.VERSION.SDK_INT < Build.VERSION_CODES.M){
+                    Log.d(TAG, "setStreamUnMute");
+                    audioManager.setStreamMute(AudioManager.STREAM_MUSIC, false);
+                }
+                else{
+                    Log.d(TAG, "adjustStreamVolumeUnMute");
+                    audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_UNMUTE, 0);
+                }
                 if(VERBOSE)Log.d(TAG,"Recording in progress.... Stop now");
                 isRecord=false;
                 //Reset the RECORD Matrix to be portrait.
@@ -936,8 +946,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 if(!memoryPrefs.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
                     if(videoFragment.doesSDCardExist() != null){
                         recordStop.what = Constants.RECORD_STOP;
-                        /*if(VERBOSE)Log.d(TAG, "Adding to Media DB");
-                        videoFragment.getActivity().getContentResolver().insert(Uri.parse(MediaTableConstants.BASE_CONTENT_URI+"/addMedia"),mediaContent);*/
                     }
                     else{
                         recordStop.what = Constants.RECORD_STOP_NO_SD_CARD;
@@ -949,8 +957,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 }
                 else{
                     recordStop.what = Constants.RECORD_STOP;
-                    /*if(VERBOSE)Log.d(TAG, "Adding to Media DB");
-                    videoFragment.getActivity().getContentResolver().insert(Uri.parse(MediaTableConstants.BASE_CONTENT_URI+"/addMedia"),mediaContent);*/
                 }
                 cameraHandler.sendMessageAtFrontOfQueue(recordStop);
                 if(VERBOSE)Log.d(TAG,"Recording STOPPED");
