@@ -14,12 +14,14 @@ import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Point;
+import android.media.AudioManager;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
 import android.media.RingtoneManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -60,7 +62,7 @@ import com.flipcam.data.MediaTableConstants;
 import com.flipcam.media.FileMedia;
 import com.flipcam.service.MediaUploadService;
 import com.flipcam.util.MediaUtil;
-import com.flipcam.view.SurfaceViewVideoFragment;
+import com.flipcam.view.MediaFragment;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -92,7 +94,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     SeekBar videoSeek;
     LinearLayout timeControls;
     LinearLayout parentMedia;
-    HashMap<Integer,SurfaceViewVideoFragment> hashMapFrags = new HashMap<>();
+    HashMap<Integer,MediaFragment> hashMapFrags = new HashMap<>();
     ControlVisbilityPreference controlVisbilityPreference;
     ImageButton deleteMedia;
     Display display;
@@ -134,7 +136,8 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     SharedPreferences sharedPreferences;
     SDCardEventReceiver sdCardEventReceiver;
     AppWidgetManager appWidgetManager;
-    boolean VERBOSE = false;
+    boolean VERBOSE = true;
+    AudioManager audioManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -153,6 +156,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         mediaFilters = new IntentFilter();
         sdCardEventReceiver = new SDCardEventReceiver();
         layoutInflater = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        audioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
         warningMsgRoot = layoutInflater.inflate(R.layout.warning_message, null);
         sharedPreferences = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
         videoControls = (LinearLayout)findViewById(R.id.videoControls);
@@ -306,6 +310,28 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         taskAlert = new Dialog(this);
         appWidgetManager = (AppWidgetManager)getSystemService(Context.APPWIDGET_SERVICE);
     }
+
+    AudioManager.OnAudioFocusChangeListener onAudioFocusChangeListener = new AudioManager.OnAudioFocusChangeListener(){
+        @Override
+        public void onAudioFocusChange(int focusChange) {
+            Log.d(TAG, "onAudioFocusChange = "+focusChange);
+            switch(focusChange){
+                case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
+                    if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && Build.VERSION.SDK_INT < Build.VERSION_CODES.M){
+                        Log.d(TAG, "setStreamMute");
+                        audioManager.setStreamMute(AudioManager.STREAM_MUSIC, true);
+                    }
+                    else{
+                        Log.d(TAG, "adjustStreamVolume");
+                        audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_MUTE, 0);
+                    }
+                    break;
+                case AudioManager.AUDIOFOCUS_LOSS:
+                    audioManager.abandonAudioFocus(this);
+                    break;
+            }
+        }
+    };
 
     @Override
     protected void onStop() {
@@ -549,21 +575,37 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         playCircle.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                SurfaceViewVideoFragment currentFrag = hashMapFrags.get(videoPos);
-                if (currentFrag.isPlayCompleted()) {
-                    currentFrag.setIsPlayCompleted(false);
-                }
-                if(VERBOSE)Log.d(TAG,"Set PLAY using Circle");
-                currentFrag.playInProgress = true;
-                if(VERBOSE)Log.d(TAG,"Duration of video = "+currentFrag.mediaPlayer.getDuration()+" , path = "+
-                        currentFrag.path.substring(currentFrag.path.lastIndexOf("/"),currentFrag.path.length()));
-                currentFrag.mediaPlayer.start();
-                pause.setVisibility(View.VISIBLE);
-                pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause));
-                currentFrag.play = true;
-                playCircle.setVisibility(View.GONE);
+                int audioFocus = audioManager.requestAudioFocus(onAudioFocusChangeListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
+                MediaFragment currentFrag = hashMapFrags.get(videoPos);
+                startPlayingMedia(currentFrag, false);
             }
         });
+    }
+
+    private void startPlayingMedia(MediaFragment currentFrag, boolean fromPauseBtn){
+        int audioFocus = audioManager.requestAudioFocus(onAudioFocusChangeListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
+        if(audioFocus == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+            if (currentFrag.isPlayCompleted()) {
+                currentFrag.setIsPlayCompleted(false);
+            }
+            if(!fromPauseBtn) {
+                if (VERBOSE) Log.d(TAG, "Set PLAY using Circle");
+            }
+            else{
+                if(VERBOSE)Log.d(TAG,"Set PLAY");
+            }
+            currentFrag.playInProgress = true;
+            if (VERBOSE)
+                Log.d(TAG, "Duration of video = " + currentFrag.mediaPlayer.getDuration() + " , path = " +
+                        currentFrag.path.substring(currentFrag.path.lastIndexOf("/"), currentFrag.path.length()));
+            currentFrag.mediaPlayer.start();
+            if (!fromPauseBtn) {
+                pause.setVisibility(View.VISIBLE);
+            }
+            pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause));
+            currentFrag.play = true;
+            playCircle.setVisibility(View.GONE);
+        }
     }
 
     public void showPlayForVideo(){
@@ -841,12 +883,12 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         }
         if(VERBOSE)Log.d(TAG,"onPageSelected = "+position+", previousSelectedFragment = "+previousSelectedFragment);
         selectedPosition = position;
-        final SurfaceViewVideoFragment currentFrag = hashMapFrags.get(position);
+        final MediaFragment currentFrag = hashMapFrags.get(position);
         if(VERBOSE)Log.d(TAG,"isHideControl = "+controlVisbilityPreference.isHideControl());
         //Reset preferences for every new fragment to be displayed.
         clearMediaPreferences();
         if(previousSelectedFragment != -1) {
-            SurfaceViewVideoFragment previousFragment = hashMapFrags.get(previousSelectedFragment);
+            MediaFragment previousFragment = hashMapFrags.get(previousSelectedFragment);
             //If previous fragment had a video, stop the video and tracker thread immediately.
             if(VERBOSE)Log.d(TAG, "medias length = "+medias.length);
             if (!isImage(medias[previousSelectedFragment].getPath())) {
@@ -942,7 +984,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
 
     boolean wasPlaying = false;
 
-    public void setupVideo(final SurfaceViewVideoFragment currentFrag, int position){
+    public void setupVideo(final MediaFragment currentFrag, int position){
         setupVideoControls(position);
         currentFrag.play=false;
         currentFrag.playInProgress=false;
@@ -982,17 +1024,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             @Override
             public void onClick(View view) {
                 if (!currentFrag.play) {
-                    if (currentFrag.isPlayCompleted()) {
-                        currentFrag.setIsPlayCompleted(false);
-                    }
-                    if(VERBOSE)Log.d(TAG,"Set PLAY");
-                    currentFrag.playInProgress = true;
-                    if(VERBOSE)Log.d(TAG,"Duration of video = "+currentFrag.mediaPlayer.getDuration()+" , path = "+
-                            currentFrag.path.substring(currentFrag.path.lastIndexOf("/"),currentFrag.path.length()));
-                    currentFrag.mediaPlayer.start();
-                    pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause));
-                    playCircle.setVisibility(View.GONE);
-                    currentFrag.play = true;
+                    startPlayingMedia(currentFrag, true);
                 } else {
                     if(VERBOSE)Log.d(TAG,"Set PAUSE");
                     currentFrag.mediaPlayer.pause();
@@ -1186,11 +1218,11 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         @Override
         public Fragment getItem(int position) {
             if(VERBOSE)Log.d(TAG,"getItem = "+position);
-            SurfaceViewVideoFragment surfaceViewVideoFragment;
+            MediaFragment mediaFragment;
             if(isDelete) {
                 isDelete = false;
-                surfaceViewVideoFragment = SurfaceViewVideoFragment.newInstance(position, true);
-                if(surfaceViewVideoFragment.getUserVisibleHint()) {
+                mediaFragment = MediaFragment.newInstance(position, true);
+                if(mediaFragment.getUserVisibleHint()) {
                     if (isImage(medias[position].getPath())) {
                         if(VERBOSE)Log.d(TAG, "IS image");
                         removeVideoControls();
@@ -1202,10 +1234,10 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 }
             }
             else{
-                surfaceViewVideoFragment = SurfaceViewVideoFragment.newInstance(position, false);
+                mediaFragment = MediaFragment.newInstance(position, false);
             }
-            hashMapFrags.put(Integer.valueOf(position),surfaceViewVideoFragment);
-            return surfaceViewVideoFragment;
+            hashMapFrags.put(Integer.valueOf(position),mediaFragment);
+            return mediaFragment;
         }
 
         @Override
@@ -1220,7 +1252,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
 
         @Override
         public int getItemPosition(Object object) {
-            SurfaceViewVideoFragment fragment = (SurfaceViewVideoFragment)object;
+            MediaFragment fragment = (MediaFragment)object;
             if(VERBOSE)Log.d(TAG,"getItemPos = "+fragment.getPath()+", POS = "+fragment.getFramePosition()+", Uservisible? = "+fragment.getUserVisibleHint());
             itemCount++;
             if(MediaUtil.doesPathExist(fragment.getPath())){

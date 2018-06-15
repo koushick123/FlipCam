@@ -383,7 +383,6 @@ public class VideoFragment extends android.app.Fragment{
 
     public void prepareAndStartRecord(){
         AudioManager audioManager = cameraView.getAudioManager();
-        Log.d(TAG, "isMusicActive = "+audioManager.isMusicActive());
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && Build.VERSION.SDK_INT < Build.VERSION_CODES.M){
             Log.d(TAG, "setStreamMute");
             audioManager.setStreamMute(AudioManager.STREAM_MUSIC, true);

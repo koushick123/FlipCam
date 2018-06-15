@@ -20,7 +20,7 @@ public class MediaView extends SurfaceView implements SurfaceHolder.Callback {
     public static final String TAG = "MediaView";
     MediaPlayer mPlayer;
     String mediaPath;
-    SurfaceViewVideoFragment surfaceViewVideoFragment;
+    MediaFragment mediaFragment;
     boolean VERBOSE = false;
 
     public MediaView(Context context, AttributeSet attrs) {
@@ -29,10 +29,10 @@ public class MediaView extends SurfaceView implements SurfaceHolder.Callback {
         getHolder().addCallback(this);
     }
 
-    public void setData(MediaPlayer mediaPlayer, String path, SurfaceViewVideoFragment fragment){
+    public void setData(MediaPlayer mediaPlayer, String path, MediaFragment fragment){
         mPlayer = mediaPlayer;
         mediaPath = path;
-        surfaceViewVideoFragment = fragment;
+        mediaFragment = fragment;
     }
 
     @Override
@@ -44,20 +44,20 @@ public class MediaView extends SurfaceView implements SurfaceHolder.Callback {
                 mPlayer.setDataSource("file://"+mediaPath);
                 mPlayer.prepare();
                 if(VERBOSE)Log.d(TAG,"MP prepared");
-                if(surfaceViewVideoFragment.getUserVisibleHint()) {
-                    if(VERBOSE)Log.d(TAG, "SAVED VIDEO for min = " + surfaceViewVideoFragment.savedVideo);
-                    if (surfaceViewVideoFragment.savedVideo != null) {
-                        surfaceViewVideoFragment.reConstructVideo(surfaceViewVideoFragment.savedVideo);
+                if(mediaFragment.getUserVisibleHint()) {
+                    if(VERBOSE)Log.d(TAG, "SAVED VIDEO for min = " + mediaFragment.savedVideo);
+                    if (mediaFragment.savedVideo != null) {
+                        mediaFragment.reConstructVideo(mediaFragment.savedVideo);
                     }
                 }
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            if(surfaceViewVideoFragment.getUserVisibleHint() && !surfaceViewVideoFragment.isStartTracker()){
-                surfaceViewVideoFragment.startTrackerThread();
+            if(mediaFragment.getUserVisibleHint() && !mediaFragment.isStartTracker()){
+                mediaFragment.startTrackerThread();
             }
         }
-        surfaceViewVideoFragment.fitVideoToScreen();
+        mediaFragment.fitVideoToScreen();
     }
 
     @Override
@@ -69,12 +69,12 @@ public class MediaView extends SurfaceView implements SurfaceHolder.Callback {
     public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
         if(VERBOSE)Log.d(TAG,"surfaceDestroyed = "+mediaPath);
         if(!isImage()){
-            if(surfaceViewVideoFragment.getUserVisibleHint()) {
+            if(mediaFragment.getUserVisibleHint()) {
                 if(VERBOSE)Log.d(TAG, "Reset");
-                surfaceViewVideoFragment.stopTrackerThread();
+                mediaFragment.stopTrackerThread();
                 try {
-                    if(surfaceViewVideoFragment.videoTracker!=null) {
-                        surfaceViewVideoFragment.videoTracker.join();
+                    if(mediaFragment.videoTracker!=null) {
+                        mediaFragment.videoTracker.join();
                     }
                 } catch (InterruptedException e) {
                     e.printStackTrace();

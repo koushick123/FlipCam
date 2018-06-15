@@ -6,9 +6,11 @@ import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Point;
+import android.media.AudioManager;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -46,10 +48,10 @@ import static com.flipcam.constants.Constants.VIDEO_SEEK_UPDATE;
  * Created by Koushick on 28-11-2017.
  */
 
-public class SurfaceViewVideoFragment extends Fragment implements MediaPlayer.OnCompletionListener,MediaPlayer.OnPreparedListener,
+public class MediaFragment extends Fragment implements MediaPlayer.OnCompletionListener,MediaPlayer.OnPreparedListener,
 MediaPlayer.OnErrorListener, Serializable{
 
-    static final String TAG = "SurfaceViewVideoFragmnt";
+    static final String TAG = "MediaFragment";
     transient public MediaPlayer mediaPlayer = null;
     transient public MediaView videoView=null;
     public boolean play=false;
@@ -57,7 +59,7 @@ MediaPlayer.OnErrorListener, Serializable{
     public String path;
     transient ImageButton pause;
     volatile boolean startTracker=false;
-    transient SurfaceViewVideoFragment.MainHandler mediaHandler;
+    transient MediaFragment.MainHandler mediaHandler;
     SeekBar videoSeek;
     volatile boolean isCompleted=false;
     String duration;
@@ -76,27 +78,29 @@ MediaPlayer.OnErrorListener, Serializable{
     transient FileMedia[] images=null;
     ControlVisbilityPreference controlVisbilityPreference;
     transient Display display;
-    transient SurfaceViewVideoFragment.VideoTracker videoTracker;
+    transient MediaFragment.VideoTracker videoTracker;
     transient public Media savedVideo = null;
     transient boolean recreate = false;
     transient ImageView playCircle;
     transient int imageHeight;
     transient int imageWidth;
     transient FrameLayout mediaPlaceholder;
-    boolean VERBOSE = false;
+    boolean VERBOSE = true;
+    AudioManager audioManager;
 
-    public static SurfaceViewVideoFragment newInstance(int pos,boolean recreate){
-        SurfaceViewVideoFragment surfaceViewVideoFragment = new SurfaceViewVideoFragment();
+    public static MediaFragment newInstance(int pos,boolean recreate){
+        MediaFragment mediaFragment = new MediaFragment();
         Bundle args = new Bundle();
         args.putInt("position", pos);
         args.putBoolean("recreate",recreate);
-        surfaceViewVideoFragment.setArguments(args);
-        return surfaceViewVideoFragment;
+        mediaFragment.setArguments(args);
+        return mediaFragment;
     }
 
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
+        audioManager = (AudioManager)getActivity().getSystemService(Context.AUDIO_SERVICE);
         if(VERBOSE)Log.d(TAG,"onActivityCreated = "+path);
         topBar = (LinearLayout)getActivity().findViewById(R.id.topMediaControls);
         videoControls = (LinearLayout)getActivity().findViewById(R.id.videoControls);
@@ -155,13 +159,39 @@ MediaPlayer.OnErrorListener, Serializable{
         }
     }
 
+    AudioManager.OnAudioFocusChangeListener onAudioFocusChangeListener = new AudioManager.OnAudioFocusChangeListener(){
+        @Override
+        public void onAudioFocusChange(int focusChange) {
+            Log.d(TAG, "onAudioFocusChange = "+focusChange);
+            switch(focusChange){
+                case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
+                    if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && Build.VERSION.SDK_INT < Build.VERSION_CODES.M){
+                        Log.d(TAG, "setStreamMute");
+                        audioManager.setStreamMute(AudioManager.STREAM_MUSIC, true);
+                    }
+                    else{
+                        Log.d(TAG, "adjustStreamVolume");
+                        audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_MUTE, 0);
+                    }
+                    break;
+                case AudioManager.AUDIOFOCUS_LOSS:
+                    /*if(play) {
+                        mediaPlayer.pause();
+                        pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow));
+                        play = false;
+                    }*/
+                    audioManager.abandonAudioFocus(this);
+                    break;
+            }
+        }
+    };
+
     public void reConstructVideo(Media savedVideo){
         videoSeek.setMax(savedVideo.getSeekDuration());
         //videoSeek.setThumb(getResources().getDrawable(R.drawable.turqoise));
         videoSeek.setProgressTintList(ColorStateList.valueOf(getResources().getColor(R.color.turqoise)));
         if(VERBOSE)Log.d(TAG, "Retrieve media completed == " + savedVideo.isMediaCompleted());
         if (savedVideo.isMediaCompleted()) {
-            //mediaPlayer.seekTo(100);
             videoSeek.setProgress(0);
             isCompleted = true;
         } else {
@@ -174,7 +204,6 @@ MediaPlayer.OnErrorListener, Serializable{
             pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause));
             play = true;
         } else {
-            //mediaPlayer.pause();
             pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow));
             play = false;
         }
@@ -182,20 +211,16 @@ MediaPlayer.OnErrorListener, Serializable{
             @Override
             public void onClick(View view) {
                 if (!play) {
-                    if (isCompleted) {
-                        isCompleted = false;
-                    }
                     if(VERBOSE)Log.d(TAG, "Set PLAY post rotate");
-                    mediaPlayer.start();
-                    playInProgress = true;
-                    pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause));
-                    playCircle.setVisibility(View.GONE);
-                    play = true;
+                    startPlayingMedia();
                 } else {
-                    if(VERBOSE)Log.d(TAG, "Set PAUSE post rotate");
-                    mediaPlayer.pause();
-                    pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow));
-                    play = false;
+                    int audioFocus = audioManager.abandonAudioFocus(onAudioFocusChangeListener);
+                    if(VERBOSE)Log.d(TAG, "Set PAUSE post rotate = "+audioFocus);
+                    if(audioFocus == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                        mediaPlayer.pause();
+                        pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow));
+                        play = false;
+                    }
                 }
             }
         });
@@ -203,15 +228,8 @@ MediaPlayer.OnErrorListener, Serializable{
             @Override
             public void onClick(View view) {
                 if (!play) {
-                    if (isCompleted) {
-                        isCompleted = false;
-                    }
                     if(VERBOSE)Log.d(TAG, "Set PLAY Circle post rotate");
-                    mediaPlayer.start();
-                    playInProgress = true;
-                    pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause));
-                    playCircle.setVisibility(View.GONE);
-                    play = true;
+                    startPlayingMedia();
                 }
             }
         });
@@ -291,6 +309,21 @@ MediaPlayer.OnErrorListener, Serializable{
         });
     }
 
+    private void startPlayingMedia(){
+        int audioFocus = audioManager.requestAudioFocus(onAudioFocusChangeListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
+        Log.d(TAG, "audioFocus = "+audioFocus);
+        if(audioFocus == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+            if (isCompleted) {
+                isCompleted = false;
+            }
+            mediaPlayer.start();
+            playInProgress = true;
+            pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause));
+            playCircle.setVisibility(View.GONE);
+            play = true;
+        }
+    }
+
     boolean wasPlaying = false;
 
     @Override
@@ -326,7 +359,6 @@ MediaPlayer.OnErrorListener, Serializable{
         display = windowManager.getDefaultDisplay();
         Point screenSize=new Point();
         display.getRealSize(screenSize);
-        //if(VERBOSE)Log.d(TAG,"Rotation = "+display.getRotation());
         if(VERBOSE)Log.d(TAG,"onCreateView = "+path);
         if(isImage()) {
             if(VERBOSE)Log.d(TAG,"show image");
@@ -610,24 +642,12 @@ MediaPlayer.OnErrorListener, Serializable{
         return path;
     }
 
-    public int getSeconds() {
-        return seconds;
-    }
-
     public void setSeconds(int seconds) {
         this.seconds = seconds;
     }
 
-    public int getMinutes() {
-        return minutes;
-    }
-
     public void setMinutes(int minutes) {
         this.minutes = minutes;
-    }
-
-    public int getHours() {
-        return hours;
     }
 
     public void setHours(int hours) {
@@ -672,16 +692,16 @@ MediaPlayer.OnErrorListener, Serializable{
     }
 
     class MainHandler extends Handler {
-        WeakReference<SurfaceViewVideoFragment> surfaceViewVideoFragmentWeakReference;
-        SurfaceViewVideoFragment mediaAct;
+        WeakReference<MediaFragment> mediaFragmentWeakReference;
+        MediaFragment mediaAct;
 
-        public MainHandler(SurfaceViewVideoFragment surfVidFrag) {
-            surfaceViewVideoFragmentWeakReference = new WeakReference<>(surfVidFrag);
+        public MainHandler(MediaFragment mediaFrag) {
+            mediaFragmentWeakReference = new WeakReference<>(mediaFrag);
         }
 
         @Override
         public void handleMessage(Message msg) {
-            mediaAct = surfaceViewVideoFragmentWeakReference.get();
+            mediaAct = mediaFragmentWeakReference.get();
             switch(msg.what)
             {
                 case VIDEO_SEEK_UPDATE:
@@ -793,7 +813,10 @@ MediaPlayer.OnErrorListener, Serializable{
                 }
             }
             if(VERBOSE)Log.d(TAG,"Continue video..");
-            mediaPlayer.start();
+            int audioFocus = audioManager.requestAudioFocus(onAudioFocusChangeListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
+            if(audioFocus == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                mediaPlayer.start();
+            }
         }
         else{
             isTrackerReady = true;
