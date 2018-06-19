@@ -13,6 +13,9 @@
     <uses-feature
         android:name="android.hardware.camera"
         android:required="true" />
+    <uses-feature
+        android:name="android.hardware.camera2"
+        android:required="false" />
 
     <meta-data
         android:name="com.facebook.sdk.AutoLogAppEventsEnabled"

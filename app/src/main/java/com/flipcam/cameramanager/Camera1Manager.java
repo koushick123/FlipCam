@@ -78,7 +78,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     }
 
     @Override
-    public void openCamera(boolean backCamera) {
+    public void openCamera(boolean backCamera, Context context) {
         for(int i=0;i<Camera.getNumberOfCameras();i++)
         {
             Camera.getCameraInfo(i, info);

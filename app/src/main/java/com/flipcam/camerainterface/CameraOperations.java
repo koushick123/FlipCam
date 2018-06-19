@@ -1,5 +1,6 @@
 package com.flipcam.camerainterface;
 
+import android.content.Context;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 
@@ -20,7 +21,7 @@ import java.util.List;
 
  public interface CameraOperations {
     //To open camera
-     void openCamera(boolean backCam);
+     void openCamera(boolean backCam, Context context);
     //To release camera
      void releaseCamera();
     //To set FPS
@@ -95,7 +96,7 @@ import java.util.List;
     int[] getPreviewSizes();
     //Set picture orientation (For Camera 1 API)
     void setRotation(int rotation);
-    //The below methods are not necessary for camera, but are included for the sake of maintaining loose coupling between Camera 1 & 2 APIs
+    //The below methods are not necessary for camera, but are included for the sake of maintaining loose coupling between CameraView and Camera APIs
     void setPhotoFragmentInstance(PhotoFragment photoFragment);
     void setPhotoPath(String mediaPath);
     void setRotation(float rot);
