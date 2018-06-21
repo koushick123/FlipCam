@@ -1,6 +1,11 @@
 package com.flipcam.cameramanager;
 
+import android.Manifest;
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.graphics.Point;
+import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
@@ -8,10 +13,23 @@ import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CaptureRequest;
+import android.hardware.camera2.params.StreamConfigurationMap;
+import android.support.annotation.NonNull;
+import android.support.v4.content.ContextCompat;
+import android.util.Log;
+import android.util.Size;
+import android.view.Surface;
+import android.view.WindowManager;
 
+import com.flipcam.PermissionActivity;
+import com.flipcam.PhotoFragment;
+import com.flipcam.VideoFragment;
 import com.flipcam.camerainterface.CameraOperations;
+import com.flipcam.constants.Constants;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.StringTokenizer;
 
 public class Camera2Manager implements CameraOperations {
 
@@ -20,12 +38,18 @@ public class Camera2Manager implements CameraOperations {
     private int cameraId;
     private CameraCharacteristics cameraCharacteristics;
     private CameraCaptureSession cameraCaptureSession;
-    private CaptureRequest captureRequest;
     private CaptureRequest.Builder captureRequestBuilder;
+    private Point previewSize;
+    StreamConfigurationMap configs;
     public final String TAG = "Camera2Manager";
     private static int VIDEO_WIDTH = 640;  // default dimensions.
     private static int VIDEO_HEIGHT = 480;
     private static Camera2Manager camera2Manager;
+    private SurfaceTexture surfaceTexture;
+    private PhotoFragment photoFrag;
+    private VideoFragment videoFrag;
+    boolean VERBOSE = true;
+
     public static Camera2Manager getInstance()
     {
         if(camera2Manager == null){
@@ -63,20 +87,342 @@ public class Camera2Manager implements CameraOperations {
                 cameraOrientation = cameraCharacteristics.get(CameraCharacteristics.LENS_FACING);
                  if (backCamera) {
                      if (cameraOrientation == CameraCharacteristics.LENS_FACING_BACK) {
-                        cameraId = Integer.parseInt(camId);
+                         cameraId = Integer.parseInt(camId);
                          break;
                     }
                 }
                 else{
                      if (cameraOrientation == CameraCharacteristics.LENS_FACING_FRONT) {
-                        cameraId = Integer.parseInt(camId);
+                         cameraId = Integer.parseInt(camId);
                          break;
                     }
                 }
             }
+            configs = cameraCharacteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+//            previewSize = configs.getOutputSizes(SurfaceTexture.class)[0];
+            if(VERBOSE)Log.d(TAG,"callback = "+stateCallback+", cam id = "+cameraId);
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED
+                || ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
+                    || ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                return;
+            }
+            WindowManager windowManager = (WindowManager)context.getSystemService(Context.WINDOW_SERVICE);
+            windowManager.getDefaultDisplay().getRealSize(previewSize);
+            cameraManager.openCamera(cameraId + "", stateCallback, null);
         }
         catch (CameraAccessException ac){
             ac.printStackTrace();
         }
+    }
+
+    private final CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback() {
+        @Override
+        public void onOpened(CameraDevice camera) {
+            //This is called when the camera is open
+            if(VERBOSE)Log.d(TAG, "onOpened == " + cameraOrientation + ", " + surfaceTexture);
+            cameraDevice = camera;
+        }
+
+        @Override
+        public void onError(@NonNull CameraDevice cameraDevice, int i) {
+
+        }
+
+        @Override
+        public void onDisconnected(@NonNull CameraDevice cameraDevice) {
+            cameraDevice.close();
+        }
+    };
+
+    @Override
+    public boolean isCameraReady() {
+        return (cameraDevice != null);
+    }
+
+    @Override
+    public void startPreview(SurfaceTexture surfaceTex) {
+        surfaceTexture = surfaceTex;
+        createCameraPreview();
+    }
+
+    private void createCameraPreview() {
+        try {
+            if(VERBOSE)Log.d(TAG, "previewSize.x = "+previewSize.x+", previewSize.y = "+previewSize.y);
+            setResolution(previewSize.x,previewSize.y);
+
+            // We set up a CaptureRequest.Builder with the output Surface.
+            captureRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_RECORD);
+
+            // This is the output Surface we need to start preview
+            Surface videoSurface = new Surface(surfaceTexture);
+            captureRequestBuilder.addTarget(videoSurface);
+            if(VERBOSE)Log.d(TAG,"beginning capture session");
+
+            // Here, we create a CameraCaptureSession for camera preview.
+            cameraDevice.createCaptureSession(Arrays.asList(videoSurface), new CameraCaptureSession.StateCallback(){
+                @Override
+                public void onConfigured(@NonNull CameraCaptureSession cameraCaptureSes) {
+                    //The camera is already closed
+                        if (null == cameraDevice) {
+                        return;
+                    }
+                    // When the session is ready, we start displaying the preview.
+                    cameraCaptureSession = cameraCaptureSes;
+                    if(VERBOSE)Log.d(TAG,"Camera capture session == "+cameraCaptureSession);
+                    try {
+                        if(VERBOSE)Log.d(TAG,"Camera session "+cameraCaptureSession);
+                        if(videoFrag != null) {
+//                            captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_VIDEO);
+                            // Finally, we start displaying the camera preview.
+                            cameraCaptureSession.setRepeatingRequest(captureRequestBuilder.build(), null, null);
+                        }
+                        else{
+//                            captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
+                            // Finally, we start displaying the camera preview.
+                            cameraCaptureSession.capture(captureRequestBuilder.build(), null, null);
+                        }
+                    } catch (CameraAccessException e) {
+                        e.printStackTrace();
+                    }
+                }
+                @Override
+                public void onConfigureFailed(@NonNull CameraCaptureSession cameraCaptureSession) {
+                }
+    }, null);
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void releaseCamera() {
+        cameraDevice.close();
+    }
+
+    @Override
+    public void setFPS() {
+//        captureRequestBuilder.set(CaptureRequest.)
+    }
+
+    @Override
+    public void setResolution() {
+
+    }
+
+    @Override
+    public void setResolution(int width, int height) {
+        if(VERBOSE)Log.d(TAG,"Set Width = "+width);
+        if(VERBOSE)Log.d(TAG,"Set Height = "+height);
+
+        SharedPreferences sharedPreferences;
+        SharedPreferences.Editor editor;
+        if(photoFrag != null) {
+            sharedPreferences = photoFrag.getActivity().getSharedPreferences(PermissionActivity.FC_SHARED_PREFERENCE, Context.MODE_PRIVATE);
+        }
+        else{
+            sharedPreferences = videoFrag.getActivity().getSharedPreferences(PermissionActivity.FC_SHARED_PREFERENCE, Context.MODE_PRIVATE);
+        }
+        //Obtain preview resolution from Preferences if already set, else, measure as below.
+        String savedPreview = sharedPreferences.getString(Constants.PREVIEW_RESOLUTION, null);
+        if(savedPreview != null && !savedPreview.equals("")){
+            StringTokenizer tokenizer = new StringTokenizer(savedPreview,",");
+            VIDEO_WIDTH = Integer.parseInt(tokenizer.nextToken());
+            if(VERBOSE)Log.d(TAG, "Saved VIDEO_WIDTH = "+VIDEO_WIDTH );
+            VIDEO_HEIGHT = Integer.parseInt(tokenizer.nextToken());
+            if(VERBOSE)Log.d(TAG, "Saved VIDEO_HEIGHT = "+VIDEO_HEIGHT );
+        }
+        else{
+            //Aspect ratio needs to be reversed, if orientation is portrait.
+            double screenAspectRatio = 1.0f / ((double) width / (double) height);
+            if (VERBOSE) Log.d(TAG, "SCREEN Aspect Ratio = " + screenAspectRatio);
+            Size[] previewSizes = configs.getOutputSizes(SurfaceTexture.class);
+            //If none of the camera preview size will (closely) match with screen resolution, default it to take the first preview size value.
+            VIDEO_HEIGHT = previewSizes[0].getHeight();
+            VIDEO_WIDTH = previewSizes[0].getWidth();
+            for(Size vidSize : previewSizes){
+                double ar = (double) vidSize.getWidth() / (double) vidSize.getHeight();
+                if (VERBOSE) Log.d(TAG, "Aspect ratio for " + vidSize.getWidth() + " / " + vidSize.getHeight() + " is = " + ar);
+                int widthDiff = Math.abs(width - vidSize.getHeight());
+                int heightDiff = Math.abs(height - vidSize.getWidth());
+                if (VERBOSE) Log.d(TAG, "Width diff = " + widthDiff + ", Height diff = " + heightDiff);
+                if (Math.abs(screenAspectRatio - ar) <= 0.2 && (widthDiff <= 105 && heightDiff <= 105)) {
+                    //Best match for camera preview!!
+                    VIDEO_HEIGHT = vidSize.getHeight();
+                    VIDEO_WIDTH = vidSize.getWidth();
+                    break;
+                }
+            }
+            editor = sharedPreferences.edit();
+            StringBuffer resolutions = new StringBuffer();
+            editor.putString(Constants.PREVIEW_RESOLUTION, resolutions.append(String.valueOf(VIDEO_WIDTH)).append(",").append(String.valueOf(VIDEO_HEIGHT)).toString());
+            editor.commit();
+        }
+        if(VERBOSE)Log.d(TAG,"HEIGHT == "+VIDEO_HEIGHT+", WIDTH == "+VIDEO_WIDTH);
+        surfaceTexture.setDefaultBufferSize(VIDEO_WIDTH, VIDEO_HEIGHT);
+    }
+
+    @Override
+    public boolean zoomInOrOut(int zoomInOrOut) {
+        return false;
+    }
+
+    @Override
+    public boolean isSmoothZoomSupported() {
+        return false;
+    }
+
+    @Override
+    public void smoothZoomInOrOut(int zoomInOrOut) {
+
+    }
+
+    @Override
+    public boolean isZoomSupported() {
+        return false;
+    }
+
+    @Override
+    public int getMaxZoom() {
+        return 0;
+    }
+
+    @Override
+    public void stopPreview() {
+
+    }
+
+    @Override
+    public void setAutoFocus() {
+
+    }
+
+    @Override
+    public void setRecordingHint() {
+
+    }
+
+    @Override
+    public void disableRecordingHint() {
+
+    }
+
+    @Override
+    public void cancelAutoFocus() {
+
+    }
+
+    @Override
+    public void setFocusMode(String focusMode) {
+
+    }
+
+    @Override
+    public void setAutoFlash() {
+
+    }
+
+    @Override
+    public void setFlashOnOff(boolean flashOn) {
+
+    }
+
+    @Override
+    public String getFlashMode() {
+        return null;
+    }
+
+    @Override
+    public String getFocusMode() {
+        return null;
+    }
+
+    @Override
+    public boolean isFlashModeSupported(String flashMode) {
+        return false;
+    }
+
+    @Override
+    public boolean isFocusModeSupported(String focusMode) {
+        return false;
+    }
+
+    @Override
+    public void setTorchLight() {
+
+    }
+
+    @Override
+    public int getCameraId() {
+        return cameraId;
+    }
+
+    @Override
+    public void setDisplayOrientation(int result) {
+
+    }
+
+    @Override
+    public void setPictureSize(int width, int height) {
+
+    }
+
+    @Override
+    public void capturePicture() {
+
+    }
+
+    @Override
+    public String getFocusModeAuto() {
+        return null;
+    }
+
+    @Override
+    public String getFlashModeOff() {
+        return null;
+    }
+
+    @Override
+    public String getFocusModeVideo() {
+        return null;
+    }
+
+    @Override
+    public String getFocusModePicture() {
+        return null;
+    }
+
+    @Override
+    public String getFlashModeTorch() {
+        return null;
+    }
+
+    @Override
+    public void setRotation(int rotation) {
+
+    }
+
+    @Override
+    public void setPhotoFragmentInstance(PhotoFragment photoFragment) {
+        photoFrag = photoFragment;
+    }
+
+    @Override
+    public void setPhotoPath(String mediaPath) {
+
+    }
+
+    @Override
+    public void setRotation(float rot) {
+
+    }
+
+    @Override
+    public void removePreviewCallback() {
+
+    }
+
+    @Override
+    public void setVideoFragmentInstance(VideoFragment videoFragment) {
+        videoFrag = videoFragment;
     }
 }

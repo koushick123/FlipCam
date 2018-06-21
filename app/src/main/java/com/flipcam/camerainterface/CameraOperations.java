@@ -13,7 +13,7 @@ import java.util.List;
  * Created by Koushick on 02-08-2017.
  * Contains a list of camera related operations.
  * This Interface will be the only way to use a camera in this app. This will have two implementations. One for Camera 1 API and another for Camera 2 API.
- * This will promote loose coupling, since no code changes will be necessary in the Photo or Video fragments.
+ * This will promote loose coupling, since only minimal code changes will be necessary in the Photo or Video fragments.
  *
  * This will contain methods which are Camera 1 and Camera 2 API specific. Those methods that do not have a purpose for a specific API, will need an empty
  * implementation.

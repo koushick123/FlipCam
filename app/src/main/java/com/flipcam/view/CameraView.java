@@ -11,6 +11,9 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.hardware.camera2.CameraAccessException;
+import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.CameraManager;
 import android.media.AudioManager;
 import android.media.CamcorderProfile;
 import android.media.MediaRecorder;
@@ -51,6 +54,7 @@ import com.flipcam.R;
 import com.flipcam.VideoFragment;
 import com.flipcam.camerainterface.CameraOperations;
 import com.flipcam.cameramanager.Camera1Manager;
+import com.flipcam.cameramanager.Camera2Manager;
 import com.flipcam.constants.Constants;
 import com.flipcam.util.GLUtil;
 
@@ -166,12 +170,51 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         super(context, attrs);
         if(VERBOSE)Log.d(TAG,"start cameraview");
         getHolder().addCallback(this);
-        camera1 = Camera1Manager.getInstance();
+        //Check if device's camera has atleast limited support for Camera 2 API. If not, we use Camera 1 API.
+        if(isCamera2Supported(context)){
+            camera1 = Camera2Manager.getInstance();
+        }
+        else {
+            camera1 = Camera1Manager.getInstance();
+        }
         focusMode = camera1.getFocusModeAuto();
         flashMode = camera1.getFlashModeOff();
         mSensorManager = (SensorManager)getContext().getSystemService(SENSOR_SERVICE);
         mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         audioManager = (AudioManager)getContext().getSystemService(Context.AUDIO_SERVICE);
+    }
+
+    private boolean isCamera2(){
+        return camera1 instanceof Camera2Manager;
+    }
+
+    public boolean isCamera2Supported(Context context){
+        boolean supported = false;
+        CameraManager cameraManager = (CameraManager)context.getSystemService(Context.CAMERA_SERVICE);
+        try {
+            CameraCharacteristics cameraCharacteristics=null;
+            for (String camId : cameraManager.getCameraIdList()) {
+                cameraCharacteristics = cameraManager.getCameraCharacteristics(camId);
+                int cameraOrientation = cameraCharacteristics.get(CameraCharacteristics.LENS_FACING);
+                if (cameraOrientation == CameraCharacteristics.LENS_FACING_BACK) {
+                    break;
+                }
+            }
+            int supportLevel = cameraCharacteristics.get(CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL);
+            if(VERBOSE)Log.d(TAG, "supportLevel = "+supportLevel);
+            switch (supportLevel){
+                case CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY:
+                    supported = false;
+                    break;
+                case CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED:
+                case CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL:
+                    supported = true;
+                    break;
+            }
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+        return supported;
     }
 
     @Override
@@ -557,13 +600,22 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         this.photoFragment = photoFragment;
     }
 
-    public void openCameraAndStartPreview()
-    {
+    public boolean isCameraPermissionAvailable(){
         int camerapermission = ContextCompat.checkSelfPermission(getContext(), Manifest.permission.CAMERA);
         int audiopermission = ContextCompat.checkSelfPermission(getContext(), Manifest.permission.RECORD_AUDIO);
         int storagepermission = ContextCompat.checkSelfPermission(getContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE);
         if (camerapermission != PackageManager.PERMISSION_GRANTED || audiopermission != PackageManager.PERMISSION_GRANTED ||
                 storagepermission != PackageManager.PERMISSION_GRANTED) {
+            return false;
+        }
+        else{
+            return true;
+        }
+    }
+
+    public void openCameraAndStartPreview()
+    {
+        if(!isCameraPermissionAvailable()){
             if(VERBOSE)Log.d(TAG,"Permission turned off mostly at settings");
             if(this.videoFragment!=null) {
                 this.videoFragment.askForPermissionAgain();
@@ -573,13 +625,15 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             }
             return;
         }
-        camera1.openCamera(backCamera);
+        camera1.openCamera(backCamera, getContext());
         if(!camera1.isCameraReady()){
             Toast.makeText(getContext(),getResources().getString(R.string.noFrontFaceCamera),Toast.LENGTH_SHORT).show();
             return;
         }
-        camera1.setResolution(measuredWidth, measuredHeight);
-        camera1.setFPS();
+        if(!isCamera2()) {
+            camera1.setResolution(measuredWidth, measuredHeight);
+            camera1.setFPS();
+        }
         setLayoutAspectRatio();
         camera1.startPreview(surfaceTexture);
         this.seekBar.setProgress(0);
@@ -756,7 +810,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             }
         }
         orientation = (orientation + 45) / 90 * 90;
-        int rotation = 0;
+        int rotation;
         if(!backCamera){
             rotation = (camera1.getCameraInfo().orientation - orientation + 360) % 360;
         } else {  // back-facing camera
