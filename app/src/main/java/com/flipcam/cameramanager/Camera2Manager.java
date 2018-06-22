@@ -40,6 +40,7 @@ public class Camera2Manager implements CameraOperations {
     private CameraCaptureSession cameraCaptureSession;
     private CaptureRequest.Builder captureRequestBuilder;
     private Point previewSize;
+    private Size videoSize;
     StreamConfigurationMap configs;
     public final String TAG = "Camera2Manager";
     private static int VIDEO_WIDTH = 640;  // default dimensions.
@@ -151,7 +152,7 @@ public class Camera2Manager implements CameraOperations {
             setResolution(previewSize.x,previewSize.y);
 
             // We set up a CaptureRequest.Builder with the output Surface.
-            captureRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_RECORD);
+            captureRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
 
             // This is the output Surface we need to start preview
             Surface videoSurface = new Surface(surfaceTexture);
@@ -185,6 +186,13 @@ public class Camera2Manager implements CameraOperations {
                         e.printStackTrace();
                     }
                 }
+
+                @Override
+                public void onClosed(@NonNull CameraCaptureSession session) {
+                    super.onClosed(session);
+                    cameraDevice.close();
+                }
+
                 @Override
                 public void onConfigureFailed(@NonNull CameraCaptureSession cameraCaptureSession) {
                 }
@@ -196,12 +204,27 @@ public class Camera2Manager implements CameraOperations {
 
     @Override
     public void releaseCamera() {
-        cameraDevice.close();
+        cameraCaptureSession.close();
     }
 
     @Override
     public void setFPS() {
-//        captureRequestBuilder.set(CaptureRequest.)
+        /*captureRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_OFF);
+        captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_OFF);
+        if(configs.isOutputSupportedFor(SurfaceTexture.class)){
+            long fps = configs.getOutputMinFrameDuration(SurfaceTexture.class, videoSize);
+            Log.d(TAG, "Setting FPS = "+fps);
+            captureRequestBuilder.set(CaptureRequest.SENSOR_FRAME_DURATION, fps);
+        }
+        //Set Exposure Compensation
+        Range<Integer> compensations = cameraCharacteristics.get(CameraCharacteristics.CONTROL_AE_COMPENSATION_RANGE);
+        Rational aeStep = cameraCharacteristics.get(CameraCharacteristics.CONTROL_AE_COMPENSATION_STEP);
+        if(compensations.getLower() != 0 && compensations.getUpper() != 0){
+            int maxExp = compensations.getUpper() * aeStep.intValue();
+            Log.d(TAG, "max exp = "+maxExp);
+            captureRequestBuilder.set(CaptureRequest.SENSOR_EXPOSURE_TIME, (long)maxExp / 2);
+        }*/
+        captureRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
     }
 
     @Override
@@ -254,10 +277,12 @@ public class Camera2Manager implements CameraOperations {
             }
             editor = sharedPreferences.edit();
             StringBuffer resolutions = new StringBuffer();
-            editor.putString(Constants.PREVIEW_RESOLUTION, resolutions.append(String.valueOf(VIDEO_WIDTH)).append(",").append(String.valueOf(VIDEO_HEIGHT)).toString());
+            editor.putString(Constants.PREVIEW_RESOLUTION,
+                    resolutions.append(String.valueOf(VIDEO_WIDTH)).append(",").append(String.valueOf(VIDEO_HEIGHT)).toString());
             editor.commit();
         }
         if(VERBOSE)Log.d(TAG,"HEIGHT == "+VIDEO_HEIGHT+", WIDTH == "+VIDEO_WIDTH);
+        videoSize = new Size(VIDEO_WIDTH, VIDEO_HEIGHT);
         surfaceTexture.setDefaultBufferSize(VIDEO_WIDTH, VIDEO_HEIGHT);
     }
 
