@@ -17,6 +17,7 @@ import com.flipcam.PhotoFragment;
 import com.flipcam.VideoFragment;
 import com.flipcam.camerainterface.CameraOperations;
 import com.flipcam.constants.Constants;
+import com.flipcam.view.CameraView;
 
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
@@ -529,5 +530,10 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     @Override
     public String getFlashModeTorch() {
         return Camera.Parameters.FLASH_MODE_TORCH;
+    }
+
+    @Override
+    public void setSurfaceView(CameraView surfaceView) {
+
     }
 }

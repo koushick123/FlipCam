@@ -6,6 +6,7 @@ import android.hardware.Camera;
 
 import com.flipcam.PhotoFragment;
 import com.flipcam.VideoFragment;
+import com.flipcam.view.CameraView;
 
 import java.util.List;
 
@@ -101,6 +102,7 @@ import java.util.List;
     void setPhotoPath(String mediaPath);
     void setRotation(float rot);
     void removePreviewCallback();
+    void setSurfaceView(CameraView surfaceView);
     //For video fragment instance
     void setVideoFragmentInstance(VideoFragment videoFragment);
 }

@@ -554,8 +554,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             backCamera = true;
         }
         focusMode = camera1.getFocusMode();
-        camera1.stopPreview();
-        camera1.releaseCamera();
+        /*camera1.stopPreview();
+        camera1.releaseCamera();*/
+        stopAndReleaseCamera();
         unregisterAccelSensor();
         isSwitch = true;
         isFocusModeSupported = false;
@@ -625,33 +626,34 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             }
             return;
         }
+        camera1.setSurfaceView(this);
         camera1.openCamera(backCamera, getContext());
-        if(!camera1.isCameraReady()){
-            Toast.makeText(getContext(),getResources().getString(R.string.noFrontFaceCamera),Toast.LENGTH_SHORT).show();
-            return;
-        }
         if(!isCamera2()) {
+            if(!camera1.isCameraReady()){
+                Toast.makeText(getContext(),getResources().getString(R.string.noFrontFaceCamera),Toast.LENGTH_SHORT).show();
+                return;
+            }
             camera1.setResolution(measuredWidth, measuredHeight);
             camera1.setFPS();
+            setLayoutAspectRatio();
+            camera1.startPreview(surfaceTexture);
         }
-        setLayoutAspectRatio();
-        camera1.startPreview(surfaceTexture);
         this.seekBar.setProgress(0);
         this.seekBar.setMax(camera1.getMaxZoom());
         if(VERBOSE)Log.d(TAG,"Setting max zoom = "+camera1.getMaxZoom());
-        //Set the focus mode to continuous focus if recording in progress
-        if (this.videoFragment!=null && camera1.isFocusModeSupported(camera1.getFocusModeVideo())) {
-            if(VERBOSE)Log.d(TAG, "Continuous AF");
-            camera1.setFocusMode(camera1.getFocusModeVideo());
-        }
-        else if(this.photoFragment!=null && camera1.isFocusModeSupported(camera1.getFocusModePicture())){
-            if(VERBOSE)Log.d(TAG, "Continuous AF Picture");
-            camera1.setFocusMode(camera1.getFocusModePicture());
-            this.photoFragment.setContinuousAF(true);
-        }
-        else if(this.photoFragment!=null && !camera1.isFocusModeSupported(camera1.getFocusModePicture())){
-            if(VERBOSE)Log.d(TAG, "Use Auto AF instead");
-            this.photoFragment.setContinuousAF(false);
+        if(!isCamera2()) {
+            //Set the focus mode to continuous focus if recording in progress
+            if (this.videoFragment != null && camera1.isFocusModeSupported(camera1.getFocusModeVideo())) {
+                if (VERBOSE) Log.d(TAG, "Continuous AF Video");
+                camera1.setFocusMode(camera1.getFocusModeVideo());
+            } else if (this.photoFragment != null && camera1.isFocusModeSupported(camera1.getFocusModePicture())) {
+                if (VERBOSE) Log.d(TAG, "Continuous AF Picture");
+                camera1.setFocusMode(camera1.getFocusModePicture());
+                this.photoFragment.setContinuousAF(true);
+            } else if (this.photoFragment != null && !camera1.isFocusModeSupported(camera1.getFocusModePicture())) {
+                if (VERBOSE) Log.d(TAG, "Use Auto AF instead");
+                this.photoFragment.setContinuousAF(false);
+            }
         }
         LinearLayout.LayoutParams flashParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,LinearLayout.LayoutParams.WRAP_CONTENT);
         if(isRecord){
@@ -667,6 +669,16 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         flashParams.width = (int) getResources().getDimension(R.dimen.flashOnWidth);
         flashBtn.setScaleType(ImageView.ScaleType.FIT_CENTER);
         flashBtn.setLayoutParams(flashParams);
+        if(!isCamera2()){
+            switchFlashOnOff();
+        }
+    }
+
+    public SurfaceTexture getSurfaceTexture(){
+        return surfaceTexture;
+    }
+
+    public void switchFlashOnOff(){
         if(this.photoFragment!=null){
             if(VERBOSE)Log.d(TAG,"isSwitch = "+isSwitch);
             if(isSwitch){
@@ -940,6 +952,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             camera1.setVideoFragmentInstance(null);
         }
         if(!camera1.isCameraReady()) {
+            if(VERBOSE)Log.d(TAG, "camera READY");
             measuredWidth = width;
             measuredHeight = height;
             frameCount=0;
@@ -951,6 +964,11 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         if(surfaceTexture!=null) {
             surfaceTexture.setOnFrameAvailableListener(this);
         }
+    }
+
+    private void stopAndReleaseCamera(){
+        camera1.stopPreview();
+        camera1.releaseCamera();
     }
 
     @Override
@@ -967,10 +985,12 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             if(camera1.isCameraReady()) {
                 //Switch off flash light if used during recording.
                 camera1.setFlashOnOff(false);
-                camera1.removePreviewCallback();
-                camera1.stopPreview();
-                camera1.releaseCamera();
+                if(!isCamera2()) {
+                    camera1.removePreviewCallback();
+                }
+                stopAndReleaseCamera();
             }
+            if(VERBOSE)Log.d(TAG, "stopped and released Camera");
             cameraHandler.removeMessages(Constants.FRAME_AVAILABLE);
             if(surfaceTexture!=null){
                 surfaceTexture.release();

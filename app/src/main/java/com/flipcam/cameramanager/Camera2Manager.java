@@ -12,6 +12,7 @@ import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
+import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.support.annotation.NonNull;
@@ -26,6 +27,7 @@ import com.flipcam.PhotoFragment;
 import com.flipcam.VideoFragment;
 import com.flipcam.camerainterface.CameraOperations;
 import com.flipcam.constants.Constants;
+import com.flipcam.view.CameraView;
 
 import java.util.Arrays;
 import java.util.List;
@@ -107,6 +109,8 @@ public class Camera2Manager implements CameraOperations {
                     || ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
                 return;
             }
+            surfaceTexture = camView.getSurfaceTexture();
+            previewSize = new Point();
             WindowManager windowManager = (WindowManager)context.getSystemService(Context.WINDOW_SERVICE);
             windowManager.getDefaultDisplay().getRealSize(previewSize);
             cameraManager.openCamera(cameraId + "", stateCallback, null);
@@ -122,6 +126,7 @@ public class Camera2Manager implements CameraOperations {
             //This is called when the camera is open
             if(VERBOSE)Log.d(TAG, "onOpened == " + cameraOrientation + ", " + surfaceTexture);
             cameraDevice = camera;
+            startPreview(surfaceTexture);
         }
 
         @Override
@@ -153,7 +158,21 @@ public class Camera2Manager implements CameraOperations {
 
             // We set up a CaptureRequest.Builder with the output Surface.
             captureRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
+            setFPS();
 
+            //Set the focus mode to continuous focus
+            if (this.videoFrag != null && isFocusModeSupported(getFocusModeVideo())) {
+                if (VERBOSE) Log.d(TAG, "Continuous AF Video");
+                setFocusMode(getFocusModeVideo());
+            } else if (this.photoFrag != null && isFocusModeSupported(getFocusModePicture())) {
+                if (VERBOSE) Log.d(TAG, "Continuous AF Picture");
+                setFocusMode(getFocusModePicture());
+                this.photoFrag.setContinuousAF(true);
+            } else if (this.photoFrag != null && !isFocusModeSupported(getFocusModePicture())) {
+                if (VERBOSE) Log.d(TAG, "Use Auto AF instead");
+                this.photoFrag.setContinuousAF(false);
+            }
+            camView.switchFlashOnOff();
             // This is the output Surface we need to start preview
             Surface videoSurface = new Surface(surfaceTexture);
             captureRequestBuilder.addTarget(videoSurface);
@@ -172,14 +191,11 @@ public class Camera2Manager implements CameraOperations {
                     if(VERBOSE)Log.d(TAG,"Camera capture session == "+cameraCaptureSession);
                     try {
                         if(VERBOSE)Log.d(TAG,"Camera session "+cameraCaptureSession);
+                        // Finally, we start displaying the camera preview.
                         if(videoFrag != null) {
-//                            captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_VIDEO);
-                            // Finally, we start displaying the camera preview.
                             cameraCaptureSession.setRepeatingRequest(captureRequestBuilder.build(), null, null);
                         }
                         else{
-//                            captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
-                            // Finally, we start displaying the camera preview.
                             cameraCaptureSession.capture(captureRequestBuilder.build(), null, null);
                         }
                     } catch (CameraAccessException e) {
@@ -190,7 +206,6 @@ public class Camera2Manager implements CameraOperations {
                 @Override
                 public void onClosed(@NonNull CameraCaptureSession session) {
                     super.onClosed(session);
-                    cameraDevice.close();
                 }
 
                 @Override
@@ -205,6 +220,7 @@ public class Camera2Manager implements CameraOperations {
     @Override
     public void releaseCamera() {
         cameraCaptureSession.close();
+        cameraCaptureSession = null;
     }
 
     @Override
@@ -224,12 +240,17 @@ public class Camera2Manager implements CameraOperations {
             Log.d(TAG, "max exp = "+maxExp);
             captureRequestBuilder.set(CaptureRequest.SENSOR_EXPOSURE_TIME, (long)maxExp / 2);
         }*/
-        captureRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
+        captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
     }
 
     @Override
     public void setResolution() {
 
+    }
+
+    CameraView camView;
+    public void setSurfaceView(CameraView surfaceView){
+        camView = surfaceView;
     }
 
     @Override
@@ -313,7 +334,8 @@ public class Camera2Manager implements CameraOperations {
 
     @Override
     public void stopPreview() {
-
+        cameraDevice.close();
+        cameraDevice = null;
     }
 
     @Override
@@ -338,7 +360,7 @@ public class Camera2Manager implements CameraOperations {
 
     @Override
     public void setFocusMode(String focusMode) {
-
+        captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, Integer.parseInt(focusMode));
     }
 
     @Override
@@ -348,7 +370,12 @@ public class Camera2Manager implements CameraOperations {
 
     @Override
     public void setFlashOnOff(boolean flashOn) {
-
+        if(!flashOn){
+            captureRequestBuilder.set(CaptureRequest.FLASH_MODE, CameraMetadata.FLASH_MODE_OFF);
+        }
+        else{
+            captureRequestBuilder.set(CaptureRequest.FLASH_MODE, CameraMetadata.FLASH_MODE_SINGLE);
+        }
     }
 
     @Override
@@ -363,7 +390,7 @@ public class Camera2Manager implements CameraOperations {
 
     @Override
     public boolean isFlashModeSupported(String flashMode) {
-        return false;
+        return cameraCharacteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
     }
 
     @Override
@@ -373,7 +400,7 @@ public class Camera2Manager implements CameraOperations {
 
     @Override
     public void setTorchLight() {
-
+        captureRequestBuilder.set(CaptureRequest.FLASH_MODE, CameraMetadata.FLASH_MODE_TORCH);
     }
 
     @Override
@@ -398,27 +425,27 @@ public class Camera2Manager implements CameraOperations {
 
     @Override
     public String getFocusModeAuto() {
-        return null;
+        return CameraMetadata.CONTROL_AF_MODE_AUTO+"";
     }
 
     @Override
     public String getFlashModeOff() {
-        return null;
+        return CameraMetadata.FLASH_MODE_OFF+"";
     }
 
     @Override
     public String getFocusModeVideo() {
-        return null;
+        return CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_VIDEO+"";
     }
 
     @Override
     public String getFocusModePicture() {
-        return null;
+        return CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_PICTURE+"";
     }
 
     @Override
     public String getFlashModeTorch() {
-        return null;
+        return CameraMetadata.FLASH_MODE_TORCH+"";
     }
 
     @Override
