@@ -770,7 +770,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             startTimerThread();
             cameraHandler.sendEmptyMessage(Constants.RECORD_START);
             orientationEventListener.disable();
-            camera1.setRecordingHint();
+            if(!isCamera2()) {
+                camera1.setRecordingHint();
+            }
         }
         else{
             isRecord=false;
@@ -783,7 +785,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 cameraHandler.sendEmptyMessage(Constants.RECORD_STOP);
             }
             orientationEventListener.enable();
-            camera1.disableRecordingHint();
+            if(!isCamera2()) {
+                camera1.disableRecordingHint();
+            }
             //Reset the RECORD Matrix to be portrait.
             System.arraycopy(IDENTITY_MATRIX,0,RECORD_IDENTITY_MATRIX,0,IDENTITY_MATRIX.length);
             //Reset Rotation angle
@@ -830,15 +834,17 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 rotationAngle = 0f;
             }
         }
-        orientation = (orientation + 45) / 90 * 90;
-        int rotation;
-        if(!backCamera){
-            rotation = (camera1.getCameraInfo().orientation - orientation + 360) % 360;
-        } else {  // back-facing camera
-            rotation = (camera1.getCameraInfo().orientation + orientation) % 360;
+        if(!isCamera2()) {
+            orientation = (orientation + 45) / 90 * 90;
+            int rotation;
+            if (!backCamera) {
+                rotation = (camera1.getCameraInfo().orientation - orientation + 360) % 360;
+            } else {  // back-facing camera
+                rotation = (camera1.getCameraInfo().orientation + orientation) % 360;
+            }
+            //if(VERBOSE)Log.d(TAG,"Rotation = "+rotation);
+            camera1.setRotation(rotation);
         }
-        //if(VERBOSE)Log.d(TAG,"Rotation = "+rotation);
-        camera1.setRotation(rotation);
     }
 
     public void setLayoutAspectRatio()
@@ -867,11 +873,13 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         else{
             degree = 0;
         }
-        if(VERBOSE)Log.d(TAG,"Orientation == "+camera1.getCameraInfo().orientation);
-        int result = (camera1.getCameraInfo().orientation + degree) % 360;
-        result = (360 - result) % 360;
-        if(VERBOSE)Log.d(TAG,"Result == "+result);
-        camera1.setDisplayOrientation(result);
+        if(!isCamera2()) {
+            if (VERBOSE) Log.d(TAG, "Orientation == " + camera1.getCameraInfo().orientation);
+            int result = (camera1.getCameraInfo().orientation + degree) % 360;
+            result = (360 - result) % 360;
+            if (VERBOSE) Log.d(TAG, "Result == " + result);
+            camera1.setDisplayOrientation(result);
+        }
     }
 
     private void releaseEGLSurface(){
@@ -1258,14 +1266,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             mediaRecorder.setOutputFile(mNextVideoAbsolutePath);
             mediaRecorder.setVideoEncodingBitRate(camcorderProfile.videoBitRate);
             mediaRecorder.setVideoFrameRate(camcorderProfile.videoFrameRate);
-            if(VERBOSE)Log.d(TAG, "camcorderProfile.videoFrameWidth = "+camcorderProfile.videoFrameWidth);
-            if(VERBOSE)Log.d(TAG, "camcorderProfile.videoFrameHeight = "+camcorderProfile.videoFrameHeight);
-            if(portrait){
-                mediaRecorder.setVideoSize(camcorderProfile.videoFrameHeight, camcorderProfile.videoFrameWidth);
-            }
-            else{
-                mediaRecorder.setVideoSize(camcorderProfile.videoFrameWidth, camcorderProfile.videoFrameHeight);
-            }
+            if(VERBOSE)Log.d(TAG, "videoWidth = "+VIDEO_WIDTH);
+            if(VERBOSE)Log.d(TAG, "videoHeight = "+VIDEO_HEIGHT);
+            mediaRecorder.setVideoSize(VIDEO_WIDTH, VIDEO_HEIGHT);
             mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
             mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
             try {
@@ -1412,6 +1415,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 }
                 mediaRecorder.release();
                 mediaRecorder = null;
+                if(isCamera2()){
+                    stopAndReleaseCamera();
+                }
                 if(FRAME_VERBOSE)Log.d(TAG,"stop isRecording == "+isRecording);
                 if(!cameraHandler.isRecordIncomplete()){
                     mainHandler.sendEmptyMessage(Constants.RECORD_COMPLETE);
