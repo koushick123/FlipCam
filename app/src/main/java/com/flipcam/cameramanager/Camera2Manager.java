@@ -164,58 +164,79 @@ public class Camera2Manager implements CameraOperations {
             if (this.videoFrag != null && isFocusModeSupported(getFocusModeVideo())) {
                 if (VERBOSE) Log.d(TAG, "Continuous AF Video");
                 setFocusMode(getFocusModeVideo());
-            } else if (this.photoFrag != null && isFocusModeSupported(getFocusModePicture())) {
-                if (VERBOSE) Log.d(TAG, "Continuous AF Picture");
-                setFocusMode(getFocusModePicture());
-                this.photoFrag.setContinuousAF(true);
-            } else if (this.photoFrag != null && !isFocusModeSupported(getFocusModePicture())) {
-                if (VERBOSE) Log.d(TAG, "Use Auto AF instead");
-                this.photoFrag.setContinuousAF(false);
             }
-            camView.switchFlashOnOff();
+            else if (this.photoFrag != null) {
+                if(isFocusModeSupported(getFocusModePicture())) {
+                    if (VERBOSE) Log.d(TAG, "Continuous AF Picture");
+                    setFocusMode(getFocusModePicture());
+                    this.photoFrag.setContinuousAF(true);
+                }
+                else{
+                    if (VERBOSE) Log.d(TAG, "Use Auto AF instead");
+                    this.photoFrag.setContinuousAF(false);
+                }
+            }
             // This is the output Surface we need to start preview
             Surface videoSurface = new Surface(surfaceTexture);
             captureRequestBuilder.addTarget(videoSurface);
-            if(VERBOSE)Log.d(TAG,"beginning capture session");
+            if(!camView.switchFlashOnOff()) {
+                if (VERBOSE) Log.d(TAG, "beginning capture session");
 
-            // Here, we create a CameraCaptureSession for camera preview.
-            cameraDevice.createCaptureSession(Arrays.asList(videoSurface), new CameraCaptureSession.StateCallback(){
-                @Override
-                public void onConfigured(@NonNull CameraCaptureSession cameraCaptureSes) {
-                    //The camera is already closed
-                        if (null == cameraDevice) {
-                        return;
-                    }
-                    // When the session is ready, we start displaying the preview.
-                    cameraCaptureSession = cameraCaptureSes;
-                    if(VERBOSE)Log.d(TAG,"Camera capture session == "+cameraCaptureSession);
-                    try {
-                        if(VERBOSE)Log.d(TAG,"Camera session "+cameraCaptureSession);
-                        // Finally, we start displaying the camera preview.
-                        if(videoFrag != null) {
-                            cameraCaptureSession.setRepeatingRequest(captureRequestBuilder.build(), null, null);
-                        }
-                        else{
-                            cameraCaptureSession.capture(captureRequestBuilder.build(), null, null);
-                        }
-                    } catch (CameraAccessException e) {
-                        e.printStackTrace();
-                    }
-                }
-
-                @Override
-                public void onClosed(@NonNull CameraCaptureSession session) {
-                    super.onClosed(session);
-                }
-
-                @Override
-                public void onConfigureFailed(@NonNull CameraCaptureSession cameraCaptureSession) {
-                }
-    }, null);
+                // Here, we create a CameraCaptureSession for camera preview.
+                cameraDevice.createCaptureSession(Arrays.asList(videoSurface), captureSessionStateCallback, null);
+            }
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
     }
+
+    private void reCreateCaptureSession(){
+        Surface videoSurface = new Surface(surfaceTexture);
+        try {
+            cameraDevice.createCaptureSession(Arrays.asList(videoSurface), captureSessionStateCallback, null);
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+    }
+
+    CameraCaptureSession.StateCallback captureSessionStateCallback = new CameraCaptureSession.StateCallback(){
+        @Override
+        public void onConfigured(@NonNull CameraCaptureSession cameraCaptureSes) {
+            //The camera is already closed
+            if (null == cameraDevice) {
+                return;
+            }
+            // When the session is ready, we start displaying the preview.
+            cameraCaptureSession = cameraCaptureSes;
+            if(VERBOSE)Log.d(TAG,"Camera capture session == "+cameraCaptureSession);
+            try {
+                // Finally, we start displaying the camera preview.
+                if(videoFrag != null) {
+                    cameraCaptureSession.setRepeatingRequest(captureRequestBuilder.build(), null, null);
+                }
+                else{
+                    cameraCaptureSession.capture(captureRequestBuilder.build(), null, null);
+                }
+            } catch (CameraAccessException e) {
+                e.printStackTrace();
+            }
+            if(VERBOSE)Log.d(TAG, "isStopCamera = "+camView.isStopCamera());
+            if(camView.isStopCamera()) {
+                stopPreview();
+                releaseCamera();
+            }
+        }
+
+        @Override
+        public void onClosed(@NonNull CameraCaptureSession session) {
+            super.onClosed(session);
+            if(VERBOSE)Log.d(TAG, "session CLOSED");
+        }
+
+        @Override
+        public void onConfigureFailed(@NonNull CameraCaptureSession cameraCaptureSession) {
+        }
+    };
 
     @Override
     public void releaseCamera() {
@@ -289,7 +310,7 @@ public class Camera2Manager implements CameraOperations {
                 int widthDiff = Math.abs(width - vidSize.getHeight());
                 int heightDiff = Math.abs(height - vidSize.getWidth());
                 if (VERBOSE) Log.d(TAG, "Width diff = " + widthDiff + ", Height diff = " + heightDiff);
-                if (Math.abs(screenAspectRatio - ar) <= 0.2 && (widthDiff <= 105 && heightDiff <= 105)) {
+                if (Math.abs(screenAspectRatio - ar) <= 0.2 && (widthDiff <= 150 && heightDiff <= 150)) {
                     //Best match for camera preview!!
                     VIDEO_HEIGHT = vidSize.getHeight();
                     VIDEO_WIDTH = vidSize.getWidth();
@@ -324,12 +345,22 @@ public class Camera2Manager implements CameraOperations {
 
     @Override
     public boolean isZoomSupported() {
-        return false;
+        float[] focalLengths = cameraCharacteristics.get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS);
+        if(focalLengths.length == 1) {
+            return false;
+        }
+        else{
+            return true;
+        }
     }
 
     @Override
     public int getMaxZoom() {
-        return 0;
+        float[] focalLengths = cameraCharacteristics.get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS);
+        for(float focalLen : focalLengths){
+            Log.d(TAG, "Focal length = "+focalLen);
+        }
+        return (int)focalLengths[focalLengths.length - 1];
     }
 
     @Override
@@ -340,7 +371,8 @@ public class Camera2Manager implements CameraOperations {
 
     @Override
     public void setAutoFocus() {
-
+        captureRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_START);
+        reCreateCaptureSession();
     }
 
     @Override
@@ -355,7 +387,8 @@ public class Camera2Manager implements CameraOperations {
 
     @Override
     public void cancelAutoFocus() {
-
+        captureRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_CANCEL);
+        reCreateCaptureSession();
     }
 
     @Override
@@ -365,7 +398,8 @@ public class Camera2Manager implements CameraOperations {
 
     @Override
     public void setAutoFlash() {
-
+        captureRequestBuilder.set(CaptureRequest.FLASH_MODE, CameraMetadata.FLASH_MODE_SINGLE);
+        reCreateCaptureSession();
     }
 
     @Override
@@ -376,31 +410,39 @@ public class Camera2Manager implements CameraOperations {
         else{
             captureRequestBuilder.set(CaptureRequest.FLASH_MODE, CameraMetadata.FLASH_MODE_SINGLE);
         }
+        reCreateCaptureSession();
     }
 
     @Override
     public String getFlashMode() {
-        return null;
+        return captureRequestBuilder.get(CaptureRequest.FLASH_MODE)+"";
     }
 
     @Override
     public String getFocusMode() {
-        return null;
+        return captureRequestBuilder.get(CaptureRequest.CONTROL_AF_MODE)+"";
     }
 
     @Override
     public boolean isFlashModeSupported(String flashMode) {
-        return cameraCharacteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
+        return (cameraCharacteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE));
     }
 
     @Override
     public boolean isFocusModeSupported(String focusMode) {
+        int[] afModes = cameraCharacteristics.get(CameraCharacteristics.CONTROL_AF_AVAILABLE_MODES);
+        for(int afMode : afModes){
+            if(afMode == Integer.parseInt(focusMode)){
+                return true;
+            }
+        }
         return false;
     }
 
     @Override
     public void setTorchLight() {
         captureRequestBuilder.set(CaptureRequest.FLASH_MODE, CameraMetadata.FLASH_MODE_TORCH);
+        reCreateCaptureSession();
     }
 
     @Override

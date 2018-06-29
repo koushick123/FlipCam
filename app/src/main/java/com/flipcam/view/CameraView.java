@@ -165,6 +165,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     boolean isPhoneMemory = true;
     StatFs availableStatFs = new StatFs(Environment.getDataDirectory().getPath());
     ContentValues mediaContent = new ContentValues();
+    boolean stopCamera = false;
 
     public CameraView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -477,6 +478,14 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         return camera1.isCameraReady();
     }
 
+    public boolean isStopCamera() {
+        return stopCamera;
+    }
+
+    public void setStopCamera(boolean stopCamera) {
+        this.stopCamera = stopCamera;
+    }
+
     public void showTimeElapsed()
     {
         if(VERBOSE)Log.d(TAG,"displaying time = "+second);
@@ -554,8 +563,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             backCamera = true;
         }
         focusMode = camera1.getFocusMode();
-        /*camera1.stopPreview();
-        camera1.releaseCamera();*/
         stopAndReleaseCamera();
         unregisterAccelSensor();
         isSwitch = true;
@@ -627,6 +634,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             return;
         }
         camera1.setSurfaceView(this);
+        setStopCamera(false);
         camera1.openCamera(backCamera, getContext());
         if(!isCamera2()) {
             if(!camera1.isCameraReady()){
@@ -678,75 +686,76 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         return surfaceTexture;
     }
 
-    public void switchFlashOnOff(){
-        if(this.photoFragment!=null){
-            if(VERBOSE)Log.d(TAG,"isSwitch = "+isSwitch);
-            if(isSwitch){
-                isSwitch = false;
-                if(this.photoFragment.isFlashOn()){
+    //Return 'true' if this method will create a camera capture session while setting a flash, or 'false' if not.
+    //If 'false' is returned, a camera capture session will be created in Camera2Manager.
+    public boolean switchFlashOnOff(){
+        if(VERBOSE)Log.d(TAG,"isSwitch = "+isSwitch);
+        if(isSwitch){
+            isSwitch = false;
+            if(this.photoFragment!=null) {
+                if (this.photoFragment.isFlashOn()) {
                     flashMode = camera1.getFlashModeTorch();
-                }
-                else{
+                } else {
                     flashMode = camera1.getFlashModeOff();
                 }
-                //Set the flash mode of previous camera
-                if(VERBOSE)Log.d(TAG,"flashmode = "+flashMode);
-                if (camera1.isFlashModeSupported(flashMode)) {
-                    if (flashMode.equalsIgnoreCase(camera1.getFlashModeOff())) {
-                        flashOnOff(false);
-                        flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_on));
-                    } else if (flashMode.equalsIgnoreCase(camera1.getFlashModeTorch())) {
-                        flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_off));
-                    }
+            }
+            else{
+                if (this.videoFragment.isFlashOn()) {
+                    flashMode = camera1.getFlashModeTorch();
                 } else {
-                    if (flashMode != null && !flashMode.equalsIgnoreCase(camera1.getFlashModeOff())) {
-                        Toast.makeText(getContext(), getResources().getString(R.string.flashModeNotSupported, flashMode), Toast.LENGTH_SHORT).show();
-                    }
-                    flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_on));
+                    flashMode = camera1.getFlashModeOff();
                 }
             }
-            else {
-                //If you are going out of app and coming back, or switching between phone and video modes, switch off flash.
-                flashMode = camera1.getFlashModeOff();
+
+            //Set the flash mode of previous camera
+            if(VERBOSE)Log.d(TAG,"flashmode = "+flashMode);
+            if (camera1.isFlashModeSupported(flashMode)) {
+                if (flashMode.equalsIgnoreCase(camera1.getFlashModeOff())) {
+                    flashOnOff(false);
+                    flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_on));
+                    return true;
+                } else if (flashMode.equalsIgnoreCase(camera1.getFlashModeTorch())) {
+                    flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_off));
+                    if(this.videoFragment!=null){
+                        flashOnOff(true);
+                        return true;
+                    }
+                    return false;
+                }
+            } else {
+                if (flashMode != null && !flashMode.equalsIgnoreCase(camera1.getFlashModeOff())) {
+                    if(isCamera2()) {
+                        switch(Integer.parseInt(flashMode)) {
+                            case 2:
+                                Toast.makeText(getContext(), getResources().getString(R.string.flashModeNotSupported, getResources().getString(R.string.torchMode)), Toast.LENGTH_SHORT).show();
+                            break;
+                            case 1:
+                                Toast.makeText(getContext(), getResources().getString(R.string.flashModeNotSupported, getResources().getString(R.string.singleMode)), Toast.LENGTH_SHORT).show();
+                            break;
+                        }
+                    }
+                    else{
+                        Toast.makeText(getContext(), getResources().getString(R.string.flashModeNotSupported, flashMode), Toast.LENGTH_SHORT).show();
+                    }
+                }
                 flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_on));
-                flashOnOff(false);
-                this.photoFragment.setFlashOn(false);
+                return false;
             }
         }
         else {
-            if(VERBOSE)Log.d(TAG,"isSwitch = "+isSwitch);
-            if(isSwitch){
-                isSwitch = false;
-                if(this.videoFragment.isFlashOn()){
-                    flashMode = camera1.getFlashModeTorch();
-                }
-                else{
-                    flashMode = camera1.getFlashModeOff();
-                }
-                //Set the flash mode of previous camera
-                if (camera1.isFlashModeSupported(flashMode)) {
-                    if (flashMode.equalsIgnoreCase(camera1.getFlashModeOff())) {
-                        flashOnOff(false);
-                        flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_on));
-                    } else if (flashMode.equalsIgnoreCase(camera1.getFlashModeTorch())) {
-                        flashOnOff(true);
-                        flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_off));
-                    }
-                } else {
-                    if (flashMode != null && !flashMode.equalsIgnoreCase(camera1.getFlashModeOff())) {
-                        Toast.makeText(getContext(), getResources().getString(R.string.flashModeNotSupported, flashMode), Toast.LENGTH_SHORT).show();
-                    }
-                    flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_on));
-                }
+            //If you are going out of app and coming back, or switching between phone and video modes, switch off flash.
+            flashMode = camera1.getFlashModeOff();
+            flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_on));
+            flashOnOff(false);
+            if(this.photoFragment!=null) {
+                this.photoFragment.setFlashOn(false);
             }
-            else {
-                //If you are going out of app and coming back, or switching between phone and video modes, switch off flash.
-                flashMode = camera1.getFlashModeOff();
-                flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_on));
-                flashOnOff(false);
+            else{
                 this.videoFragment.setFlashOn(false);
             }
+            return true;
         }
+        return true;
     }
 
     public void record(boolean noSDCard)
@@ -984,11 +993,14 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             CameraRenderer cameraRenderer = cameraHandler.getCameraRendererInstance();
             if(camera1.isCameraReady()) {
                 //Switch off flash light if used during recording.
-                camera1.setFlashOnOff(false);
-                if(!isCamera2()) {
-                    camera1.removePreviewCallback();
+                if(isCamera2()) {
+                    setStopCamera(true);
+                    camera1.setFlashOnOff(false);
                 }
-                stopAndReleaseCamera();
+                else {
+                    camera1.removePreviewCallback();
+                    stopAndReleaseCamera();
+                }
             }
             if(VERBOSE)Log.d(TAG, "stopped and released Camera");
             cameraHandler.removeMessages(Constants.FRAME_AVAILABLE);

@@ -850,7 +850,14 @@ public class VideoFragment extends android.app.Fragment{
                 flash.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_off));
             }
             else{
-                makeText(getActivity().getApplicationContext(),getResources().getString(R.string.flashModeNotSupported, cameraView.getCameraImplementation().getFlashModeTorch()),Toast.LENGTH_SHORT).show();
+                switch(Integer.parseInt(cameraView.getCameraImplementation().getFlashModeTorch())) {
+                    case 2:
+                        Toast.makeText(getApplicationContext(), getResources().getString(R.string.flashModeNotSupported, getResources().getString(R.string.torchMode)), Toast.LENGTH_SHORT).show();
+                        break;
+                    case 1:
+                        Toast.makeText(getApplicationContext(), getResources().getString(R.string.flashModeNotSupported, getResources().getString(R.string.singleMode)), Toast.LENGTH_SHORT).show();
+                        break;
+                }
             }
         }
         else

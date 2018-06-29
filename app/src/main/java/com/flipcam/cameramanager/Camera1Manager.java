@@ -186,7 +186,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
                 int widthDiff = Math.abs(width - previewSizes.get(i).height);
                 int heightDiff = Math.abs(height - previewSizes.get(i).width);
                 if (VERBOSE) Log.d(TAG, "Width diff = " + widthDiff + ", Height diff = " + heightDiff);
-                if (Math.abs(screenAspectRatio - ar) <= 0.2 && (widthDiff <= 105 && heightDiff <= 105)) {
+                if (Math.abs(screenAspectRatio - ar) <= 0.2 && (widthDiff <= 150 && heightDiff <= 150)) {
                     //Best match for camera preview!!
                     VIDEO_HEIGHT = previewSizes.get(i).height;
                     VIDEO_WIDTH = previewSizes.get(i).width;
