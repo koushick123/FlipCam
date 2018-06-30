@@ -230,10 +230,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
             mCamera.setParameters(parameters);
             return true;
         }
-        else
-        {
-            return false;
-        }
+        return false;
     }
 
     boolean zoomChangeListener = false;

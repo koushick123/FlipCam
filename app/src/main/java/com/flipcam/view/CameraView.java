@@ -205,9 +205,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             if(VERBOSE)Log.d(TAG, "supportLevel = "+supportLevel);
             switch (supportLevel){
                 case CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY:
+                case CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED:
                     supported = false;
                     break;
-                case CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED:
                 case CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL:
                     supported = true;
                     break;
@@ -770,9 +770,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             startTimerThread();
             cameraHandler.sendEmptyMessage(Constants.RECORD_START);
             orientationEventListener.disable();
-            if(!isCamera2()) {
-                camera1.setRecordingHint();
-            }
+            camera1.setRecordingHint();
         }
         else{
             isRecord=false;
@@ -785,9 +783,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 cameraHandler.sendEmptyMessage(Constants.RECORD_STOP);
             }
             orientationEventListener.enable();
-            if(!isCamera2()) {
-                camera1.disableRecordingHint();
-            }
+            camera1.disableRecordingHint();
             //Reset the RECORD Matrix to be portrait.
             System.arraycopy(IDENTITY_MATRIX,0,RECORD_IDENTITY_MATRIX,0,IDENTITY_MATRIX.length);
             //Reset Rotation angle

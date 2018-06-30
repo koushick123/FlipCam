@@ -52,6 +52,7 @@ public class Camera2Manager implements CameraOperations {
     private PhotoFragment photoFrag;
     private VideoFragment videoFrag;
     boolean VERBOSE = true;
+    float[] focalLengths;
 
     public static Camera2Manager getInstance()
     {
@@ -330,6 +331,14 @@ public class Camera2Manager implements CameraOperations {
 
     @Override
     public boolean zoomInOrOut(int zoomInOrOut) {
+        if(isZoomSupported() && zoomInOrOut >= 0 && zoomInOrOut <= getMaxZoom())
+        {
+            if(VERBOSE)Log.d(TAG,"Set Current zoom = "+zoomInOrOut);
+            captureRequestBuilder.set(CaptureRequest.LENS_FOCAL_LENGTH, (float) zoomInOrOut);
+            reCreateCaptureSession();
+
+            return true;
+        }
         return false;
     }
 
@@ -345,7 +354,7 @@ public class Camera2Manager implements CameraOperations {
 
     @Override
     public boolean isZoomSupported() {
-        float[] focalLengths = cameraCharacteristics.get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS);
+//        float[] focalLengths = cameraCharacteristics.get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS);
         if(focalLengths.length == 1) {
             return false;
         }
@@ -356,7 +365,8 @@ public class Camera2Manager implements CameraOperations {
 
     @Override
     public int getMaxZoom() {
-        float[] focalLengths = cameraCharacteristics.get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS);
+        focalLengths = cameraCharacteristics.get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS);
+        Log.d(TAG, "focalLengths = "+focalLengths.length);
         for(float focalLen : focalLengths){
             Log.d(TAG, "Focal length = "+focalLen);
         }
