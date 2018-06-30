@@ -58,4 +58,7 @@ public class Constants
     public static final String PREVIEW_RESOLUTION = "PreviewResolution";
     //Widget Ids
     public static final String WIDGET_IDS = "Widget_IDs";
+    //Video Resolution
+    public static final String SELECT_VIDEO_RESOLUTION = "selectVideoResolution";
+    public static final String VIDEO_DIMENSION = "videoDimension";
 }

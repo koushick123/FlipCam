@@ -79,7 +79,9 @@ import java.util.List;
      List<Camera.Size> getSupportedPictureSizes();
     //To set picture size
      void setPictureSize(int width, int height);
-    //To capture picture
+     //To set Video Size
+      void setVideoSize(int width, int height);
+      //To capture picture
      void capturePicture();
     //Fetch AF mode
     String getFocusModeAuto();

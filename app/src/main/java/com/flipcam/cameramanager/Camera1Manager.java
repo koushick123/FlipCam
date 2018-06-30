@@ -50,6 +50,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     private static Camera1Manager camera1Manager;
     Bitmap photo;
     boolean VERBOSE = true;
+    CameraView cameraView;
     public static Camera1Manager getInstance()
     {
         if(camera1Manager == null){
@@ -200,6 +201,8 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         }
         if(VERBOSE)Log.d(TAG,"HEIGHT == "+VIDEO_HEIGHT+", WIDTH == "+VIDEO_WIDTH);
         parameters.setPreviewSize(VIDEO_WIDTH, VIDEO_HEIGHT);
+        cameraView.setVideoHeight(VIDEO_HEIGHT);
+        cameraView.setVideoWidth(VIDEO_WIDTH);
         mCamera.setParameters(parameters);
     }
 
@@ -349,6 +352,14 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
             }
         }
         mCamera.getParameters().setPictureSize(width,height);
+    }
+
+    @Override
+    public void setVideoSize(int width, int height) {
+        SharedPreferences sharedPreferences = videoFrag.getActivity().getSharedPreferences(PermissionActivity.FC_SHARED_PREFERENCE, Context.MODE_PRIVATE);
+        if(sharedPreferences.getString(Constants.SELECT_VIDEO_RESOLUTION, null) != null){
+            //If the video resolution is HIGH, choose the one closest to screen resolution.
+        }
     }
 
     @Override
@@ -531,6 +542,6 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
 
     @Override
     public void setSurfaceView(CameraView surfaceView) {
-
+        cameraView = surfaceView;
     }
 }

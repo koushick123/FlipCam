@@ -134,6 +134,9 @@ public class SettingsActivity extends AppCompatActivity{
     AppWidgetManager appWidgetManager;
     ControlVisbilityPreference controlVisbilityPreference;
     boolean VERBOSE = false;
+    RadioButton videoResHigh;
+    RadioButton videoResMedium;
+    RadioButton videoResLow;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -153,8 +156,11 @@ public class SettingsActivity extends AppCompatActivity{
         switchOnDrive = (CheckBox) findViewById(R.id.switchOnDrive);
         sdcardlayout = (LinearLayout)findViewById(R.id.sdcardlayout);
         showMemoryConsumed = (CheckBox)findViewById(R.id.showMemoryConsumed);
-        thresholdText.setText(getResources().getString(R.string.memoryThresholdLimit, getResources().getInteger(R.integer.minimumMemoryWarning) + "MB"));
-        getSupportActionBar().setTitle(getResources().getString(R.string.settingTitle));
+        videoResHigh = (RadioButton)findViewById(R.id.videoResHigh);
+        videoResMedium = (RadioButton)findViewById(R.id.videoResMedium);
+        videoResLow = (RadioButton)findViewById(R.id.videoResLow);
+        thresholdText.setText(getString(R.string.memoryThresholdLimit, getResources().getInteger(R.integer.minimumMemoryWarning) + "MB"));
+        getSupportActionBar().setTitle(getString(R.string.settingTitle));
         settingsPref = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
         settingsEditor = settingsPref.edit();
         if(VERBOSE)if(VERBOSE)Log.d(TAG,"SD Card Path onCreate = "+settingsPref.getString(Constants.SD_CARD_PATH,""));
@@ -216,11 +222,11 @@ public class SettingsActivity extends AppCompatActivity{
         LinearLayout warningParent = (LinearLayout)warningMsgRoot.findViewById(R.id.warningParent);
         warningParent.setBackgroundColor(getResources().getColor(R.color.backColorSettingMsg));
         TextView warningTitle = (TextView)warningMsgRoot.findViewById(R.id.warningTitle);
-        warningTitle.setText(getResources().getString(R.string.sdCardRemovedTitle));
+        warningTitle.setText(getString(R.string.sdCardRemovedTitle));
         ImageView warningSign = (ImageView)warningMsgRoot.findViewById(R.id.warningSign);
         warningSign.setVisibility(View.VISIBLE);
         TextView warningText = (TextView)warningMsgRoot.findViewById(R.id.warningText);
-        warningText.setText(getResources().getString(R.string.sdCardNotPresentForRecord));
+        warningText.setText(getString(R.string.sdCardNotPresentForRecord));
         okButton = (Button)warningMsgRoot.findViewById(R.id.okButton);
         okButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -265,14 +271,14 @@ public class SettingsActivity extends AppCompatActivity{
             if(!settingsPref.getBoolean(Constants.PHONE_MEMORY_DISABLE, true)){
                 String memoryLimit = settingsPref.getString(Constants.PHONE_MEMORY_LIMIT, getResources().getInteger(R.integer.minimumMemoryWarning) + "");
                 String memoryMetric = settingsPref.getString(Constants.PHONE_MEMORY_METRIC, "MB");
-                thresholdText.setText(getResources().getString(R.string.memoryThresholdLimit, Integer.parseInt(memoryLimit) + " " + memoryMetric));
+                thresholdText.setText(getString(R.string.memoryThresholdLimit, Integer.parseInt(memoryLimit) + " " + memoryMetric));
             }
             else{
-                thresholdText.setText(getResources().getString(R.string.memoryThresholdLimit, getResources().getString(R.string.phoneMemoryLimitDisabled)));
+                thresholdText.setText(getString(R.string.memoryThresholdLimit, getString(R.string.phoneMemoryLimitDisabled)));
             }
         }
         else{
-            thresholdText.setText(getResources().getString(R.string.memoryThresholdLimit, getResources().getString(R.string.phoneMemoryLimitDisabled)));
+            thresholdText.setText(getString(R.string.memoryThresholdLimit, getString(R.string.phoneMemoryLimitDisabled)));
         }
         //Update Auto upload
         //Google Drive
@@ -317,9 +323,9 @@ public class SettingsActivity extends AppCompatActivity{
         LinearLayout shareMediaParent = (LinearLayout)shareMediaRoot.findViewById(R.id.shareMediaParent);
         shareMediaParent.setBackgroundColor(getResources().getColor(R.color.backColorSettingMsg));
         TextView shareTitle = (TextView)shareMediaRoot.findViewById(R.id.shareTitle);
-        shareTitle.setText(getResources().getString(R.string.resetTitle));
+        shareTitle.setText(getString(R.string.resetTitle));
         TextView shareMsg = (TextView)shareMediaRoot.findViewById(R.id.shareText);
-        shareMsg.setText(getResources().getString(R.string.resetMsg));
+        shareMsg.setText(getString(R.string.resetMsg));
         Button okBtn = (Button)shareMediaRoot.findViewById(R.id.okToShare);
         okBtn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -376,15 +382,15 @@ public class SettingsActivity extends AppCompatActivity{
         if (media != null && media.length > 0) {
             String filepath = media[0].getPath();
             if(VERBOSE)Log.d(TAG, "FilePath = " + filepath);
-            if (filepath.endsWith(getResources().getString(R.string.IMG_EXT))
-                    || filepath.endsWith(getResources().getString(R.string.ANOTHER_IMG_EXT))) {
+            if (filepath.endsWith(getString(R.string.IMG_EXT))
+                    || filepath.endsWith(getString(R.string.ANOTHER_IMG_EXT))) {
                 Bitmap latestImage = BitmapFactory.decodeFile(filepath);
                 latestImage = Bitmap.createScaledBitmap(latestImage, (int) getResources().getDimension(R.dimen.thumbnailWidth),
                         (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
                 if(VERBOSE)Log.d(TAG, "Update Photo thumbnail");
                 remoteViews.setViewVisibility(R.id.playCircleWidget, View.INVISIBLE);
                 remoteViews.setImageViewBitmap(R.id.imageWidget, latestImage);
-                remoteViews.setTextViewText(R.id.widgetMsg, getResources().getString(R.string.widgetMediaMsg));
+                remoteViews.setTextViewText(R.id.widgetMsg, getString(R.string.widgetMediaMsg));
             } else {
                 Bitmap vid = null;
                 MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
@@ -400,7 +406,7 @@ public class SettingsActivity extends AppCompatActivity{
                         vid = mediaMetadataRetriever.getFrameAtTime(Constants.FIRST_SEC_MICRO);
                     } else {
                         remoteViews.setImageViewResource(R.id.imageWidget, R.drawable.placeholder);
-                        remoteViews.setTextViewText(R.id.widgetMsg, getResources().getString(R.string.widgetNoMedia));
+                        remoteViews.setTextViewText(R.id.widgetMsg, getString(R.string.widgetNoMedia));
                     }
                 }
                 if (vid != null) {
@@ -409,12 +415,12 @@ public class SettingsActivity extends AppCompatActivity{
                     if(VERBOSE)Log.d(TAG, "Update Video thumbnail");
                     remoteViews.setViewVisibility(R.id.playCircleWidget, View.VISIBLE);
                     remoteViews.setImageViewBitmap(R.id.imageWidget, vid);
-                    remoteViews.setTextViewText(R.id.widgetMsg, getResources().getString(R.string.widgetMediaMsg));
+                    remoteViews.setTextViewText(R.id.widgetMsg, getString(R.string.widgetMediaMsg));
                 }
             }
         } else {
             remoteViews.setImageViewResource(R.id.imageWidget, R.drawable.placeholder);
-            remoteViews.setTextViewText(R.id.widgetMsg, getResources().getString(R.string.widgetNoMedia));
+            remoteViews.setTextViewText(R.id.widgetMsg, getString(R.string.widgetNoMedia));
         }
         if(VERBOSE)Log.d(TAG, "Update FC Widget");
         appWidgetManager.updateAppWidget(appWidgetId, remoteViews);
@@ -478,11 +484,11 @@ public class SettingsActivity extends AppCompatActivity{
                     LinearLayout warningParent = (LinearLayout)warningMsgRoot.findViewById(R.id.warningParent);
                     warningParent.setBackgroundColor(getResources().getColor(R.color.backColorSettingMsg));
                     TextView warningTitle = (TextView)warningMsgRoot.findViewById(R.id.warningTitle);
-                    warningTitle.setText(getResources().getString(R.string.sdCardNotDetectTitle));
+                    warningTitle.setText(getString(R.string.sdCardNotDetectTitle));
                     ImageView warningSign = (ImageView)warningMsgRoot.findViewById(R.id.warningSign);
                     warningSign.setVisibility(View.VISIBLE);
                     TextView warningText = (TextView)warningMsgRoot.findViewById(R.id.warningText);
-                    warningText.setText(getResources().getString(R.string.sdCardNotDetectMessage));
+                    warningText.setText(getString(R.string.sdCardNotDetectMessage));
                 }
                 else{
                     settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, false);
@@ -495,9 +501,9 @@ public class SettingsActivity extends AppCompatActivity{
                     ImageView warningSign = (ImageView)warningMsgRoot.findViewById(R.id.warningSign);
                     warningSign.setVisibility(View.GONE);
                     TextView warningTitle = (TextView)warningMsgRoot.findViewById(R.id.warningTitle);
-                    warningTitle.setText(getResources().getString(R.string.sdCardDetectTitle));
+                    warningTitle.setText(getString(R.string.sdCardDetectTitle));
                     TextView warningText = (TextView)warningMsgRoot.findViewById(R.id.warningText);
-                    warningText.setText(getResources().getString(R.string.sdCardDetectMessage, sdCardPath));
+                    warningText.setText(getString(R.string.sdCardDetectMessage, sdCardPath));
                     controlVisbilityPreference.setMediaSelectedPosition(0);
                 }
                 warningMsg.setContentView(warningMsgRoot);
@@ -512,6 +518,30 @@ public class SettingsActivity extends AppCompatActivity{
                 });
                 break;
         }
+    }
+
+    public void selectVideoResolution(View view){
+        switch (view.getId()){
+            case R.id.videoResHigh:
+                videoResHigh.setChecked(true);
+                videoResMedium.setChecked(false);
+                videoResLow.setChecked(false);
+                settingsEditor.putString(Constants.SELECT_VIDEO_RESOLUTION, getString(R.string.videoResHigh));
+                break;
+            case R.id.videoResMedium:
+                videoResHigh.setChecked(false);
+                videoResMedium.setChecked(true);
+                videoResLow.setChecked(false);
+                settingsEditor.putString(Constants.SELECT_VIDEO_RESOLUTION, getString(R.string.videoResMedium));
+                break;
+            case R.id.videoResLow:
+                videoResHigh.setChecked(false);
+                videoResMedium.setChecked(false);
+                videoResLow.setChecked(true);
+                settingsEditor.putString(Constants.SELECT_VIDEO_RESOLUTION, getString(R.string.videoResLow));
+                break;
+        }
+        settingsEditor.commit();
     }
 
     public void showSDCardPath(String path){
@@ -539,15 +569,15 @@ public class SettingsActivity extends AppCompatActivity{
         cloud = Constants.GOOGLE_DRIVE_CLOUD;
         if (switchOnDrive.isChecked()) {
             savetocloudtitle = (TextView)saveToCloudRoot.findViewById(R.id.savetocloudtitle);
-            savetocloudtitle.setText(getResources().getString(R.string.saveToCloudTitle, getResources().getString(R.string.googleDrive)));
+            savetocloudtitle.setText(getString(R.string.saveToCloudTitle, getString(R.string.googleDrive)));
             ImageView placeHolderIcon = (ImageView)saveToCloudRoot.findViewById(R.id.placeHolderIconSavetoCloud);
-            placeHolderIcon.setImageDrawable(getResources().getDrawable(R.drawable.google_drive));
+            placeHolderIcon.setImageDrawable(getDrawable(R.drawable.google_drive));
             LinearLayout.LayoutParams imageParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
             imageParams.width = (int)getResources().getDimension(R.dimen.googleDriveIconWidth);
             imageParams.height = (int)getResources().getDimension(R.dimen.googleDriveIconHeight);
             placeHolderIcon.setLayoutParams(imageParams);
             TextView savetoCloudMsg = (TextView)saveToCloudRoot.findViewById(R.id.savetocloudmsg);
-            savetoCloudMsg.setText(getResources().getString(R.string.continueToCloud));
+            savetoCloudMsg.setText(getString(R.string.continueToCloud));
             saveToCloud.setContentView(saveToCloudRoot);
             saveToCloud.setCancelable(false);
             saveToCloud.show();
@@ -571,15 +601,15 @@ public class SettingsActivity extends AppCompatActivity{
         cloud = Constants.DROPBOX_CLOUD;
         if(switchOnDropbox.isChecked()){
             savetocloudtitle = (TextView)saveToCloudRoot.findViewById(R.id.savetocloudtitle);
-            savetocloudtitle.setText(getResources().getString(R.string.saveToCloudTitle, getResources().getString(R.string.dropbox)));
+            savetocloudtitle.setText(getString(R.string.saveToCloudTitle, getString(R.string.dropbox)));
             ImageView placeHolderIcon = (ImageView)saveToCloudRoot.findViewById(R.id.placeHolderIconSavetoCloud);
-            placeHolderIcon.setImageDrawable(getResources().getDrawable(R.drawable.dropbox));
+            placeHolderIcon.setImageDrawable(getDrawable(R.drawable.dropbox));
             LinearLayout.LayoutParams imageParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
             imageParams.width = (int)getResources().getDimension(R.dimen.dropBoxIconWidth);
             imageParams.height = (int)getResources().getDimension(R.dimen.dropBoxIconHeight);
             placeHolderIcon.setLayoutParams(imageParams);
             TextView savetoCloudMsg = (TextView)saveToCloudRoot.findViewById(R.id.savetocloudmsg);
-            savetoCloudMsg.setText(getResources().getString(R.string.saveToCloudDropbox));
+            savetoCloudMsg.setText(getString(R.string.saveToCloudDropbox));
             saveToCloud.setContentView(saveToCloudRoot);
             saveToCloud.setCancelable(false);
             saveToCloud.show();
@@ -632,7 +662,7 @@ public class SettingsActivity extends AppCompatActivity{
                 }
                 else if(cloud == Constants.DROPBOX_CLOUD){
                     if(!isConnectedToInternet()){
-                        Toast.makeText(getApplicationContext(),getResources().getString(R.string.noConnectionMessage),Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getApplicationContext(),getString(R.string.noConnectionMessage),Toast.LENGTH_SHORT).show();
                         switchOnDropbox.setChecked(false);
                         return;
                     }
@@ -642,15 +672,15 @@ public class SettingsActivity extends AppCompatActivity{
                     signInProgress = true;
                     TextView signInText = (TextView)signInProgressRoot.findViewById(R.id.signInText);
                     TextView signInprogressTitle = (TextView)signInProgressRoot.findViewById(R.id.savetocloudtitle);
-                    signInprogressTitle.setText(getResources().getString(R.string.signInProgressTitle, getResources().getString(R.string.dropbox)));
+                    signInprogressTitle.setText(getString(R.string.signInProgressTitle, getString(R.string.dropbox)));
                     if(doesPackageExist(this, "com.dropbox.android")){
                         signInText.setText("Opening Dropbox App...");
                     }
                     else {
-                        signInText.setText(getResources().getString(R.string.signInProgressDropbox));
+                        signInText.setText(getString(R.string.signInProgressDropbox));
                     }
                     ImageView signInImage = (ImageView) signInProgressRoot.findViewById(R.id.signInImage);
-                    signInImage.setImageDrawable(getResources().getDrawable(R.drawable.dropbox));
+                    signInImage.setImageDrawable(getDrawable(R.drawable.dropbox));
                     signInProgressDialog.setContentView(signInProgressRoot);
                     signInProgressDialog.setCancelable(false);
                     signInProgressDialog.show();
@@ -729,7 +759,7 @@ public class SettingsActivity extends AppCompatActivity{
             goToDropbox = false;
             if(VERBOSE)Log.d(TAG, "Access token = " + Auth.getOAuth2Token());
             if(Auth.getOAuth2Token() == null){
-                Toast.makeText(getApplicationContext(),getResources().getString(R.string.signInDropboxFail),Toast.LENGTH_LONG).show();
+                Toast.makeText(getApplicationContext(),getString(R.string.signInDropboxFail),Toast.LENGTH_LONG).show();
                 switchOnDropbox.setChecked(false);
                 disableDropboxInSetting();
             }
@@ -739,15 +769,15 @@ public class SettingsActivity extends AppCompatActivity{
                 dbxRequestConfig = new DbxRequestConfig("dropbox/flipCam");
                 dbxClientV2 = new DbxClientV2(dbxRequestConfig, Auth.getOAuth2Token());
                 if(settingsPref.contains(Constants.DROPBOX_FOLDER) && (!settingsPref.getString(Constants.DROPBOX_FOLDER,"").equals("")
-                        && !settingsPref.getString(Constants.DROPBOX_FOLDER,"").equalsIgnoreCase(getResources().getString(R.string.app_name)))){
+                        && !settingsPref.getString(Constants.DROPBOX_FOLDER,"").equalsIgnoreCase(getString(R.string.app_name)))){
                     checkIfFolderCreatedInDropbox();
                 }
                 else {
                     //Folder name is same as app name
-                    updateDropboxInSetting(getResources().getString(R.string.app_name), true);
+                    updateDropboxInSetting(getString(R.string.app_name), true);
                     TextView dropBoxfolderCreated = (TextView) accessGrantedDropboxRoot.findViewById(R.id.dropBoxFolderCreated);
-                    dropBoxfolderCreated.setText(getResources().getString(R.string.autouploadFolderUpdated, getResources().getString(R.string.flipCamAppFolder),
-                            getResources().getString(R.string.dropbox)));
+                    dropBoxfolderCreated.setText(getString(R.string.autouploadFolderUpdated, getString(R.string.flipCamAppFolder),
+                            getString(R.string.dropbox)));
                     CheckBox dropBoxFolderCreateEnable = (CheckBox) accessGrantedDropboxRoot.findViewById(R.id.dropBoxFolderCreateEnable);
                     dropBoxFolderCreateEnable.setChecked(false);
                     accesGrantedDropbox.setContentView(accessGrantedDropboxRoot);
@@ -783,7 +813,7 @@ public class SettingsActivity extends AppCompatActivity{
     String accName;
     public void continueToGoogleDrive(){
         if(!isConnectedToInternet()){
-            Toast.makeText(getApplicationContext(),getResources().getString(R.string.noConnectionMessage),Toast.LENGTH_SHORT).show();
+            Toast.makeText(getApplicationContext(),getString(R.string.noConnectionMessage),Toast.LENGTH_SHORT).show();
             switchOnDrive.setChecked(false);
             return;
         }
@@ -793,10 +823,10 @@ public class SettingsActivity extends AppCompatActivity{
         TextView signInText = (TextView)signInProgressRoot.findViewById(R.id.signInText);
         TextView signInprogressTitle = (TextView)signInProgressRoot.findViewById(R.id.savetocloudtitle);
         if(cloud == Constants.GOOGLE_DRIVE_CLOUD) {
-            signInprogressTitle.setText(getResources().getString(R.string.signInProgressTitle, getResources().getString(R.string.googleDrive)));
-            signInText.setText(getResources().getString(R.string.signInProgress, getResources().getString(R.string.googleDrive)));
+            signInprogressTitle.setText(getString(R.string.signInProgressTitle, getString(R.string.googleDrive)));
+            signInText.setText(getString(R.string.signInProgress, getString(R.string.googleDrive)));
             ImageView signInImage = (ImageView) signInProgressRoot.findViewById(R.id.signInImage);
-            signInImage.setImageDrawable(getResources().getDrawable(R.drawable.google_drive));
+            signInImage.setImageDrawable(getDrawable(R.drawable.google_drive));
         }
         signInProgressDialog.setContentView(signInProgressRoot);
         signInProgressDialog.setCancelable(false);
@@ -816,14 +846,14 @@ public class SettingsActivity extends AppCompatActivity{
 
     public void checkIfFolderCreatedInDropbox(){
         if(!isConnectedToInternet()){
-            Toast.makeText(getApplicationContext(),getResources().getString(R.string.noConnectionMessage),Toast.LENGTH_SHORT).show();
+            Toast.makeText(getApplicationContext(),getString(R.string.noConnectionMessage),Toast.LENGTH_SHORT).show();
             switchOnDropbox.setChecked(false);
             return;
         }
         TextView uploadFolderMsg = (TextView)uploadFolderCheckRoot.findViewById(R.id.uploadFolderMsg);
-        uploadFolderMsg.setText(getResources().getString(R.string.uploadCheckDropboxMsg, getResources().getString(R.string.dropbox)));
+        uploadFolderMsg.setText(getString(R.string.uploadCheckDropboxMsg, getString(R.string.dropbox)));
         ImageView signinImage = (ImageView)uploadFolderCheckRoot.findViewById(R.id.signInImage);
-        signinImage.setImageDrawable(getResources().getDrawable(R.drawable.dropbox));
+        signinImage.setImageDrawable(getDrawable(R.drawable.dropbox));
         uploadFolderCheck.setContentView(uploadFolderCheckRoot);
         uploadFolderCheck.setCancelable(false);
         uploadFolderCheck.show();
@@ -841,9 +871,9 @@ public class SettingsActivity extends AppCompatActivity{
                         if(!metadata.getName().equals("")) {
                             if(VERBOSE)Log.d(TAG, "Save folder name in setting");
                             ImageView placeholdericon = (ImageView) autoUploadEnabledRoot.findViewById(R.id.placeHolderIconAutoUpload);
-                            placeholdericon.setImageDrawable(getResources().getDrawable(R.drawable.dropbox));
+                            placeholdericon.setImageDrawable(getDrawable(R.drawable.dropbox));
                             TextView autoUploadMsg = (TextView) autoUploadEnabledRoot.findViewById(R.id.autoUploadMsg);
-                            autoUploadMsg.setText(getResources().getString(R.string.autouploadFolderUpdated, metadata.getName(), getResources().getString(R.string.dropbox)));
+                            autoUploadMsg.setText(getString(R.string.autouploadFolderUpdated, metadata.getName(), getString(R.string.dropbox)));
                             TextView folderNameTxt = (TextView) autoUploadEnabledRoot.findViewById(R.id.folderName);
                             folderNameTxt.setText(metadata.getName());
                             autoUploadEnabled.setContentView(autoUploadEnabledRoot);
@@ -871,10 +901,10 @@ public class SettingsActivity extends AppCompatActivity{
                         if(VERBOSE)Log.d(TAG, "Folder not present = "+metadataerror.getMessage());
                         TextView signInText = (TextView)signInProgressRoot.findViewById(R.id.signInText);
                         TextView signInprogressTitle = (TextView)signInProgressRoot.findViewById(R.id.savetocloudtitle);
-                        signInprogressTitle.setText(getResources().getString(R.string.uploadFolderNotExist));
-                        signInText.setText(getResources().getString(R.string.uploadFolderMovedDeleted, folderName));
+                        signInprogressTitle.setText(getString(R.string.uploadFolderNotExist));
+                        signInText.setText(getString(R.string.uploadFolderMovedDeleted, folderName));
                         ImageView signInImage = (ImageView) signInProgressRoot.findViewById(R.id.signInImage);
-                        signInImage.setImageDrawable(getResources().getDrawable(R.drawable.dropbox));
+                        signInImage.setImageDrawable(getDrawable(R.drawable.dropbox));
                         signInProgressDialog.setContentView(signInProgressRoot);
                         signInProgressDialog.setCancelable(false);
                         runOnUiThread(new Runnable() {
@@ -890,10 +920,10 @@ public class SettingsActivity extends AppCompatActivity{
                             e.printStackTrace();
                         }
                         //Reset folder to FlipCam and give option to user to recreate a subfolder.
-                        updateDropboxInSetting(getResources().getString(R.string.app_name), true);
+                        updateDropboxInSetting(getString(R.string.app_name), true);
                         TextView dropBoxfolderCreated = (TextView) accessGrantedDropboxRoot.findViewById(R.id.dropBoxFolderCreated);
-                        dropBoxfolderCreated.setText(getResources().getString(R.string.autouploadFolderUpdated, getResources().getString(R.string.flipCamAppFolder),
-                                getResources().getString(R.string.dropbox)));
+                        dropBoxfolderCreated.setText(getString(R.string.autouploadFolderUpdated, getString(R.string.flipCamAppFolder),
+                                getString(R.string.dropbox)));
                         final CheckBox dropBoxFolderCreateEnable = (CheckBox) accessGrantedDropboxRoot.findViewById(R.id.dropBoxFolderCreateEnable);
                         accesGrantedDropbox.setContentView(accessGrantedDropboxRoot);
                         accesGrantedDropbox.setCancelable(false);
@@ -923,9 +953,9 @@ public class SettingsActivity extends AppCompatActivity{
 
     public void checkIfFolderCreatedInDrive(){
         TextView uploadFolderMsg = (TextView)uploadFolderCheckRoot.findViewById(R.id.uploadFolderMsg);
-        uploadFolderMsg.setText(getResources().getString(R.string.uploadCheckMessage, getResources().getString(R.string.googleDrive)));
+        uploadFolderMsg.setText(getString(R.string.uploadCheckMessage, getString(R.string.googleDrive)));
         ImageView signinImage = (ImageView)uploadFolderCheckRoot.findViewById(R.id.signInImage);
-        signinImage.setImageDrawable(getResources().getDrawable(R.drawable.google_drive));
+        signinImage.setImageDrawable(getDrawable(R.drawable.google_drive));
         uploadFolderCheck.setContentView(uploadFolderCheckRoot);
         uploadFolderCheck.setCancelable(false);
         uploadFolderCheck.show();
@@ -949,7 +979,7 @@ public class SettingsActivity extends AppCompatActivity{
                         @Override
                         public void onFailure(@NonNull Exception e) {
                             if(!isConnectedToInternet()) {
-                                Toast.makeText(getApplicationContext(),getResources().getString(R.string.noConnectionMessage),Toast.LENGTH_SHORT).show();
+                                Toast.makeText(getApplicationContext(),getString(R.string.noConnectionMessage),Toast.LENGTH_SHORT).show();
                                 uploadFolderCheck.dismiss();
                                 switchOnDrive.setChecked(false);
                                 disableGoogleDriveInSetting();
@@ -966,7 +996,7 @@ public class SettingsActivity extends AppCompatActivity{
                                 queryForFolder(folderName);
                             }
                             else if(e.getMessage().contains(String.valueOf(CommonStatusCodes.TIMEOUT))){
-                                Toast.makeText(getApplicationContext(),getResources().getString(R.string.timeoutErrorSync),Toast.LENGTH_SHORT).show();
+                                Toast.makeText(getApplicationContext(),getString(R.string.timeoutErrorSync),Toast.LENGTH_SHORT).show();
                                 uploadFolderCheck.dismiss();
                                 switchOnDrive.setChecked(false);
                                 disableGoogleDriveInSetting();
@@ -1011,9 +1041,9 @@ public class SettingsActivity extends AppCompatActivity{
                                         public void onSuccess(DriveId driveId) {
                                             uploadFolderCheck.dismiss();
                                             ImageView placeholdericon = (ImageView) autoUploadEnabledRoot.findViewById(R.id.placeHolderIconAutoUpload);
-                                            placeholdericon.setImageDrawable(getResources().getDrawable(R.drawable.google_drive));
+                                            placeholdericon.setImageDrawable(getDrawable(R.drawable.google_drive));
                                             TextView autoUploadMsg = (TextView) autoUploadEnabledRoot.findViewById(R.id.autoUploadMsg);
-                                            autoUploadMsg.setText(getResources().getString(R.string.autouploadFolderUpdated, driveFolderName, getResources().getString(R.string.googleDrive)));
+                                            autoUploadMsg.setText(getString(R.string.autouploadFolderUpdated, driveFolderName, getString(R.string.googleDrive)));
                                             TextView folderName = (TextView) autoUploadEnabledRoot.findViewById(R.id.folderName);
                                             folderName.setText(driveFolderName);
                                             autoUploadEnabled.setContentView(autoUploadEnabledRoot);
@@ -1027,10 +1057,10 @@ public class SettingsActivity extends AppCompatActivity{
                                         @Override
                                         public void onFailure(@NonNull Exception e) {
                                             if(!isConnectedToInternet()) {
-                                                Toast.makeText(getApplicationContext(),getResources().getString(R.string.noConnectionMessage),Toast.LENGTH_SHORT).show();
+                                                Toast.makeText(getApplicationContext(),getString(R.string.noConnectionMessage),Toast.LENGTH_SHORT).show();
                                             }
                                             else if(e.getMessage().contains(String.valueOf(CommonStatusCodes.TIMEOUT))){
-                                                Toast.makeText(getApplicationContext(),getResources().getString(R.string.timeoutErrorSync),Toast.LENGTH_SHORT).show();
+                                                Toast.makeText(getApplicationContext(),getString(R.string.timeoutErrorSync),Toast.LENGTH_SHORT).show();
                                             }
                                             uploadFolderCheck.dismiss();
                                             switchOnDrive.setChecked(false);
@@ -1051,10 +1081,10 @@ public class SettingsActivity extends AppCompatActivity{
                     public void onFailure(@NonNull Exception e) {
                         if(VERBOSE)Log.d(TAG, "Failure = " + e.getMessage());
                         if(!isConnectedToInternet()) {
-                            Toast.makeText(getApplicationContext(),getResources().getString(R.string.noConnectionMessage),Toast.LENGTH_SHORT).show();
+                            Toast.makeText(getApplicationContext(),getString(R.string.noConnectionMessage),Toast.LENGTH_SHORT).show();
                         }
                         else if(e.getMessage().contains(String.valueOf(CommonStatusCodes.TIMEOUT))){
-                            Toast.makeText(getApplicationContext(),getResources().getString(R.string.timeoutErrorSync),Toast.LENGTH_SHORT).show();
+                            Toast.makeText(getApplicationContext(),getString(R.string.timeoutErrorSync),Toast.LENGTH_SHORT).show();
                         }
                         uploadFolderCheck.dismiss();
                         switchOnDrive.setChecked(false);
@@ -1098,7 +1128,7 @@ public class SettingsActivity extends AppCompatActivity{
                 if (resultCode != RESULT_OK) {
                     //Sign in failed due to connection problem or user cancelled it.
                     if(VERBOSE)Log.d(TAG, "Sign-in failed.");
-                    Toast.makeText(getApplicationContext(),getResources().getString(R.string.signinfail),Toast.LENGTH_LONG).show();
+                    Toast.makeText(getApplicationContext(),getString(R.string.signinfail),Toast.LENGTH_LONG).show();
                     if(cloud == Constants.GOOGLE_DRIVE_CLOUD) {
                         switchOnDrive.setChecked(false);
                         signedInDrive = false;
@@ -1116,7 +1146,7 @@ public class SettingsActivity extends AppCompatActivity{
                     //Check For Connectivity again.
                     if(!isConnectedToInternet()){
                         if(VERBOSE)Log.d(TAG,"NO Internet");
-                        Toast.makeText(getApplicationContext(),getResources().getString(R.string.noConnectionMessage),Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getApplicationContext(),getString(R.string.noConnectionMessage),Toast.LENGTH_SHORT).show();
                         switchOnDrive.setChecked(false);
                         disableGoogleDriveInSetting();
                     }
@@ -1125,7 +1155,7 @@ public class SettingsActivity extends AppCompatActivity{
                     }
                 } else {
                     Log.e(TAG, "Sign-in failed 222.");
-                    Toast.makeText(getApplicationContext(),getResources().getString(R.string.signinfail),Toast.LENGTH_LONG).show();
+                    Toast.makeText(getApplicationContext(),getString(R.string.signinfail),Toast.LENGTH_LONG).show();
                     if(cloud == Constants.GOOGLE_DRIVE_CLOUD) {
                         switchOnDrive.setChecked(false);
                         signedInDrive = false;
@@ -1160,14 +1190,14 @@ public class SettingsActivity extends AppCompatActivity{
         uploadFolderTitle = (TextView)cloudUploadRoot.findViewById(R.id.uploadFolderTitle);
         uploadDestIcon = (ImageView) cloudUploadRoot.findViewById(R.id.uploadDestIcon);
         if(cloud == Constants.GOOGLE_DRIVE_CLOUD) {
-            uploadFolderMsg.setText(getResources().getString(R.string.uploadFolder, getResources().getString(R.string.googleDrive)));
-            uploadFolderTitle.setText(getResources().getString(R.string.uploadFolderTitle));
-            uploadDestIcon.setImageDrawable(getResources().getDrawable(R.drawable.google_drive));
+            uploadFolderMsg.setText(getString(R.string.uploadFolder, getString(R.string.googleDrive)));
+            uploadFolderTitle.setText(getString(R.string.uploadFolderTitle));
+            uploadDestIcon.setImageDrawable(getDrawable(R.drawable.google_drive));
         }
         else if(cloud == Constants.DROPBOX_CLOUD){
-            uploadFolderMsg.setText(getResources().getString(R.string.uploadFolder, getResources().getString(R.string.dropbox)));
-            uploadFolderTitle.setText(getResources().getString(R.string.uploadFolderTitle));
-            uploadDestIcon.setImageDrawable(getResources().getDrawable(R.drawable.dropbox));
+            uploadFolderMsg.setText(getString(R.string.uploadFolder, getString(R.string.dropbox)));
+            uploadFolderTitle.setText(getString(R.string.uploadFolderTitle));
+            uploadDestIcon.setImageDrawable(getDrawable(R.drawable.dropbox));
         }
         if(VERBOSE)Log.d(TAG,"Open cloud upload dialog");
         cloudUpload.setContentView(cloudUploadRoot);
@@ -1208,7 +1238,7 @@ public class SettingsActivity extends AppCompatActivity{
                     if (validateFolderNameIsNotEmpty()) {
                         cloudUpload.dismiss();
                         if(!isConnectedToInternet()){
-                            Toast.makeText(getApplicationContext(),getResources().getString(R.string.noConnectionMessage),Toast.LENGTH_SHORT).show();
+                            Toast.makeText(getApplicationContext(),getString(R.string.noConnectionMessage),Toast.LENGTH_SHORT).show();
                             switchOnDrive.setChecked(false);
                             disableDropboxInSetting();
                             return;
@@ -1237,11 +1267,11 @@ public class SettingsActivity extends AppCompatActivity{
                                             public void onSuccess(DriveFolder driveFolder) {
                                                 signInProgressDialog.dismiss();
                                                 ImageView placeholdericon = (ImageView) autoUploadEnabledWithFolderRoot.findViewById(R.id.placeHolderIconAutoUpload);
-                                                placeholdericon.setImageDrawable(getResources().getDrawable(R.drawable.google_drive));
+                                                placeholdericon.setImageDrawable(getDrawable(R.drawable.google_drive));
                                                 TextView folderCreated = (TextView) autoUploadEnabledWithFolderRoot.findViewById(R.id.folderCreatedMsg);
-                                                folderCreated.setText(getResources().getString(R.string.folderCreatedSuccess, folderNameText.getText().toString()));
+                                                folderCreated.setText(getString(R.string.folderCreatedSuccess, folderNameText.getText().toString()));
                                                 TextView autoUploadMsg = (TextView) autoUploadEnabledWithFolderRoot.findViewById(R.id.autoUploadMsg);
-                                                autoUploadMsg.setText(getResources().getString(R.string.autouploadFolderCreated, getResources().getString(R.string.googleDrive)));
+                                                autoUploadMsg.setText(getString(R.string.autouploadFolderCreated, getString(R.string.googleDrive)));
                                                 autoUploadEnabledWithFolder.setContentView(autoUploadEnabledWithFolderRoot);
                                                 autoUploadEnabledWithFolder.setCancelable(false);
                                                 autoUploadEnabledWithFolder.show();
@@ -1255,7 +1285,7 @@ public class SettingsActivity extends AppCompatActivity{
                                         signInProgressDialog.dismiss();
                                         if(VERBOSE)Log.d(TAG, "Unable to create folder", e);
                                         Toast.makeText(getApplicationContext(),
-                                                getResources().getString(R.string.foldercreateErrorGoogleDrive, getResources().getString(R.string.googleDrive)),
+                                                getString(R.string.foldercreateErrorGoogleDrive, getString(R.string.googleDrive)),
                                                 Toast.LENGTH_SHORT).show();
                                         switchOnDrive.setChecked(false);
                                         signedInDrive = false;
@@ -1264,14 +1294,14 @@ public class SettingsActivity extends AppCompatActivity{
                                     }
                                 });
                     } else {
-                        Toast.makeText(getApplicationContext(), getResources().getString(R.string.uploadFolderEmpty), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getApplicationContext(), getString(R.string.uploadFolderEmpty), Toast.LENGTH_SHORT).show();
                     }
                 }
                 else if(cloud == Constants.DROPBOX_CLOUD){
                     if(validateFolderNameIsNotEmpty() && validateFolderNameDropBox()) {
                         cloudUpload.dismiss();
                         if(!isConnectedToInternet()){
-                            Toast.makeText(getApplicationContext(),getResources().getString(R.string.noConnectionMessage),Toast.LENGTH_SHORT).show();
+                            Toast.makeText(getApplicationContext(),getString(R.string.noConnectionMessage),Toast.LENGTH_SHORT).show();
                             switchOnDropbox.setChecked(false);
                             disableDropboxInSetting();
                             return;
@@ -1286,11 +1316,11 @@ public class SettingsActivity extends AppCompatActivity{
                                         String folderId = createFolderResult.getMetadata().getId();
                                         if (folderId != null && !folderId.equals("")) {
                                             ImageView placeholdericon = (ImageView) autoUploadEnabledWithFolderRoot.findViewById(R.id.placeHolderIconAutoUpload);
-                                            placeholdericon.setImageDrawable(getResources().getDrawable(R.drawable.dropbox));
+                                            placeholdericon.setImageDrawable(getDrawable(R.drawable.dropbox));
                                             TextView folderCreated = (TextView) autoUploadEnabledWithFolderRoot.findViewById(R.id.folderCreatedMsg);
-                                            folderCreated.setText(getResources().getString(R.string.folderCreatedSuccess, folderNameText.getText().toString()));
+                                            folderCreated.setText(getString(R.string.folderCreatedSuccess, folderNameText.getText().toString()));
                                             TextView autoUploadMsg = (TextView) autoUploadEnabledWithFolderRoot.findViewById(R.id.autoUploadMsg);
-                                            autoUploadMsg.setText(getResources().getString(R.string.autouploadFolderCreated, getResources().getString(R.string.dropbox)));
+                                            autoUploadMsg.setText(getString(R.string.autouploadFolderCreated, getString(R.string.dropbox)));
                                             autoUploadEnabledWithFolder.setContentView(autoUploadEnabledWithFolderRoot);
                                             autoUploadEnabledWithFolder.setCancelable(false);
                                             runOnUiThread(new Runnable() {
@@ -1310,7 +1340,7 @@ public class SettingsActivity extends AppCompatActivity{
                                                 public void run() {
                                                     signInProgressDialog.dismiss();
                                                     Toast.makeText(getApplicationContext(),
-                                                            getResources().getString(R.string.foldercreateErrorGoogleDrive, getResources().getString(R.string.dropbox)),
+                                                            getString(R.string.foldercreateErrorGoogleDrive, getString(R.string.dropbox)),
                                                             Toast.LENGTH_SHORT).show();
                                                     switchOnDropbox.setChecked(false);
                                                 }
@@ -1326,7 +1356,7 @@ public class SettingsActivity extends AppCompatActivity{
                                             public void run() {
                                                 signInProgressDialog.dismiss();
                                                 Toast.makeText(getApplicationContext(),
-                                                        getResources().getString(R.string.foldercreateErrorGoogleDrive, getResources().getString(R.string.dropbox)),
+                                                        getString(R.string.foldercreateErrorGoogleDrive, getString(R.string.dropbox)),
                                                         Toast.LENGTH_SHORT).show();
                                                 switchOnDropbox.setChecked(false);
                                             }
@@ -1338,7 +1368,7 @@ public class SettingsActivity extends AppCompatActivity{
                             }).start();
                     }
                     else{
-                        Toast.makeText(getApplicationContext(), getResources().getString(R.string.uploadFolderDropbox), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getApplicationContext(), getString(R.string.uploadFolderDropbox), Toast.LENGTH_SHORT).show();
                     }
                 }
                 break;
@@ -1364,16 +1394,16 @@ public class SettingsActivity extends AppCompatActivity{
     public void showCreateProgress(){
         TextView signInText = (TextView)signInProgressRoot.findViewById(R.id.signInText);
         TextView signInprogressTitle = (TextView)signInProgressRoot.findViewById(R.id.savetocloudtitle);
-        signInprogressTitle.setText(getResources().getString(R.string.uploadCheckHeader));
+        signInprogressTitle.setText(getString(R.string.uploadCheckHeader));
         ImageView signInImage = (ImageView) signInProgressRoot.findViewById(R.id.signInImage);
         switch (cloud){
             case Constants.DROPBOX_CLOUD:
-            signInText.setText(getResources().getString(R.string.createFolder, getResources().getString(R.string.dropbox)));
-            signInImage.setImageDrawable(getResources().getDrawable(R.drawable.dropbox));
+            signInText.setText(getString(R.string.createFolder, getString(R.string.dropbox)));
+            signInImage.setImageDrawable(getDrawable(R.drawable.dropbox));
                 break;
             case Constants.GOOGLE_DRIVE_CLOUD:
-            signInText.setText(getResources().getString(R.string.createFolder, getResources().getString(R.string.googleDrive)));
-            signInImage.setImageDrawable(getResources().getDrawable(R.drawable.google_drive));
+            signInText.setText(getString(R.string.createFolder, getString(R.string.googleDrive)));
+            signInImage.setImageDrawable(getDrawable(R.drawable.google_drive));
                 break;
         }
         signInProgressDialog.setContentView(signInProgressRoot);
@@ -1401,12 +1431,12 @@ public class SettingsActivity extends AppCompatActivity{
         TextView disabledMsg = (TextView) autoUploadDisabledRoot.findViewById(R.id.autoUploadDisabledMsg);
         switch (cloud){
             case Constants.GOOGLE_DRIVE_CLOUD:
-                placeholderIcon.setImageDrawable(getResources().getDrawable(R.drawable.google_drive));
-                disabledMsg.setText(getResources().getString(R.string.signoutcloud, getResources().getString(R.string.googleDrive)));
+                placeholderIcon.setImageDrawable(getDrawable(R.drawable.google_drive));
+                disabledMsg.setText(getString(R.string.signoutcloud, getString(R.string.googleDrive)));
                 break;
             case Constants.DROPBOX_CLOUD:
-                placeholderIcon.setImageDrawable(getResources().getDrawable(R.drawable.dropbox));
-                disabledMsg.setText(getResources().getString(R.string.üploadDisabledDropbox));
+                placeholderIcon.setImageDrawable(getDrawable(R.drawable.dropbox));
+                disabledMsg.setText(getString(R.string.üploadDisabledDropbox));
                 break;
         }
         autoUploadDisabled.setContentView(autoUploadDisabledRoot);

@@ -229,5 +229,9 @@
     <string name="unableToDelete">Unable to delete file</string>
     <string name="torchMode">Torch</string>
     <string name="singleMode">Auto</string>
+    <string name="videoResolutionHeading">Video Resolutions</string>
+    <string name="videoResHigh">HIGH</string>
+    <string name="videoResMedium">MEDIUM</string>
+    <string name="videoResLow">LOW</string>
 </resources>
 

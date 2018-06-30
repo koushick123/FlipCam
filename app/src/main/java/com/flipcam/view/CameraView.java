@@ -78,8 +78,8 @@ import static com.flipcam.constants.Constants.SHOW_ELAPSED_TIME;
 public class CameraView extends SurfaceView implements SurfaceHolder.Callback, SurfaceTexture.OnFrameAvailableListener, SensorEventListener{
 
     public static final String TAG = "CameraView";
-    private static int VIDEO_WIDTH = 640;  // dimensions for VGA
-    private static int VIDEO_HEIGHT = 480;
+    private int VIDEO_WIDTH = 640;  // dimensions for VGA
+    private int VIDEO_HEIGHT = 480;
     CamcorderProfile camcorderProfile;
     SurfaceTexture surfaceTexture;
     private EGLDisplay mEGLDisplay = EGL14.EGL_NO_DISPLAY;
@@ -484,6 +484,22 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
 
     public void setStopCamera(boolean stopCamera) {
         this.stopCamera = stopCamera;
+    }
+
+    public int getVideoWidth() {
+        return VIDEO_WIDTH;
+    }
+
+    public void setVideoWidth(int videoWidth) {
+        VIDEO_WIDTH = videoWidth;
+    }
+
+    public int getVideoHeight() {
+        return VIDEO_HEIGHT;
+    }
+
+    public void setVideoHeight(int videoHeight) {
+        VIDEO_HEIGHT = videoHeight;
     }
 
     public void showTimeElapsed()
@@ -1244,9 +1260,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             return fb;
         }
 
-        void setupMediaRecorder()
+        public void setupMediaRecorder(int width, int height, int camcorderProf)
         {
-            camcorderProfile = CamcorderProfile.get(camera1.getCameraId(),CamcorderProfile.QUALITY_HIGH);
+            camcorderProfile = CamcorderProfile.get(camera1.getCameraId(),camcorderProf);
             mediaRecorder = new MediaRecorder();
             try {
                 mediaRecorder.setAudioSource(MediaRecorder.AudioSource.CAMCORDER);
@@ -1262,9 +1278,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             mediaRecorder.setOutputFile(mNextVideoAbsolutePath);
             mediaRecorder.setVideoEncodingBitRate(camcorderProfile.videoBitRate);
             mediaRecorder.setVideoFrameRate(camcorderProfile.videoFrameRate);
-            if(VERBOSE)Log.d(TAG, "videoWidth = "+VIDEO_WIDTH);
-            if(VERBOSE)Log.d(TAG, "videoHeight = "+VIDEO_HEIGHT);
-            mediaRecorder.setVideoSize(VIDEO_WIDTH, VIDEO_HEIGHT);
+            if(VERBOSE)Log.d(TAG, "videoWidth = "+width);
+            if(VERBOSE)Log.d(TAG, "videoHeight = "+height);
+            mediaRecorder.setVideoSize(width, height);
             mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
             mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
             try {
@@ -1468,7 +1484,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         }
                         break;
                     case Constants.RECORD_START:
-                        cameraRenderer.setupMediaRecorder();
+//                        cameraRenderer.setupMediaRecorder(VIDEO_WIDTH, VIDEO_HEIGHT);
                         hour = 0; minute = 0; second = 0;
                         isRecording = true;
                         break;
