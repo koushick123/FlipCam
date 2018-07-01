@@ -266,6 +266,39 @@ public class SettingsActivity extends AppCompatActivity{
             phoneMemBtn.setChecked(true);
             sdCardBtn.setChecked(false);
         }
+        //Update Video Resolution
+        if(settingsPref.contains(Constants.SELECT_VIDEO_RESOLUTION)){
+            if(settingsPref.getString(Constants.SELECT_VIDEO_RESOLUTION, null) != null){
+                if(VERBOSE)Log.d(TAG, "select video resolution exists");
+                String selectVideoRes = settingsPref.getString(Constants.SELECT_VIDEO_RESOLUTION, null);
+                if(selectVideoRes.equalsIgnoreCase(getString(R.string.videoResHigh))){
+                    videoResHigh.setChecked(true);
+                    videoResMedium.setChecked(false);
+                    videoResLow.setChecked(false);
+                }
+                else if(selectVideoRes.equalsIgnoreCase(getString(R.string.videoResMedium))){
+                    videoResHigh.setChecked(false);
+                    videoResMedium.setChecked(true);
+                    videoResLow.setChecked(false);
+                }
+                else{
+                    videoResHigh.setChecked(false);
+                    videoResMedium.setChecked(false);
+                    videoResLow.setChecked(true);
+                }
+            }
+            else{
+                //Set HIGH as default
+                videoResHigh.setChecked(true);
+                videoResMedium.setChecked(false);
+                videoResLow.setChecked(false);
+            }
+        }
+        else{
+            videoResHigh.setChecked(true);
+            videoResMedium.setChecked(false);
+            videoResLow.setChecked(false);
+        }
         //Update Phone memory
         if(settingsPref.contains(Constants.PHONE_MEMORY_DISABLE)){
             if(!settingsPref.getBoolean(Constants.PHONE_MEMORY_DISABLE, true)){

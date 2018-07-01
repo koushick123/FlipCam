@@ -60,5 +60,10 @@ public class Constants
     public static final String WIDGET_IDS = "Widget_IDs";
     //Video Resolution
     public static final String SELECT_VIDEO_RESOLUTION = "selectVideoResolution";
-    public static final String VIDEO_DIMENSION = "videoDimension";
+    public static final String VIDEO_DIMENSION_HIGH = "videoDimensionHigh";
+    public static final String VIDEO_DIMENSION_MEDIUM = "videoDimensionMedium";
+    public static final String VIDEO_DIMENSION_LOW = "videoDimensionLow";
+    public static final String CAMPROFILE_FOR_RECORD_HIGH = "CamcorderProfileForRecordHigh";
+    public static final String CAMPROFILE_FOR_RECORD_MEDIUM = "CamcorderProfileForRecordMedium";
+    public static final String CAMPROFILE_FOR_RECORD_LOW = "CamcorderProfileForRecordLow";
 }

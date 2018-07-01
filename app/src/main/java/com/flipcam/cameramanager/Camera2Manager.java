@@ -466,6 +466,11 @@ public class Camera2Manager implements CameraOperations {
     }
 
     @Override
+    public void setVideoSize() {
+
+    }
+
+    @Override
     public void setPictureSize(int width, int height) {
 
     }

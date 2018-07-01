@@ -166,12 +166,13 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     StatFs availableStatFs = new StatFs(Environment.getDataDirectory().getPath());
     ContentValues mediaContent = new ContentValues();
     boolean stopCamera = false;
+    int camProfileForRecord;
 
     public CameraView(Context context, AttributeSet attrs) {
         super(context, attrs);
         if(VERBOSE)Log.d(TAG,"start cameraview");
         getHolder().addCallback(this);
-        //Check if device's camera has atleast limited support for Camera 2 API. If not, we use Camera 1 API.
+        //Check if device's camera has FULL support for Camera 2 API. If not, we use Camera 1 API.
         if(isCamera2Supported(context)){
             camera1 = Camera2Manager.getInstance();
         }
@@ -190,7 +191,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     }
 
     public boolean isCamera2Supported(Context context){
-        boolean supported = false;
+//        boolean supported = false;
         CameraManager cameraManager = (CameraManager)context.getSystemService(Context.CAMERA_SERVICE);
         try {
             CameraCharacteristics cameraCharacteristics=null;
@@ -203,7 +204,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             }
             int supportLevel = cameraCharacteristics.get(CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL);
             if(VERBOSE)Log.d(TAG, "supportLevel = "+supportLevel);
-            switch (supportLevel){
+            /*switch (supportLevel){
                 case CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY:
                 case CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED:
                     supported = false;
@@ -211,11 +212,12 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 case CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL:
                     supported = true;
                     break;
-            }
+            }*/
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
-        return supported;
+        //Disable Camera 2 API till this can be tested on a device that provides FULL hardware level support.
+        return false;
     }
 
     @Override
@@ -496,6 +498,14 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
 
     public int getVideoHeight() {
         return VIDEO_HEIGHT;
+    }
+
+    public int getCamProfileForRecord() {
+        return camProfileForRecord;
+    }
+
+    public void setCamProfileForRecord(int camProfileForRecord) {
+        this.camProfileForRecord = camProfileForRecord;
     }
 
     public void setVideoHeight(int videoHeight) {
@@ -1485,6 +1495,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         break;
                     case Constants.RECORD_START:
 //                        cameraRenderer.setupMediaRecorder(VIDEO_WIDTH, VIDEO_HEIGHT);
+                        cameraRenderer.setupMediaRecorder(getVideoWidth(), getVideoHeight(), getCamProfileForRecord());
                         hour = 0; minute = 0; second = 0;
                         isRecording = true;
                         break;
