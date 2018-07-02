@@ -325,8 +325,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     @Override
     public void onFrameAvailable(SurfaceTexture surfaceTexture) {
         if(FRAME_VERBOSE)Log.d(TAG,"FRAME Available now");
-        if(FRAME_VERBOSE)Log.d(TAG,"is Record = "+isRecord);
-        if(isRecord){
+        if(FRAME_VERBOSE)Log.d(TAG,"is Record = "+isRecord());
+        if(isRecord()){
             if(FRAME_VERBOSE)Log.d(TAG,"Frame avail cnt = "+(++cameraFrameCnt));
         }
         cameraHandler.sendEmptyMessage(Constants.FRAME_AVAILABLE);
@@ -512,6 +512,14 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         VIDEO_HEIGHT = videoHeight;
     }
 
+    public boolean isRecord() {
+        return isRecord;
+    }
+
+    public void setRecord(boolean record) {
+        isRecord = record;
+    }
+
     public void showTimeElapsed()
     {
         if(VERBOSE)Log.d(TAG,"displaying time = "+second);
@@ -578,6 +586,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     }
 
     boolean isSwitch = false;
+
     public void switchCamera()
     {
         if(backCamera)
@@ -590,6 +599,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         }
         focusMode = camera1.getFocusMode();
         stopAndReleaseCamera();
+
         unregisterAccelSensor();
         isSwitch = true;
         isFocusModeSupported = false;
@@ -690,7 +700,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             }
         }
         LinearLayout.LayoutParams flashParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,LinearLayout.LayoutParams.WRAP_CONTENT);
-        if(isRecord){
+        if(isRecord()){
             flashParams.setMargins(0,(int)getResources().getDimension(R.dimen.flashOnLeftMargin),0,0);
             flashParams.weight=0.3f;
         }
@@ -786,12 +796,13 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
 
     public void record(boolean noSDCard)
     {
-        if(!isRecord) {
+        if(!isRecord()) {
             determineOrientation();
             if(VERBOSE)Log.d(TAG,"Rot angle == "+rotationAngle+", portrait = "+portrait);
             Matrix.rotateM(RECORD_IDENTITY_MATRIX, 0, rotationAngle , 0, 0, 1);
             setLayoutAspectRatio();
-            isRecord=true;
+//            isRecord=true;
+            setRecord(true);
             setKeepScreenOn(true);
             startTimerThread();
             cameraHandler.sendEmptyMessage(Constants.RECORD_START);
@@ -799,7 +810,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             camera1.setRecordingHint();
         }
         else{
-            isRecord=false;
+//            isRecord=false;
+            setRecord(false);
             setKeepScreenOn(false);
             stopTimerThread();
             if(noSDCard) {
@@ -1042,7 +1054,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             releaseEGLSurface();
             releaseProgram();
             releaseEGLContext();
-            if(isRecord) {
+            if(isRecord()) {
                 Log.d(TAG, "Unmute audio");
                 if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && Build.VERSION.SDK_INT < Build.VERSION_CODES.M){
                     Log.d(TAG, "setStreamUnMute");
@@ -1053,7 +1065,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                     audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_UNMUTE, 0);
                 }
                 if(VERBOSE)Log.d(TAG,"Recording in progress.... Stop now");
-                isRecord=false;
+//                isRecord=false;
+                setRecord(false);
                 //Reset the RECORD Matrix to be portrait.
                 System.arraycopy(IDENTITY_MATRIX,0,RECORD_IDENTITY_MATRIX,0,IDENTITY_MATRIX.length);
                 //Reset Rotation angle
@@ -1417,10 +1430,11 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             }
             frameCount++;
             availableStatFs.restat(Environment.getDataDirectory().getPath());
-            if(isRecord && isPhoneMemory && (availableStatFs.getAvailableBytes() < lowestMemory)) {
+            if(isRecord() && isPhoneMemory && (availableStatFs.getAvailableBytes() < lowestMemory)) {
                 if(FRAME_VERBOSE)Log.d(TAG, "lowestMemory = "+lowestMemory);
                 if(FRAME_VERBOSE)Log.d(TAG, "avail mem = "+availableStatFs.getAvailableBytes());
-                isRecord=false;
+//                isRecord=false;
+                setRecord(false);
                 stopTimerThread();
                 isRecording = false;
                 recordStop = -1;
@@ -1488,8 +1502,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                     case Constants.FRAME_AVAILABLE:
                         if(FRAME_VERBOSE)Log.d(TAG,"send to FRAME_AVAILABLE");
                         cameraRenderer.drawFrame();
-                        if(FRAME_VERBOSE)Log.d(TAG,"Record = "+isRecord);
-                        if(isRecord){
+                        if(FRAME_VERBOSE)Log.d(TAG,"Record = "+isRecord());
+                        if(isRecord()){
                             if(FRAME_VERBOSE)Log.d(TAG,"render frame = "+(++frameCnt));
                         }
                         break;
