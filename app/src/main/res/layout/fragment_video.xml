@@ -11,7 +11,8 @@
     <com.flipcam.view.CameraView
         android:id="@+id/cameraSurfaceView"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:layout_gravity="center" />
 
     <LinearLayout
         android:id="@+id/seekParent"

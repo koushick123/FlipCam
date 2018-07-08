@@ -80,6 +80,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     public static final String TAG = "CameraView";
     private int VIDEO_WIDTH = 640;  // dimensions for VGA
     private int VIDEO_HEIGHT = 480;
+    private int recordVideoWidth = 640;
+    private int recordVideoHeight = 480;
     CamcorderProfile camcorderProfile;
     SurfaceTexture surfaceTexture;
     private EGLDisplay mEGLDisplay = EGL14.EGL_NO_DISPLAY;
@@ -488,16 +490,20 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         this.stopCamera = stopCamera;
     }
 
-    public int getVideoWidth() {
-        return VIDEO_WIDTH;
+    public int getRecordVideoWidth() {
+        return recordVideoWidth;
     }
 
-    public void setVideoWidth(int videoWidth) {
-        VIDEO_WIDTH = videoWidth;
+    public void setRecordVideoWidth(int recordVideoWidth) {
+        this.recordVideoWidth = recordVideoWidth;
     }
 
-    public int getVideoHeight() {
-        return VIDEO_HEIGHT;
+    public int getRecordVideoHeight() {
+        return recordVideoHeight;
+    }
+
+    public void setRecordVideoHeight(int recordVideoHeight) {
+        this.recordVideoHeight = recordVideoHeight;
     }
 
     public int getCamProfileForRecord() {
@@ -506,10 +512,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
 
     public void setCamProfileForRecord(int camProfileForRecord) {
         this.camProfileForRecord = camProfileForRecord;
-    }
-
-    public void setVideoHeight(int videoHeight) {
-        VIDEO_HEIGHT = videoHeight;
     }
 
     public boolean isRecord() {
@@ -522,7 +524,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
 
     public void showTimeElapsed()
     {
-        if(VERBOSE)Log.d(TAG,"displaying time = "+second);
+        if(FRAME_VERBOSE)Log.d(TAG,"displaying time = "+second);
         String showSec = "0";
         String showMin = "0";
         String showHr = "0";
@@ -1301,8 +1303,17 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             mediaRecorder.setOutputFile(mNextVideoAbsolutePath);
             mediaRecorder.setVideoEncodingBitRate(camcorderProfile.videoBitRate);
             mediaRecorder.setVideoFrameRate(camcorderProfile.videoFrameRate);
-            if(VERBOSE)Log.d(TAG, "videoWidth = "+width);
-            if(VERBOSE)Log.d(TAG, "videoHeight = "+height);
+            if(!portrait){
+                if(VERBOSE)Log.d(TAG, "LS videoWidth = "+width);
+                if(VERBOSE)Log.d(TAG, "LS videoHeight = "+height);
+            }
+            else{
+                int temp = width;
+                width = height;
+                height = temp;
+                if(VERBOSE)Log.d(TAG, "PR videoWidth = "+width);
+                if(VERBOSE)Log.d(TAG, "PR videoHeight = "+height);
+            }
             mediaRecorder.setVideoSize(width, height);
             mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
             mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
@@ -1509,7 +1520,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         break;
                     case Constants.RECORD_START:
 //                        cameraRenderer.setupMediaRecorder(VIDEO_WIDTH, VIDEO_HEIGHT);
-                        cameraRenderer.setupMediaRecorder(getVideoWidth(), getVideoHeight(), getCamProfileForRecord());
+                        cameraRenderer.setupMediaRecorder(getRecordVideoWidth(), getRecordVideoHeight(), getCamProfileForRecord());
                         hour = 0; minute = 0; second = 0;
                         isRecording = true;
                         break;
