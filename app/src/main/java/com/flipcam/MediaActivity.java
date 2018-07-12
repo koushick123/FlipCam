@@ -138,6 +138,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     AppWidgetManager appWidgetManager;
     boolean VERBOSE = true;
     AudioManager audioManager;
+    ImageView gridViewOn;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -267,6 +268,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         noImage = (ImageView)findViewById(R.id.noImage);
         noImageText = (TextView)findViewById(R.id.noImageText);
         playCircle = (ImageView)findViewById(R.id.playVideo);
+        gridViewOn = (ImageView)findViewById(R.id.gridViewOn);
         if(VERBOSE)Log.d(TAG, "savedInstanceState = "+savedInstanceState);
         if(savedInstanceState == null){
             clearMediaPreferences();
@@ -300,6 +302,15 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 }
             }
         }
+        gridViewOn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent mediaGridAct = new Intent(getApplicationContext(), GalleryActivity.class);
+                mediaGridAct.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                startActivity(mediaGridAct);
+                finish();
+            }
+        });
         notifyIcon = BitmapFactory.decodeResource(getApplicationContext().getResources(),R.drawable.ic_launcher);
         mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         queueNotification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);

@@ -17,6 +17,9 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AbsListView;
 import android.widget.AdapterView;
@@ -57,6 +60,19 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
     ControlVisbilityPreference controlVisbilityPreference;
     FileMedia[] medias;
     boolean VERBOSE = false;
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        Log.d(TAG, "onCreateOptionsMenu");
+        MenuInflater menuInflater = getMenuInflater();
+        menuInflater.inflate(R.menu.media_menu, menu);
+        return true;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

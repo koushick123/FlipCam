@@ -47,25 +47,35 @@
         android:layout_gravity="top"
         android:background="@color/mediaControlColor"
         android:gravity="center_vertical"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:weightSum="1">
 
         <ImageButton
             android:id="@+id/deleteMedia"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="0.5"
+            android:layout_weight=".33"
             android:background="@color/mediaControlColor"
-            android:src="@drawable/ic_delete"
-            android:contentDescription="@string/deleteMedia" />
+            android:contentDescription="@string/deleteMedia"
+            android:src="@drawable/ic_delete" />
 
         <ImageButton
             android:id="@+id/shareMedia"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="0.5"
+            android:layout_weight=".33"
             android:background="@color/mediaControlColor"
-            android:src="@drawable/ic_share"
-            android:contentDescription="@string/shareMedia"/>
+            android:contentDescription="@string/shareMedia"
+            android:src="@drawable/ic_share" />
+
+        <ImageView
+            android:id="@+id/gridViewOn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight=".33"
+            android:scaleX="1.5"
+            android:scaleY="1.5"
+            app:srcCompat="@drawable/ic_view_comfy" />
 
     </LinearLayout>
 

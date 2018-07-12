@@ -233,5 +233,6 @@
     <string name="videoResHigh">HIGH</string>
     <string name="videoResMedium">MEDIUM</string>
     <string name="videoResLow">LOW</string>
+    <string name="mediaSlideview">Show media in Slide View</string>
 </resources>
 
