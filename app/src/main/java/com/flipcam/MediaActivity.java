@@ -183,6 +183,12 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             mPager.setCurrentItem(mediaPos);
             selectedPosition = previousSelectedFragment = mediaPos;
         }
+        else if(getIntent().getExtras().getBoolean("fromMenu")){
+            int scrollPos = getIntent().getExtras().getInt("scrollTo");
+            Log.d(TAG, "go to page = "+scrollPos);
+            mPager.setCurrentItem(scrollPos);
+            selectedPosition = previousSelectedFragment = scrollPos;
+        }
         deleteMedia = (ImageButton)findViewById(R.id.deleteMedia);
         deleteAlert = new Dialog(this);
         deleteMedia.setOnClickListener(new View.OnClickListener(){
@@ -306,7 +312,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             @Override
             public void onClick(View view) {
                 Intent mediaGridAct = new Intent(getApplicationContext(), GalleryActivity.class);
-                mediaGridAct.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                mediaGridAct.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(mediaGridAct);
                 finish();
             }

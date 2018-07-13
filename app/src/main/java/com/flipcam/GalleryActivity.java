@@ -59,11 +59,24 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
     TextView mediaCount;
     ControlVisbilityPreference controlVisbilityPreference;
     FileMedia[] medias;
-    boolean VERBOSE = false;
+    boolean VERBOSE = true;
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        return super.onOptionsItemSelected(item);
+        switch (item.getItemId()){
+            case R.id.slideView:
+                Intent mediaAct = new Intent(getApplicationContext(), MediaActivity.class);
+                int scrollPos = mediaGrid.getFirstVisiblePosition();
+                Log.d(TAG, "scrollPos = "+scrollPos);
+                mediaAct.putExtra("fromMenu",true);
+                mediaAct.putExtra("scrollTo",scrollPos);
+                mediaAct.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(mediaAct);
+                finish();
+                return true;
+                default:
+                    return super.onOptionsItemSelected(item);
+        }
     }
 
     @Override
@@ -109,6 +122,7 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
             mediaCount.setText(getResources().getString(R.string.galleryCount, MediaUtil.getPhotosCount(), MediaUtil.getVideosCount()));
             MediaAdapter mediaAdapter = new MediaAdapter(getApplicationContext(), medias);
             mediaGrid.setAdapter(mediaAdapter);
+            mediaGrid.invalidate();
             mediaGrid.setOnScrollListener(new AbsListView.OnScrollListener() {
                 @Override
                 public void onScrollStateChanged(AbsListView absListView, int i) {

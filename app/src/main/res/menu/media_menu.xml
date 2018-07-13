@@ -3,5 +3,5 @@
     xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:id="@+id/slideView"
         android:title="@string/mediaSlideview"
-        app:showAsAction="ifRoom" />
+        app:showAsAction="never" />
 </menu>
