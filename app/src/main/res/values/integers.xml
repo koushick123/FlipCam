@@ -2,6 +2,6 @@
 <resources>
     <integer name="minimumMemoryWarning">40</integer>
     <integer name="slide_animation_duration">300</integer>
-    <integer name="fullHDWidth">1920</integer>
-    <integer name="fullHDHeight">1080</integer>
+    <integer name="fullHDWidth">1080</integer>
+    <integer name="fullHDHeight">1920</integer>
 </resources>

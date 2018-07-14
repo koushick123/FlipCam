@@ -7,12 +7,16 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
+import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
 import android.graphics.YuvImage;
 import android.hardware.Camera;
 import android.media.CamcorderProfile;
 import android.util.Log;
+import android.view.Display;
+import android.view.Surface;
+import android.view.WindowManager;
 
 import com.flipcam.PermissionActivity;
 import com.flipcam.PhotoFragment;
@@ -26,6 +30,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.StringTokenizer;
@@ -57,6 +63,9 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     CameraView cameraView;
     Context appContext;
     Resources resources;
+    WindowManager windowManager;
+    Point screenSize = new Point();
+    Display display;
     public static Camera1Manager getInstance()
     {
         if(camera1Manager == null){
@@ -117,6 +126,9 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         else{
             mCamera=null;
         }
+        windowManager = (WindowManager)context.getSystemService(Context.WINDOW_SERVICE);
+        display = windowManager.getDefaultDisplay();
+        display.getSize(screenSize);
         appContext = context;
     }
 
@@ -159,11 +171,10 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
 
     @Override
     public void setResolution(int width, int height) {
-        if(VERBOSE)Log.d(TAG,"Set Width = "+width);
-        if(VERBOSE)Log.d(TAG,"Set Height = "+height);
+        if(VERBOSE)Log.d(TAG,"Screen Width = "+width);
+        if(VERBOSE)Log.d(TAG,"Screen Height = "+height);
 
-        SharedPreferences sharedPreferences;
-        SharedPreferences.Editor editor;
+        /*SharedPreferences sharedPreferences;
         if(photoFrag != null) {
             sharedPreferences = photoFrag.getActivity().getSharedPreferences(PermissionActivity.FC_SHARED_PREFERENCE, Context.MODE_PRIVATE);
             resources = photoFrag.getActivity().getResources();
@@ -180,43 +191,16 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
             if(VERBOSE)Log.d(TAG, "Saved VIDEO_WIDTH = "+VIDEO_WIDTH );
             VIDEO_HEIGHT = Integer.parseInt(tokenizer.nextToken());
             if(VERBOSE)Log.d(TAG, "Saved VIDEO_HEIGHT = "+VIDEO_HEIGHT );
-            //For debug purpose only. To be removed later.
-            List<Camera.Size> videoSizes = parameters.getSupportedVideoSizes();
-            Log.d(TAG, "videoSizes size = "+videoSizes.size());
-            for(Camera.Size videoSize : videoSizes){
-                if (VERBOSE)Log.d(TAG, "video size = "+videoSize.width+" X "+videoSize.height);
-            }
-            previewSizes = parameters.getSupportedPreviewSizes();
-            for (int i = 0; i < previewSizes.size(); i++) {
-                if (VERBOSE) Log.d(TAG, "Preview size = " + previewSizes.get(i).width + " X " + previewSizes.get(i).height);
-            }
-        }
-        else {
-            //Aspect ratio needs to be reversed, if orientation is portrait.
-            double screenAspectRatio = 1.0f / ((double) width / (double) height);
-            if (VERBOSE) Log.d(TAG, "SCREEN Aspect Ratio = " + screenAspectRatio);
-
-            previewSizes = parameters.getSupportedPreviewSizes();
-            //Need to calculate preview size whose aspect ratio closely matches that of the chosen video resolution.
-            //Below logic needs to be changed.
-            for (int i = 0; i < previewSizes.size(); i++) {
-                double ar = (double) previewSizes.get(i).width / (double) previewSizes.get(i).height;
-                if (VERBOSE) Log.d(TAG, "Aspect ratio for " + previewSizes.get(i).width + " / " + previewSizes.get(i).height + " is = " + ar);
-                int widthDiff = Math.abs(width - previewSizes.get(i).height);
-                int heightDiff = Math.abs(height - previewSizes.get(i).width);
-                if (VERBOSE) Log.d(TAG, "Width diff = " + widthDiff + ", Height diff = " + heightDiff);
-                if (Math.abs(screenAspectRatio - ar) <= 0.1 && (widthDiff <= 150 && heightDiff <= 150)) {
-                    //Best match for camera preview!!
-                    VIDEO_HEIGHT = previewSizes.get(i).height;
-                    VIDEO_WIDTH = previewSizes.get(i).width;
-                    break;
-                }
-            }
-            editor = sharedPreferences.edit();
-            StringBuffer resolutions = new StringBuffer();
-            editor.putString(Constants.PREVIEW_RESOLUTION, resolutions.append(String.valueOf(VIDEO_WIDTH)).append(",").append(String.valueOf(VIDEO_HEIGHT)).toString());
-            editor.commit();
-        }
+        }*/
+        //Aspect ratio needs to be reversed, if orientation is portrait.
+        screenAspectRatio = 1.0f / ((double) width / (double) height);
+        if (VERBOSE) Log.d(TAG, "SCREEN Aspect Ratio = " + screenAspectRatio);
+        setVideoSize();
+        choosePreviewSizeForVideo();
+        /*editor = sharedPreferences.edit();
+        StringBuffer resolutions = new StringBuffer();
+        editor.putString(Constants.PREVIEW_RESOLUTION, resolutions.append(String.valueOf(VIDEO_WIDTH)).append(",").append(String.valueOf(VIDEO_HEIGHT)).toString());
+        editor.commit();*/
         if(VERBOSE)Log.d(TAG,"HEIGHT == "+VIDEO_HEIGHT+", WIDTH == "+VIDEO_WIDTH);
         parameters.setPreviewSize(VIDEO_WIDTH, VIDEO_HEIGHT);
         if(!cameraView.isRecord()) {
@@ -228,11 +212,29 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
 //                editor1.remove(Constants.VIDEO_DIMENSION_LOW);
                 editor1.commit();
             }
-            setVideoSize();
         }
         mCamera.setParameters(parameters);
     }
     List<Camera.Size> previewSizes;
+    double targetVideoRatio;
+    double screenAspectRatio;
+
+    private void choosePreviewSizeForVideo(){
+
+        //For chosen video resolution, we need to display a preview that is a closest match to targetVideoRatio.
+        double arDiff = Double.MAX_VALUE;
+        Collections.sort(previewSizes, new CameraSizeComparator());
+        for(Camera.Size previews : previewSizes){
+            double previewAR = (double)previews.width / (double)previews.height;
+            if(Math.abs(previewAR - targetVideoRatio) < arDiff){
+                arDiff = Math.abs(previewAR - targetVideoRatio);
+                Log.d(TAG, "arDiff = "+arDiff);
+                VIDEO_WIDTH = previews.width;
+                VIDEO_HEIGHT = previews.height;
+                Log.d(TAG, "Video width = "+VIDEO_WIDTH+", Video height = "+VIDEO_HEIGHT);
+            }
+        }
+    }
 
     @Override
     public void setRotation(int rotation)
@@ -382,8 +384,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         mCamera.getParameters().setPictureSize(width,height);
     }
 
-    @Override
-    public void setVideoSize() {
+    private SharedPreferences obtainSettingsPrefs(){
         SharedPreferences sharedPreferences;
         if(videoFrag != null) {
             sharedPreferences = videoFrag.getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
@@ -391,143 +392,158 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         else{
             sharedPreferences = photoFrag.getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
         }
-        if(sharedPreferences.getString(Constants.SELECT_VIDEO_RESOLUTION, null) != null) {
+        return sharedPreferences;
+    }
 
-            String selectedRes = sharedPreferences.getString(Constants.SELECT_VIDEO_RESOLUTION, null);
+    @Override
+    public void setVideoSize() {
+        SharedPreferences sharedPreferences;
+        previewSizes = parameters.getSupportedPreviewSizes();
+
+        //Need to choose preview size whose aspect ratio closely matches that of the chosen video resolution.
+        sharedPreferences = obtainSettingsPrefs();
+        String selectedRes;
+        if((selectedRes = sharedPreferences.getString(Constants.SELECT_VIDEO_RESOLUTION, null)) != null) {
+
             //Choose video dimension based on selected resolution.
             if (selectedRes.equalsIgnoreCase(appContext.getResources().getString(R.string.videoResHigh))) {
 
                 if (sharedPreferences.getString(Constants.VIDEO_DIMENSION_HIGH, null) != null) {
                     String dimension = sharedPreferences.getString(Constants.VIDEO_DIMENSION_HIGH, null);
                     StringTokenizer tokenizer = new StringTokenizer(dimension, ":");
-                    String width = tokenizer.nextToken();
-                    String height = tokenizer.nextToken();
-                    if (VERBOSE) Log.d(TAG, "SAVED Video Res HIGH = " + width + " X " + height);
-                    if (VERBOSE)
-                        Log.d(TAG, "SAVED CAM PROFILE = " + sharedPreferences.getInt(Constants.CAMPROFILE_FOR_RECORD_HIGH, 4));
-                    cameraView.setRecordVideoWidth(Integer.parseInt(width));
-                    cameraView.setRecordVideoHeight(Integer.parseInt(height));
-                    cameraView.setCamProfileForRecord(sharedPreferences.getInt(Constants.CAMPROFILE_FOR_RECORD_HIGH, 4));
+                    String targetWidth = tokenizer.nextToken();
+                    String targetHeight = tokenizer.nextToken();
+                    targetVideoRatio = Double.parseDouble(targetWidth) / Double.parseDouble(targetHeight);
                 }
                 else{
-                    //If the video resolution is HIGH, choose the one closest to screen resolution.
-                    Log.d(TAG, "SET Screen resolution as HIGH");
-                    cameraView.setRecordVideoWidth(VIDEO_WIDTH);
-                    cameraView.setRecordVideoHeight(VIDEO_HEIGHT);
-                    cameraView.setCamProfileForRecord(CamcorderProfile.QUALITY_HIGH);
-                    SharedPreferences.Editor editor = sharedPreferences.edit();
-                    editor.putString(Constants.VIDEO_DIMENSION_HIGH, VIDEO_WIDTH+":"+VIDEO_HEIGHT);
-                    editor.putInt(Constants.CAMPROFILE_FOR_RECORD_HIGH, CamcorderProfile.QUALITY_HIGH);
-                    editor.commit();
+                    //As of this release, the highest video resolution will not exceed the resolution of the screen.
+                    targetVideoRatio = screenAspectRatio;
                 }
-            } else if (selectedRes.equalsIgnoreCase(appContext.getResources().getString(R.string.videoResMedium))) {
-
+                Log.d(TAG, "targetVideoRatio for HIGH = "+targetVideoRatio);
+            }
+            else if(selectedRes.equalsIgnoreCase(appContext.getResources().getString(R.string.videoResMedium))){
                 if (sharedPreferences.getString(Constants.VIDEO_DIMENSION_MEDIUM, null) != null) {
                     String dimension = sharedPreferences.getString(Constants.VIDEO_DIMENSION_MEDIUM, null);
                     StringTokenizer tokenizer = new StringTokenizer(dimension, ":");
-                    String width = tokenizer.nextToken();
-                    String height = tokenizer.nextToken();
-                    if (VERBOSE) Log.d(TAG, "SAVED Video Res MEDIUM = " + width + " X " + height);
-                    if (VERBOSE)
-                        Log.d(TAG, "SAVED CAM PROFILE = " + sharedPreferences.getInt(Constants.CAMPROFILE_FOR_RECORD_MEDIUM, 4));
-                    cameraView.setRecordVideoWidth(Integer.parseInt(width));
-                    cameraView.setRecordVideoHeight(Integer.parseInt(height));
-                    cameraView.setCamProfileForRecord(sharedPreferences.getInt(Constants.CAMPROFILE_FOR_RECORD_MEDIUM, 4));
+                    String targetWidth = tokenizer.nextToken();
+                    String targetHeight = tokenizer.nextToken();
+                    targetVideoRatio = Double.parseDouble(targetWidth) / Double.parseDouble(targetHeight);
                 }
                 else{
-                    StringTokenizer videoDimen;
-                    previewSizes = parameters.getSupportedPreviewSizes();
-                    if(VIDEO_WIDTH > resources.getInteger(R.integer.fullHDWidth)){
-
-                        //Choose a resolution that matches closest to 1080P, as medium resolution.
-                        if(CamcorderProfile.hasProfile(cameraId, CamcorderProfile.QUALITY_1080P)) {
-                            if (VERBOSE) Log.d(TAG, "SET 1080P as medium");
-                            videoDimen = new StringTokenizer(findClosestResolutionInCamera(CamcorderProfile.QUALITY_1080P), ":");
-                            cameraView.setCamProfileForRecord(CamcorderProfile.QUALITY_1080P);
-                        }
-                        else{
-                            videoDimen = checkForMediumResolutions();
-                        }
-                    }
-                    else if(VIDEO_WIDTH == resources.getInteger(R.integer.fullHDWidth)){
-
-                        videoDimen = checkForMediumResolutions();
-                    }
-                    else{
-                        //Choose a resolution that matches closest to 480P as medium resolution.
-                        if(CamcorderProfile.hasProfile(cameraId, CamcorderProfile.QUALITY_480P)) {
-                            if (VERBOSE) Log.d(TAG, "SET 480P as medium");
-                            videoDimen = new StringTokenizer(findClosestResolutionInCamera(CamcorderProfile.QUALITY_480P), ":");
-                            cameraView.setCamProfileForRecord(CamcorderProfile.QUALITY_480P);
-                        }
-                        else{
-                            if(VERBOSE)Log.d(TAG, "SET HIGH since other medium resolutions are not supported");
-                            videoDimen = new StringTokenizer(VIDEO_WIDTH+":"+VIDEO_HEIGHT);
-                            cameraView.setCamProfileForRecord(CamcorderProfile.QUALITY_HIGH);
-                        }
-                    }
-                    cameraView.setRecordVideoWidth(Integer.parseInt(videoDimen.nextToken()));
-                    cameraView.setRecordVideoHeight(Integer.parseInt(videoDimen.nextToken()));
-                    SharedPreferences.Editor editor = sharedPreferences.edit();
-                    if(VERBOSE)Log.d(TAG, "Selected RESOLUTION video width = "+cameraView.getRecordVideoWidth()+" X "+cameraView.getRecordVideoHeight());
-                    editor.putString(Constants.VIDEO_DIMENSION_MEDIUM, cameraView.getRecordVideoWidth()+":"+cameraView.getRecordVideoHeight());
-                    editor.putInt(Constants.CAMPROFILE_FOR_RECORD_MEDIUM, cameraView.getCamProfileForRecord());
-                    editor.commit();
+                    targetVideoRatio = chooseMediumResolution();
                 }
-            } else {
+                Log.d(TAG, "targetVideoRatio for MEDIUM = "+targetVideoRatio);
+            }
+            else{
                 if (sharedPreferences.getString(Constants.VIDEO_DIMENSION_LOW, null) != null) {
                     String dimension = sharedPreferences.getString(Constants.VIDEO_DIMENSION_LOW, null);
                     StringTokenizer tokenizer = new StringTokenizer(dimension, ":");
-                    String width = tokenizer.nextToken();
-                    String height = tokenizer.nextToken();
-                    if (VERBOSE) Log.d(TAG, "SAVED Video Res LOW = " + width + " X " + height);
-                    if (VERBOSE)
-                        Log.d(TAG, "SAVED CAM PROFILE = " + sharedPreferences.getInt(Constants.CAMPROFILE_FOR_RECORD_LOW, 4));
-                    cameraView.setRecordVideoWidth(Integer.parseInt(width));
-                    cameraView.setRecordVideoHeight(Integer.parseInt(height));
-                    cameraView.setCamProfileForRecord(sharedPreferences.getInt(Constants.CAMPROFILE_FOR_RECORD_LOW, 4));
+                    String targetWidth = tokenizer.nextToken();
+                    String targetHeight = tokenizer.nextToken();
+                    targetVideoRatio = Double.parseDouble(targetWidth) / Double.parseDouble(targetHeight);
                 }
                 else{
-                    //Choose lowest possible resolution.
-                    previewSizes = parameters.getSupportedPreviewSizes();
                     if(VERBOSE)Log.d(TAG, "SET QUALITY_LOW as low");
                     CamcorderProfile lowProfile = CamcorderProfile.get(CamcorderProfile.QUALITY_LOW);
                     cameraView.setCamProfileForRecord(CamcorderProfile.QUALITY_LOW);
                     cameraView.setRecordVideoWidth(lowProfile.videoFrameWidth);
                     cameraView.setRecordVideoHeight(lowProfile.videoFrameHeight);
-                    SharedPreferences.Editor editor = sharedPreferences.edit();
-                    if(VERBOSE)Log.d(TAG, "Selected RESOLUTION video width = "+cameraView.getRecordVideoWidth()+" X "+cameraView.getRecordVideoHeight());
-                    editor.putString(Constants.VIDEO_DIMENSION_LOW, cameraView.getRecordVideoWidth()+":"+cameraView.getRecordVideoHeight());
-                    editor.putInt(Constants.CAMPROFILE_FOR_RECORD_LOW, cameraView.getCamProfileForRecord());
-                    editor.commit();
+                    targetVideoRatio = ((double)(lowProfile.videoFrameWidth) / (double)(lowProfile.videoFrameHeight));
                 }
+                Log.d(TAG, "targetVideoRatio for LOW = "+targetVideoRatio);
             }
         }
         else{
-            if(VERBOSE)Log.d(TAG, "Choose DEFAULT as HIGH");
-            //Choose HIGH as default video resolution
-            cameraView.setRecordVideoWidth(VIDEO_WIDTH);
-            cameraView.setRecordVideoHeight(VIDEO_HEIGHT);
-            cameraView.setCamProfileForRecord(CamcorderProfile.QUALITY_HIGH);
+            targetVideoRatio = screenAspectRatio;
         }
+    }
+
+    int screenWidth;
+    private double chooseMediumResolution(){
+        SharedPreferences sharedPreferences = obtainSettingsPrefs();
+        StringTokenizer videoDimen;
+        previewSizes = parameters.getSupportedPreviewSizes();
+        if(display.getRotation() == Surface.ROTATION_0 || display.getRotation() == Surface.ROTATION_180){
+            screenWidth = screenSize.x;
+        }
+        else{
+            //In Landscape mode, get screensize y.
+            screenWidth = screenSize.y;
+        }
+        if(screenWidth > resources.getInteger(R.integer.fullHDWidth)){
+
+            //Choose a resolution that matches closest to 1080P, as medium resolution.
+            if(CamcorderProfile.hasProfile(cameraId, CamcorderProfile.QUALITY_1080P)) {
+                if (VERBOSE) Log.d(TAG, "SET 1080P as medium");
+                videoDimen = new StringTokenizer(findClosestResolutionInCamera(CamcorderProfile.QUALITY_1080P), ":");
+                cameraView.setCamProfileForRecord(CamcorderProfile.QUALITY_1080P);
+            }
+            else{
+                videoDimen = checkForMediumResolutions();
+            }
+        }
+        else if(VIDEO_WIDTH == resources.getInteger(R.integer.fullHDWidth)){
+
+            videoDimen = checkForMediumResolutions();
+        }
+        else{
+            //Choose a resolution that matches closest to 480P as medium resolution.
+            if(CamcorderProfile.hasProfile(cameraId, CamcorderProfile.QUALITY_480P)) {
+                if (VERBOSE) Log.d(TAG, "SET 480P as medium");
+                videoDimen = new StringTokenizer(findClosestResolutionInCamera(CamcorderProfile.QUALITY_480P), ":");
+                cameraView.setCamProfileForRecord(CamcorderProfile.QUALITY_480P);
+            }
+            else if(CamcorderProfile.hasProfile(cameraId, CamcorderProfile.QUALITY_QVGA)){
+                if(VERBOSE)Log.d(TAG, "SET QVGA as medium");
+                videoDimen = new StringTokenizer(findClosestResolutionInCamera(CamcorderProfile.QUALITY_QVGA), ":");
+                cameraView.setCamProfileForRecord(CamcorderProfile.QUALITY_QVGA);
+            }
+            else if(CamcorderProfile.hasProfile(cameraId, CamcorderProfile.QUALITY_QCIF)){
+                if(VERBOSE)Log.d(TAG, "SET QCIF as medium");
+                videoDimen = new StringTokenizer(findClosestResolutionInCamera(CamcorderProfile.QUALITY_QCIF), ":");
+                cameraView.setCamProfileForRecord(CamcorderProfile.QUALITY_QCIF);
+            }
+            else{
+                if(VERBOSE)Log.d(TAG, "SET HIGH since other medium resolutions are not supported");
+                videoDimen = new StringTokenizer(findClosestResolutionInCamera(CamcorderProfile.QUALITY_HIGH), ":");
+                cameraView.setCamProfileForRecord(CamcorderProfile.QUALITY_HIGH);
+            }
+        }
+        cameraView.setRecordVideoWidth(Integer.parseInt(videoDimen.nextToken()));
+        cameraView.setRecordVideoHeight(Integer.parseInt(videoDimen.nextToken()));
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        if(VERBOSE)Log.d(TAG, "Selected RESOLUTION video width = "+cameraView.getRecordVideoWidth()+" X "+cameraView.getRecordVideoHeight());
+        editor.putString(Constants.VIDEO_DIMENSION_MEDIUM, cameraView.getRecordVideoWidth()+":"+cameraView.getRecordVideoHeight());
+        editor.putInt(Constants.CAMPROFILE_FOR_RECORD_MEDIUM, cameraView.getCamProfileForRecord());
+        editor.commit();
+        return (double)cameraView.getRecordVideoWidth() / (double)cameraView.getRecordVideoHeight();
     }
 
     private StringTokenizer checkForMediumResolutions(){
         StringTokenizer videoDimen;
-        //Choose a resolution that matches closest to 480P as medium resolution.
         if(CamcorderProfile.hasProfile(cameraId, CamcorderProfile.QUALITY_720P)) {
             if(VERBOSE)Log.d(TAG, "SET 720P as medium");
             videoDimen = new StringTokenizer(findClosestResolutionInCamera(CamcorderProfile.QUALITY_720P), ":");
             cameraView.setCamProfileForRecord(CamcorderProfile.QUALITY_720P);
         }
         else if(CamcorderProfile.hasProfile(cameraId, CamcorderProfile.QUALITY_480P)){
-            if(VERBOSE)Log.d(TAG, "SET 480P as low");
+            if(VERBOSE)Log.d(TAG, "SET 480P as medium");
             videoDimen = new StringTokenizer(findClosestResolutionInCamera(CamcorderProfile.QUALITY_480P), ":");
             cameraView.setCamProfileForRecord(CamcorderProfile.QUALITY_480P);
         }
+        else if(CamcorderProfile.hasProfile(cameraId, CamcorderProfile.QUALITY_QVGA)){
+            if(VERBOSE)Log.d(TAG, "SET QVGA as medium");
+            videoDimen = new StringTokenizer(findClosestResolutionInCamera(CamcorderProfile.QUALITY_QVGA), ":");
+            cameraView.setCamProfileForRecord(CamcorderProfile.QUALITY_QVGA);
+        }
+        else if(CamcorderProfile.hasProfile(cameraId, CamcorderProfile.QUALITY_QCIF)){
+            if(VERBOSE)Log.d(TAG, "SET QCIF as medium");
+            videoDimen = new StringTokenizer(findClosestResolutionInCamera(CamcorderProfile.QUALITY_QCIF), ":");
+            cameraView.setCamProfileForRecord(CamcorderProfile.QUALITY_QCIF);
+        }
         else{
             if(VERBOSE)Log.d(TAG, "SET HIGH since other medium resolutions are not supported");
-            videoDimen = new StringTokenizer(VIDEO_WIDTH+":"+VIDEO_HEIGHT);
+            videoDimen = new StringTokenizer(findClosestResolutionInCamera(CamcorderProfile.QUALITY_HIGH), ":");
             cameraView.setCamProfileForRecord(CamcorderProfile.QUALITY_HIGH);
         }
         return videoDimen;
@@ -536,16 +552,37 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     private String findClosestResolutionInCamera(int camcorderProf){
         CamcorderProfile profile = CamcorderProfile.get(cameraId, camcorderProf);
         TreeMap<Double, String> ratioDimension = new TreeMap<>();
-        for(Camera.Size prevSize : previewSizes){
-            double previewRatio = (double) prevSize.width / (double) prevSize.height;
-            if (VERBOSE) Log.d(TAG, "Preview ratio for " + prevSize.width + " / " + prevSize.height + " is = " + previewRatio);
-            if(prevSize.width < VIDEO_WIDTH) {
-                ratioDimension.put(Math.abs((double)prevSize.width - (double)profile.videoFrameWidth),
+        List<Camera.Size> videoSizes = parameters.getSupportedVideoSizes();
+        if(videoSizes == null){
+            videoSizes = parameters.getSupportedPreviewSizes();
+        }
+        Collections.sort(videoSizes, new CameraSizeComparator());
+        for(Camera.Size videoSize: videoSizes){
+            double videoRatio = (double) videoSize.width / (double) videoSize.height;
+            if (VERBOSE) Log.d(TAG, "Video ratio for " + videoSize.width + " / " + videoSize.height + " is = " + videoRatio);
+            //screenWidth is width in portrait mode, and since all video sizes are width / height in landscape mode, we use videoSize.height
+            if(videoSize.height <= screenWidth) {
+                ratioDimension.put(Math.abs((double)videoSize.width - (double)profile.videoFrameWidth),
                         profile.videoFrameWidth + ":" + profile.videoFrameHeight);
             }
         }
         Log.d(TAG, "Dimension closest to "+camcorderProf+" = "+ratioDimension.get(0d));
         return ratioDimension.get(0d);
+    }
+
+    class CameraSizeComparator implements Comparator<Camera.Size>{
+        @Override
+        public int compare(Camera.Size size1, Camera.Size size2) {
+            if(size1.width < size2.width){
+                return 1;
+            }
+            else if(size1.width > size2.width){
+                return -1;
+            }
+            else{
+                return 0;
+            }
+        }
     }
 
     @Override

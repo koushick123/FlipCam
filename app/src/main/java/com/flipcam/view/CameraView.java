@@ -218,7 +218,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
-        //Disable Camera 2 API till this can be tested on a device that provides FULL hardware level support.
+        //Camera 2 API support deferred.
         return false;
     }
 
@@ -679,8 +679,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 Toast.makeText(getContext(),getResources().getString(R.string.noFrontFaceCamera),Toast.LENGTH_SHORT).show();
                 return;
             }
+            //Set the video resolution as per selection in settings.
             camera1.setResolution(measuredWidth, measuredHeight);
             camera1.setFPS();
+            //Resize the preview to match the aspect ratio of selected video resolution.
             setLayoutAspectRatio();
             camera1.startPreview(surfaceTexture);
         }
