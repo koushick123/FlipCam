@@ -279,7 +279,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             switch(msg.what)
             {
                 case Constants.SHOW_ELAPSED_TIME:
-                    if(VERBOSE)Log.d(TAG,"show time now");
+                    if(FRAME_VERBOSE)Log.d(TAG,"show time now");
                     showTimeElapsed();
                     break;
                 case Constants.SHOW_MEMORY_CONSUMED:
@@ -890,8 +890,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         // Set the preview aspect ratio.
         requestLayout();
         ViewGroup.LayoutParams layoutParams = getLayoutParams();
-        VIDEO_WIDTH = camera1.getPreviewSizes()[0];
-        VIDEO_HEIGHT = camera1.getPreviewSizes()[1];
+        VIDEO_WIDTH = camera1.getDisplaySizes()[0];
+        VIDEO_HEIGHT = camera1.getDisplaySizes()[1];
         int temp = VIDEO_HEIGHT;
         VIDEO_HEIGHT = VIDEO_WIDTH;
         VIDEO_WIDTH = temp;

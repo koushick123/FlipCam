@@ -97,6 +97,8 @@ import java.util.List;
     Camera.CameraInfo getCameraInfo();
     //Get Camera preview sizes (For Camera 1 API)
     int[] getPreviewSizes();
+    //Get display sizes for recording
+    int[] getDisplaySizes();
     //Set picture orientation (For Camera 1 API)
     void setRotation(int rotation);
     //The below methods are not necessary for camera, but are included for the sake of maintaining loose coupling between CameraView and Camera APIs

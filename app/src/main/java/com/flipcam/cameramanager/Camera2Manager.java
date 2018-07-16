@@ -63,6 +63,11 @@ public class Camera2Manager implements CameraOperations {
     }
 
     @Override
+    public int[] getDisplaySizes() {
+        return new int[0];
+    }
+
+    @Override
     public int[] getPreviewSizes()
     {
         int[] sizes = new int[2];

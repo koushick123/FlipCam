@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_height="match_parent"
-    android:layout_width="match_parent"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/frameMedia"
-    xmlns:android="http://schemas.android.com/apk/res/android">
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
 
     <ImageView
         android:id="@+id/noImage"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@color/mediaControlColor"
+        android:contentDescription="@string/noImage"
         android:src="@drawable/ic_no_media"
-        android:visibility="gone"
-        android:contentDescription="@string/noImage"/>
+        android:visibility="gone" />
 
     <TextView
         android:id="@+id/noImageText"
@@ -29,16 +29,17 @@
     <android.support.v4.view.ViewPager xmlns:android="http://schemas.android.com/apk/res/android"
         android:id="@+id/mediaPager"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:background="@color/settingsBarColor" />
 
     <ImageView
         android:id="@+id/playVideo"
         android:layout_width="84dp"
         android:layout_height="84dp"
         android:layout_gravity="center"
+        android:contentDescription="@string/playVideoCircle"
         android:visibility="invisible"
-        app:srcCompat="@drawable/ic_play_circle_outline"
-        android:contentDescription="@string/playVideoCircle"/>
+        app:srcCompat="@drawable/ic_play_circle_outline" />
 
     <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
         android:id="@+id/topMediaControls"
@@ -136,9 +137,9 @@
                 android:layout_gravity="center"
                 android:layout_weight="0.1"
                 android:background="@color/mediaControlColor"
+                android:contentDescription="@string/playVideo"
                 android:scaleType="centerCrop"
-                android:src="@drawable/ic_play_arrow"
-                android:contentDescription="@string/playVideo"/>
+                android:src="@drawable/ic_play_arrow" />
         </LinearLayout>
     </LinearLayout>
 </FrameLayout>
