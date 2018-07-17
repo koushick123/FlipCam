@@ -137,6 +137,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         windowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
         display = windowManager.getDefaultDisplay();
         display.getSize(screenSize);
+        screenWidth = screenSize.x;
         appContext = context;
         resources = appContext.getResources();
     }
@@ -222,7 +223,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         if(selectedRes.equalsIgnoreCase(appContext.getResources().getString(R.string.videoResMedium)) ||
                 selectedRes.equalsIgnoreCase(appContext.getResources().getString(R.string.videoResHigh))){
             //Scale display preview for Medium and High resolutions, to make the recording window look not too small.
-            int scaleWidth = (int)(targetVideoRatio * screenWidth);
+            int scaleWidth = (int)(targetVideoRatio * (double)screenWidth);
             DISPLAY_WIDTH = scaleWidth;
             DISPLAY_HEIGHT = screenWidth;
             Log.d(TAG, "SCALED Video width = " + DISPLAY_WIDTH + ", Video height = " + DISPLAY_HEIGHT);
@@ -481,7 +482,6 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     private void chooseMediumResolution(){
         SharedPreferences sharedPreferences = obtainSettingsPrefs();
         StringTokenizer videoDimen;
-        screenWidth = screenSize.x;
         if(screenWidth > resources.getInteger(R.integer.fullHDWidth)){
 
             //Choose a resolution that matches closest to 1080P, as medium resolution.

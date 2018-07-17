@@ -805,7 +805,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             if(VERBOSE)Log.d(TAG,"Rot angle == "+rotationAngle+", portrait = "+portrait);
             Matrix.rotateM(RECORD_IDENTITY_MATRIX, 0, rotationAngle , 0, 0, 1);
             setLayoutAspectRatio();
-//            isRecord=true;
             setRecord(true);
             setKeepScreenOn(true);
             startTimerThread();
@@ -814,7 +813,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             camera1.setRecordingHint();
         }
         else{
-//            isRecord=false;
             setRecord(false);
             setKeepScreenOn(false);
             stopTimerThread();
@@ -1412,7 +1410,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 if(isRecording) {
                     makeCurrent(encoderSurface);
                     if (FRAME_VERBOSE) Log.d(TAG, "Made encoder surface current");
-                    GLES20.glViewport(0, 0, VIDEO_WIDTH, VIDEO_HEIGHT);
+                    GLES20.glViewport(0, 0, getRecordVideoWidth(), getRecordVideoHeight());
                     draw(RECORD_IDENTITY_MATRIX, createFloatBuffer(GLUtil.FULL_RECTANGLE_COORDS), 0, (GLUtil.FULL_RECTANGLE_COORDS.length / 2), 2, 2 * SIZEOF_FLOAT, mTmpMatrix,
                             createFloatBuffer(GLUtil.FULL_RECTANGLE_TEX_COORDS), mTextureId, 2 * SIZEOF_FLOAT);
                     if (FRAME_VERBOSE) Log.d(TAG, "Populated to encoder");

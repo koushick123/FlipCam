@@ -404,7 +404,7 @@ MediaPlayer.OnErrorListener, Serializable{
         if(VERBOSE)Log.d(TAG,"screenAR = "+screenAR);
         FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
         if (display.getRotation() == Surface.ROTATION_0) {
-            if(Math.abs(screenAR - imageAR) < 0.1) {
+            if(Math.abs(screenAR - imageAR) < 0.01) {
                 if(VERBOSE)Log.d(TAG,"Portrait");
                 layoutParams.width = screenSize.x;
                 layoutParams.height = screenSize.y;
