@@ -435,7 +435,7 @@ MediaPlayer.OnErrorListener, Serializable{
         double screenAR = (double) screenSize.x / (double) screenSize.y;
         FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
         if (display.getRotation() == Surface.ROTATION_0) {
-            if (Math.abs(screenAR - videoAR) < 0.1) {
+            if (Math.abs(screenAR - videoAR) < 0.01) {
                 layoutParams.width = screenSize.x;
                 layoutParams.height = screenSize.y;
                 videoView.setLayoutParams(layoutParams);

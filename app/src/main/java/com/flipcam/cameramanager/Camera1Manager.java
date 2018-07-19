@@ -182,7 +182,6 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         if (VERBOSE) Log.d(TAG, "Screen Height = " + height);
         setVideoSize();
         setPreviewSizeForVideo();
-//        if (VERBOSE) Log.d(TAG, "HEIGHT == " + VIDEO_HEIGHT + ", WIDTH == " + VIDEO_WIDTH);
         if (!cameraView.isRecord()) {
             if (videoFrag != null) {
                 SharedPreferences settings = videoFrag.getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
@@ -220,18 +219,11 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
             }
         }
         parameters.setPreviewSize(VIDEO_WIDTH, VIDEO_HEIGHT);
-        if(selectedRes.equalsIgnoreCase(appContext.getResources().getString(R.string.videoResMedium)) ||
-                selectedRes.equalsIgnoreCase(appContext.getResources().getString(R.string.videoResHigh))){
-            //Scale display preview for Medium and High resolutions, to make the recording window look not too small.
-            int scaleWidth = (int)(targetVideoRatio * (double)screenWidth);
-            DISPLAY_WIDTH = scaleWidth;
-            DISPLAY_HEIGHT = screenWidth;
-            Log.d(TAG, "SCALED Video width = " + DISPLAY_WIDTH + ", Video height = " + DISPLAY_HEIGHT);
-        }
-        else{
-            DISPLAY_WIDTH = VIDEO_WIDTH;
-            DISPLAY_HEIGHT = VIDEO_HEIGHT;
-        }
+        //Scale display preview to make the recording window look not too small.
+        int scaleWidth = (int)(targetVideoRatio * (double)screenWidth);
+        DISPLAY_WIDTH = scaleWidth;
+        DISPLAY_HEIGHT = screenWidth;
+        Log.d(TAG, "SCALED Video width = " + DISPLAY_WIDTH + ", Video height = " + DISPLAY_HEIGHT);
     }
 
     @Override
