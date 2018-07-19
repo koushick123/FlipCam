@@ -202,21 +202,27 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     private void setPreviewSizeForVideo() {
 
         //For chosen video resolution, we need to display a preview that is a closest match to targetVideoRatio.
-        String selectedRes = obtainSettingsPrefs().getString(Constants.SELECT_VIDEO_RESOLUTION, resources.getString(R.string.videoResHigh));
-        double arDiff = Double.MAX_VALUE;
-        previewSizes = parameters.getSupportedPreviewSizes();
-        Collections.sort(previewSizes, new CameraSizeComparator());
-        for (Camera.Size previews : previewSizes) {
-            double previewAR = (double) previews.width / (double) previews.height;
-            Log.d(TAG, "PREVIEW res = " + previews.width + " / " + previews.height);
-            Log.d(TAG, "PREVIEWAR = " + previewAR);
-            if (Math.abs(previewAR - targetVideoRatio) < arDiff) {
-                arDiff = Math.abs(previewAR - targetVideoRatio);
-                Log.d(TAG, "arDiff = " + arDiff);
-                VIDEO_WIDTH = previews.width;
-                VIDEO_HEIGHT = previews.height;
-                Log.d(TAG, "Video width = " + VIDEO_WIDTH + ", Video height = " + VIDEO_HEIGHT);
+        //Use below logic only if supported video sizes is different from supported preview sizes.
+        if(parameters.getSupportedVideoSizes() != null) {
+            double arDiff = Double.MAX_VALUE;
+            previewSizes = parameters.getSupportedPreviewSizes();
+            Collections.sort(previewSizes, new CameraSizeComparator());
+            for (Camera.Size previews : previewSizes) {
+                double previewAR = (double) previews.width / (double) previews.height;
+                Log.d(TAG, "PREVIEW res = " + previews.width + " / " + previews.height);
+                Log.d(TAG, "PREVIEWAR = " + previewAR);
+                if (Math.abs(previewAR - targetVideoRatio) < arDiff) {
+                    arDiff = Math.abs(previewAR - targetVideoRatio);
+                    Log.d(TAG, "arDiff = " + arDiff);
+                    VIDEO_WIDTH = previews.width;
+                    VIDEO_HEIGHT = previews.height;
+                    Log.d(TAG, "Video width = " + VIDEO_WIDTH + ", Video height = " + VIDEO_HEIGHT);
+                }
             }
+        }
+        else{
+            VIDEO_WIDTH = cameraView.getRecordVideoWidth();
+            VIDEO_HEIGHT = cameraView.getRecordVideoHeight();
         }
         parameters.setPreviewSize(VIDEO_WIDTH, VIDEO_HEIGHT);
         //Scale display preview to make the recording window look not too small.
@@ -385,7 +391,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         SharedPreferences sharedPreferences = obtainSettingsPrefs();
 
         //There are only 3 choices.
-        //If user chooses HIGH, choose highest resolution that does not exceed the screen resolution.
+        //If user chooses HIGH, choose highest resolution.
         //If user chooses MEDIUM, choose a medium resolution lesser than the highest one.
         //If user chooses LOW, choose the lowest supported resolution.
         String selectedRes;
@@ -401,7 +407,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
                     targetHeight = tokenizer.nextToken();
                     targetVideoRatio = Double.parseDouble(targetWidth) / Double.parseDouble(targetHeight);
                 } else {
-                    //As of this release, the highest video resolution will not exceed the resolution of the screen.
+                    //As of this release, the highest video resolution.
                     chooseHighestResolution();
                 }
                 Log.d(TAG, "targetVideoRatio for HIGH = " + targetVideoRatio);
