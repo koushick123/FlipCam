@@ -490,6 +490,14 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         this.stopCamera = stopCamera;
     }
 
+    public boolean isSwitch() {
+        return isSwitch;
+    }
+
+    public void setSwitch(boolean aSwitch) {
+        isSwitch = aSwitch;
+    }
+
     public int getRecordVideoWidth() {
         return recordVideoWidth;
     }
@@ -603,7 +611,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         stopAndReleaseCamera();
 
         unregisterAccelSensor();
-        isSwitch = true;
+        setSwitch(true);
         isFocusModeSupported = false;
         openCameraAndStartPreview();
         if(this.photoFragment!=null && !this.photoFragment.isContinuousAF()) {
@@ -680,9 +688,11 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 return;
             }
             //Set the video resolution as per selection in settings.
-            camera1.setResolution(measuredWidth, measuredHeight);
+            if(VERBOSE)Log.d(TAG, "call setResolution");
+            camera1.setResolution();
             camera1.setFPS();
             //Resize the preview to match the aspect ratio of selected video resolution.
+            if(VERBOSE)Log.d(TAG, "call setLayoutAspectRatio");
             setLayoutAspectRatio();
             camera1.startPreview(surfaceTexture);
         }
@@ -729,9 +739,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     //Return 'true' if this method will create a camera capture session while setting a flash, or 'false' if not.
     //If 'false' is returned, a camera capture session will be created in Camera2Manager.
     public boolean switchFlashOnOff(){
-        if(VERBOSE)Log.d(TAG,"isSwitch = "+isSwitch);
-        if(isSwitch){
-            isSwitch = false;
+        if(VERBOSE)Log.d(TAG,"isSwitch = "+isSwitch());
+        if(isSwitch()){
+            setSwitch(false);
             if(this.photoFragment!=null) {
                 if (this.photoFragment.isFlashOn()) {
                     flashMode = camera1.getFlashModeTorch();

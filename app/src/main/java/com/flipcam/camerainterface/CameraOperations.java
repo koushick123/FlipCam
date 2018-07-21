@@ -95,8 +95,6 @@ import java.util.List;
     String getFlashModeTorch();
     //Get camera info (For Camera 1 API)
     Camera.CameraInfo getCameraInfo();
-    //Get Camera preview sizes (For Camera 1 API)
-    int[] getPreviewSizes();
     //Get display sizes for recording
     int[] getDisplaySizes();
     //Set picture orientation (For Camera 1 API)

@@ -68,15 +68,6 @@ public class Camera2Manager implements CameraOperations {
     }
 
     @Override
-    public int[] getPreviewSizes()
-    {
-        int[] sizes = new int[2];
-        sizes[0] = VIDEO_WIDTH;
-        sizes[1] = VIDEO_HEIGHT;
-        return sizes;
-    }
-
-    @Override
     public Camera.CameraInfo getCameraInfo()
     {
         return null;
