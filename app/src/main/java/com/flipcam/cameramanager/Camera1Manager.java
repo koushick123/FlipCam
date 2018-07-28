@@ -114,13 +114,6 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         }
         if (cameraId != -1) {
             parameters = mCamera.getParameters();
-            if(VERBOSE)Log.d(TAG, "current exposure = " + parameters.getExposureCompensation());
-            if(VERBOSE)Log.d(TAG, "current exposure STEP = " + parameters.getExposureCompensationStep());
-            //Need to have EV as 1.0, for correct exposure.
-            int currExp = (int) (1.0d / (double) parameters.getExposureCompensationStep());
-            parameters.setExposureCompensation(currExp);
-            mCamera.setParameters(parameters);
-            if (VERBOSE) Log.d(TAG, "exp comp set = " + parameters.getExposureCompensation());
             mCamera.setPreviewCallback(this);
         } else {
             mCamera = null;
@@ -171,6 +164,16 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     @Override
     public void setResolution(int width, int height) {
 
+    }
+
+    @Override
+    public void setAutoExposureAndLock() {
+        Log.d(TAG, "ALL Parameters = "+parameters.flatten());
+        if(parameters.isAutoExposureLockSupported()) {
+            Log.d(TAG, "setAutoExposureLock false");
+            parameters.setAutoExposureLock(false);
+            mCamera.setParameters(parameters);
+        }
     }
 
     List<Camera.Size> previewSizes;

@@ -3,10 +3,6 @@ package com.flipcam.util;
 import android.opengl.GLES20;
 import android.util.Log;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.FloatBuffer;
-
 /**
  * Created by Koushick on 12-08-2017.
  */
@@ -40,14 +36,8 @@ public class GLUtil {
                     "varying vec2 vTextureCoord;\n" +
                     "uniform samplerExternalOES sTexture;\n" +
                     "void main() {\n" +
-                    "    gl_FragColor = texture2D(sTexture, vTextureCoord);\n" +
+                    "    gl_FragColor = 1.9 * texture2D(sTexture, vTextureCoord);\n" +
                     "}\n";
-
-    /*public static final float[] IDENTITY_MATRIX;
-    static {
-        IDENTITY_MATRIX = new float[16];
-        Matrix.setIdentityM(IDENTITY_MATRIX, 0);
-    }*/
     /**
      * A "full" square, extending from -1 to +1 in both dimensions.  When the model/view/projection
      * matrix is identity, this will exactly cover the viewport.
@@ -152,18 +142,5 @@ public class GLUtil {
         if (location < 0) {
             throw new RuntimeException("Unable to locate '" + label + "' in program");
         }
-    }
-
-    /**
-     * Allocates a direct float buffer, and populates it with the float array data.
-     */
-    public static FloatBuffer createFloatBuffer(float[] coords) {
-        // Allocate a direct ByteBuffer, using 4 bytes per float, and copy coords into it.
-        ByteBuffer bb = ByteBuffer.allocateDirect(coords.length * SIZEOF_FLOAT);
-        bb.order(ByteOrder.nativeOrder());
-        FloatBuffer fb = bb.asFloatBuffer();
-        fb.put(coords);
-        fb.position(0);
-        return fb;
     }
 }

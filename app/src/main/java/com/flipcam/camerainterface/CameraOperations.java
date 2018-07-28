@@ -31,6 +31,8 @@ import java.util.List;
      void setResolution();
     //To set Resolution with width and height
      void setResolution(int width,int height);
+     //To set Auto exposure
+    void setAutoExposureAndLock();
     //To set zoom
      boolean zoomInOrOut(int zoomInOrOut);
     //To check if smooth zoom is supported

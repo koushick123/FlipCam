@@ -110,7 +110,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         IDENTITY_MATRIX = new float[16];
         Matrix.setIdentityM(IDENTITY_MATRIX, 0);
         RECORD_IDENTITY_MATRIX = new float[16];
-        Matrix.setIdentityM(RECORD_IDENTITY_MATRIX, 0);}
+        Matrix.setIdentityM(RECORD_IDENTITY_MATRIX, 0);
+    }
 
     CameraRenderer.CameraHandler cameraHandler;
     MainHandler mainHandler;
@@ -730,6 +731,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         if(!isCamera2()){
             switchFlashOnOff();
         }
+        camera1.setAutoExposureAndLock();
     }
 
     public SurfaceTexture getSurfaceTexture(){
@@ -969,6 +971,11 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         camera1.capturePicture();
     }
 
+    private void stopAndReleaseCamera(){
+        camera1.stopPreview();
+        camera1.releaseCamera();
+    }
+
     @Override
     public void surfaceCreated(SurfaceHolder surfaceHolder) {
         if(VERBOSE)Log.d(TAG, "surfCreated holder = " + surfaceHolder);
@@ -1029,11 +1036,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         }
     }
 
-    private void stopAndReleaseCamera(){
-        camera1.stopPreview();
-        camera1.releaseCamera();
-    }
-
     @Override
     public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
         if(VERBOSE)Log.d(TAG,"surfaceDestroyed = "+surfaceHolder);
@@ -1077,7 +1079,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                     audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_UNMUTE, 0);
                 }
                 if(VERBOSE)Log.d(TAG,"Recording in progress.... Stop now");
-//                isRecord=false;
                 setRecord(false);
                 //Reset the RECORD Matrix to be portrait.
                 System.arraycopy(IDENTITY_MATRIX,0,RECORD_IDENTITY_MATRIX,0,IDENTITY_MATRIX.length);
@@ -1303,7 +1304,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 mediaRecorder.setAudioSource(MediaRecorder.AudioSource.CAMCORDER);
             }
             catch(Exception e){
-                if(VERBOSE)Log.d(TAG,"Camera not having a mic oriented in the same way. Use the default microphone");
+                if(VERBOSE)Log.e(TAG,"Camera not having a mic oriented in the same way. Use the default microphone");
                 mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
             }
             mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);

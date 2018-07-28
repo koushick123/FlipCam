@@ -117,6 +117,11 @@ public class Camera2Manager implements CameraOperations {
         }
     }
 
+    @Override
+    public void setAutoExposureAndLock() {
+
+    }
+
     private final CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback() {
         @Override
         public void onOpened(CameraDevice camera) {
