@@ -170,6 +170,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     ContentValues mediaContent = new ContentValues();
     boolean stopCamera = false;
     int camProfileForRecord;
+    public float colorVal = 0.0f;
 
     public CameraView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -1190,6 +1191,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             return surface1;
         }
 
+        int changer;
+        int tex;
         /*
         Copyright 2014 Google Inc. All rights reserved.
          Borrowed from Grafika project. This is NOT an official Google Project,
@@ -1209,6 +1212,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             GLUtil.checkLocation(muMVPMatrixLoc, "uMVPMatrix");
             muTexMatrixLoc = GLES20.glGetUniformLocation(mProgramHandle, "uTexMatrix");
             GLUtil.checkLocation(muTexMatrixLoc, "uTexMatrix");
+            changer = GLES20.glGetUniformLocation(mProgramHandle, "changer");
+            GLUtil.checkLocation(changer, "changer");
+            tex = GLES20.glGetUniformLocation(mProgramHandle, "sTexture");
+            GLUtil.checkLocation(tex, "sTexture");
             mTextureTarget = GLES11Ext.GL_TEXTURE_EXTERNAL_OES;
             mTextureId = createGLTextureObject();
             surfaceTexture = new SurfaceTexture(mTextureId);
@@ -1238,6 +1245,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                           float[] texMatrix, FloatBuffer texBuffer, int textureId, int texStride) {
             GLUtil.checkGlError("draw start");
 
+            tex = GLES20.glGetUniformLocation(mProgramHandle, "sTexture");
+            changer = GLES20.glGetUniformLocation(mProgramHandle, "changer");
             // Select the program.
             GLES20.glUseProgram(mProgramHandle);
             GLUtil.checkGlError("glUseProgram");
@@ -1253,7 +1262,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             // Copy the texture transformation matrix over.
             GLES20.glUniformMatrix4fv(muTexMatrixLoc, 1, false, texMatrix, 0);
             GLUtil.checkGlError("glUniformMatrix4fv");
-
+            GLES20.glUniform1i(tex, 0);
+            GLES20.glUniform1f(changer, colorVal);
             // Enable the "aPosition" vertex attribute.
             GLES20.glEnableVertexAttribArray(maPositionLoc);
             GLUtil.checkGlError("glEnableVertexAttribArray");

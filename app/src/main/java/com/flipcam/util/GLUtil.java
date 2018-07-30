@@ -9,7 +9,7 @@ import android.util.Log;
 
 public class GLUtil {
     public static final String TAG = "GLUtil";
-    static boolean VERBOSE = false;
+    static boolean VERBOSE = true;
     /*
     Copyright 2014 Google Inc. All rights reserved.
     Borrowed from Grafika project. This is NOT an official Google Project,
@@ -35,8 +35,14 @@ public class GLUtil {
                     "precision mediump float;\n" +
                     "varying vec2 vTextureCoord;\n" +
                     "uniform samplerExternalOES sTexture;\n" +
+                    "uniform float changer;\n" +
+                    "float r, g, b;\n" +
                     "void main() {\n" +
-                    "    gl_FragColor = 1.9 * texture2D(sTexture, vTextureCoord);\n" +
+                    "    vec4 tex = texture2D(sTexture, vTextureCoord);\n" +
+                    "    r = clamp(tex.r + changer, 0.0, 1.0);\n" +
+                    "    g = clamp(tex.g + changer, 0.0, 1.0);\n" +
+                    "    b = clamp(tex.b + changer, 0.0, 1.0);\n" +
+                    "    gl_FragColor = vec4(r, g, b, tex.a);\n" +
                     "}\n";
     /**
      * A "full" square, extending from -1 to +1 in both dimensions.  When the model/view/projection
