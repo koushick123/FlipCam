@@ -428,14 +428,38 @@ public class PhotoFragment extends Fragment {
         return capturePic;
     }
 
+    public ImageButton getSwitchCamera() {
+        return switchCamera;
+    }
+
+    public void setSwitchCamera(ImageButton switchCamera) {
+        this.switchCamera = switchCamera;
+    }
+
+    public ImageButton getVideoMode() {
+        return videoMode;
+    }
+
+    public void setVideoMode(ImageButton videoMode) {
+        this.videoMode = videoMode;
+    }
+
+    public ImageView getThumbnail() {
+        return thumbnail;
+    }
+
+    public void setThumbnail(ImageView thumbnail) {
+        this.thumbnail = thumbnail;
+    }
+
     public void showImagePreview()
     {
-        capturePic.setClickable(true);
-        videoMode.setClickable(true);
-        switchCamera.setClickable(true);
-        thumbnail.setClickable(true);
         imagePreview.setImageBitmap(cameraView.getDrawingCache());
         imagePreview.setVisibility(View.VISIBLE);
+        capturePic.setClickable(false);
+        videoMode.setClickable(false);
+        switchCamera.setClickable(false);
+        thumbnail.setClickable(false);
         cameraView.capturePhoto();
     }
 

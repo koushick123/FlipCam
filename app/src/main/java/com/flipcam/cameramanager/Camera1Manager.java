@@ -283,8 +283,8 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         capture = true;
         Camera.Parameters parameters = mCamera.getParameters();
         parameters.setZoom(zoomedVal);
-        mCamera.takePicture(this, null, null, this);
         mCamera.setParameters(parameters);
+        mCamera.takePicture(this, null, null, this);
     }
 
     @Override
@@ -328,9 +328,12 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
             //Start the preview no matter if photo is saved or not.
             if (VERBOSE) Log.d(TAG, "photo is ready");
             camera.startPreview();
-            photoFrag.getCapturePic().setClickable(true);
             photoFrag.hideImagePreview();
             photoFrag.showImageSaved();
+            photoFrag.getCapturePic().setClickable(true);
+            photoFrag.getVideoMode().setClickable(true);
+            photoFrag.getSwitchCamera().setClickable(true);
+            photoFrag.getThumbnail().setClickable(true);
         }
     }
 

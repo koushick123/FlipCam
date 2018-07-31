@@ -48,6 +48,8 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
     AppWidgetManager appWidgetManager;
     SharedPreferences sharedPreferences;
     boolean VERBOSE = false;
+    View settingsRootView;
+    Dialog settingsDialog;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -63,6 +65,8 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
         appWidgetManager = (AppWidgetManager)getSystemService(Context.APPWIDGET_SERVICE);
         warningMsgRoot = layoutInflater.inflate(R.layout.warning_message,null);
         warningMsg = new Dialog(this);
+        settingsRootView = layoutInflater.inflate(R.layout.settings, null);
+        settingsDialog = new Dialog(this);
         sharedPreferences = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
         SharedPreferences.Editor settingsEditor = sharedPreferences.edit();
         if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
@@ -157,25 +161,6 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
     }
 
     public String doesSDCardExist(){
-//        File[] storage = new File("/storage").listFiles();
-        /*File[] mediaDirs = getExternalMediaDirs();
-        if(mediaDirs != null) {
-            if(VERBOSE)Log.d(TAG, "mediaDirs = " + mediaDirs.length);
-        }
-        for(int i=0;i<mediaDirs.length;i++){
-            if(VERBOSE)Log.d(TAG, "external media dir = "+mediaDirs[i]);
-            if(mediaDirs[i] != null) {
-                try {
-                    if (Environment.isExternalStorageRemovable(mediaDirs[i])) {
-                        if(VERBOSE)Log.d(TAG, "Removable storage = " + mediaDirs[i]);
-                        return mediaDirs[i].getPath();
-                    }
-                } catch (IllegalArgumentException illegal) {
-                    if(VERBOSE)Log.d(TAG, "Not a valid storage device");
-                }
-            }
-        }
-        return null;*/
         String sdcardpath = sharedPreferences.getString(Constants.SD_CARD_PATH, "");
         try {
             String filename = "/doesSDCardExist_"+String.valueOf(System.currentTimeMillis()).substring(0,5);
@@ -206,6 +191,14 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
         Intent settingsIntent = new Intent(this, SettingsActivity.class);
         startActivity(settingsIntent);
         overridePendingTransition(R.anim.slide_from_right,R.anim.slide_to_left);
+    }
+
+    public void adjustBrightness(View view){
+        TextView header = (TextView)settingsRootView.findViewById(R.id.header);
+        header.setText(getResources().getString(R.string.brightnessHeading));
+        settingsDialog.setContentView(settingsRootView);
+        settingsDialog.setCancelable(true);
+        settingsDialog.show();
     }
 
     @Override

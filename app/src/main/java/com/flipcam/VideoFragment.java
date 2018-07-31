@@ -763,7 +763,6 @@ public class VideoFragment extends android.app.Fragment{
         timeElapParam.setMargins(0,(int)getResources().getDimension(R.dimen.timeAndMemTopMargin),0,0);
         timeElapParam.weight=0.3f;
         timeElapsed.setLayoutParams(timeElapParam);
-        //settingsBar.addView(timeElapsed);
         cameraView.setTimeElapsedText(timeElapsed);
         timeElapsedParentLayout.setLayoutParams(parentLayoutParams);
         timeElapsedParentLayout.addView(timeElapsed);
@@ -780,7 +779,6 @@ public class VideoFragment extends android.app.Fragment{
         memConsumed.setMargins(0, (int) getResources().getDimension(R.dimen.timeAndMemTopMargin), 0, 0);
         memConsumed.weight = 0.3f;
         memoryConsumed.setLayoutParams(memConsumed);
-        //settingsBar.addView(memoryConsumed);
         memoryConsumedParentLayout.setLayoutParams(parentLayoutParams);
         memoryConsumedParentLayout.addView(memoryConsumed);
         settingsBar.addView(memoryConsumedParentLayout);
@@ -794,25 +792,6 @@ public class VideoFragment extends android.app.Fragment{
     }
 
     public String doesSDCardExist(){
-        //File[] storage = new File("/storage").listFiles();
-        /*File[] mediaDirs = getApplicationContext().getExternalMediaDirs();
-        if(mediaDirs != null) {
-            if(VERBOSE)Log.d(TAG, "mediaDirs = " + mediaDirs.length);
-        }
-        for(int i=0;i<mediaDirs.length;i++){
-            if(VERBOSE)Log.d(TAG, "external media dir = "+mediaDirs[i]);
-            if(mediaDirs[i] != null){
-                try{
-                    if(Environment.isExternalStorageRemovable(mediaDirs[i])){
-                        if(VERBOSE)Log.d(TAG, "Removable storage = "+mediaDirs[i]);
-                        return mediaDirs[i].getPath();
-                    }
-                }
-                catch(IllegalArgumentException illegal) {
-                    if(VERBOSE)Log.d(TAG, "Not a valid storage device");
-                }
-            }
-        }*/
         String sdcardpath = sharedPreferences.getString(Constants.SD_CARD_PATH, "");
         try {
             String filename = "/doesSDCardExist_"+String.valueOf(System.currentTimeMillis()).substring(0,5);

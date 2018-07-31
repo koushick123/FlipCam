@@ -234,5 +234,6 @@
     <string name="videoResMedium">MEDIUM</string>
     <string name="videoResLow">LOW</string>
     <string name="mediaSlideview">Slide View</string>
+    <string name="brightnessHeading">BRIGHTNESS</string>
 </resources>
 

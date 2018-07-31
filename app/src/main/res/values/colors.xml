@@ -44,4 +44,6 @@
     <color name="backColorDialog">#000000</color>
     //Background color for sign in message
     <color name="backColorSettingMsg">#cF000000</color>
+    //Background color for settings popup message
+    <color name="backColorSettingPopup">#cF000000</color>
 </resources>

@@ -115,4 +115,9 @@
     //Margins for FlipCam gallery
     <dimen name="fcGalleryTextTopAndBottomMargin">15dp</dimen>
     <dimen name="fcGalleryTextLeftMargin">15dp</dimen>
+    //Size for brightness icon
+    <dimen name="brightnessWidth">25dp</dimen>
+    <dimen name="brightnessHeight">25dp</dimen>
+    <dimen name="instantSettingWidth">50dp</dimen>
+    <dimen name="instantSettingHeight">150dp</dimen>
 </resources>
