@@ -198,6 +198,9 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
         header.setText(getResources().getString(R.string.brightnessHeading));
         settingsDialog.setContentView(settingsRootView);
         settingsDialog.setCancelable(true);
+        WindowManager.LayoutParams lp = settingsDialog.getWindow().getAttributes();
+        lp.dimAmount = 0.0f;
+        settingsDialog.getWindow().setBackgroundDrawableResource(R.color.backColorSettingPopup);
         settingsDialog.show();
     }
 
