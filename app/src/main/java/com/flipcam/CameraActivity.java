@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Point;
 import android.media.MediaMetadataRetriever;
 import android.os.Bundle;
 import android.os.Environment;
@@ -20,6 +21,7 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.RemoteViews;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -193,15 +195,53 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
         overridePendingTransition(R.anim.slide_from_right,R.anim.slide_to_left);
     }
 
-    public void adjustBrightness(View view){
+    public void openBrightnessPopup(View view){
         TextView header = (TextView)settingsRootView.findViewById(R.id.header);
         header.setText(getResources().getString(R.string.brightnessHeading));
+        Point size = new Point();
+        getWindowManager().getDefaultDisplay().getSize(size);
         settingsDialog.setContentView(settingsRootView);
         settingsDialog.setCancelable(true);
         WindowManager.LayoutParams lp = settingsDialog.getWindow().getAttributes();
         lp.dimAmount = 0.0f;
+        lp.width = (int)(size.x * 0.8);
+        SeekBar brightnessBar = (SeekBar)settingsRootView.findViewById(R.id.brightnessBar);
+        brightnessBar.setMax(20);
+        brightnessBar.setProgress(10);
+        brightnessBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            int prevProgress = Integer.MAX_VALUE;
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if(isVideo()){
+                    if(prevProgress > progress){
+                        videoFragment.cameraView.colorVal += 0.05f;
+                    }
+                    else {
+                        videoFragment.cameraView.colorVal -= 0.05f;
+                    }
+                }
+                Log.d(TAG, "videoFragment.cameraView.colorVal = "+videoFragment.cameraView.colorVal);
+                if(prevProgress == Integer.MAX_VALUE){
+                    prevProgress = progress;
+                }
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
         settingsDialog.getWindow().setBackgroundDrawableResource(R.color.backColorSettingPopup);
         settingsDialog.show();
+    }
+
+    private boolean isVideo(){
+        return videoFragment!=null;
     }
 
     @Override

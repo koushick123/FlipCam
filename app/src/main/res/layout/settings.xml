@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
@@ -8,26 +9,64 @@
         android:id="@+id/header"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_centerInParent="false"
         android:layout_marginBottom="30dp"
         android:layout_marginTop="15dp"
         android:gravity="center_horizontal"
         android:textColor="@color/turqoise"
         android:textStyle="bold" />
 
-    <ProgressBar
+    <ImageView
+        android:id="@+id/maxBrightness"
+        android:layout_width="@dimen/brightnessWidth"
+        android:layout_height="@dimen/brightnessHeight"
+        android:layout_alignParentEnd="true"
+        android:layout_alignTop="@+id/minBrightness"
+        android:layout_marginBottom="15dp"
+        android:layout_marginEnd="15dp"
+        app:srcCompat="@drawable/full_brightness" />
+
+    <ImageView
+        android:id="@+id/minBrightness"
+        android:layout_width="@dimen/brightnessWidth"
+        android:layout_height="@dimen/brightnessHeight"
+        android:layout_below="@+id/header"
+        android:layout_marginBottom="15dp"
+        android:layout_marginStart="15dp"
+        app:srcCompat="@drawable/low_brightness" />
+
+    <SeekBar
         android:id="@+id/brightnessBar"
         style="?android:attr/progressBarStyleHorizontal"
-        android:layout_width="300dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginBottom="30dp"
-        android:layout_marginEnd="10dp"
-        android:layout_marginStart="10dp" />
+        android:layout_below="@+id/maxBrightness"
+        android:layout_centerInParent="true"
+        android:layout_marginBottom="10dp"
+        android:layout_marginEnd="15dp"
+        android:layout_marginStart="15dp"
+        android:indeterminate="false"
+        android:progressBackgroundTint="@color/settingsBarColor"
+        android:progressTint="@color/turqoise"
+        android:thumb="@drawable/greencircle" />
+
+    <ImageView
+        android:id="@+id/normalBrightness"
+        android:layout_width="25dp"
+        android:layout_height="25dp"
+        android:layout_below="@+id/brightnessBar"
+        android:layout_centerHorizontal="true"
+        android:layout_centerInParent="false"
+        android:layout_marginBottom="20dp"
+        app:srcCompat="@drawable/ic_action_name" />
 
     <ZoomControls
         android:id="@+id/brightnessControl"
         android:layout_width="170dp"
         android:layout_height="40dp"
+        android:layout_below="@+id/normalBrightness"
+        android:layout_centerInParent="true"
         android:layout_gravity="center_horizontal"
         android:layout_marginBottom="15dp"></ZoomControls>
-</LinearLayout>
+</RelativeLayout>

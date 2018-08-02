@@ -79,7 +79,7 @@
             android:id="@+id/brightness"
             android:layout_width="@dimen/brightnessWidth"
             android:layout_height="@dimen/brightnessHeight"
-            android:onClick="adjustBrightness"
+            android:onClick="openBrightnessPopup"
             android:src="@drawable/full_brightness" />
     </LinearLayout>
 </FrameLayout>
