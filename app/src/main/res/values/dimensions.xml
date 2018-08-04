@@ -120,4 +120,11 @@
     <dimen name="brightnessHeight">25dp</dimen>
     <dimen name="instantSettingWidth">50dp</dimen>
     <dimen name="instantSettingHeight">150dp</dimen>
+    //Dimensions for brightness popup
+    <dimen name="brightnessBottomMargin">15dp</dimen>
+    <dimen name="normalBrightnessWidth">25dp</dimen>
+    <dimen name="normalBrightnessHeight">25dp</dimen>
+    <dimen name="increaseBrightnessHeight">30dp</dimen>
+    <dimen name="increaseBrightnessWidth">100dp</dimen>
+    <dimen name="increaseDecreaseTextSize">19sp</dimen>
 </resources>

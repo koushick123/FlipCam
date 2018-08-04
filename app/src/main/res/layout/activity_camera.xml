@@ -80,6 +80,7 @@
             android:layout_width="@dimen/brightnessWidth"
             android:layout_height="@dimen/brightnessHeight"
             android:onClick="openBrightnessPopup"
+            android:background="?android:attr/selectableItemBackground"
             android:src="@drawable/full_brightness" />
     </LinearLayout>
 </FrameLayout>

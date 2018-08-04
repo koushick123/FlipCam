@@ -12,6 +12,15 @@ public class ControlVisbilityPreference extends Application implements Serializa
 
     private boolean hideControl;
     private int mediaSelectedPosition;
+    private int brightnessLevel;
+
+    public int getBrightnessLevel() {
+        return brightnessLevel;
+    }
+
+    public void setBrightnessLevel(int brightnessLevel) {
+        this.brightnessLevel = brightnessLevel;
+    }
 
     public int getMediaSelectedPosition() {
         return mediaSelectedPosition;

@@ -23,8 +23,8 @@
         android:layout_height="@dimen/brightnessHeight"
         android:layout_alignParentEnd="true"
         android:layout_alignTop="@+id/minBrightness"
-        android:layout_marginBottom="15dp"
-        android:layout_marginEnd="15dp"
+        android:layout_marginBottom="@dimen/brightnessBottomMargin"
+        android:layout_marginEnd="@dimen/brightnessBottomMargin"
         app:srcCompat="@drawable/full_brightness" />
 
     <ImageView
@@ -32,8 +32,8 @@
         android:layout_width="@dimen/brightnessWidth"
         android:layout_height="@dimen/brightnessHeight"
         android:layout_below="@+id/header"
-        android:layout_marginBottom="15dp"
-        android:layout_marginStart="15dp"
+        android:layout_marginBottom="@dimen/brightnessBottomMargin"
+        android:layout_marginStart="@dimen/brightnessBottomMargin"
         app:srcCompat="@drawable/low_brightness" />
 
     <SeekBar
@@ -53,20 +53,49 @@
 
     <ImageView
         android:id="@+id/normalBrightness"
-        android:layout_width="25dp"
-        android:layout_height="25dp"
+        android:layout_width="@dimen/normalBrightnessWidth"
+        android:layout_height="@dimen/normalBrightnessHeight"
         android:layout_below="@+id/brightnessBar"
         android:layout_centerHorizontal="true"
         android:layout_centerInParent="false"
         android:layout_marginBottom="20dp"
         app:srcCompat="@drawable/ic_action_name" />
 
-    <ZoomControls
-        android:id="@+id/brightnessControl"
-        android:layout_width="170dp"
-        android:layout_height="40dp"
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_below="@+id/normalBrightness"
         android:layout_centerInParent="true"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginBottom="15dp"></ZoomControls>
+        android:layout_marginBottom="20dp"
+        android:gravity="center_horizontal"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/decreaseBrightness"
+            android:layout_width="@dimen/increaseBrightnessWidth"
+            android:layout_height="@dimen/increaseBrightnessHeight"
+            android:layout_below="@+id/normalBrightness"
+            android:layout_centerInParent="false"
+            android:layout_marginLeft="20dp"
+            android:layout_marginRight="20dp"
+            android:layout_weight="1"
+            android:background="@color/turqoise"
+            android:text="-"
+            android:textSize="@dimen/increaseDecreaseTextSize" />
+
+        <Button
+            android:id="@+id/increaseBrightness"
+            android:layout_width="@dimen/increaseBrightnessWidth"
+            android:layout_height="@dimen/increaseBrightnessHeight"
+            android:layout_below="@+id/normalBrightness"
+            android:layout_centerInParent="false"
+            android:layout_marginLeft="20dp"
+            android:layout_marginRight="20dp"
+            android:layout_toRightOf="@+id/decreaseBrightness"
+            android:layout_weight="1"
+            android:background="@color/turqoise"
+            android:text="+"
+            android:textSize="@dimen/increaseDecreaseTextSize" />
+
+    </LinearLayout>
 </RelativeLayout>

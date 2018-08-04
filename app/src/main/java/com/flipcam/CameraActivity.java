@@ -52,6 +52,8 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
     boolean VERBOSE = false;
     View settingsRootView;
     Dialog settingsDialog;
+    ControlVisbilityPreference controlVisbilityPreference;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -63,6 +65,8 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
             //Start with video fragment
             showVideoFragment();
         }
+        controlVisbilityPreference = (ControlVisbilityPreference)getApplicationContext();
+        controlVisbilityPreference.setBrightnessLevel(5);
         layoutInflater = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         appWidgetManager = (AppWidgetManager)getSystemService(Context.APPWIDGET_SERVICE);
         warningMsgRoot = layoutInflater.inflate(R.layout.warning_message,null);
@@ -205,25 +209,15 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
         WindowManager.LayoutParams lp = settingsDialog.getWindow().getAttributes();
         lp.dimAmount = 0.0f;
         lp.width = (int)(size.x * 0.8);
-        SeekBar brightnessBar = (SeekBar)settingsRootView.findViewById(R.id.brightnessBar);
-        brightnessBar.setMax(20);
-        brightnessBar.setProgress(10);
+        final SeekBar brightnessBar = (SeekBar)settingsRootView.findViewById(R.id.brightnessBar);
+        brightnessBar.setMax(10);
+        Log.d(TAG, "brightnessLevel SET to = "+controlVisbilityPreference.getBrightnessLevel());
+        brightnessBar.setProgress(controlVisbilityPreference.getBrightnessLevel());
+        brightnessBar.setOnSeekBarChangeListener(null);
         brightnessBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            int prevProgress = Integer.MAX_VALUE;
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                if(isVideo()){
-                    if(prevProgress > progress){
-                        videoFragment.cameraView.colorVal += 0.05f;
-                    }
-                    else {
-                        videoFragment.cameraView.colorVal -= 0.05f;
-                    }
-                }
-                Log.d(TAG, "videoFragment.cameraView.colorVal = "+videoFragment.cameraView.colorVal);
-                if(prevProgress == Integer.MAX_VALUE){
-                    prevProgress = progress;
-                }
+
             }
 
             @Override
@@ -233,7 +227,39 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-
+                seekBar.setProgress(controlVisbilityPreference.getBrightnessLevel());
+            }
+        });
+        Button increaseBrightness = (Button)settingsRootView.findViewById(R.id.increaseBrightness);
+        increaseBrightness.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(isVideo()) {
+                    if(videoFragment.cameraView.colorVal < 0.25f) {
+                        videoFragment.cameraView.colorVal += 0.05f;
+                        brightnessBar.incrementProgressBy(1);
+                        controlVisbilityPreference.setBrightnessLevel(brightnessBar.getProgress());
+                    }
+                    else{
+                        videoFragment.cameraView.colorVal = 0.25f;
+                    }
+                }
+            }
+        });
+        Button decreaseBrightness = (Button)settingsRootView.findViewById(R.id.decreaseBrightness);
+        decreaseBrightness.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(isVideo()){
+                    if(videoFragment.cameraView.colorVal > -0.25f) {
+                        videoFragment.cameraView.colorVal -= 0.05f;
+                        brightnessBar.incrementProgressBy(-1);
+                        controlVisbilityPreference.setBrightnessLevel(brightnessBar.getProgress());
+                    }
+                    else{
+                        videoFragment.cameraView.colorVal = -0.25f;
+                    }
+                }
             }
         });
         settingsDialog.getWindow().setBackgroundDrawableResource(R.color.backColorSettingPopup);
