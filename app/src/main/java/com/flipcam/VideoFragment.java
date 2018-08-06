@@ -80,6 +80,7 @@ public class VideoFragment extends android.app.Fragment{
     ImageButton stopRecord;
     ImageView imagePreview;
     TextView modeText;
+    TextView resInfo;
     LinearLayout modeLayout;
     OrientationEventListener orientationEventListener;
     int orientation = -1;
@@ -138,6 +139,7 @@ public class VideoFragment extends android.app.Fragment{
         });
         cameraView.setFlashButton(flash);
         modeText = (TextView)getActivity().findViewById(R.id.modeInfo);
+        resInfo = (TextView)getActivity().findViewById(R.id.resInfo);
         modeLayout = (LinearLayout)getActivity().findViewById(R.id.modeLayout);
         permissionInterface = (PermissionInterface)getActivity();
         switchInterface = (SwitchInterface)getActivity();
@@ -719,6 +721,10 @@ public class VideoFragment extends android.app.Fragment{
         modeText.setText(getResources().getString(R.string.VIDEO_MODE));
         settingsBar.setBackgroundColor(getResources().getColor(R.color.settingsBarColor));
         flash.setBackgroundColor(getResources().getColor(R.color.settingsBarColor));
+    }
+
+    public void setVideoResInfo(String width, String height){
+        resInfo.setText(width+" X "+height);
     }
 
     public void hideSettingsBarAndIcon()

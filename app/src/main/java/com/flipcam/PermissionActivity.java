@@ -15,6 +15,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.WindowManager;
 
+import com.flipcam.constants.Constants;
+
 public class PermissionActivity extends AppCompatActivity {
 
     final String TAG = "PermissionActivity";
@@ -32,7 +34,7 @@ public class PermissionActivity extends AppCompatActivity {
     DialogInterface.OnClickListener exitListener;
     AlertDialog.Builder alertDialog;
     private static SharedPreferences sharedPreferences;
-    boolean VERBOSE = false;
+    boolean VERBOSE = true;
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -133,6 +135,18 @@ public class PermissionActivity extends AppCompatActivity {
                 openCameraFragment();
             } else if(!showPermission){
                 if(VERBOSE)Log.d(TAG, "Permissions not obtained. Obtain explicitly");
+                //Remove SELECT_VIDEO_RESOLUTION from shared preferences. This is necessary since for some devices, it is pre-selected as a medium resolution
+                //leading to incorrect preview size.
+                SharedPreferences videoPref = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
+                String videoResPref = videoPref.getString(Constants.SELECT_VIDEO_RESOLUTION, null);
+                if(VERBOSE)Log.d(TAG, "videoResPref = "+videoResPref);
+                SharedPreferences.Editor editor = videoPref.edit();
+                editor.remove(Constants.SELECT_VIDEO_RESOLUTION);
+                editor.remove(Constants.VIDEO_DIMENSION_HIGH);
+                editor.remove(Constants.VIDEO_DIMENSION_MEDIUM);
+                editor.remove(Constants.VIDEO_DIMENSION_LOW);
+                editor.commit();
+                Log.d(TAG, "REMOVED INVALID RES");
                 ActivityCompat.requestPermissions(this,
                         new String[]{Manifest.permission.CAMERA,Manifest.permission.RECORD_AUDIO,Manifest.permission.WRITE_EXTERNAL_STORAGE},
                         ALL_PERMISSIONS);

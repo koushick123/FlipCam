@@ -49,6 +49,13 @@
                 android:background="@color/modeText"
                 android:text="@string/VIDEO_MODE"
                 android:textColor="@color/settingsBarColor" />
+
+            <TextView
+                android:id="@+id/resInfo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/turqoise" />
+
         </LinearLayout>
 
         <ImageButton
@@ -80,6 +87,7 @@
             android:layout_width="@dimen/brightnessWidth"
             android:layout_height="@dimen/brightnessHeight"
             android:onClick="openBrightnessPopup"
+            android:contentDescription="@string/brightnessContentDescription"
             android:background="?android:attr/selectableItemBackground"
             android:src="@drawable/full_brightness" />
     </LinearLayout>

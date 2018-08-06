@@ -450,6 +450,9 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
             if(!cameraView.isRecord()) {
                 cameraView.setRecordVideoWidth(Integer.parseInt(targetWidth));
                 cameraView.setRecordVideoHeight(Integer.parseInt(targetHeight));
+                if(this.videoFrag != null){
+                    this.videoFrag.setVideoResInfo(targetWidth, targetHeight);
+                }
             }
     }
 

@@ -203,6 +203,7 @@
     <string name="placeholderContentDescription">Plcaeholder Icon</string>
     <string name="uploadFolderDesc">Upload Folder</string>
     <string name="dropboxContentDescription">Dropbox Icon</string>
+    <string name="brightnessContentDescription">Brightness Icon</string>
     <string name="flashOn">Flash On</string>
     <string name="settings">Settings</string>
     <string name="noImage">No Photos/Videos</string>
