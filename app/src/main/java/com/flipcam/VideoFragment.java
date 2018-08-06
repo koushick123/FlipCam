@@ -99,7 +99,8 @@ public class VideoFragment extends android.app.Fragment{
     SharedPreferences sharedPreferences;
     ImageView microThumbnail;
     AppWidgetManager appWidgetManager;
-    boolean VERBOSE = false;
+    boolean VERBOSE = true;
+    ControlVisbilityPreference controlVisbilityPreference;
 
     public static VideoFragment newInstance() {
         VideoFragment fragment = new VideoFragment();
@@ -160,6 +161,8 @@ public class VideoFragment extends android.app.Fragment{
         substitute = (ImageView)view.findViewById(R.id.substitute);
         substitute.setVisibility(View.INVISIBLE);
         cameraView = (CameraView)view.findViewById(R.id.cameraSurfaceView);
+        controlVisbilityPreference = (ControlVisbilityPreference)getApplicationContext();
+        cameraView.colorVal = controlVisbilityPreference.getBrightnessProgress();
         if(VERBOSE)Log.d(TAG,"cameraview onresume visibility= "+cameraView.getWindowVisibility());
         zoombar = (SeekBar)view.findViewById(R.id.zoomBar);
         zoombar.setProgressTintList(ColorStateList.valueOf(getResources().getColor(R.color.progressFill)));

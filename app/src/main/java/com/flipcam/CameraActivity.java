@@ -20,6 +20,7 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.ImageView;
 import android.widget.RemoteViews;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -49,9 +50,10 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
     LayoutInflater layoutInflater;
     AppWidgetManager appWidgetManager;
     SharedPreferences sharedPreferences;
-    boolean VERBOSE = false;
+    boolean VERBOSE = true;
     View settingsRootView;
     Dialog settingsDialog;
+    ImageView brightness;
     ControlVisbilityPreference controlVisbilityPreference;
 
     @Override
@@ -59,14 +61,16 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
         super.onCreate(savedInstanceState);
         if(VERBOSE)Log.d(TAG,"onCreate");
         setContentView(R.layout.activity_camera);
+        brightness = (ImageView)findViewById(R.id.brightness);
+        controlVisbilityPreference = (ControlVisbilityPreference)getApplicationContext();
         getSupportActionBar().hide();
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         if(savedInstanceState == null) {
             //Start with video fragment
             showVideoFragment();
+            controlVisbilityPreference.setBrightnessLevel(Constants.NORMAL_BRIGHTNESS);
+            controlVisbilityPreference.setBrightnessProgress(0.0f);
         }
-        controlVisbilityPreference = (ControlVisbilityPreference)getApplicationContext();
-        controlVisbilityPreference.setBrightnessLevel(5);
         layoutInflater = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         appWidgetManager = (AppWidgetManager)getSystemService(Context.APPWIDGET_SERVICE);
         warningMsgRoot = layoutInflater.inflate(R.layout.warning_message,null);
@@ -211,9 +215,7 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
         lp.width = (int)(size.x * 0.8);
         final SeekBar brightnessBar = (SeekBar)settingsRootView.findViewById(R.id.brightnessBar);
         brightnessBar.setMax(10);
-        Log.d(TAG, "brightnessLevel SET to = "+controlVisbilityPreference.getBrightnessLevel());
         brightnessBar.setProgress(controlVisbilityPreference.getBrightnessLevel());
-        brightnessBar.setOnSeekBarChangeListener(null);
         brightnessBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
@@ -243,6 +245,7 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
                     else{
                         videoFragment.cameraView.colorVal = 0.25f;
                     }
+                    controlVisbilityPreference.setBrightnessProgress(videoFragment.cameraView.colorVal);
                 }
             }
         });
@@ -259,6 +262,7 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
                     else{
                         videoFragment.cameraView.colorVal = -0.25f;
                     }
+                    controlVisbilityPreference.setBrightnessProgress(videoFragment.cameraView.colorVal);
                 }
             }
         });
@@ -295,10 +299,13 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
             fragmentTransaction.add(R.id.cameraPreview, videoFragment, VIDEO).commit();
             if(VERBOSE)Log.d(TAG,"videofragment added");
         }
+        if(VERBOSE)Log.d(TAG, "brightnessLevel SET to = "+controlVisbilityPreference.getBrightnessLevel());
+        brightness.setVisibility(View.VISIBLE);
     }
 
     public void showPhotoFragment()
     {
+        brightness.setVisibility(View.INVISIBLE);
         FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
         if(photoFragment == null) {
             if(VERBOSE)Log.d(TAG,"creating photofragment");

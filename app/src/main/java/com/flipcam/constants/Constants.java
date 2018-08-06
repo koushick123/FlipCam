@@ -66,4 +66,7 @@ public class Constants
     public static final String CAMPROFILE_FOR_RECORD_HIGH = "CamcorderProfileForRecordHigh";
     public static final String CAMPROFILE_FOR_RECORD_MEDIUM = "CamcorderProfileForRecordMedium";
     public static final String CAMPROFILE_FOR_RECORD_LOW = "CamcorderProfileForRecordLow";
+    //Normal brightness level
+    public static final int NORMAL_BRIGHTNESS = 5;
+    public static final float NORMAL_BRIGHTNESS_PROGRESS = 0.0f;
 }

@@ -2,6 +2,8 @@ package com.flipcam;
 
 import android.app.Application;
 
+import com.flipcam.constants.Constants;
+
 import java.io.Serializable;
 
 /**
@@ -12,7 +14,16 @@ public class ControlVisbilityPreference extends Application implements Serializa
 
     private boolean hideControl;
     private int mediaSelectedPosition;
-    private int brightnessLevel;
+    private int brightnessLevel = Constants.NORMAL_BRIGHTNESS;
+    private float brightnessProgress = Constants.NORMAL_BRIGHTNESS_PROGRESS;
+
+    public float getBrightnessProgress() {
+        return brightnessProgress;
+    }
+
+    public void setBrightnessProgress(float brightnessProgress) {
+        this.brightnessProgress = brightnessProgress;
+    }
 
     public int getBrightnessLevel() {
         return brightnessLevel;
