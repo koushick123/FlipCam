@@ -60,7 +60,6 @@
             android:layout_marginStart="20dp"
             android:layout_marginEnd="10dp"
             android:layout_weight="1"
-            android:onClick="okToShare"
             android:text="@string/okBtn" />
 
         <Button
@@ -70,7 +69,6 @@
             android:layout_marginStart="10dp"
             android:layout_marginEnd="20dp"
             android:layout_weight="1"
-            android:onClick="cancelShare"
             android:text="@string/cancelBtn" />
     </LinearLayout>
 

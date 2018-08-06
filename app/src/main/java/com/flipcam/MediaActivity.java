@@ -18,8 +18,6 @@ import android.media.AudioManager;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
 import android.media.RingtoneManager;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -29,7 +27,6 @@ import android.support.v4.app.FragmentStatePagerAdapter;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.app.NotificationCompat;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Display;
@@ -48,35 +45,21 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.facebook.AccessToken;
 import com.facebook.CallbackManager;
-import com.facebook.FacebookCallback;
-import com.facebook.FacebookException;
-import com.facebook.GraphRequest;
-import com.facebook.GraphResponse;
-import com.facebook.HttpMethod;
-import com.facebook.login.LoginManager;
-import com.facebook.login.LoginResult;
 import com.flipcam.constants.Constants;
 import com.flipcam.data.MediaTableConstants;
 import com.flipcam.media.FileMedia;
-import com.flipcam.service.MediaUploadService;
 import com.flipcam.util.MediaUtil;
 import com.flipcam.view.MediaFragment;
-
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 
 import static com.flipcam.PermissionActivity.FC_MEDIA_PREFERENCE;
 
@@ -119,15 +102,10 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     CallbackManager callbackManager;
     NotificationManager mNotificationManager;
     Bitmap notifyIcon;
-    android.support.v4.app.NotificationCompat.Builder mBuilder;
     Uri queueNotification;
-    String userId = null;
-    LoginManager loginManager = LoginManager.getInstance();
-    ArrayList<String> publishPermissions;
     ImageView playCircle;
     View deleteMediaRoot;
     View taskInProgressRoot;
-    View shareMediaRoot;
     LayoutInflater layoutInflater;
     Dialog taskAlert;
     View warningMsgRoot;
@@ -250,16 +228,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                             }
                             startActivity(chooser);
                         }
-                    } else {
-                        TextView shareText = (TextView) shareMediaRoot.findViewById(R.id.shareText);
-                        if (isImage(medias[selectedPosition].getPath())) {
-                            shareText.setText(getResources().getString(R.string.shareMessage, getResources().getString(R.string.photo)));
-                        } else {
-                            shareText.setText(getResources().getString(R.string.shareMessage, getResources().getString(R.string.video)));
-                        }
-                        shareAlert.setContentView(shareMediaRoot);
-                        shareAlert.setCancelable(true);
-                        shareAlert.show();
                     }
                 }
             }
@@ -323,7 +291,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         layoutInflater = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         deleteMediaRoot = layoutInflater.inflate(R.layout.delete_media, null);
         taskInProgressRoot = layoutInflater.inflate(R.layout.task_in_progress, null);
-        shareMediaRoot = layoutInflater.inflate(R.layout.share_media, null);
         taskAlert = new Dialog(this);
         appWidgetManager = (AppWidgetManager)getSystemService(Context.APPWIDGET_SERVICE);
     }
@@ -394,11 +361,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         pause.setLayoutParams(pauseParams);
     }
 
-    public void okToShare(View view){
-        shareAlert.dismiss();
-        shareToFacebook();
-    }
-
     void exitToPreviousActivity(){
         if(getIntent().getExtras().getBoolean("fromGallery")) {
             exitMediaAndShowNoSDCardInGallery();
@@ -406,10 +368,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         else {
             exitMediaAndShowNoSDCard();
         }
-    }
-
-    public void cancelShare(View view){
-        shareAlert.dismiss();
     }
 
     public void reDrawTopMediaControls(){
@@ -592,7 +550,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         playCircle.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                int audioFocus = audioManager.requestAudioFocus(onAudioFocusChangeListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
                 MediaFragment currentFrag = hashMapFrags.get(videoPos);
                 startPlayingMedia(currentFrag, false);
             }
@@ -671,206 +628,11 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         deleteAlert.dismiss();
     }
 
-    public void closeAppNotExist(View view){
-        appNotExist.dismiss();
-    }
-
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         callbackManager.onActivityResult(requestCode, resultCode, data);
     }
-
-    public void shareToFacebook(){
-            boolean loggedIn = AccessToken.getCurrentAccessToken() != null;
-            if(VERBOSE)Log.d(TAG,"Access token = "+loggedIn);
-            if(!loggedIn) {
-                permissionFB.setContentView(R.layout.permission_facebook);
-                permissionFB.setCancelable(true);
-                permissionFB.show();
-            }
-            else{
-                if(isConnectedToInternet()) {
-                    showFacebookShareScreen();
-                }
-                else{
-                    showNoConnection();
-                }
-            }
-    }
-
-    public void notNowFB(View view){
-        permissionFB.dismiss();
-    }
-
-    public void loginToFacebook(View view)
-    {
-        permissionFB.dismiss();
-        if(isConnectedToInternet()) {
-            publishPermissions = new ArrayList<>();
-            callbackManager = CallbackManager.Factory.create();
-            publishPermissions.add(getResources().getString(R.string.FBPermissions));
-            loginManager = LoginManager.getInstance();
-            loginManager.logInWithPublishPermissions(this, publishPermissions);
-            loginManager.registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
-                @Override
-                public void onSuccess(LoginResult loginResult) {
-                    // App code
-                    if(VERBOSE)Log.d(TAG, "onSuccess = " + loginResult.toString());
-                    AccessToken accessToken = loginResult.getAccessToken();
-                    Set<String> grantedPermissions = loginResult.getRecentlyGrantedPermissions();
-                    if(VERBOSE)Log.d(TAG, "access token = " + accessToken);
-                    if(VERBOSE)Log.d(TAG, "granted perm = " + grantedPermissions.size());
-                    showFacebookShareScreen();
-                }
-
-                @Override
-                public void onCancel() {
-                    // App code
-                    if(VERBOSE)Log.d(TAG, "onCancel");
-                }
-
-                @Override
-                public void onError(FacebookException exception) {
-                    // App code
-                    if(VERBOSE)Log.d(TAG, "onError");
-                    exception.printStackTrace();
-                }
-            });
-        }
-        else{
-            showNoConnection();
-        }
-    }
-    public void showNoConnection(){
-        noConnAlert.setContentView(R.layout.warning_message);
-        noConnAlert.setCancelable(true);
-        noConnAlert.show();
-    }
-
-    public boolean isConnectedToInternet(){
-        ConnectivityManager cm =
-                (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
-
-        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
-        boolean isConnected = activeNetwork != null &&
-                activeNetwork.isConnectedOrConnecting();
-        return isConnected;
-    }
-
-    public void showFacebookShareScreen(){
-        shareToFBAlert.setContentView(R.layout.share_to_facebook);
-        shareToFBAlert.setCancelable(true);
-        shareToFBAlert.show();
-    }
-
-    public void continueToFB(View view){
-        shareToFBAlert.dismiss();
-        showUploadMessage();
-        uploadToFacebook();
-    }
-
-    public void showUploadMessage()
-    {
-        LinearLayout imageUploadLayout = new LinearLayout(this);
-        imageUploadLayout.setOrientation(LinearLayout.HORIZONTAL);
-        imageUploadLayout.setBackgroundColor(getResources().getColor(R.color.mediaControlColor));
-        TextView imageUploadText = new TextView(this);
-        if(isImage(medias[selectedPosition].getPath())) {
-            imageUploadText.setText(getResources().getString(R.string.uploadQueuedAlert,"Photo"));
-        }
-        else{
-            imageUploadText.setText(getResources().getString(R.string.uploadQueuedAlert,"Video"));
-        }
-        ImageView imageUploadImg = new ImageView(this);
-        imageUploadImg.setImageDrawable(getResources().getDrawable(R.drawable.ic_file_upload));
-        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        layoutParams.height = (int)getResources().getDimension(R.dimen.uploadIconHeight);
-        layoutParams.width = (int)getResources().getDimension(R.dimen.uploadIconWidth);
-        layoutParams.weight = 0.25f;
-        layoutParams.gravity = Gravity.CENTER;
-        imageUploadImg.setLayoutParams(layoutParams);
-        layoutParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        layoutParams.weight = 0.75f;
-        layoutParams.gravity = Gravity.CENTER;
-        imageUploadText.setLayoutParams(layoutParams);
-        imageUploadText.setPadding((int)getResources().getDimension(R.dimen.uploadPadding),(int)getResources().getDimension(R.dimen.uploadPadding),
-                (int)getResources().getDimension(R.dimen.uploadPadding),(int)getResources().getDimension(R.dimen.uploadPadding));
-        imageUploadText.setTextColor(getResources().getColor(R.color.turqoise));
-        imageUploadImg.setPadding(0,0,(int)getResources().getDimension(R.dimen.uploadImagePaddingRight),0);
-        imageUploadLayout.addView(imageUploadText);
-        imageUploadLayout.addView(imageUploadImg);
-        final Toast showUploaded = Toast.makeText(this,"",Toast.LENGTH_SHORT);
-        showUploaded.setGravity(Gravity.BOTTOM,0,(int)getResources().getDimension(R.dimen.uploadMsgBottomMargin));
-        showUploaded.setView(imageUploadLayout);
-        showUploaded.show();
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    Thread.sleep(2000);
-                    showUploaded.cancel();
-                }catch (InterruptedException ie){
-                    ie.printStackTrace();
-                }
-            }
-        }).start();
-    }
-
-    public void logoutOfFacebook(View view){
-        LoginManager.getInstance().logOut();
-        if(VERBOSE)Log.d(TAG,"Logout DONE");
-        shareToFBAlert.dismiss();
-        logoutFB.setContentView(R.layout.logout_facebook);
-        logoutFB.setCancelable(true);
-        logoutFB.show();
-    }
-
-    public void closeLogoutFB(View view){
-        logoutFB.dismiss();
-    }
-
-    public void uploadToFacebook(){
-        if(userId == null) {
-            Bundle params = new Bundle();
-            GraphRequest meReq = new GraphRequest(AccessToken.getCurrentAccessToken(), "/me", params, HttpMethod.GET, getcallback);
-            meReq.executeAsync();
-        }
-        else{
-            Intent mediaUploadIntent = new Intent(getApplicationContext(),MediaUploadService.class);
-            mediaUploadIntent.putExtra("uploadFile",medias[selectedPosition].getPath());
-            mediaUploadIntent.putExtra("userId",userId);
-            startService(mediaUploadIntent);
-        }
-    }
-
-    GraphRequest.Callback getcallback = new GraphRequest.Callback() {
-        @Override
-        public void onCompleted(GraphResponse response) {
-            Log.i(TAG, "Fetch user id = " + response.getRawResponse());
-            if (response.getError() != null) {
-                Log.i(TAG, "onCompleted /me = " + response.getError().getErrorCode());
-                Log.i(TAG, "onCompleted /me = " + response.getError().getSubErrorCode());
-                mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(getResources().getString(R.string.noConnectionMessage)));
-                mBuilder.setContentText(getResources().getString(R.string.uploadErrorMessage));
-                mBuilder.setContentTitle(getResources().getString(R.string.errorTitle));
-                mBuilder.setColor(getResources().getColor(R.color.uploadError));
-                String startId = (String)response.getRequest().getParameters().get("startID");
-                mNotificationManager.notify(Integer.parseInt(startId), mBuilder.build());
-            } else {
-                JSONObject jsonObject = response.getJSONObject();
-                try {
-                    userId = (String) jsonObject.get("id");
-                    Intent mediaUploadIntent = new Intent(getApplicationContext(), MediaUploadService.class);
-                    mediaUploadIntent.putExtra("uploadFile", medias[selectedPosition].getPath());
-                    mediaUploadIntent.putExtra("userId", userId);
-                    startService(mediaUploadIntent);
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    };
 
     @Override
     public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
