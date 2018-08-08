@@ -59,7 +59,7 @@ public class Constants
     //Widget Ids
     public static final String WIDGET_IDS = "Widget_IDs";
     //Video Resolution
-    public static final String SELECT_VIDEO_RESOLUTION = "selectVideoResolution";
+    public static final String SELECT_VIDEO_RESOLUTION = "SelectVideoResolution";
     public static final String VIDEO_DIMENSION_HIGH = "videoDimensionHigh";
     public static final String VIDEO_DIMENSION_MEDIUM = "videoDimensionMedium";
     public static final String VIDEO_DIMENSION_LOW = "videoDimensionLow";
@@ -69,4 +69,7 @@ public class Constants
     //Normal brightness level
     public static final int NORMAL_BRIGHTNESS = 5;
     public static final float NORMAL_BRIGHTNESS_PROGRESS = 0.0f;
+    //Photo Resolution
+    public static final String SELECT_PHOTO_RESOLUTION = "SelectPhotoResolution";
+    public static final String SUPPORT_PHOTO_RESOLUTIONS = "SupportedPhotoResolutions";
 }

@@ -145,6 +145,8 @@ public class PermissionActivity extends AppCompatActivity {
                 editor.remove(Constants.VIDEO_DIMENSION_HIGH);
                 editor.remove(Constants.VIDEO_DIMENSION_MEDIUM);
                 editor.remove(Constants.VIDEO_DIMENSION_LOW);
+                editor.remove(Constants.SUPPORT_PHOTO_RESOLUTIONS);
+                editor.remove(Constants.SELECT_PHOTO_RESOLUTION);
                 editor.commit();
                 Log.d(TAG, "REMOVED INVALID RES");
                 ActivityCompat.requestPermissions(this,

@@ -8,8 +8,6 @@ import com.flipcam.PhotoFragment;
 import com.flipcam.VideoFragment;
 import com.flipcam.view.CameraView;
 
-import java.util.List;
-
 /**
  * Created by Koushick on 02-08-2017.
  * Contains a list of camera related operations.
@@ -78,11 +76,11 @@ import java.util.List;
     //To set display orientation to match that of the activity/frame
      void setDisplayOrientation(int result);
     //To get supported picture sizes
-     List<Camera.Size> getSupportedPictureSizes();
+     void getSupportedPictureSizes();
     //To set picture size
-     void setPictureSize(int width, int height);
+     void setPictureSize();
      //To set Video Size for Recording
-      void setVideoSize();
+     void setVideoSize();
       //To capture picture
      void capturePicture();
     //Fetch AF mode

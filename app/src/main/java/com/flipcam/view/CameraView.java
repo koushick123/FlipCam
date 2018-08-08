@@ -689,6 +689,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 Toast.makeText(getContext(),getResources().getString(R.string.noFrontFaceCamera),Toast.LENGTH_SHORT).show();
                 return;
             }
+            //Set the photo resolution as per selection in settings.
+            camera1.getSupportedPictureSizes();
+            camera1.setPictureSize();
             //Set the video resolution as per selection in settings.
             if(VERBOSE)Log.d(TAG, "call setResolution");
             camera1.setResolution();

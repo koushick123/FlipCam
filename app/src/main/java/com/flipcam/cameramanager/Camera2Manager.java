@@ -30,7 +30,6 @@ import com.flipcam.constants.Constants;
 import com.flipcam.view.CameraView;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.StringTokenizer;
 
 public class Camera2Manager implements CameraOperations {
@@ -74,8 +73,8 @@ public class Camera2Manager implements CameraOperations {
     }
 
     @Override
-    public List<Camera.Size> getSupportedPictureSizes() {
-        return null;
+    public void getSupportedPictureSizes() {
+
     }
 
     @Override
@@ -472,7 +471,7 @@ public class Camera2Manager implements CameraOperations {
     }
 
     @Override
-    public void setPictureSize(int width, int height) {
+    public void setPictureSize() {
 
     }
 

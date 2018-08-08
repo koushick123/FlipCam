@@ -23,6 +23,7 @@ import com.flipcam.R;
 import com.flipcam.VideoFragment;
 import com.flipcam.camerainterface.CameraOperations;
 import com.flipcam.constants.Constants;
+import com.flipcam.model.Dimension;
 import com.flipcam.view.CameraView;
 
 import java.io.ByteArrayOutputStream;
@@ -31,9 +32,12 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.TreeSet;
 
 /**
  * Created by Koushick on 02-08-2017.
@@ -66,6 +70,11 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     WindowManager windowManager;
     Point screenSize = new Point();
     Display display;
+    String targetWidth, targetHeight;
+    List<Camera.Size> previewSizes;
+    double targetVideoRatio;
+    double targetPhotoRatio;
+    int screenWidth;
 
     public static Camera1Manager getInstance() {
         if (camera1Manager == null) {
@@ -88,8 +97,43 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     }
 
     @Override
-    public List<Camera.Size> getSupportedPictureSizes() {
-        return mCamera.getParameters().getSupportedPictureSizes();
+    public void getSupportedPictureSizes() {
+        SharedPreferences sharedPreferences = obtainSettingsPrefs();
+        Set<String> supportedPics = sharedPreferences.getStringSet(Constants.SUPPORT_PHOTO_RESOLUTIONS, null);
+        Log.d(TAG, "SupportedPics = "+supportedPics);
+        if(supportedPics == null) {
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            supportedPics = new HashSet<>();
+            List<Camera.Size> picsSizes = mCamera.getParameters().getSupportedPictureSizes();
+            for (Camera.Size size : picsSizes) {
+                Log.d(TAG, "Adding "+size.width+" , "+size.height);
+                supportedPics.add(size.width + " X " + size.height);
+            }
+            editor.putStringSet(Constants.SUPPORT_PHOTO_RESOLUTIONS, supportedPics);
+            editor.commit();
+            //Sort by descending order and take the largest value as default photo resolution.
+            TreeSet<Dimension> sortedPicsSizes = new TreeSet<>();
+            if(VERBOSE)Log.d(TAG, "photoRes SIZE = "+supportedPics.size());
+            int width = 0, height = 0;
+            for(String resol: supportedPics){
+                width = Integer.parseInt(resol.substring(0, resol.indexOf(" ")));
+                height = Integer.parseInt(resol.substring(resol.lastIndexOf(" ")+1, resol.length()));
+                sortedPicsSizes.add(new Dimension(width, height));
+            }
+            Iterator<String> resolIter = supportedPics.iterator();
+            while(resolIter.hasNext()){
+                //First value has the largest value.
+                String dimen = resolIter.next();
+                String[] dimensions = dimen.split(" X ");
+                width = Integer.parseInt(dimensions[0]);
+                height = Integer.parseInt(dimensions[1]);
+                break;
+            }
+            if(sharedPreferences.getString(Constants.SELECT_PHOTO_RESOLUTION, null) == null){
+                editor.putString(Constants.SELECT_PHOTO_RESOLUTION, width+" X "+height);
+                editor.commit();
+            }
+        }
     }
 
     @Override
@@ -176,13 +220,19 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         }
     }
 
-    List<Camera.Size> previewSizes;
-    double targetVideoRatio;
-    int screenWidth;
+    private void setPreviewSizeForTargetRatio() {
 
-    private void setPreviewSizeForVideo() {
-
-        //For chosen video resolution, we need to display a preview that is a closest match to targetVideoRatio.
+        //For chosen video resolution, we need to display a preview that is a closest match to targetVideoRatio for video
+        // and targetPhotoRatio for photo.
+        double targetRatio;
+        if(this.videoFrag != null){
+            if(VERBOSE)Log.d(TAG, "Video Mode");
+            targetRatio = targetVideoRatio;
+        }
+        else{
+            if(VERBOSE)Log.d(TAG, "Photo Mode");
+            targetRatio = targetPhotoRatio;
+        }
         double arDiff = Double.MAX_VALUE;
         previewSizes = parameters.getSupportedPreviewSizes();
         Collections.sort(previewSizes, new CameraSizeComparator());
@@ -190,8 +240,8 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
             double previewAR = (double) previews.width / (double) previews.height;
             if(VERBOSE)Log.d(TAG, "PREVIEW res = " + previews.width + " / " + previews.height);
             if(VERBOSE)Log.d(TAG, "PREVIEWAR = " + previewAR);
-            if (Math.abs(previewAR - targetVideoRatio) < arDiff) {
-                arDiff = Math.abs(previewAR - targetVideoRatio);
+            if (Math.abs(previewAR - targetRatio) < arDiff) {
+                arDiff = Math.abs(previewAR - targetRatio);
                 if(VERBOSE)Log.d(TAG, "arDiff = " + arDiff);
                 VIDEO_WIDTH = previews.width;
                 VIDEO_HEIGHT = previews.height;
@@ -200,7 +250,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         }
         parameters.setPreviewSize(VIDEO_WIDTH, VIDEO_HEIGHT);
         //Scale display preview to make the recording window look not too small.
-        int scaleWidth = (int)(targetVideoRatio * (double)screenWidth);
+        int scaleWidth = (int)(targetRatio * (double)screenWidth);
         DISPLAY_WIDTH = scaleWidth;
         DISPLAY_HEIGHT = screenWidth;
         if(VERBOSE)Log.d(TAG, "SCALED Video width = " + DISPLAY_WIDTH + ", Video height = " + DISPLAY_HEIGHT);
@@ -215,7 +265,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     @Override
     public void setResolution() {
         setVideoSize();
-        setPreviewSizeForVideo();
+        setPreviewSizeForTargetRatio();
         mCamera.setParameters(parameters);
     }
 
@@ -343,15 +393,20 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     }
 
     @Override
-    public void setPictureSize(int width, int height) {
+    public void setPictureSize() {
         List<Integer> formats = mCamera.getParameters().getSupportedPictureFormats();
         for (int i = 0; i < formats.size(); i++) {
-            if (formats.get(i) == ImageFormat.NV21) {
+            if (formats.get(i) == ImageFormat.JPEG) {
                 mCamera.getParameters().setPreviewFormat(formats.get(i));
                 break;
             }
         }
-        mCamera.getParameters().setPictureSize(width, height);
+        SharedPreferences sharedPreferences = obtainSettingsPrefs();
+        String photoDimen = sharedPreferences.getString(Constants.SELECT_PHOTO_RESOLUTION, null);
+        String[] dimensions = photoDimen.split(" X ");
+        mCamera.getParameters().setPictureSize(Integer.parseInt(dimensions[0]), Integer.parseInt(dimensions[1]));
+        targetPhotoRatio = Double.parseDouble(dimensions[0]) / Double.parseDouble(dimensions[1]);
+        Log.d(TAG, "targetPhotoRatio = "+targetPhotoRatio);
     }
 
     private SharedPreferences obtainSettingsPrefs() {
@@ -363,8 +418,6 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         }
         return sharedPreferences;
     }
-
-    String targetWidth, targetHeight;
 
     /*
     setVideoSize() sets the video resolution as per selection in Settings.

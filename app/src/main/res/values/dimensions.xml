@@ -80,6 +80,7 @@
     <dimen name="settingsMainText">17sp</dimen>
     //Text size for subtext
     <dimen name="settingsSubText">14sp</dimen>
+    <dimen name="settingsSubTextPhoto">7sp</dimen>
     <dimen name="headTextLeftMargin">20dp</dimen>
     <dimen name="phoneMemTextLeftMargin">17dp</dimen>
     <dimen name="headTextTopMargin">10dp</dimen>
@@ -87,6 +88,8 @@
     <dimen name="greenArrowHeight">40dp</dimen>
     <dimen name="switchRightMargin">60dp</dimen>
     <dimen name="separatorHeight">3dp</dimen>
+    <dimen name="separatorHeightSmall">0.5dp</dimen>
+    <dimen name="saveMediaSepTopAndBottomMargin">5dp</dimen>
     <dimen name="checkboxTextMsgHeight">54dp</dimen>
     <dimen name="checkboxTextMsgRightMargin">20dp</dimen>
     <dimen name="resetAllTextMsgRightMargin">20dp</dimen>
@@ -127,4 +130,6 @@
     <dimen name="increaseBrightnessHeight">30dp</dimen>
     <dimen name="increaseBrightnessWidth">100dp</dimen>
     <dimen name="increaseDecreaseTextSize">19sp</dimen>
+    //Margin for video res bottom margin
+    <dimen name="videoResBottomMargin">5dp</dimen>
 </resources>

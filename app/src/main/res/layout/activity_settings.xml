@@ -43,6 +43,7 @@
                 android:layout_marginStart="@dimen/headTextLeftMargin"
                 android:layout_marginTop="@dimen/headTextTopMargin"
                 android:layout_weight="1"
+                android:background="@drawable/ripple"
                 android:buttonTint="@color/turqoise"
                 android:checked="true"
                 android:onClick="selectSaveMedia"
@@ -66,6 +67,7 @@
                 android:layout_marginStart="@dimen/headTextLeftMargin"
                 android:layout_marginTop="5dp"
                 android:layout_weight="1"
+                android:background="@drawable/ripple"
                 android:buttonTint="@color/turqoise"
                 android:onClick="selectSaveMedia"
                 android:text="@string/sdCard"
@@ -108,9 +110,9 @@
             android:id="@+id/videoResolutionParent"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
             android:layout_marginBottom="@dimen/headTextTopMargin"
-            android:layout_marginTop="@dimen/headTextTopMargin">
+            android:layout_marginTop="@dimen/headTextTopMargin"
+            android:orientation="vertical">
 
             <TextView
                 android:id="@+id/videoResHeading"
@@ -123,12 +125,12 @@
 
             <RadioButton
                 android:id="@+id/videoResHigh"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="5dp"
+                android:layout_marginBottom="@dimen/videoResBottomMargin"
                 android:layout_marginStart="@dimen/headTextLeftMargin"
                 android:layout_marginTop="@dimen/headTextTopMargin"
-                android:layout_weight="1"
+                android:background="@drawable/ripple"
                 android:buttonTint="@color/turqoise"
                 android:checked="true"
                 android:onClick="selectVideoResolution"
@@ -138,12 +140,12 @@
 
             <RadioButton
                 android:id="@+id/videoResMedium"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="5dp"
+                android:layout_marginBottom="@dimen/videoResBottomMargin"
                 android:layout_marginStart="@dimen/headTextLeftMargin"
                 android:layout_marginTop="@dimen/headTextTopMargin"
-                android:layout_weight="1"
+                android:background="@drawable/ripple"
                 android:buttonTint="@color/turqoise"
                 android:checked="false"
                 android:onClick="selectVideoResolution"
@@ -153,12 +155,12 @@
 
             <RadioButton
                 android:id="@+id/videoResLow"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="5dp"
+                android:layout_marginBottom="@dimen/videoResBottomMargin"
                 android:layout_marginStart="@dimen/headTextLeftMargin"
                 android:layout_marginTop="@dimen/headTextTopMargin"
-                android:layout_weight="1"
+                android:background="@drawable/ripple"
                 android:buttonTint="@color/turqoise"
                 android:checked="false"
                 android:onClick="selectVideoResolution"
@@ -176,70 +178,98 @@
         android:orientation="horizontal">
     </LinearLayout>
 
-    <LinearLayout
-        android:id="@+id/phoneMemParent"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="@dimen/headTextTopMargin"
-        android:layout_marginTop="@dimen/headTextTopMargin"
-        android:orientation="horizontal"
-        android:onClick="showMemoryConsumed">
-
         <LinearLayout
-            android:id="@+id/phoneMemParentVert"
-            android:layout_width="wrap_content"
+            android:id="@+id/photoResolutionParent"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight=".1"
+            android:layout_marginBottom="@dimen/headTextTopMargin"
+            android:layout_marginTop="@dimen/headTextTopMargin"
             android:orientation="vertical">
 
             <TextView
-                android:id="@+id/phoneMemText"
-                android:layout_width="match_parent"
+                android:id="@+id/photoResolutionHeading"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="@dimen/headTextLeftMargin"
-                android:text="@string/phoneMemoryLimit"
+                android:layout_marginLeft="@dimen/headTextLeftMargin"
+                android:text="@string/photoResolutionHeading"
                 android:textColor="@color/turqoise"
                 android:textSize="@dimen/settingsMainText" />
 
-            <TextView
-                android:id="@+id/phoneMemTextMsg"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_marginStart="@dimen/headTextLeftMargin"
-                android:layout_marginTop="@dimen/headTextTopMargin"
-                android:text="@string/phoneMemoryLimitMsg"
-                android:textAlignment="textStart"
-                android:textColor="@color/turqoise"
-                android:textSize="@dimen/settingsSubText" />
-
-            <TextView
-                android:id="@+id/thresholdText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="@dimen/headTextLeftMargin"
-                android:layout_marginTop="@dimen/headTextTopMargin"
-                android:text="@string/memoryThresholdLimit"
-                android:textColor="@color/turqoise" />
-
         </LinearLayout>
 
         <LinearLayout
-            android:id="@+id/arrow"
+            android:id="@+id/separator6"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_gravity="center"
-            android:layout_weight=".5"
-            android:gravity="center"
-            android:orientation="vertical">
-
-            <ImageView
-                android:id="@+id/greenArrow"
-                android:layout_width="@dimen/greenArrowWidth"
-                android:layout_height="@dimen/greenArrowHeight"
-                app:srcCompat="@drawable/ic_keyboard_arrow_right"
-                android:contentDescription="@string/greenArrow"/>
+            android:layout_height="@dimen/separatorHeight"
+            android:background="@color/turqoise"
+            android:orientation="horizontal">
         </LinearLayout>
-    </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/phoneMemParent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/headTextTopMargin"
+            android:layout_marginTop="@dimen/headTextTopMargin"
+            android:background="@drawable/ripple"
+            android:onClick="showMemoryConsumed"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:id="@+id/phoneMemParentVert"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight=".1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/phoneMemText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/headTextLeftMargin"
+                    android:text="@string/phoneMemoryLimit"
+                    android:textColor="@color/turqoise"
+                    android:textSize="@dimen/settingsMainText" />
+
+                <TextView
+                    android:id="@+id/phoneMemTextMsg"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginStart="@dimen/headTextLeftMargin"
+                    android:layout_marginTop="@dimen/headTextTopMargin"
+                    android:text="@string/phoneMemoryLimitMsg"
+                    android:textAlignment="textStart"
+                    android:textColor="@color/turqoise"
+                    android:textSize="@dimen/settingsSubText" />
+
+                <TextView
+                    android:id="@+id/thresholdText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/headTextLeftMargin"
+                    android:layout_marginTop="@dimen/headTextTopMargin"
+                    android:text="@string/memoryThresholdLimit"
+                    android:textColor="@color/turqoise" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/arrow"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_gravity="center"
+                android:layout_weight=".5"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <ImageView
+                    android:id="@+id/greenArrow"
+                    android:layout_width="@dimen/greenArrowWidth"
+                    android:layout_height="@dimen/greenArrowHeight"
+                    android:contentDescription="@string/greenArrow"
+                    app:srcCompat="@drawable/ic_keyboard_arrow_right" />
+            </LinearLayout>
+        </LinearLayout>
 
     <LinearLayout
         android:id="@+id/separator3"
@@ -282,11 +312,11 @@
             android:textColor="@color/turqoise" />
 
         <LinearLayout
-        android:id="@+id/googleDrive"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:weightSum="1">
+            android:id="@+id/googleDrive"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:weightSum="1">
 
             <CheckBox
                 android:id="@+id/switchOnDrive"
@@ -297,6 +327,7 @@
                 android:layout_marginTop="10dp"
                 android:layout_weight=".5"
                 android:autoText="false"
+                android:background="@drawable/ripple"
                 android:buttonTint="@color/turqoise"
                 android:checked="false"
                 android:onClick="saveToCloudDrive"
@@ -324,6 +355,7 @@
                 android:layout_marginBottom="@dimen/headTextTopMargin"
                 android:layout_marginStart="@dimen/headTextLeftMargin"
                 android:layout_weight=".5"
+                android:background="@drawable/ripple"
                 android:buttonTint="@color/turqoise"
                 android:checked="false"
                 android:onClick="saveToDropBox"
@@ -362,31 +394,32 @@
 
     </LinearLayout>
 
-    <LinearLayout
-        android:id="@+id/showMemMsgParent"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:weightSum="1">
-
-        <CheckBox
-            android:id="@+id/showMemoryConsumed"
+        <LinearLayout
+            android:id="@+id/showMemMsgParent"
             android:layout_width="match_parent"
-            android:layout_height="@dimen/checkboxTextMsgHeight"
-            android:layout_marginBottom="@dimen/checkboxMarginTopBottom"
-            android:layout_marginStart="@dimen/headTextLeftMargin"
-            android:layout_marginEnd="@dimen/checkboxTextMsgRightMargin"
-            android:layout_marginTop="@dimen/checkboxMarginTopBottom"
-            android:layout_weight="0.68"
-            android:buttonTint="@color/turqoise"
-            android:checked="true"
-            android:onClick="checkShowMemoryConsumed"
-            android:paddingStart="@dimen/headTextLeftMargin"
-            android:text="@string/showMemConsumedMsg"
-            android:textColor="@color/turqoise"
-            android:textSize="@dimen/settingsSubText" />
+            android:layout_height="wrap_content"
+            android:background="@drawable/ripple"
+            android:orientation="horizontal"
+            android:weightSum="1">
 
-    </LinearLayout>
+            <CheckBox
+                android:id="@+id/showMemoryConsumed"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/checkboxTextMsgHeight"
+                android:layout_marginBottom="@dimen/checkboxMarginTopBottom"
+                android:layout_marginEnd="@dimen/checkboxTextMsgRightMargin"
+                android:layout_marginStart="@dimen/headTextLeftMargin"
+                android:layout_marginTop="@dimen/checkboxMarginTopBottom"
+                android:layout_weight="0.68"
+                android:buttonTint="@color/turqoise"
+                android:checked="true"
+                android:onClick="checkShowMemoryConsumed"
+                android:paddingStart="@dimen/headTextLeftMargin"
+                android:text="@string/showMemConsumedMsg"
+                android:textColor="@color/turqoise"
+                android:textSize="@dimen/settingsSubText" />
+
+        </LinearLayout>
 
     <LinearLayout
         android:id="@+id/separator1"

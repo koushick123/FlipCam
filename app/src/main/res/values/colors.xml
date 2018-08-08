@@ -46,4 +46,6 @@
     <color name="backColorSettingMsg">#cF000000</color>
     //Background color for settings popup message
     <color name="backColorSettingPopup">#80000000</color>
+    //Background color for ripple
+    <color name="rippleColor">#387171</color>
 </resources>
