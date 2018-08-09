@@ -323,7 +323,9 @@ public class SettingsActivity extends AppCompatActivity{
             if(photoResolutionParent.getChildCount() > 1){
                 photoResolutionParent.removeViews(1, photoResolutionParent.getChildCount()-1);
             }
+            if(VERBOSE)Log.d(TAG, "sortedPicsSizes size "+sortedPicsSizes.size());
             for(Dimension resol : sortedPicsSizes){
+                if(VERBOSE)Log.d(TAG, "Need to ADD = "+resol.toString());
                 RadioButton photoResButton = new RadioButton(getApplicationContext());
                 LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,
                         LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -331,11 +333,23 @@ public class SettingsActivity extends AppCompatActivity{
                         (int)getResources().getDimension(R.dimen.headTextTopMargin), 0,
                         (int)getResources().getDimension(R.dimen.videoResBottomMargin));
                 photoResButton.setButtonTintList(ColorStateList.valueOf(getResources().getColor(R.color.turqoise)));
-                if(index == 0) {
-                    photoResButton.setChecked(true);
+                if(settingsPref.getString(Constants.SELECT_PHOTO_RESOLUTION, null) == null) {
+                    if (index == 0) {
+                        photoResButton.setChecked(true);
+                    } else {
+                        photoResButton.setChecked(false);
+                    }
                 }
                 else{
-                    photoResButton.setChecked(false);
+                    String[] dimension = settingsPref.getString(Constants.SELECT_PHOTO_RESOLUTION, null).split(" X ");
+                    String selWidth = dimension[0];
+                    String selHeight = dimension[1];
+                    if(resol.getWidth() == Integer.parseInt(selWidth) && resol.getHeight() == Integer.parseInt(selHeight)){
+                        photoResButton.setChecked(true);
+                    }
+                    else{
+                        photoResButton.setChecked(false);
+                    }
                 }
                 photoResIds[index] = index;
                 photoResButton.setId(index++);
@@ -348,6 +362,7 @@ public class SettingsActivity extends AppCompatActivity{
                 photoResButton.setOnTouchListener(photoResOnTouchListener);
                 photoResButton.setLayoutParams(layoutParams);
                 photoResolutionParent.addView(photoResButton);
+                if(VERBOSE)Log.d(TAG, "ADDED "+photoResButton.getText());
             }
         }
         //Update Phone memory

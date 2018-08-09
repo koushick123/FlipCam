@@ -148,7 +148,7 @@ public class PermissionActivity extends AppCompatActivity {
                 editor.remove(Constants.SUPPORT_PHOTO_RESOLUTIONS);
                 editor.remove(Constants.SELECT_PHOTO_RESOLUTION);
                 editor.commit();
-                Log.d(TAG, "REMOVED INVALID RES");
+                if(VERBOSE)Log.d(TAG, "REMOVED SHAREDPREFS");
                 ActivityCompat.requestPermissions(this,
                         new String[]{Manifest.permission.CAMERA,Manifest.permission.RECORD_AUDIO,Manifest.permission.WRITE_EXTERNAL_STORAGE},
                         ALL_PERMISSIONS);

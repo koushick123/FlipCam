@@ -1,26 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/photoCameraView"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/settingsBarColor"
     android:orientation="vertical">
 
     <com.flipcam.view.CameraView
+        android:id="@+id/photocameraSurfaceView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:id="@+id/photocameraSurfaceView"
-        />
+        android:layout_gravity="center" />
 
     <ImageView
+        android:id="@+id/imagePreview"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_gravity="center"
-        android:id="@+id/imagePreview"
-        android:visibility="invisible"
         android:background="@color/transparentBar"
         android:contentDescription="@string/imagePreview"
-        />
+        android:visibility="invisible" />
 
     <LinearLayout
         android:id="@+id/photoSeekParent"
@@ -36,8 +36,7 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="10dp"
             android:progressBackgroundTint="@color/settingsBarColor"
-            android:thumb="@drawable/greencircle"
-            />
+            android:thumb="@drawable/greencircle" />
 
         <LinearLayout
             android:id="@+id/photoFunctions"
@@ -55,8 +54,8 @@
                 android:layout_gravity="center_vertical"
                 android:layout_marginStart="5dp"
                 android:background="@color/settingsBarColor"
-                android:src="@drawable/placeholder"
-                android:contentDescription="@string/photoSubstitute"/>
+                android:contentDescription="@string/photoSubstitute"
+                android:src="@drawable/placeholder" />
 
             <ImageButton
                 android:id="@+id/photoSwitchCamera"
@@ -65,57 +64,57 @@
                 android:layout_gravity="center_vertical"
                 android:layout_marginStart="15dp"
                 android:background="@color/settingsBarColor"
-                android:src="@drawable/switch_camera"
-                android:contentDescription="@string/switchCamera"/>
+                android:contentDescription="@string/switchCamera"
+                android:src="@drawable/switch_camera" />
 
             <ImageButton
                 android:id="@+id/cameraCapture"
                 android:layout_width="67dp"
                 android:layout_height="76dp"
                 android:layout_gravity="center"
-                android:layout_marginStart="15dp"
                 android:layout_marginEnd="5dp"
+                android:layout_marginStart="15dp"
                 android:background="@color/settingsBarColor"
+                android:contentDescription="@string/clickCamera"
                 android:scaleType="centerCrop"
-                android:src="@drawable/capture_picture"
-                android:contentDescription="@string/clickCamera"/>
+                android:src="@drawable/capture_picture" />
 
             <ImageButton
                 android:id="@+id/videoMode"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_vertical"
-                android:layout_marginStart="10dp"
                 android:layout_marginEnd="10dp"
+                android:layout_marginStart="10dp"
                 android:background="@color/settingsBarColor"
-                android:src="@drawable/video_mode"
-                android:contentDescription="@string/videoMode"/>
+                android:contentDescription="@string/videoMode"
+                android:src="@drawable/video_mode" />
 
             <FrameLayout
+                android:id="@+id/thumbnailParent"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:id="@+id/thumbnailParent">
+                android:layout_height="wrap_content">
 
                 <ImageView
                     android:id="@+id/photoThumbnail"
                     android:layout_width="wrap_content"
                     android:layout_height="65dp"
                     android:layout_gravity="center_vertical"
-                    android:layout_marginStart="5dp"
                     android:layout_marginEnd="5dp"
+                    android:layout_marginStart="5dp"
                     android:layout_weight="0.06"
                     android:background="@color/settingsBarColor"
-                    android:src="@drawable/placeholder"
-                    android:contentDescription="@string/thumbnail"/>
+                    android:contentDescription="@string/thumbnail"
+                    android:src="@drawable/placeholder" />
 
                 <ImageView
                     android:id="@+id/microThumbnail"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
+                    android:contentDescription="@string/playVideoCircle"
                     android:visibility="invisible"
-                    app:srcCompat="@drawable/ic_play_circle_thumbnail"
-                    android:contentDescription="@string/playVideoCircle"/>
+                    app:srcCompat="@drawable/ic_play_circle_thumbnail" />
             </FrameLayout>
         </LinearLayout>
     </LinearLayout>

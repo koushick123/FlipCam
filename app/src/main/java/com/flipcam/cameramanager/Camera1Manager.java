@@ -120,13 +120,12 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
                 height = Integer.parseInt(resol.substring(resol.lastIndexOf(" ")+1, resol.length()));
                 sortedPicsSizes.add(new Dimension(width, height));
             }
-            Iterator<String> resolIter = supportedPics.iterator();
+            Iterator<Dimension> resolIter = sortedPicsSizes.iterator();
             while(resolIter.hasNext()){
                 //First value has the largest value.
-                String dimen = resolIter.next();
-                String[] dimensions = dimen.split(" X ");
-                width = Integer.parseInt(dimensions[0]);
-                height = Integer.parseInt(dimensions[1]);
+                Dimension dimen = resolIter.next();
+                width = dimen.getWidth();
+                height = dimen.getHeight();
                 break;
             }
             if(sharedPreferences.getString(Constants.SELECT_PHOTO_RESOLUTION, null) == null){
@@ -249,7 +248,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
             }
         }
         parameters.setPreviewSize(VIDEO_WIDTH, VIDEO_HEIGHT);
-        //Scale display preview to make the recording window look not too small.
+        //Scale display preview to make the camera window look not too small.
         int scaleWidth = (int)(targetRatio * (double)screenWidth);
         DISPLAY_WIDTH = scaleWidth;
         DISPLAY_HEIGHT = screenWidth;
@@ -404,7 +403,13 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         SharedPreferences sharedPreferences = obtainSettingsPrefs();
         String photoDimen = sharedPreferences.getString(Constants.SELECT_PHOTO_RESOLUTION, null);
         String[] dimensions = photoDimen.split(" X ");
-        mCamera.getParameters().setPictureSize(Integer.parseInt(dimensions[0]), Integer.parseInt(dimensions[1]));
+        Camera.Parameters parameters = mCamera.getParameters();
+        if(VERBOSE)Log.d(TAG, "SET PIC SIZE = "+photoDimen);
+        parameters.setPictureSize(Integer.parseInt(dimensions[0]), Integer.parseInt(dimensions[1]));
+        if(this.photoFrag != null){
+            this.photoFrag.setPhotoResInfo(dimensions[0], dimensions[1]);
+        }
+        mCamera.setParameters(parameters);
         targetPhotoRatio = Double.parseDouble(dimensions[0]) / Double.parseDouble(dimensions[1]);
         Log.d(TAG, "targetPhotoRatio = "+targetPhotoRatio);
     }

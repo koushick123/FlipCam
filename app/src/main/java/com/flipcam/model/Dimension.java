@@ -22,8 +22,19 @@ public class Dimension implements Comparable<Dimension>{
             return 1;
         }
         else{
+            if(height > dimension.getHeight()){
+                return -1;
+            }
+            else if(height < dimension.getHeight()){
+                return 1;
+            }
             return 0;
         }
+    }
+
+    @Override
+    public String toString() {
+        return width+" X "+height;
     }
 
     public int getWidth() {

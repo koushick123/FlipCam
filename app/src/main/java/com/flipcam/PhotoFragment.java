@@ -75,6 +75,7 @@ public class PhotoFragment extends Fragment {
     ImageButton capturePic;
     ImageView imagePreview;
     TextView modeText;
+    TextView resInfo;
     boolean continuousAF = true;
     OrientationEventListener orientationEventListener;
     int orientation = -1;
@@ -130,6 +131,7 @@ public class PhotoFragment extends Fragment {
         });
         cameraView.setFlashButton(flash);
         modeText = (TextView)getActivity().findViewById(R.id.modeInfo);
+        resInfo = (TextView)getActivity().findViewById(R.id.resInfo);
         modeText.setText(getResources().getString(R.string.PHOTO_MODE));
         photoPermission = (PhotoFragment.PhotoPermission)getActivity();
         switchPhoto = (PhotoFragment.SwitchPhoto)getActivity();
@@ -591,6 +593,10 @@ public class PhotoFragment extends Fragment {
                 openMedia();
             }
         });
+    }
+
+    public void setPhotoResInfo(String width, String height){
+        resInfo.setText(width+" X "+height);
     }
 
     public boolean isImage(String path)
