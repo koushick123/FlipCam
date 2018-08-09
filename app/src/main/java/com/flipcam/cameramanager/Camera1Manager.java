@@ -403,7 +403,6 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         SharedPreferences sharedPreferences = obtainSettingsPrefs();
         String photoDimen = sharedPreferences.getString(Constants.SELECT_PHOTO_RESOLUTION, null);
         String[] dimensions = photoDimen.split(" X ");
-        Camera.Parameters parameters = mCamera.getParameters();
         if(VERBOSE)Log.d(TAG, "SET PIC SIZE = "+photoDimen);
         parameters.setPictureSize(Integer.parseInt(dimensions[0]), Integer.parseInt(dimensions[1]));
         if(this.photoFrag != null){
