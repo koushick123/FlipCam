@@ -231,12 +231,16 @@
     <string name="torchMode">Torch</string>
     <string name="singleMode">Auto</string>
     <string name="videoResolutionHeading">Video Resolutions</string>
-    <string name="photoResolutionHeading">Photo Resolutions</string>
+    <string name="photoResolutionDialogHeading">Photo Resolutions</string>
+    <string name="photoSettings">Photo Settings...</string>
     <string name="videoResHigh">HIGH</string>
     <string name="videoResMedium">MEDIUM</string>
     <string name="videoResLow">LOW</string>
     <string name="mediaSlideview">Slide View</string>
     <string name="brightnessHeading">BRIGHTNESS</string>
     <string name="photoResDisplay">%1$s X %2$s</string>
+    <string name="backCamResTitle">Back Camera Resolution</string>
+    <string name="backCamResSummary">Set the photo resolution for the rear camera.</string>
+    <string name="photoSettingsTitle">Photo Settings</string>
 </resources>
 

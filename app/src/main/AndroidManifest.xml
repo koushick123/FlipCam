@@ -33,12 +33,14 @@
             android:name="com.facebook.FacebookContentProvider"
             android:authorities="com.facebook.app.FacebookContentProvider308890512940081"
             android:exported="true" />
+
         <meta-data
             android:name="com.facebook.sdk.ApplicationId"
             android:value="@string/facebook_app_id" />
         <meta-data
             android:name="com.google.android.apps.drive.APP_ID"
             android:value="790824425492" />
+
         <activity
             android:name="com.facebook.FacebookActivity"
             android:configChanges="keyboard|keyboardHidden|screenLayout|screenSize|orientation"
@@ -116,12 +118,17 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/appwidget_provider" />
         </receiver>
+
         <activity
             android:name=".GalleryActivity"
             android:configChanges="orientation|screenSize" />
+
         <provider
-            android:authorities="@string/content_authority"
             android:name=".data.MediaProvider"
-            />
+            android:authorities="@string/content_authority" />
+
+        <activity android:name=".PhotoSettingsActivity"
+            android:label="@string/photoSettingsTitle"></activity>
     </application>
+
 </manifest>

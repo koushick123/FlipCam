@@ -74,7 +74,13 @@ import static com.flipcam.constants.Constants.SHOW_ELAPSED_TIME;
 /**
  * Created by Koushick on 15-08-2017.
  */
-
+/*
+CameraView is used to display the camera preview using SurfaceView. This is the class where all camera related operations for both photo and video are
+performed.
+All camera related settings like video resolution, FPS, and photo resolution are set here.
+CameraView uses CameraOperations for all camera related functions. CameraOperations is an interface with Camera1 and Camera2 API implementations,
+depending on the device's support level.
+ */
 public class CameraView extends SurfaceView implements SurfaceHolder.Callback, SurfaceTexture.OnFrameAvailableListener, SensorEventListener{
 
     public static final String TAG = "CameraView";
@@ -267,6 +273,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         if(VERBOSE)Log.d(TAG,"onAccuracyChanged");
     }
 
+    //Main class handler to receive messages from child threads like CameraRenderer using Android message passing mechanism.
     class MainHandler extends Handler {
         WeakReference<CameraView> cameraView;
         CameraView camView;
@@ -326,6 +333,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         if(VERBOSE)Log.d(TAG,"Come out of WAIT");
     }
 
+    //As each frame is available from the camera, it is sent to CameraRenderer thread to draw on the screen, thereby avoiding performing heavy operations
+    //like this on the main thread.
     @Override
     public void onFrameAvailable(SurfaceTexture surfaceTexture) {
         if(FRAME_VERBOSE)Log.d(TAG,"FRAME Available now");
@@ -656,6 +665,14 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         this.photoFragment = photoFragment;
     }
 
+    public boolean isBackCamera() {
+        return backCamera;
+    }
+
+    public void setBackCamera(boolean backCamera) {
+        this.backCamera = backCamera;
+    }
+
     public boolean isCameraPermissionAvailable(){
         int camerapermission = ContextCompat.checkSelfPermission(getContext(), Manifest.permission.CAMERA);
         int audiopermission = ContextCompat.checkSelfPermission(getContext(), Manifest.permission.RECORD_AUDIO);
@@ -669,6 +686,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         }
     }
 
+    //This method sets all the camera parameters and opens the camera. Same is called when you switch the camera.
     public void openCameraAndStartPreview()
     {
         if(!isCameraPermissionAvailable()){
@@ -847,6 +865,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         }
     }
 
+    //This method is used to calculate the orientation necessary for the photo/video when the device is oriented as per portrait or landscape.
     public void determineOrientation() {
 
         if(orientation != -1) {
@@ -1050,6 +1069,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         }
         mSensorManager.unregisterListener(this);
         if(cameraHandler!=null) {
+            //Ensure camera's resources are properly released.
             CameraRenderer cameraRenderer = cameraHandler.getCameraRendererInstance();
             if(camera1.isCameraReady()) {
                 //Switch off flash light if used during recording.
@@ -1073,6 +1093,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             releaseProgram();
             releaseEGLContext();
             if(isRecord()) {
+                //If video recording was in progress, ensure recording is stopped and saved, before exiting.
                 Log.d(TAG, "Unmute audio");
                 if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && Build.VERSION.SDK_INT < Build.VERSION_CODES.M){
                     Log.d(TAG, "setStreamUnMute");
@@ -1111,6 +1132,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             stopTimerThread();
             try {
                 if(cameraRenderer!=null){
+                    //If possible wait for camerarenderer to finish before the main thread exits.
                     cameraRenderer.join();
                 }
             } catch (InterruptedException e) {
@@ -1118,7 +1140,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             }
         }
     }
-
+    //This is the class that draws the each camera frame onto the device's screen. It uses OpenGL API to draw the preview frame.
+    //It also controls the video recording.
     class CameraRenderer extends Thread
     {
         int recordStop = -1;
@@ -1473,7 +1496,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             if(isRecord() && isPhoneMemory && (availableStatFs.getAvailableBytes() < lowestMemory)) {
                 if(FRAME_VERBOSE)Log.d(TAG, "lowestMemory = "+lowestMemory);
                 if(FRAME_VERBOSE)Log.d(TAG, "avail mem = "+availableStatFs.getAvailableBytes());
-//                isRecord=false;
                 setRecord(false);
                 stopTimerThread();
                 isRecording = false;
@@ -1548,7 +1570,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         }
                         break;
                     case Constants.RECORD_START:
-//                        cameraRenderer.setupMediaRecorder(VIDEO_WIDTH, VIDEO_HEIGHT);
                         cameraRenderer.setupMediaRecorder(getRecordVideoWidth(), getRecordVideoHeight(), getCamProfileForRecord());
                         hour = 0; minute = 0; second = 0;
                         isRecording = true;
@@ -1604,6 +1625,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     }
     volatile boolean startTimer = false;
     volatile boolean updateTimer = false;
+    //This thread controls the timer for video recording. A separate thread was needed, since the CameraRenderer thread was overloaded with displaying
+    //and recording each frame, the timer value was incorrect during recording.
     class VideoTimer extends Thread
     {
         @Override

@@ -13,6 +13,7 @@ import android.graphics.SurfaceTexture;
 import android.graphics.YuvImage;
 import android.hardware.Camera;
 import android.media.CamcorderProfile;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.Display;
 import android.view.WindowManager;
@@ -42,7 +43,10 @@ import java.util.TreeSet;
 /**
  * Created by Koushick on 02-08-2017.
  */
-
+/*
+This class controls all Old Camera1 API operations for the camera. The CameraView only uses CameraOperations interface and this is the implementation for
+Camera1.
+ */
 public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeListener, Camera.ShutterCallback,Camera.PictureCallback, Camera.PreviewCallback {
 
     private Camera mCamera;
@@ -98,40 +102,56 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
 
     @Override
     public void getSupportedPictureSizes() {
+        Set<String> supportedPics;
         SharedPreferences sharedPreferences = obtainSettingsPrefs();
-        Set<String> supportedPics = sharedPreferences.getStringSet(Constants.SUPPORT_PHOTO_RESOLUTIONS, null);
-        Log.d(TAG, "SupportedPics = "+supportedPics);
-        if(supportedPics == null) {
+        if(cameraView.isBackCamera()) {
+            //For rear camera get all supported photo resolutions.
+            supportedPics = sharedPreferences.getStringSet(Constants.SUPPORT_PHOTO_RESOLUTIONS, null);
+            Log.d(TAG, "SupportedPics = " + supportedPics);
+        }
+        else {
+            //For front camera get all supported photo resolutions.
+            supportedPics = sharedPreferences.getStringSet(Constants.SUPPORT_PHOTO_RESOLUTIONS_FRONT, null);
+            Log.d(TAG, "SupportedPics FRONT = " + supportedPics);
+        }
+        fetchSupportedPicSizesForCamera(supportedPics, sharedPreferences, cameraView.isBackCamera());
+    }
+
+    private void fetchSupportedPicSizesForCamera(Set<String> supportedPics, SharedPreferences sharedPreferences, boolean backCam){
+        if (supportedPics == null) {
             SharedPreferences.Editor editor = sharedPreferences.edit();
             supportedPics = new HashSet<>();
             List<Camera.Size> picsSizes = mCamera.getParameters().getSupportedPictureSizes();
             for (Camera.Size size : picsSizes) {
-                Log.d(TAG, "Adding "+size.width+" , "+size.height);
+                Log.d(TAG, "Adding " + size.width + " , " + size.height);
                 supportedPics.add(size.width + " X " + size.height);
             }
-            editor.putStringSet(Constants.SUPPORT_PHOTO_RESOLUTIONS, supportedPics);
-            editor.commit();
             //Sort by descending order and take the largest value as default photo resolution.
             TreeSet<Dimension> sortedPicsSizes = new TreeSet<>();
-            if(VERBOSE)Log.d(TAG, "photoRes SIZE = "+supportedPics.size());
+            if (VERBOSE) Log.d(TAG, "photoRes SIZE = " + supportedPics.size());
             int width = 0, height = 0;
-            for(String resol: supportedPics){
+            for (String resol : supportedPics) {
                 width = Integer.parseInt(resol.substring(0, resol.indexOf(" ")));
-                height = Integer.parseInt(resol.substring(resol.lastIndexOf(" ")+1, resol.length()));
+                height = Integer.parseInt(resol.substring(resol.lastIndexOf(" ") + 1, resol.length()));
                 sortedPicsSizes.add(new Dimension(width, height));
             }
             Iterator<Dimension> resolIter = sortedPicsSizes.iterator();
-            while(resolIter.hasNext()){
+            while (resolIter.hasNext()) {
                 //First value has the largest value.
                 Dimension dimen = resolIter.next();
                 width = dimen.getWidth();
                 height = dimen.getHeight();
                 break;
             }
-            if(sharedPreferences.getString(Constants.SELECT_PHOTO_RESOLUTION, null) == null){
-                editor.putString(Constants.SELECT_PHOTO_RESOLUTION, width+" X "+height);
-                editor.commit();
+            if(backCam) {
+                editor.putStringSet(Constants.SUPPORT_PHOTO_RESOLUTIONS, supportedPics);
+                editor.putString(Constants.SELECT_PHOTO_RESOLUTION, width + " X " + height);
             }
+            else{
+                editor.putStringSet(Constants.SUPPORT_PHOTO_RESOLUTIONS_FRONT, supportedPics);
+                editor.putString(Constants.SELECT_PHOTO_RESOLUTION_FRONT, width + " X " + height);
+            }
+            editor.commit();
         }
     }
 
@@ -401,7 +421,21 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
             }
         }
         SharedPreferences sharedPreferences = obtainSettingsPrefs();
-        String photoDimen = sharedPreferences.getString(Constants.SELECT_PHOTO_RESOLUTION, null);
+        SharedPreferences fromPrefMgr = PreferenceManager.getDefaultSharedPreferences(appContext);
+        String photoDimen;
+        if(cameraView.isBackCamera()){
+            if(fromPrefMgr.getString(Constants.SELECT_PHOTO_RESOLUTION, null) == null) {
+                if(VERBOSE)Log.d(TAG, "Obtain from Act shared prefs");
+                photoDimen = sharedPreferences.getString(Constants.SELECT_PHOTO_RESOLUTION, null);
+            }
+            else{
+                if(VERBOSE)Log.d(TAG, "Obtain from PreferenceManager");
+                photoDimen = fromPrefMgr.getString(Constants.SELECT_PHOTO_RESOLUTION, null);
+            }
+        }
+        else{
+            photoDimen = sharedPreferences.getString(Constants.SELECT_PHOTO_RESOLUTION_FRONT, null);
+        }
         String[] dimensions = photoDimen.split(" X ");
         if(VERBOSE)Log.d(TAG, "SET PIC SIZE = "+photoDimen);
         parameters.setPictureSize(Integer.parseInt(dimensions[0]), Integer.parseInt(dimensions[1]));
@@ -410,7 +444,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         }
         mCamera.setParameters(parameters);
         targetPhotoRatio = Double.parseDouble(dimensions[0]) / Double.parseDouble(dimensions[1]);
-        Log.d(TAG, "targetPhotoRatio = "+targetPhotoRatio);
+        if(VERBOSE)Log.d(TAG, "targetPhotoRatio = "+targetPhotoRatio);
     }
 
     private SharedPreferences obtainSettingsPrefs() {

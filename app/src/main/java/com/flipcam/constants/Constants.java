@@ -71,5 +71,7 @@ public class Constants
     public static final float NORMAL_BRIGHTNESS_PROGRESS = 0.0f;
     //Photo Resolution
     public static final String SELECT_PHOTO_RESOLUTION = "SelectPhotoResolution";
+    public static final String SELECT_PHOTO_RESOLUTION_FRONT = "SelectPhotoResolutionFront";
     public static final String SUPPORT_PHOTO_RESOLUTIONS = "SupportedPhotoResolutions";
+    public static final String SUPPORT_PHOTO_RESOLUTIONS_FRONT = "SupportedPhotoResolutionsFront";
 }

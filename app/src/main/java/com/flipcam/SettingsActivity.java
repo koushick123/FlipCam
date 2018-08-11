@@ -11,7 +11,6 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.RippleDrawable;
@@ -20,6 +19,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.os.Environment;
+import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -47,7 +47,6 @@ import com.dropbox.core.v2.files.DbxUserFilesRequests;
 import com.dropbox.core.v2.files.GetMetadataErrorException;
 import com.flipcam.constants.Constants;
 import com.flipcam.media.FileMedia;
-import com.flipcam.model.Dimension;
 import com.flipcam.util.MediaUtil;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
@@ -75,7 +74,6 @@ import com.google.android.gms.tasks.Task;
 import java.io.File;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.TreeSet;
 
 public class SettingsActivity extends AppCompatActivity{
 
@@ -205,7 +203,16 @@ public class SettingsActivity extends AppCompatActivity{
         accountManager = (AccountManager)getSystemService(Context.ACCOUNT_SERVICE);
         appWidgetManager = (AppWidgetManager)getSystemService(Context.APPWIDGET_SERVICE);
         controlVisbilityPreference = (ControlVisbilityPreference)getApplicationContext();
+        photoResolutionParent.setOnClickListener(photoResolutionParentListener);
     }
+
+    View.OnClickListener photoResolutionParentListener = new View.OnClickListener(){
+        @Override
+        public void onClick(View view) {
+            Intent photoSettings = new Intent(getApplicationContext(), PhotoSettingsActivity.class);
+            startActivity(photoSettings);
+        }
+    };
 
     class SDCardEventReceiver extends BroadcastReceiver{
         @Override
@@ -307,64 +314,11 @@ public class SettingsActivity extends AppCompatActivity{
             videoResMedium.setChecked(false);
             videoResLow.setChecked(false);
         }
-        //Update Photo Resolution
-        if(settingsPref.getStringSet(Constants.SUPPORT_PHOTO_RESOLUTIONS, null) != null){
-            HashSet<String> photoRes = (HashSet)settingsPref.getStringSet(Constants.SUPPORT_PHOTO_RESOLUTIONS, null);
-            TreeSet<com.flipcam.model.Dimension> sortedPicsSizes = new TreeSet<>();
-            if(VERBOSE)Log.d(TAG, "photoRes SIZE = "+photoRes.size());
-            int width, height;
-            for(String resol: photoRes){
-                width = Integer.parseInt(resol.substring(0, resol.indexOf(" ")));
-                height = Integer.parseInt(resol.substring(resol.lastIndexOf(" ")+1, resol.length()));
-                sortedPicsSizes.add(new Dimension(width, height));
-            }
-            int index = 0;
-            photoResIds = new int[sortedPicsSizes.size()];
-            if(photoResolutionParent.getChildCount() > 1){
-                photoResolutionParent.removeViews(1, photoResolutionParent.getChildCount()-1);
-            }
-            if(VERBOSE)Log.d(TAG, "sortedPicsSizes size "+sortedPicsSizes.size());
-            for(Dimension resol : sortedPicsSizes){
-                if(VERBOSE)Log.d(TAG, "Need to ADD = "+resol.toString());
-                RadioButton photoResButton = new RadioButton(getApplicationContext());
-                LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT);
-                layoutParams.setMargins((int)getResources().getDimension(R.dimen.headTextLeftMargin),
-                        (int)getResources().getDimension(R.dimen.headTextTopMargin), 0,
-                        (int)getResources().getDimension(R.dimen.videoResBottomMargin));
-                photoResButton.setButtonTintList(ColorStateList.valueOf(getResources().getColor(R.color.turqoise)));
-                if(settingsPref.getString(Constants.SELECT_PHOTO_RESOLUTION, null) == null) {
-                    if (index == 0) {
-                        photoResButton.setChecked(true);
-                    } else {
-                        photoResButton.setChecked(false);
-                    }
-                }
-                else{
-                    String[] dimension = settingsPref.getString(Constants.SELECT_PHOTO_RESOLUTION, null).split(" X ");
-                    String selWidth = dimension[0];
-                    String selHeight = dimension[1];
-                    if(resol.getWidth() == Integer.parseInt(selWidth) && resol.getHeight() == Integer.parseInt(selHeight)){
-                        photoResButton.setChecked(true);
-                    }
-                    else{
-                        photoResButton.setChecked(false);
-                    }
-                }
-                photoResIds[index] = index;
-                photoResButton.setId(index++);
-                photoResButton.setOnClickListener(photoResListener);
-                photoResButton.setText(getResources().getString(R.string.photoResDisplay, String.valueOf(resol.getWidth()),
-                        String.valueOf(resol.getHeight())));
-                photoResButton.setTextColor(getResources().getColor(R.color.turqoise));
-                photoResButton.setTextSize((int)getResources().getDimension(R.dimen.settingsSubTextPhoto));
-                rippleDrawable = (RippleDrawable)photoResButton.getBackground();
-                photoResButton.setOnTouchListener(photoResOnTouchListener);
-                photoResButton.setLayoutParams(layoutParams);
-                photoResolutionParent.addView(photoResButton);
-                if(VERBOSE)Log.d(TAG, "ADDED "+photoResButton.getText());
-            }
-        }
+        //Photo Resolution
+        String selRes = settingsPref.getString(Constants.SELECT_PHOTO_RESOLUTION, null);
+        Log.d(TAG, "SELECTED PIC RES = "+selRes);
+        selRes = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString(Constants.SELECT_PHOTO_RESOLUTION, null);
+        Log.d(TAG, "SELECTED PIC RES PREF MGR = "+selRes);
         //Update Phone memory
         if(settingsPref.contains(Constants.PHONE_MEMORY_DISABLE)){
             if(!settingsPref.getBoolean(Constants.PHONE_MEMORY_DISABLE, true)){

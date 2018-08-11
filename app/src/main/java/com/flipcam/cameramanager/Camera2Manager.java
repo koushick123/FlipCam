@@ -31,7 +31,10 @@ import com.flipcam.view.CameraView;
 
 import java.util.Arrays;
 import java.util.StringTokenizer;
-
+/*
+This class controls all new Camera2 API operations for the camera. The CameraView only uses CameraOperations interface and this is the implementation for
+Camera2.
+ */
 public class Camera2Manager implements CameraOperations {
 
     private CameraDevice cameraDevice;

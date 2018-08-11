@@ -182,8 +182,7 @@
             android:id="@+id/photoResolutionParent"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="@dimen/headTextTopMargin"
-            android:layout_marginTop="@dimen/headTextTopMargin"
+            android:background="@drawable/ripple"
             android:orientation="vertical">
 
             <TextView
@@ -191,7 +190,9 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="@dimen/headTextLeftMargin"
-                android:text="@string/photoResolutionHeading"
+                android:paddingBottom="@dimen/photoResTopBottomMargin"
+                android:paddingTop="@dimen/photoResTopBottomMargin"
+                android:text="@string/photoSettings"
                 android:textColor="@color/turqoise"
                 android:textSize="@dimen/settingsMainText" />
 
@@ -209,11 +210,11 @@
             android:id="@+id/phoneMemParent"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="@dimen/headTextTopMargin"
-            android:layout_marginTop="@dimen/headTextTopMargin"
             android:background="@drawable/ripple"
             android:onClick="showMemoryConsumed"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:paddingBottom="@dimen/headTextTopMargin"
+            android:paddingTop="@dimen/headTextTopMargin">
 
             <LinearLayout
                 android:id="@+id/phoneMemParentVert"

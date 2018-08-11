@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/resolPrefParent"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/settingsBarColor"
+    android:foreground="@drawable/ripple"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/resolTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/photoResLeftMargin"
+        android:textColor="@color/turqoise"
+        android:textSize="@dimen/photoResTitleSize"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/resolSummary"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/photoResLeftMargin"
+        android:layout_marginTop="@dimen/photoResSummaryTopMargin"
+        android:textColor="@color/turqoise"
+        android:textSize="@dimen/photoResSummarySize" />
+</LinearLayout>

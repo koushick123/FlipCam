@@ -135,7 +135,7 @@ public class PermissionActivity extends AppCompatActivity {
                 openCameraFragment();
             } else if(!showPermission){
                 if(VERBOSE)Log.d(TAG, "Permissions not obtained. Obtain explicitly");
-                //Remove SELECT_VIDEO_RESOLUTION from shared preferences. This is necessary since for some devices, it is pre-selected as a medium resolution
+                //Remove SELECT_VIDEO_RESOLUTION from shared preferences. This is necessary, since for some devices it is pre-selected as a medium resolution
                 //leading to incorrect preview size.
                 SharedPreferences videoPref = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
                 String videoResPref = videoPref.getString(Constants.SELECT_VIDEO_RESOLUTION, null);
@@ -147,6 +147,8 @@ public class PermissionActivity extends AppCompatActivity {
                 editor.remove(Constants.VIDEO_DIMENSION_LOW);
                 editor.remove(Constants.SUPPORT_PHOTO_RESOLUTIONS);
                 editor.remove(Constants.SELECT_PHOTO_RESOLUTION);
+                editor.remove(Constants.SUPPORT_PHOTO_RESOLUTIONS_FRONT);
+                editor.remove(Constants.SELECT_PHOTO_RESOLUTION_FRONT);
                 editor.commit();
                 if(VERBOSE)Log.d(TAG, "REMOVED SHAREDPREFS");
                 ActivityCompat.requestPermissions(this,
