@@ -4,16 +4,19 @@ import android.content.Context;
 import android.preference.ListPreference;
 import android.util.Log;
 import android.view.View;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
-public class ResolutionListPreference extends ListPreference {
+public class MyListPreference extends ListPreference {
 
     Context mContext;
-    public static final String TAG = "CustomListPref";
+    boolean enableSeparator;
+    public static final String TAG = "MyListPreference";
 
-    public ResolutionListPreference(Context context) {
+    public MyListPreference(Context context, boolean enableSep) {
         super(context);
         mContext = context;
+        enableSeparator = enableSep;
     }
 
     @Override
@@ -23,6 +26,8 @@ public class ResolutionListPreference extends ListPreference {
         title.setText(getTitle());
         TextView summary = (TextView)view.findViewById(R.id.resolSummary);
         summary.setText(getSummary());
+        LinearLayout seperator = (LinearLayout)view.findViewById(R.id.separator);
+        seperator.setVisibility(enableSeparator ? View.VISIBLE : View.GONE);
         super.onBindView(view);
     }
 

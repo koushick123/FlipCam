@@ -240,7 +240,9 @@
     <string name="brightnessHeading">BRIGHTNESS</string>
     <string name="photoResDisplay">%1$s X %2$s</string>
     <string name="backCamResTitle">Back Camera Resolution</string>
+    <string name="frontCamResTitle">Front Camera Resolution</string>
     <string name="backCamResSummary">Set the photo resolution for the rear camera.</string>
+    <string name="frontCamResSummary">Set the photo resolution for the front camera.</string>
     <string name="photoSettingsTitle">Photo Settings</string>
 </resources>
 

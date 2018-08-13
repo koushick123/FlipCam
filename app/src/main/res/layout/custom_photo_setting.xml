@@ -12,6 +12,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginStart="@dimen/photoResLeftMargin"
+        android:layout_marginTop="@dimen/photoResSummaryTopBottomMargin"
         android:textColor="@color/turqoise"
         android:textSize="@dimen/photoResTitleSize"
         android:textStyle="bold" />
@@ -20,8 +21,17 @@
         android:id="@+id/resolSummary"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/photoResSummaryTopBottomMargin"
         android:layout_marginStart="@dimen/photoResLeftMargin"
-        android:layout_marginTop="@dimen/photoResSummaryTopMargin"
+        android:layout_marginTop="@dimen/photoResSummaryTopBottomMargin"
         android:textColor="@color/turqoise"
         android:textSize="@dimen/photoResSummarySize" />
+
+    <LinearLayout
+        android:id="@+id/separator"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/turqoise"
+        android:orientation="horizontal"
+        android:visibility="gone"></LinearLayout>
 </LinearLayout>

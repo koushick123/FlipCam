@@ -5,7 +5,6 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.ListPreference;
 import android.preference.Preference;
-import android.preference.PreferenceCategory;
 import android.preference.PreferenceFragment;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
@@ -48,15 +47,25 @@ public class PhotoSettingsActivity extends AppCompatActivity {
             super.onCreate(savedInstanceState);
             if(VERBOSE)Log.d(TAG, "PhotoSettingFragment onCreate");
             addPreferencesFromResource(R.xml.preferences);
-            //Add Pref Category
-            PreferenceCategory preferenceCategory = new PreferenceCategory(mContext);
-            getPreferenceScreen().addPreference(preferenceCategory);
             //Add Back Camera list prefs
-            ListPreference listPreference = new ResolutionListPreference(getActivity());
-            listPreference.setTitle(getResources().getString(R.string.backCamResTitle));
-            listPreference.setSummary(getResources().getString(R.string.backCamResSummary));
+            addResolutionList(true);
+            //Add Front camera list prefs
+            addResolutionList(false);
+        }
+
+        private void addResolutionList(boolean backCamera){
+            Log.d(TAG, "for backCamera? = "+backCamera);
+            ListPreference listPreference;
+            Set<String> entries;
             SharedPreferences settingsPrefs = getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
-            Set<String> entries = settingsPrefs.getStringSet(Constants.SUPPORT_PHOTO_RESOLUTIONS, null);
+            if(backCamera) {
+                listPreference = new MyListPreference(getActivity(), true);
+                entries = settingsPrefs.getStringSet(Constants.SUPPORT_PHOTO_RESOLUTIONS, null);
+            }
+            else{
+                listPreference = new MyListPreference(getActivity(), true);
+                entries = settingsPrefs.getStringSet(Constants.SUPPORT_PHOTO_RESOLUTIONS_FRONT, null);
+            }
             int index=0;
             TreeSet<Dimension> sortedPicsSizes = new TreeSet<>();
             if (VERBOSE) Log.d(TAG, "photoRes SIZE = " + entries.size());
@@ -78,8 +87,18 @@ public class PhotoSettingsActivity extends AppCompatActivity {
             listPreference.setEntries(resEntries);
             listPreference.setEntryValues(resEntries);
             listPreference.setPersistent(true);
-            listPreference.setKey(Constants.SELECT_PHOTO_RESOLUTION);
-            listPreference.setValue(settingsPrefs.getString(Constants.SELECT_PHOTO_RESOLUTION, null));
+            if(backCamera) {
+                listPreference.setTitle(getResources().getString(R.string.backCamResTitle));
+                listPreference.setSummary(getResources().getString(R.string.backCamResSummary));
+                listPreference.setKey(Constants.SELECT_PHOTO_RESOLUTION);
+                listPreference.setValue(settingsPrefs.getString(Constants.SELECT_PHOTO_RESOLUTION, null));
+            }
+            else{
+                listPreference.setTitle(getResources().getString(R.string.frontCamResTitle));
+                listPreference.setSummary(getResources().getString(R.string.frontCamResSummary));
+                listPreference.setKey(Constants.SELECT_PHOTO_RESOLUTION_FRONT);
+                listPreference.setValue(settingsPrefs.getString(Constants.SELECT_PHOTO_RESOLUTION_FRONT, null));
+            }
             listPreference.setDialogTitle(getResources().getString(R.string.photoResolutionDialogHeading));
             listPreference.setLayoutResource(R.layout.custom_photo_setting);
             getPreferenceScreen().addPreference(listPreference);

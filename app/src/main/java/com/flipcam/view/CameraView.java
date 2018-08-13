@@ -247,7 +247,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 else{
                     if(focusNow) {
                         if(VERBOSE)Log.d(TAG, "Focus now in landscape");
-                        camera1.setAutoFocus();
+                        camera1.setAutoFocus(true);
                         focusNow = false;
                     }
                 }
@@ -260,7 +260,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             else{
                 if(focusNow) {
                     if(VERBOSE)Log.d(TAG, "Focus now");
-                    camera1.setAutoFocus();
+                    camera1.setAutoFocus(true);
                     focusNow = false;
                 }
             }

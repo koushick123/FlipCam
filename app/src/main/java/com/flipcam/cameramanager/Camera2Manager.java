@@ -383,7 +383,7 @@ public class Camera2Manager implements CameraOperations {
     }
 
     @Override
-    public void setAutoFocus() {
+    public void setAutoFocus(boolean noPic) {
         captureRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_START);
         reCreateCaptureSession();
     }

@@ -47,7 +47,7 @@ import java.util.TreeSet;
 This class controls all Old Camera1 API operations for the camera. The CameraView only uses CameraOperations interface and this is the implementation for
 Camera1.
  */
-public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeListener, Camera.ShutterCallback,Camera.PictureCallback, Camera.PreviewCallback {
+public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeListener, Camera.ShutterCallback, Camera.PictureCallback, Camera.PreviewCallback {
 
     private Camera mCamera;
     public final String TAG = "Camera1Manager";
@@ -79,6 +79,16 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     double targetVideoRatio;
     double targetPhotoRatio;
     int screenWidth;
+    boolean zoomChangeListener = false;
+    boolean noPicture = false;
+
+    public boolean isNoPicture() {
+        return noPicture;
+    }
+
+    public void setNoPicture(boolean noPicture) {
+        this.noPicture = noPicture;
+    }
 
     public static Camera1Manager getInstance() {
         if (camera1Manager == null) {
@@ -305,8 +315,6 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         return false;
     }
 
-    boolean zoomChangeListener = false;
-
     public boolean isSmoothZoomSupported() {
         if (VERBOSE) Log.d(TAG, "smooth zoom = " + parameters.isSmoothZoomSupported());
         //Add a zoomchangelistener flag so that it is not set every time this is called
@@ -343,17 +351,38 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     }
 
     FileOutputStream picture = null;
-
+    String previousFocusMode = null;
     @Override
     public void capturePicture() {
         photo = null;
         int zoomedVal = photoFrag.getZoomBar().getProgress();
-        if (VERBOSE) Log.d(TAG, "take pic");
+        if (VERBOSE) Log.d(TAG, "take pic = "+zoomedVal);
         capture = true;
         Camera.Parameters parameters = mCamera.getParameters();
         parameters.setZoom(zoomedVal);
         mCamera.setParameters(parameters);
-        mCamera.takePicture(this, null, null, this);
+        if(zoomedVal > 0) {
+            mCamera.takePicture(this, null, null, this);
+        }
+        else{
+            /*When the user tries to take a picture, to ensure that it is a properly focused picture, we will set autofocus, provided it is supported by
+            the camera. Once the picture is captured, we reset the focus mode back to Continuous picture, if that was the previous mode.
+            */
+            if(isFocusModeSupported(Camera.Parameters.FOCUS_MODE_AUTO)){
+                if(VERBOSE)Log.d(TAG, "take Focused picture");
+                previousFocusMode = mCamera.getParameters().getFocusMode();
+                takeFocusedPicture();
+            }
+            else{
+                mCamera.takePicture(this, null, null, this);
+            }
+        }
+    }
+
+    private void takeFocusedPicture(){
+        parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
+        mCamera.setParameters(parameters);
+        setAutoFocus(false);
     }
 
     @Override
@@ -403,12 +432,14 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
             photoFrag.getVideoMode().setClickable(true);
             photoFrag.getSwitchCamera().setClickable(true);
             photoFrag.getThumbnail().setClickable(true);
+            //Reset Focus mode to Continuous AF if applicable
+            if(previousFocusMode != null){
+                //Cancel AF point
+                mCamera.cancelAutoFocus();
+                parameters.setFocusMode(previousFocusMode);
+                mCamera.setParameters(parameters);
+            }
         }
-    }
-
-    @Override
-    public void onShutter() {
-        if (VERBOSE) Log.d(TAG, "Photo captured");
     }
 
     @Override
@@ -434,7 +465,14 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
             }
         }
         else{
-            photoDimen = sharedPreferences.getString(Constants.SELECT_PHOTO_RESOLUTION_FRONT, null);
+            if(fromPrefMgr.getString(Constants.SELECT_PHOTO_RESOLUTION_FRONT, null) == null) {
+                if(VERBOSE)Log.d(TAG, "Obtain from Act shared prefs = "+cameraView.isBackCamera());
+                photoDimen = sharedPreferences.getString(Constants.SELECT_PHOTO_RESOLUTION_FRONT, null);
+            }
+            else{
+                if(VERBOSE)Log.d(TAG, "Obtain from PreferenceManager = "+cameraView.isBackCamera());
+                photoDimen = fromPrefMgr.getString(Constants.SELECT_PHOTO_RESOLUTION_FRONT, null);
+            }
         }
         String[] dimensions = photoDimen.split(" X ");
         if(VERBOSE)Log.d(TAG, "SET PIC SIZE = "+photoDimen);
@@ -681,6 +719,11 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         return ratioDimension.toString();
     }
 
+    @Override
+    public void onShutter() {
+
+    }
+
     class CameraSizeComparator implements Comparator<Camera.Size>{
         @Override
         public int compare(Camera.Size size1, Camera.Size size2) {
@@ -718,17 +761,13 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     Camera.AutoFocusCallback autoFocusCallback = new Camera.AutoFocusCallback() {
         @Override
         public void onAutoFocus(boolean success, Camera camera) {
-            if(success) {
-                if(VERBOSE)Log.d(TAG,"auto focus set successfully");
-                focused = success;
+            //Take a picture regardless of AF success, otherwise we would need to keep retrying more number of times, which would delay
+            //the picture capturing process for the user, significantly.
+            if(!isNoPicture()) {
+                mCamera.takePicture(Camera1Manager.getInstance(), null, null, Camera1Manager.getInstance());
             }
         }
     };
-
-    //Use this method to keep checking until auto focus is set
-    public boolean isAutoFocus(){
-        return focused;
-    }
 
     @Override
     public void cancelAutoFocus() {
@@ -737,7 +776,8 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     }
 
     @Override
-    public void setAutoFocus(){
+    public void setAutoFocus(boolean noPicture){
+        setNoPicture(noPicture);
         mCamera.autoFocus(autoFocusCallback);
     }
 

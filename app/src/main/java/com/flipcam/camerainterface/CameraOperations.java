@@ -44,7 +44,7 @@ import com.flipcam.view.CameraView;
     //To stop preview
      void stopPreview();
     //To set auto focus
-     void setAutoFocus();
+     void setAutoFocus(boolean noPic);
     //To set recording hint for certain optimization done by camera
      void setRecordingHint();
     //To disable recording hint

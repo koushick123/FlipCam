@@ -132,10 +132,11 @@
     <dimen name="increaseDecreaseTextSize">19sp</dimen>
     //Margin for video res bottom margin
     <dimen name="videoResBottomMargin">5dp</dimen>
-    //Size for Photo res title
+    //Size for Photo res
     <dimen name="photoResTitleSize">15sp</dimen>
-    <dimen name="photoResSummarySize">12sp</dimen>
-    <dimen name="photoResSummaryTopMargin">10dp</dimen>
+    <dimen name="photoResSummarySize">13sp</dimen>
+    <dimen name="photoResSummaryTopBottomMargin">15dp</dimen>
     <dimen name="photoResLeftMargin">10dp</dimen>
     <dimen name="photoResTopBottomMargin">15dp</dimen>
+    <dimen name="listPrefSeparatorTopBottomPadding">20dp</dimen>
 </resources>
