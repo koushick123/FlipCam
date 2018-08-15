@@ -91,4 +91,12 @@
             android:background="?android:attr/selectableItemBackground"
             android:src="@drawable/full_brightness" />
     </LinearLayout>
+
+    <ImageView
+        android:id="@+id/imageHighlight"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="center"
+        android:contentDescription="@string/imagePreview"
+        android:visibility="invisible" />
 </FrameLayout>

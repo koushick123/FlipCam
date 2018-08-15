@@ -355,6 +355,8 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     @Override
     public void capturePicture() {
         photo = null;
+        //Reset previousFocusMode in case camera is switched. Front camera may not support the same focus mode as rear camera.
+        previousFocusMode = null;
         int zoomedVal = photoFrag.getZoomBar().getProgress();
         if (VERBOSE) Log.d(TAG, "take pic = "+zoomedVal);
         capture = true;
@@ -425,9 +427,9 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
             }
             //Start the preview no matter if photo is saved or not.
             if (VERBOSE) Log.d(TAG, "photo is ready");
+            photoFrag.animatePhotoShrink();
             camera.startPreview();
             photoFrag.hideImagePreview();
-            photoFrag.showImageSaved();
             photoFrag.getCapturePic().setClickable(true);
             photoFrag.getVideoMode().setClickable(true);
             photoFrag.getSwitchCamera().setClickable(true);
@@ -879,7 +881,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
                 Bitmap thumb = BitmapFactory.decodeByteArray(baos.toByteArray(), 0, baos.size());
                 baos.close();
                 Matrix rotate = new Matrix();
-                rotate.setRotate(rotation);
+                rotate.setRotate(270);
                 if(VERBOSE)Log.d(TAG,"rotation = "+rotation);
                 thumb = Bitmap.createBitmap(thumb, 0, 0, previewWidth, previewHeight, rotate, false);
                 photoFrag.createAndShowPhotoThumbnail(thumb);

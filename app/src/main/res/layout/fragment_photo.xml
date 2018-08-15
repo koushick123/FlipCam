@@ -13,15 +13,6 @@
         android:layout_height="match_parent"
         android:layout_gravity="center" />
 
-    <ImageView
-        android:id="@+id/imagePreview"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_gravity="center"
-        android:background="@color/transparentBar"
-        android:contentDescription="@string/imagePreview"
-        android:visibility="invisible" />
-
     <LinearLayout
         android:id="@+id/photoSeekParent"
         android:layout_width="match_parent"
@@ -118,4 +109,13 @@
             </FrameLayout>
         </LinearLayout>
     </LinearLayout>
+
+    <ImageView
+        android:id="@+id/imagePreview"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="center"
+        android:contentDescription="@string/imagePreview"
+        android:visibility="invisible" />
+
 </FrameLayout>

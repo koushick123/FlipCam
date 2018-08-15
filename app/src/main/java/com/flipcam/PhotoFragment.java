@@ -12,6 +12,7 @@ import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Point;
 import android.hardware.SensorManager;
 import android.media.ExifInterface;
 import android.media.MediaMetadataRetriever;
@@ -19,11 +20,14 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.util.Log;
-import android.view.Gravity;
+import android.view.Display;
 import android.view.LayoutInflater;
 import android.view.OrientationEventListener;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
+import android.view.animation.LinearInterpolator;
+import android.view.animation.ScaleAnimation;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.FrameLayout;
@@ -74,6 +78,7 @@ public class PhotoFragment extends Fragment {
     SwitchPhoto switchPhoto;
     ImageButton capturePic;
     ImageView imagePreview;
+    ImageView imageHighlight;
     TextView modeText;
     TextView resInfo;
     boolean continuousAF = true;
@@ -89,9 +94,10 @@ public class PhotoFragment extends Fragment {
     SharedPreferences sharedPreferences;
     boolean sdCardUnavailWarned = false;
     FrameLayout thumbnailParent;
+    FrameLayout photoCameraView;
     ImageView microThumbnail;
     AppWidgetManager appWidgetManager;
-    boolean VERBOSE = false;
+    boolean VERBOSE = true;
 
     public interface PhotoPermission{
         void askPhotoPermission();
@@ -132,6 +138,7 @@ public class PhotoFragment extends Fragment {
         cameraView.setFlashButton(flash);
         modeText = (TextView)getActivity().findViewById(R.id.modeInfo);
         resInfo = (TextView)getActivity().findViewById(R.id.resInfo);
+        imageHighlight = (ImageView)getActivity().findViewById(R.id.imageHighlight);
         modeText.setText(getResources().getString(R.string.PHOTO_MODE));
         photoPermission = (PhotoFragment.PhotoPermission)getActivity();
         switchPhoto = (PhotoFragment.SwitchPhoto)getActivity();
@@ -156,6 +163,7 @@ public class PhotoFragment extends Fragment {
         substitute.setVisibility(View.INVISIBLE);
         cameraView = (CameraView)view.findViewById(R.id.photocameraSurfaceView);
         zoombar = (SeekBar)view.findViewById(R.id.photoZoomBar);
+        imagePreview = (ImageView)view.findViewById(R.id.imagePreview);
         zoombar.setProgressTintList(ColorStateList.valueOf(getResources().getColor(R.color.progressFill)));
         cameraView.setSeekBar(zoombar);
         zoombar.setProgress(0);
@@ -195,6 +203,7 @@ public class PhotoFragment extends Fragment {
         thumbnail = (ImageView)view.findViewById(R.id.photoThumbnail);
         microThumbnail = (ImageView)view.findViewById(R.id.microThumbnail);
         thumbnailParent = (FrameLayout)view.findViewById(R.id.thumbnailParent);
+        photoCameraView = (FrameLayout)view.findViewById(R.id.photoCameraView);
         videoMode = (ImageButton) view.findViewById(R.id.videoMode);
         videoMode.setOnClickListener(new View.OnClickListener(){
             @Override
@@ -278,7 +287,6 @@ public class PhotoFragment extends Fragment {
         if(VERBOSE)Log.d(TAG,"passing photofragment to cameraview");
         cameraView.setPhotoFragmentInstance(this);
         cameraView.setFragmentInstance(null);
-        imagePreview = (ImageView)view.findViewById(R.id.imagePreview);
         orientationEventListener = new OrientationEventListener(getActivity().getApplicationContext(), SensorManager.SENSOR_DELAY_UI){
             @Override
             public void onOrientationChanged(int i) {
@@ -289,8 +297,13 @@ public class PhotoFragment extends Fragment {
                 }
             }
         };
+        WindowManager windowManager = (WindowManager) getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
+        Display display = windowManager.getDefaultDisplay();
+        display.getSize(size);
         return view;
     }
+
+    Point size = new Point();
 
     class SDCardEventReceiver extends BroadcastReceiver {
         @Override
@@ -377,41 +390,6 @@ public class PhotoFragment extends Fragment {
         thumbnail.setRotation(rotationAngle);
     }
 
-    public void showImageSaved()
-    {
-        LinearLayout recordSavedLayout = new LinearLayout(getActivity());
-        recordSavedLayout.setGravity(Gravity.CENTER);
-        determineOrientation();
-        recordSavedLayout.setRotation(rotationAngle);
-        recordSavedLayout.setOrientation(LinearLayout.VERTICAL);
-        recordSavedLayout.setBackgroundColor(getResources().getColor(R.color.savedMsg));
-        TextView recordSavedText = new TextView(getActivity());
-        recordSavedText.setText(getResources().getString(R.string.IMAGE_SAVED));
-        ImageView recordSavedImg = new ImageView(getActivity());
-        recordSavedImg.setImageDrawable(getResources().getDrawable(R.drawable.ic_done_white));
-        recordSavedText.setPadding((int)getResources().getDimension(R.dimen.recordSavePadding),(int)getResources().getDimension(R.dimen.recordSavePadding),
-                (int)getResources().getDimension(R.dimen.recordSavePadding),(int)getResources().getDimension(R.dimen.recordSavePadding));
-        recordSavedText.setTextColor(getResources().getColor(R.color.saveText));
-        recordSavedImg.setPadding(0,0,0,(int)getResources().getDimension(R.dimen.recordSaveImagePaddingBottom));
-        recordSavedLayout.addView(recordSavedText);
-        recordSavedLayout.addView(recordSavedImg);
-        final Toast showCompleted = Toast.makeText(getActivity().getApplicationContext(),"",Toast.LENGTH_SHORT);
-        showCompleted.setGravity(Gravity.CENTER,0,0);
-        showCompleted.setView(recordSavedLayout);
-        showCompleted.show();
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    Thread.sleep(1000);
-                    showCompleted.cancel();
-                }catch (InterruptedException ie){
-                    ie.printStackTrace();
-                }
-            }
-        }).start();
-    }
-
     public boolean isContinuousAF() {
         return continuousAF;
     }
@@ -456,13 +434,29 @@ public class PhotoFragment extends Fragment {
 
     public void showImagePreview()
     {
+        //Use imagePreview to show the captured preview even after zoom in.
         imagePreview.setImageBitmap(cameraView.getDrawingCache());
         imagePreview.setVisibility(View.VISIBLE);
+        //Use imageHighlight to highlight the borders when a picture is being taken.
+        imageHighlight.setImageDrawable(getResources().getDrawable(R.drawable.photo_highlight));
+        imageHighlight.setVisibility(View.VISIBLE);
         capturePic.setClickable(false);
         videoMode.setClickable(false);
         switchCamera.setClickable(false);
         thumbnail.setClickable(false);
         cameraView.capturePhoto();
+    }
+
+    public void animatePhotoShrink(){
+        Log.d(TAG, "animatePhotoShrink");
+        int adjustWidth = (int)getResources().getDimension(R.dimen.thumbnailWidth);
+        int adjustHeight = (int)getResources().getDimension(R.dimen.thumbnailHeight);
+        ScaleAnimation scaleAnim = new ScaleAnimation(1.0f,0.1f, 1.0f, 0.1f, size.x - adjustWidth / 2,
+                size.y - adjustHeight / 2);
+        scaleAnim.setInterpolator(new LinearInterpolator());
+        scaleAnim.setDuration(250);
+        imageHighlight.startAnimation(scaleAnim);
+        imageHighlight.setVisibility(View.INVISIBLE);
     }
 
     public void hideImagePreview()

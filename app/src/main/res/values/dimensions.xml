@@ -26,12 +26,6 @@
     //Stop button margin
     <dimen name="stopBtnLeftMargin">15dp</dimen>
     <dimen name="stopBtnRightMargin">15dp</dimen>
-    //Thumbnail button margin
-    <dimen name="thumbBtnLeftMargin">5dp</dimen>
-    <dimen name="thumbBtnRightMargin">5dp</dimen>
-    //Photo mode button margin
-    <dimen name="photoModeBtnLeftMargin">0dp</dimen>
-    <dimen name="photoModeBtnRightMargin">10dp</dimen>
     //Record substitute button margin
     <dimen name="recordSubsBtnRightMargin">15dp</dimen>
     //Pause button padding
@@ -139,4 +133,6 @@
     <dimen name="photoResLeftMargin">10dp</dimen>
     <dimen name="photoResTopBottomMargin">15dp</dimen>
     <dimen name="listPrefSeparatorTopBottomPadding">20dp</dimen>
+    //Photo highlight thickness
+    <dimen name="photoHighlightWidth">4dp</dimen>
 </resources>
