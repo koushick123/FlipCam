@@ -135,4 +135,12 @@
     <dimen name="listPrefSeparatorTopBottomPadding">20dp</dimen>
     //Photo highlight thickness
     <dimen name="photoHighlightWidth">4dp</dimen>
+    //Margin for settings message
+    <dimen name="featureLeftAndRightMargin">10dp</dimen>
+    <dimen name="valueLeftAndRightMargin">10dp</dimen>
+    <dimen name="featureAndValueTopAndBottomMargin">10dp</dimen>
+    //Dimension for close button
+    <dimen name="widthAndHeightForClose">12dp</dimen>
+    //Dimension for heading
+    <dimen name="widthAndHeightForHeading">27dp</dimen>
 </resources>

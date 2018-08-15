@@ -102,6 +102,8 @@ public class VideoFragment extends android.app.Fragment{
     AppWidgetManager appWidgetManager;
     boolean VERBOSE = true;
     ControlVisbilityPreference controlVisbilityPreference;
+    View settingsMsgRoot;
+    Dialog settingsMsgDialog;
 
     public static VideoFragment newInstance() {
         VideoFragment fragment = new VideoFragment();
@@ -147,6 +149,8 @@ public class VideoFragment extends android.app.Fragment{
         layoutInflater = (LayoutInflater)getActivity().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         warningMsgRoot = layoutInflater.inflate(R.layout.warning_message, null);
         warningMsg = new Dialog(getActivity());
+        settingsMsgRoot = layoutInflater.inflate(R.layout.settings_message, null);
+        settingsMsgDialog = new Dialog(getActivity());
         mediaFilters = new IntentFilter();
         sdCardEventReceiver = new SDCardEventReceiver();
         sharedPreferences = getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
@@ -836,6 +840,27 @@ public class VideoFragment extends android.app.Fragment{
             if(cameraView.isFlashModeSupported(cameraView.getCameraImplementation().getFlashModeTorch())) {
                 flashOn = true;
                 flash.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_off));
+                TextView feature = (TextView)settingsMsgRoot.findViewById(R.id.feature);
+                feature.setText(getResources().getString(R.string.flashSetting).toUpperCase());
+                TextView value = (TextView)settingsMsgRoot.findViewById(R.id.value);
+                value.setText(getResources().getString(R.string.torchMode).toUpperCase());
+                ImageView heading = (ImageView)settingsMsgRoot.findViewById(R.id.heading);
+                heading.setImageDrawable(getResources().getDrawable(R.drawable.torch));
+                final Toast settingsMsg = Toast.makeText(getActivity().getApplicationContext(),"",Toast.LENGTH_SHORT);
+                settingsMsg.setGravity(Gravity.CENTER,0,0);
+                settingsMsg.setView(settingsMsgRoot);
+                settingsMsg.show();
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            Thread.sleep(1000);
+                            settingsMsg.cancel();
+                        }catch (InterruptedException ie){
+                            ie.printStackTrace();
+                        }
+                    }
+                }).start();
             }
             else{
                 if(cameraView.getCameraImplementation().getFlashModeTorch().equalsIgnoreCase(getResources().getString(R.string.torchMode)))

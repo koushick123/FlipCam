@@ -244,5 +244,6 @@
     <string name="backCamResSummary">Set the photo resolution for the rear camera.</string>
     <string name="frontCamResSummary">Set the photo resolution for the front camera.</string>
     <string name="photoSettingsTitle">Photo Settings</string>
+    <string name="flashSetting">FLASH</string>
 </resources>
 

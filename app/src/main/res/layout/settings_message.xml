@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center"
+    android:background="@color/savedMsg">
+
+    <ImageView
+        android:id="@+id/heading"
+        android:layout_width="@dimen/widthAndHeightForHeading"
+        android:layout_height="@dimen/widthAndHeightForHeading"
+        android:layout_centerHorizontal="true"
+        android:layout_centerInParent="false"
+        android:layout_marginTop="@dimen/featureAndValueTopAndBottomMargin"
+        app:srcCompat="@drawable/greencircle" />
+
+    <LinearLayout
+        android:id="@+id/featureParent"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/heading"
+        android:layout_centerInParent="true"
+        android:layout_marginBottom="@dimen/featureAndValueTopAndBottomMargin"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/feature"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="false"
+            android:layout_centerInParent="false"
+            android:layout_marginBottom="@dimen/featureAndValueTopAndBottomMargin"
+            android:layout_marginEnd="@dimen/featureLeftAndRightMargin"
+            android:layout_marginStart="@dimen/featureLeftAndRightMargin"
+            android:layout_marginTop="@dimen/featureAndValueTopAndBottomMargin"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="TextView"
+            android:textColor="@color/turqoise"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/value"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="false"
+            android:layout_centerInParent="false"
+            android:layout_marginBottom="@dimen/featureAndValueTopAndBottomMargin"
+            android:layout_marginEnd="@dimen/valueLeftAndRightMargin"
+            android:layout_marginStart="@dimen/valueLeftAndRightMargin"
+            android:layout_marginTop="@dimen/featureAndValueTopAndBottomMargin"
+            android:layout_toEndOf="@+id/feature"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="TextView"
+            android:textColor="@color/turqoise"
+            android:textStyle="bold" />
+
+    </LinearLayout>
+
+</RelativeLayout>
