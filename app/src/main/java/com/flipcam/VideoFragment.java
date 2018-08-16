@@ -854,7 +854,7 @@ public class VideoFragment extends android.app.Fragment{
                     @Override
                     public void run() {
                         try {
-                            Thread.sleep(1000);
+                            Thread.sleep(1250);
                             settingsMsg.cancel();
                         }catch (InterruptedException ie){
                             ie.printStackTrace();
@@ -878,6 +878,27 @@ public class VideoFragment extends android.app.Fragment{
             if(VERBOSE)Log.d(TAG,"Flash off");
             flashOn = false;
             flash.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_on));
+            TextView feature = (TextView)settingsMsgRoot.findViewById(R.id.feature);
+            feature.setText(getResources().getString(R.string.flashSetting).toUpperCase());
+            TextView value = (TextView)settingsMsgRoot.findViewById(R.id.value);
+            value.setText(getResources().getString(R.string.flashOffMode).toUpperCase());
+            ImageView heading = (ImageView)settingsMsgRoot.findViewById(R.id.heading);
+            heading.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_off));
+            final Toast settingsMsg = Toast.makeText(getActivity().getApplicationContext(),"",Toast.LENGTH_SHORT);
+            settingsMsg.setGravity(Gravity.CENTER,0,0);
+            settingsMsg.setView(settingsMsgRoot);
+            settingsMsg.show();
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Thread.sleep(1250);
+                        settingsMsg.cancel();
+                    }catch (InterruptedException ie){
+                        ie.printStackTrace();
+                    }
+                }
+            }).start();
         }
         cameraView.flashOnOff(flashOn);
     }

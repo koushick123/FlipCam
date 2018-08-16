@@ -21,6 +21,7 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.util.Log;
 import android.view.Display;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.OrientationEventListener;
 import android.view.View;
@@ -98,6 +99,8 @@ public class PhotoFragment extends Fragment {
     ImageView microThumbnail;
     AppWidgetManager appWidgetManager;
     boolean VERBOSE = true;
+    View settingsMsgRoot;
+    Dialog settingsMsgDialog;
 
     public interface PhotoPermission{
         void askPhotoPermission();
@@ -144,6 +147,8 @@ public class PhotoFragment extends Fragment {
         switchPhoto = (PhotoFragment.SwitchPhoto)getActivity();
         lowestThresholdCheckForPictureInterface = (LowestThresholdCheckForPictureInterface)getActivity();
         layoutInflater = (LayoutInflater)getActivity().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        settingsMsgRoot = layoutInflater.inflate(R.layout.settings_message, null);
+        settingsMsgDialog = new Dialog(getActivity());
         warningMsgRoot = layoutInflater.inflate(R.layout.warning_message, null);
         warningMsg = new Dialog(getActivity());
         mediaFilters = new IntentFilter();
@@ -543,6 +548,27 @@ public class PhotoFragment extends Fragment {
             if(cameraView.isFlashModeSupported(cameraView.getCameraImplementation().getFlashModeTorch())) {
                 flashOn = true;
                 flash.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_off));
+                TextView feature = (TextView)settingsMsgRoot.findViewById(R.id.feature);
+                feature.setText(getResources().getString(R.string.flashSetting).toUpperCase());
+                TextView value = (TextView)settingsMsgRoot.findViewById(R.id.value);
+                value.setText(getResources().getString(R.string.flashOnMode).toUpperCase());
+                ImageView heading = (ImageView)settingsMsgRoot.findViewById(R.id.heading);
+                heading.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_on));
+                final Toast settingsMsg = Toast.makeText(getActivity().getApplicationContext(),"",Toast.LENGTH_SHORT);
+                settingsMsg.setGravity(Gravity.CENTER,0,0);
+                settingsMsg.setView(settingsMsgRoot);
+                settingsMsg.show();
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            Thread.sleep(1250);
+                            settingsMsg.cancel();
+                        }catch (InterruptedException ie){
+                            ie.printStackTrace();
+                        }
+                    }
+                }).start();
             }
             else{
                 Toast.makeText(getActivity().getApplicationContext(),"Flash Mode " + cameraView.getCameraImplementation().getFlashModeTorch() + " not supported by this camera.",Toast.LENGTH_SHORT).show();
@@ -553,6 +579,27 @@ public class PhotoFragment extends Fragment {
             if(VERBOSE)Log.d(TAG,"Flash off");
             flashOn=false;
             flash.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_on));
+            TextView feature = (TextView)settingsMsgRoot.findViewById(R.id.feature);
+            feature.setText(getResources().getString(R.string.flashSetting).toUpperCase());
+            TextView value = (TextView)settingsMsgRoot.findViewById(R.id.value);
+            value.setText(getResources().getString(R.string.flashOffMode).toUpperCase());
+            ImageView heading = (ImageView)settingsMsgRoot.findViewById(R.id.heading);
+            heading.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_off));
+            final Toast settingsMsg = Toast.makeText(getActivity().getApplicationContext(),"",Toast.LENGTH_SHORT);
+            settingsMsg.setGravity(Gravity.CENTER,0,0);
+            settingsMsg.setView(settingsMsgRoot);
+            settingsMsg.show();
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Thread.sleep(1250);
+                        settingsMsg.cancel();
+                    }catch (InterruptedException ie){
+                        ie.printStackTrace();
+                    }
+                }
+            }).start();
         }
     }
 

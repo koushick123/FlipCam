@@ -229,6 +229,8 @@
     <string name="zoomNotSupported">Zoom not supported for this camera.</string>
     <string name="unableToDelete">Unable to delete file</string>
     <string name="torchMode">Torch</string>
+    <string name="flashOnMode">On</string>
+    <string name="flashOffMode">Off</string>
     <string name="singleMode">Auto</string>
     <string name="videoResolutionHeading">Video Resolutions</string>
     <string name="photoResolutionDialogHeading">Photo Resolutions</string>
