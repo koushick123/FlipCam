@@ -235,6 +235,7 @@
     <string name="videoResolutionHeading">Video Resolutions</string>
     <string name="photoResolutionDialogHeading">Photo Resolutions</string>
     <string name="photoSettings">Photo Settings...</string>
+    <string name="videoSettings">Video Settings...</string>
     <string name="videoResHigh">HIGH</string>
     <string name="videoResMedium">MEDIUM</string>
     <string name="videoResLow">LOW</string>

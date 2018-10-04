@@ -141,6 +141,7 @@ public class SettingsActivity extends AppCompatActivity{
     RadioButton videoResMedium;
     RadioButton videoResLow;
     LinearLayout photoResolutionParent;
+    LinearLayout videoSettingParent;
     int[] photoResIds;
 
     @Override

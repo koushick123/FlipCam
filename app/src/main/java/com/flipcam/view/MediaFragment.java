@@ -18,8 +18,10 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.Display;
+import android.view.GestureDetector;
 import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.View;
 import android.view.ViewGroup;
@@ -87,6 +89,7 @@ MediaPlayer.OnErrorListener, Serializable{
     transient FrameLayout mediaPlaceholder;
     boolean VERBOSE = true;
     AudioManager audioManager;
+    boolean imageScaled = false;
 
     public static MediaFragment newInstance(int pos,boolean recreate){
         MediaFragment mediaFragment = new MediaFragment();
@@ -157,6 +160,63 @@ MediaPlayer.OnErrorListener, Serializable{
                 calculateAndDisplayEndTime(Integer.parseInt(duration), true);
             }
         }
+        final GestureDetector detector = new GestureDetector(getActivity().getApplicationContext(), new GestureDetector.SimpleOnGestureListener(){
+            @Override
+            public boolean onSingleTapConfirmed(MotionEvent motionEvent) {
+                Log.d(TAG, "onSingleTapConfirmed");
+                showMediaControls();
+                return true;
+            }
+
+            @Override
+            public boolean onDown(MotionEvent e) {
+                return true;
+            }
+
+            @Override
+            public boolean onDoubleTap(MotionEvent motionEvent) {
+                Log.d(TAG, "onDoubleTap");
+                if(isImage()){
+                    if(!imageScaled) {
+                        picture.setPivotX(motionEvent.getX());
+                        picture.setPivotY(motionEvent.getY());
+                        picture.setScaleX(2.0f);
+                        picture.setScaleY(2.0f);
+                        imageScaled = true;
+                    }
+                    else{
+                        picture.setScaleX(1.0f);
+                        picture.setScaleY(1.0f);
+                        imageScaled = false;
+                    }
+                    return true;
+                }
+                else{
+                    return false;
+                }
+            }
+
+            @Override
+            public boolean onDoubleTapEvent(MotionEvent motionEvent) {
+                return false;
+            }
+        });
+        if(isImage()){
+            picture.setOnTouchListener(new View.OnTouchListener() {
+                @Override
+                public boolean onTouch(View view, MotionEvent motionEvent) {
+                    return detector.onTouchEvent(motionEvent);
+                }
+            });
+        }
+        else{
+            videoView.setOnTouchListener(new View.OnTouchListener(){
+                @Override
+                public boolean onTouch(View view, MotionEvent motionEvent) {
+                    return detector.onTouchEvent(motionEvent);
+                }
+            });
+        }
     }
 
     AudioManager.OnAudioFocusChangeListener onAudioFocusChangeListener = new AudioManager.OnAudioFocusChangeListener(){
@@ -175,11 +235,6 @@ MediaPlayer.OnErrorListener, Serializable{
                     }
                     break;
                 case AudioManager.AUDIOFOCUS_LOSS:
-                    /*if(play) {
-                        mediaPlayer.pause();
-                        pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow));
-                        play = false;
-                    }*/
                     audioManager.abandonAudioFocus(this);
                     break;
             }
@@ -188,7 +243,6 @@ MediaPlayer.OnErrorListener, Serializable{
 
     public void reConstructVideo(Media savedVideo){
         videoSeek.setMax(savedVideo.getSeekDuration());
-        //videoSeek.setThumb(getResources().getDrawable(R.drawable.turqoise));
         videoSeek.setProgressTintList(ColorStateList.valueOf(getResources().getColor(R.color.turqoise)));
         if(VERBOSE)Log.d(TAG, "Retrieve media completed == " + savedVideo.isMediaCompleted());
         if (savedVideo.isMediaCompleted()) {
@@ -349,12 +403,6 @@ MediaPlayer.OnErrorListener, Serializable{
         videoView = (MediaView) view.findViewById(R.id.recordedVideo);
         picture = (ImageView)view.findViewById(R.id.recordedImage);
         mediaPlaceholder = (FrameLayout)view.findViewById(R.id.mediaPlaceholder);
-        mediaPlaceholder.setOnClickListener(new View.OnClickListener(){
-            @Override
-            public void onClick(View view) {
-                showMediaControls();
-            }
-        });
         WindowManager windowManager = (WindowManager)getActivity().getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
         display = windowManager.getDefaultDisplay();
         Point screenSize=new Point();
@@ -370,6 +418,9 @@ MediaPlayer.OnErrorListener, Serializable{
             fitPhotoToScreen();
             Uri uri = Uri.fromFile(new File(path));
             GlideApp.with(getContext()).load(uri).into(picture);
+            if(savedInstanceState!=null){
+                imageScaled = savedInstanceState.getBoolean("imageScaled");
+            }
         }
         else {
             if(VERBOSE)Log.d(TAG,"show video");
@@ -380,12 +431,6 @@ MediaPlayer.OnErrorListener, Serializable{
             mediaPlayer.setOnErrorListener(this);
             videoView.setData(mediaPlayer,path,this);
             videoView.setKeepScreenOn(true);
-            videoView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    showMediaControls();
-                }
-            });
             MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
             mediaMetadataRetriever.setDataSource(path);
             duration = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
@@ -487,6 +532,9 @@ MediaPlayer.OnErrorListener, Serializable{
                     mediaPlayer.pause();
                 }
             }
+        }
+        else{
+            outState.putBoolean("imageScaled",imageScaled);
         }
     }
 

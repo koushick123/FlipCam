@@ -171,12 +171,40 @@
         </LinearLayout>
 
         <LinearLayout
+            android:id="@+id/separatorVideo2"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/separatorHeight"
+            android:background="@color/turqoise"
+            android:orientation="horizontal">
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/videoSettingParent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/ripple"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/videoSettingHeading"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="@dimen/headTextLeftMargin"
+                android:paddingBottom="@dimen/photoResTopBottomMargin"
+                android:paddingTop="@dimen/photoResTopBottomMargin"
+                android:text="@string/videoSettings"
+                android:textColor="@color/turqoise"
+                android:textSize="@dimen/settingsMainText" />
+
+        </LinearLayout>
+
+        <LinearLayout
         android:id="@+id/separator2"
         android:layout_width="match_parent"
         android:layout_height="@dimen/separatorHeight"
         android:background="@color/turqoise"
         android:orientation="horizontal">
-    </LinearLayout>
+        </LinearLayout>
 
         <LinearLayout
             android:id="@+id/photoResolutionParent"
