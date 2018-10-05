@@ -129,6 +129,9 @@
 
         <activity android:name=".PhotoSettingsActivity"
             android:label="@string/photoSettingsTitle"></activity>
+
+        <activity android:name=".VideoSettingsActivity"
+            android:label="@string/videoSettingsTitle"></activity>
     </application>
 
 </manifest>

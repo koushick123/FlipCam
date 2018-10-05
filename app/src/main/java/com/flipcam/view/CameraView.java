@@ -11,9 +11,6 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.hardware.camera2.CameraAccessException;
-import android.hardware.camera2.CameraCharacteristics;
-import android.hardware.camera2.CameraManager;
 import android.media.AudioManager;
 import android.media.CamcorderProfile;
 import android.media.MediaRecorder;
@@ -182,7 +179,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         super(context, attrs);
         if(VERBOSE)Log.d(TAG,"start cameraview");
         getHolder().addCallback(this);
-        //Check if device's camera has FULL support for Camera 2 API. If not, we use Camera 1 API.
+        //Check if device's camera has at least LIMITED support for Camera 2 API. If not, we use Camera 1 API.
         if(isCamera2Supported(context)){
             camera1 = Camera2Manager.getInstance();
         }
@@ -201,7 +198,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     }
 
     public boolean isCamera2Supported(Context context){
-//        boolean supported = false;
+        //Camera 2 API support deferred.
+        /*boolean supported = false;
         CameraManager cameraManager = (CameraManager)context.getSystemService(Context.CAMERA_SERVICE);
         try {
             CameraCharacteristics cameraCharacteristics=null;
@@ -214,7 +212,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             }
             int supportLevel = cameraCharacteristics.get(CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL);
             if(VERBOSE)Log.d(TAG, "supportLevel = "+supportLevel);
-            /*switch (supportLevel){
+            switch (supportLevel){
                 case CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY:
                 case CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED:
                     supported = false;
@@ -222,11 +220,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 case CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL:
                     supported = true;
                     break;
-            }*/
+            }
         } catch (CameraAccessException e) {
             e.printStackTrace();
-        }
-        //Camera 2 API support deferred.
+        }*/
         return false;
     }
 

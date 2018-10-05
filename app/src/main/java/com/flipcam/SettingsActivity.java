@@ -137,9 +137,6 @@ public class SettingsActivity extends AppCompatActivity{
     AppWidgetManager appWidgetManager;
     ControlVisbilityPreference controlVisbilityPreference;
     boolean VERBOSE = true;
-    RadioButton videoResHigh;
-    RadioButton videoResMedium;
-    RadioButton videoResLow;
     LinearLayout photoResolutionParent;
     LinearLayout videoSettingParent;
     int[] photoResIds;
@@ -162,10 +159,8 @@ public class SettingsActivity extends AppCompatActivity{
         switchOnDrive = (CheckBox) findViewById(R.id.switchOnDrive);
         sdcardlayout = (LinearLayout)findViewById(R.id.sdcardlayout);
         showMemoryConsumed = (CheckBox)findViewById(R.id.showMemoryConsumed);
-        videoResHigh = (RadioButton)findViewById(R.id.videoResHigh);
-        videoResMedium = (RadioButton)findViewById(R.id.videoResMedium);
-        videoResLow = (RadioButton)findViewById(R.id.videoResLow);
         photoResolutionParent = (LinearLayout)findViewById(R.id.photoResolutionParent);
+        videoSettingParent = (LinearLayout)findViewById(R.id.videoSettingParent);
         thresholdText.setText(getString(R.string.memoryThresholdLimit, getResources().getInteger(R.integer.minimumMemoryWarning) + "MB"));
         getSupportActionBar().setTitle(getString(R.string.settingTitle));
         settingsPref = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
@@ -205,6 +200,7 @@ public class SettingsActivity extends AppCompatActivity{
         appWidgetManager = (AppWidgetManager)getSystemService(Context.APPWIDGET_SERVICE);
         controlVisbilityPreference = (ControlVisbilityPreference)getApplicationContext();
         photoResolutionParent.setOnClickListener(photoResolutionParentListener);
+        videoSettingParent.setOnClickListener(videoResolutionParentListener);
     }
 
     View.OnClickListener photoResolutionParentListener = new View.OnClickListener(){
@@ -212,6 +208,14 @@ public class SettingsActivity extends AppCompatActivity{
         public void onClick(View view) {
             Intent photoSettings = new Intent(getApplicationContext(), PhotoSettingsActivity.class);
             startActivity(photoSettings);
+        }
+    };
+
+    View.OnClickListener videoResolutionParentListener = new View.OnClickListener(){
+        @Override
+        public void onClick(View view) {
+            Intent videoSettings = new Intent(getApplicationContext(), VideoSettingsActivity.class);
+            startActivity(videoSettings);
         }
     };
 
@@ -282,44 +286,16 @@ public class SettingsActivity extends AppCompatActivity{
             phoneMemBtn.setChecked(true);
             sdCardBtn.setChecked(false);
         }
-        //Update Video Resolution
-        if(settingsPref.contains(Constants.SELECT_VIDEO_RESOLUTION)){
-            if(settingsPref.getString(Constants.SELECT_VIDEO_RESOLUTION, null) != null){
-                if(VERBOSE)Log.d(TAG, "select video resolution exists");
-                String selectVideoRes = settingsPref.getString(Constants.SELECT_VIDEO_RESOLUTION, null);
-                if(selectVideoRes.equalsIgnoreCase(getString(R.string.videoResHigh))){
-                    videoResHigh.setChecked(true);
-                    videoResMedium.setChecked(false);
-                    videoResLow.setChecked(false);
-                }
-                else if(selectVideoRes.equalsIgnoreCase(getString(R.string.videoResMedium))){
-                    videoResHigh.setChecked(false);
-                    videoResMedium.setChecked(true);
-                    videoResLow.setChecked(false);
-                }
-                else{
-                    videoResHigh.setChecked(false);
-                    videoResMedium.setChecked(false);
-                    videoResLow.setChecked(true);
-                }
-            }
-            else{
-                //Set HIGH as default
-                videoResHigh.setChecked(true);
-                videoResMedium.setChecked(false);
-                videoResLow.setChecked(false);
-            }
-        }
-        else{
-            videoResHigh.setChecked(true);
-            videoResMedium.setChecked(false);
-            videoResLow.setChecked(false);
-        }
+        //Video Resolution
+        String selRes = settingsPref.getString(Constants.SELECT_VIDEO_RESOLUTION, null);
+        if(VERBOSE)Log.d(TAG, "SELECTED VIDEO RES = "+selRes);
+        selRes = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString(Constants.SELECT_VIDEO_RESOLUTION, null);
+        if(VERBOSE)Log.d(TAG, "SELECTED VIDEO RES PREF MGR = "+selRes);
         //Photo Resolution
-        String selRes = settingsPref.getString(Constants.SELECT_PHOTO_RESOLUTION, null);
-        Log.d(TAG, "SELECTED PIC RES = "+selRes);
+        selRes = settingsPref.getString(Constants.SELECT_PHOTO_RESOLUTION, null);
+        if(VERBOSE)Log.d(TAG, "SELECTED PIC RES = "+selRes);
         selRes = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString(Constants.SELECT_PHOTO_RESOLUTION, null);
-        Log.d(TAG, "SELECTED PIC RES PREF MGR = "+selRes);
+        if(VERBOSE)Log.d(TAG, "SELECTED PIC RES PREF MGR = "+selRes);
         //Update Phone memory
         if(settingsPref.contains(Constants.PHONE_MEMORY_DISABLE)){
             if(!settingsPref.getBoolean(Constants.PHONE_MEMORY_DISABLE, true)){
@@ -610,30 +586,6 @@ public class SettingsActivity extends AppCompatActivity{
                 });
                 break;
         }
-    }
-
-    public void selectVideoResolution(View view){
-        switch (view.getId()){
-            case R.id.videoResHigh:
-                videoResHigh.setChecked(true);
-                videoResMedium.setChecked(false);
-                videoResLow.setChecked(false);
-                settingsEditor.putString(Constants.SELECT_VIDEO_RESOLUTION, getString(R.string.videoResHigh));
-                break;
-            case R.id.videoResMedium:
-                videoResHigh.setChecked(false);
-                videoResMedium.setChecked(true);
-                videoResLow.setChecked(false);
-                settingsEditor.putString(Constants.SELECT_VIDEO_RESOLUTION, getString(R.string.videoResMedium));
-                break;
-            case R.id.videoResLow:
-                videoResHigh.setChecked(false);
-                videoResMedium.setChecked(false);
-                videoResLow.setChecked(true);
-                settingsEditor.putString(Constants.SELECT_VIDEO_RESOLUTION, getString(R.string.videoResLow));
-                break;
-        }
-        settingsEditor.commit();
     }
 
     public void showSDCardPath(String path){

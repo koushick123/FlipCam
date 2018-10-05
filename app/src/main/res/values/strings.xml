@@ -233,6 +233,7 @@
     <string name="flashOffMode">Off</string>
     <string name="singleMode">Auto</string>
     <string name="videoResolutionHeading">Video Resolutions</string>
+    <string name="videoResolutionSummary">Set the video resolution for rear and front cameras.</string>
     <string name="photoResolutionDialogHeading">Photo Resolutions</string>
     <string name="photoSettings">Photo Settings...</string>
     <string name="videoSettings">Video Settings...</string>
@@ -247,6 +248,7 @@
     <string name="backCamResSummary">Set the photo resolution for the rear camera.</string>
     <string name="frontCamResSummary">Set the photo resolution for the front camera.</string>
     <string name="photoSettingsTitle">Photo Settings</string>
+    <string name="videoSettingsTitle">Video Settings</string>
     <string name="flashSetting">FLASH</string>
 </resources>
 

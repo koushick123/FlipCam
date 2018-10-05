@@ -488,13 +488,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     }
 
     private SharedPreferences obtainSettingsPrefs() {
-        SharedPreferences sharedPreferences;
-        if (videoFrag != null) {
-            sharedPreferences = videoFrag.getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
-        } else {
-            sharedPreferences = photoFrag.getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
-        }
-        return sharedPreferences;
+        return PreferenceManager.getDefaultSharedPreferences(appContext);
     }
 
     /*
@@ -512,79 +506,78 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
 
     @Override
     public void setVideoSize() {
-        SharedPreferences sharedPreferences = obtainSettingsPrefs();
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(appContext);
         if(VERBOSE)Log.d(TAG, "cameraView.isRecord() = "+cameraView.isRecord());
-        String  selectedRes = sharedPreferences.getString(Constants.SELECT_VIDEO_RESOLUTION, null);
-           if (selectedRes!= null) {
-                //Choose highest video dimension supported on this device.
-                if (selectedRes.equalsIgnoreCase(appContext.getResources().getString(R.string.videoResHigh))) {
-
-                    if (sharedPreferences.getString(Constants.VIDEO_DIMENSION_HIGH, null) != null) {
-                        if (VERBOSE) Log.d(TAG, "Read Saved high resolution");
-                        String dimension = sharedPreferences.getString(Constants.VIDEO_DIMENSION_HIGH, null);
-                        StringTokenizer tokenizer = new StringTokenizer(dimension, ":");
-                        targetWidth = tokenizer.nextToken();
-                        targetHeight = tokenizer.nextToken();
-                        targetVideoRatio = Double.parseDouble(targetWidth) / Double.parseDouble(targetHeight);
-                    } else {
-                        chooseHighestResolution();
-                    }
-                    if(VERBOSE)Log.d(TAG, "targetVideoRatio for HIGH = " + targetVideoRatio);
-                    if(!cameraView.isRecord()) {
-                        cameraView.setCamProfileForRecord(sharedPreferences.getInt(Constants.CAMPROFILE_FOR_RECORD_HIGH, 0));
-                    }
-                } else if (selectedRes.equalsIgnoreCase(appContext.getResources().getString(R.string.videoResMedium))) {
-                    if (sharedPreferences.getString(Constants.VIDEO_DIMENSION_MEDIUM, null) != null) {
-                        if (VERBOSE) Log.d(TAG, "Read Saved medium resolution");
-                        String dimension = sharedPreferences.getString(Constants.VIDEO_DIMENSION_MEDIUM, null);
-                        StringTokenizer tokenizer = new StringTokenizer(dimension, ":");
-                        targetWidth = tokenizer.nextToken();
-                        targetHeight = tokenizer.nextToken();
-                        targetVideoRatio = Double.parseDouble(targetWidth) / Double.parseDouble(targetHeight);
-                        if(!cameraView.isRecord()) {
-                            cameraView.setCamProfileForRecord(sharedPreferences.getInt(Constants.CAMPROFILE_FOR_RECORD_MEDIUM, 0));
-                        }
-                    } else {
-                        chooseMediumResolution();
-                    }
-                    if(VERBOSE)Log.d(TAG, "targetVideoRatio for MEDIUM = " + targetVideoRatio);
-                } else {
-                    if (sharedPreferences.getString(Constants.VIDEO_DIMENSION_LOW, null) != null) {
-                        if (VERBOSE) Log.d(TAG, "Read Saved low resolution");
-                        String dimension = sharedPreferences.getString(Constants.VIDEO_DIMENSION_LOW, null);
-                        StringTokenizer tokenizer = new StringTokenizer(dimension, ":");
-                        targetWidth = tokenizer.nextToken();
-                        targetHeight = tokenizer.nextToken();
-                        targetVideoRatio = Double.parseDouble(targetWidth) / Double.parseDouble(targetHeight);
-                        if(!cameraView.isRecord()) {
-                            cameraView.setCamProfileForRecord(sharedPreferences.getInt(Constants.CAMPROFILE_FOR_RECORD_LOW, 0));
-                        }
-                    } else {
-                        chooseLowestResolution();
-                    }
-                    if(VERBOSE)Log.d(TAG, "targetVideoRatio for LOW = " + targetVideoRatio);
-                }
-                if(VERBOSE)Log.d(TAG, "SET " + targetWidth + " X " + targetHeight);
-            } else {
-                if(cameraView.isSwitch()){
-                    if (VERBOSE) Log.d(TAG, "Read Saved high resolution for SEC Camera");
+        String selectedRes = sharedPreferences.getString(Constants.SELECT_VIDEO_RESOLUTION, null);
+        if (selectedRes!= null) {
+            //Choose highest video dimension supported on this device.
+            if (selectedRes.equalsIgnoreCase(appContext.getResources().getString(R.string.videoResHigh))) {
+                if (sharedPreferences.getString(Constants.VIDEO_DIMENSION_HIGH, null) != null) {
+                    if (VERBOSE) Log.d(TAG, "Read Saved high resolution");
                     String dimension = sharedPreferences.getString(Constants.VIDEO_DIMENSION_HIGH, null);
                     StringTokenizer tokenizer = new StringTokenizer(dimension, ":");
                     targetWidth = tokenizer.nextToken();
                     targetHeight = tokenizer.nextToken();
                     targetVideoRatio = Double.parseDouble(targetWidth) / Double.parseDouble(targetHeight);
-                }
-                else {
+                } else {
                     chooseHighestResolution();
                 }
-            }
-            if(!cameraView.isRecord()) {
-                cameraView.setRecordVideoWidth(Integer.parseInt(targetWidth));
-                cameraView.setRecordVideoHeight(Integer.parseInt(targetHeight));
-                if(this.videoFrag != null){
-                    this.videoFrag.setVideoResInfo(targetWidth, targetHeight);
+                if(VERBOSE)Log.d(TAG, "targetVideoRatio for HIGH = " + targetVideoRatio);
+                if(!cameraView.isRecord()) {
+                    cameraView.setCamProfileForRecord(sharedPreferences.getInt(Constants.CAMPROFILE_FOR_RECORD_HIGH, 0));
                 }
+            } else if (selectedRes.equalsIgnoreCase(appContext.getResources().getString(R.string.videoResMedium))) {
+                if (sharedPreferences.getString(Constants.VIDEO_DIMENSION_MEDIUM, null) != null) {
+                    if (VERBOSE) Log.d(TAG, "Read Saved medium resolution");
+                    String dimension = sharedPreferences.getString(Constants.VIDEO_DIMENSION_MEDIUM, null);
+                    StringTokenizer tokenizer = new StringTokenizer(dimension, ":");
+                    targetWidth = tokenizer.nextToken();
+                    targetHeight = tokenizer.nextToken();
+                    targetVideoRatio = Double.parseDouble(targetWidth) / Double.parseDouble(targetHeight);
+                    if(!cameraView.isRecord()) {
+                        cameraView.setCamProfileForRecord(sharedPreferences.getInt(Constants.CAMPROFILE_FOR_RECORD_MEDIUM, 0));
+                    }
+                } else {
+                    chooseMediumResolution();
+                }
+                if(VERBOSE)Log.d(TAG, "targetVideoRatio for MEDIUM = " + targetVideoRatio);
+            } else {
+                if (sharedPreferences.getString(Constants.VIDEO_DIMENSION_LOW, null) != null) {
+                    if (VERBOSE) Log.d(TAG, "Read Saved low resolution");
+                    String dimension = sharedPreferences.getString(Constants.VIDEO_DIMENSION_LOW, null);
+                    StringTokenizer tokenizer = new StringTokenizer(dimension, ":");
+                    targetWidth = tokenizer.nextToken();
+                    targetHeight = tokenizer.nextToken();
+                    targetVideoRatio = Double.parseDouble(targetWidth) / Double.parseDouble(targetHeight);
+                    if(!cameraView.isRecord()) {
+                        cameraView.setCamProfileForRecord(sharedPreferences.getInt(Constants.CAMPROFILE_FOR_RECORD_LOW, 0));
+                    }
+                } else {
+                    chooseLowestResolution();
+                }
+                if(VERBOSE)Log.d(TAG, "targetVideoRatio for LOW = " + targetVideoRatio);
             }
+            if(VERBOSE)Log.d(TAG, "SET " + targetWidth + " X " + targetHeight);
+        } else {
+            if(cameraView.isSwitch()){
+                if (VERBOSE) Log.d(TAG, "Read Saved high resolution for SEC Camera");
+                String dimension = sharedPreferences.getString(Constants.VIDEO_DIMENSION_HIGH, null);
+                StringTokenizer tokenizer = new StringTokenizer(dimension, ":");
+                targetWidth = tokenizer.nextToken();
+                targetHeight = tokenizer.nextToken();
+                targetVideoRatio = Double.parseDouble(targetWidth) / Double.parseDouble(targetHeight);
+            }
+            else {
+                chooseHighestResolution();
+            }
+        }
+        if(!cameraView.isRecord()) {
+            cameraView.setRecordVideoWidth(Integer.parseInt(targetWidth));
+            cameraView.setRecordVideoHeight(Integer.parseInt(targetHeight));
+            if(this.videoFrag != null){
+                this.videoFrag.setVideoResInfo(targetWidth, targetHeight);
+            }
+        }
     }
 
     private void chooseLowestResolution(){
