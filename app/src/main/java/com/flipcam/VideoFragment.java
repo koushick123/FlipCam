@@ -728,7 +728,7 @@ public class VideoFragment extends android.app.Fragment{
     }
 
     public void setVideoResInfo(String width, String height){
-        resInfo.setText(width+" X "+height);
+        resInfo.setText(getResources().getString(R.string.resolutionDisplay, width, height));
     }
 
     public void hideSettingsBarAndIcon()

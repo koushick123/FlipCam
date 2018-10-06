@@ -222,7 +222,6 @@
     <string name="recordedImage">Captured Image</string>
     <string name="recordVideo">Record Video</string>
     <string name="photoMode">Switch to Photo</string>
-    <string name="shareFB">Share to Facebook</string>
     <string name="googleDriveDesc">Google Drive Icon</string>
     <string name="warningSymbol">Warning Message</string>
     <string name="photoSubstitute">Photo substitute</string>
@@ -242,7 +241,7 @@
     <string name="videoResLow">LOW</string>
     <string name="mediaSlideview">Slide View</string>
     <string name="brightnessHeading">BRIGHTNESS</string>
-    <string name="photoResDisplay">%1$s X %2$s</string>
+    <string name="resolutionDisplay">%1$s X %2$s</string>
     <string name="backCamResTitle">Back Camera Resolution</string>
     <string name="frontCamResTitle">Front Camera Resolution</string>
     <string name="backCamResSummary">Set the photo resolution for the rear camera.</string>
@@ -250,5 +249,6 @@
     <string name="photoSettingsTitle">Photo Settings</string>
     <string name="videoSettingsTitle">Video Settings</string>
     <string name="flashSetting">FLASH</string>
+    <string name="memoryConsumedTitle">Memory Consumed</string>
 </resources>
 

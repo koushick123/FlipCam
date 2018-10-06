@@ -22,11 +22,11 @@ public class MyListPreference extends ListPreference {
     @Override
     protected void onBindView(View view) {
         Log.d(TAG, "onBindView = "+view);
-        TextView title = (TextView)view.findViewById(R.id.resolTitle);
+        TextView title = view.findViewById(R.id.resolTitle);
         title.setText(getTitle());
-        TextView summary = (TextView)view.findViewById(R.id.resolSummary);
+        TextView summary = view.findViewById(R.id.resolSummary);
         summary.setText(getSummary());
-        LinearLayout seperator = (LinearLayout)view.findViewById(R.id.separator);
+        LinearLayout seperator = view.findViewById(R.id.separator);
         seperator.setVisibility(enableSeparator ? View.VISIBLE : View.GONE);
         super.onBindView(view);
     }

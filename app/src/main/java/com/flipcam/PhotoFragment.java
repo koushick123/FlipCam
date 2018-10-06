@@ -637,7 +637,7 @@ public class PhotoFragment extends Fragment {
     }
 
     public void setPhotoResInfo(String width, String height){
-        resInfo.setText(width+" X "+height);
+        resInfo.setText(getResources().getString(R.string.resolutionDisplay, width, height));
     }
 
     public boolean isImage(String path)

@@ -29,6 +29,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.os.StatFs;
+import android.preference.PreferenceManager;
 import android.support.v4.content.ContextCompat;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -1476,7 +1477,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                     else if(previousTime == 0){
                         previousTime = System.currentTimeMillis();
                     }
-                    if(videoFragment.getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE).getBoolean(Constants.SHOW_MEMORY_CONSUMED_MSG, false)) {
+                    if(PreferenceManager.getDefaultSharedPreferences(getContext()).getBoolean(Constants.SHOW_MEMORY_CONSUMED_MSG, false)) {
                         mainHandler.sendEmptyMessage(Constants.SHOW_MEMORY_CONSUMED);
                     }
                     if (recordStop == -1) {

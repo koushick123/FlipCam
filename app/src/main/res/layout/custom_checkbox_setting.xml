@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/resolPrefParent"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/settingsBarColor"
+    android:foreground="@drawable/ripple"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/checkboxTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="@dimen/photoResLeftMargin"
+        android:layout_marginStart="@dimen/photoResLeftMargin"
+        android:layout_marginTop="@dimen/photoResSummaryTopBottomMargin"
+        android:textColor="@color/turqoise"
+        android:textSize="@dimen/photoResTitleSize"
+        android:textStyle="bold" />
+
+    <CheckBox
+        android:id="@+id/checkboxSummary"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/photoResSummaryTopBottomMargin"
+        android:layout_marginEnd="@dimen/photoResLeftMargin"
+        android:layout_marginStart="5dp"
+        android:layout_marginTop="@dimen/photoResSummaryTopBottomMargin"
+        android:buttonTint="@color/turqoise"
+        android:paddingLeft="15dp"
+        android:text="Checkbox"
+        android:textColor="@color/turqoise" />
+
+    <LinearLayout
+        android:id="@+id/separator"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/turqoise"
+        android:orientation="horizontal"
+        android:visibility="gone"></LinearLayout>
+
+</LinearLayout>

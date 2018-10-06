@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.os.Bundle;
+import android.preference.CheckBoxPreference;
 import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceFragment;
@@ -80,6 +81,14 @@ public class VideoSettingsActivity extends AppCompatActivity {
                     return true;
                 }
             });
+            final CheckBoxPreference memoryConsumedPref = new MemoryConsumedPreference(getActivity(), true);
+            memoryConsumedPref.setTitle(resources.getString(R.string.showMemConsumed));
+            memoryConsumedPref.setSummary(resources.getString(R.string.showMemConsumedMsg));
+            memoryConsumedPref.setKey(Constants.SHOW_MEMORY_CONSUMED_MSG);
+            memoryConsumedPref.setLayoutResource(R.layout.custom_checkbox_setting);
+            boolean memCon = PreferenceManager.getDefaultSharedPreferences(getActivity()).getBoolean(Constants.SHOW_MEMORY_CONSUMED_MSG, false);
+            if(VERBOSE)Log.d(TAG, "MEMORY CONSUMED PREF MGR = "+memCon);
+            getPreferenceScreen().addPreference(memoryConsumedPref);
         }
     }
 }

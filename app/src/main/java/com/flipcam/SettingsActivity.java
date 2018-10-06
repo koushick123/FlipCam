@@ -13,7 +13,6 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.drawable.RippleDrawable;
 import android.media.MediaMetadataRetriever;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -25,7 +24,6 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
@@ -128,7 +126,6 @@ public class SettingsActivity extends AppCompatActivity{
     DbxClientV2 dbxClientV2;
     DbxRequestConfig dbxRequestConfig;
     boolean goToDropbox = false;
-    CheckBox showMemoryConsumed;
     View warningMsgRoot;
     Dialog warningMsg;
     Button okButton;
@@ -139,7 +136,6 @@ public class SettingsActivity extends AppCompatActivity{
     boolean VERBOSE = true;
     LinearLayout photoResolutionParent;
     LinearLayout videoSettingParent;
-    int[] photoResIds;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -158,7 +154,6 @@ public class SettingsActivity extends AppCompatActivity{
         switchOnDropbox = (CheckBox) findViewById(R.id.switchOnDropbox);
         switchOnDrive = (CheckBox) findViewById(R.id.switchOnDrive);
         sdcardlayout = (LinearLayout)findViewById(R.id.sdcardlayout);
-        showMemoryConsumed = (CheckBox)findViewById(R.id.showMemoryConsumed);
         photoResolutionParent = (LinearLayout)findViewById(R.id.photoResolutionParent);
         videoSettingParent = (LinearLayout)findViewById(R.id.videoSettingParent);
         thresholdText.setText(getString(R.string.memoryThresholdLimit, getResources().getInteger(R.integer.minimumMemoryWarning) + "MB"));
@@ -292,6 +287,9 @@ public class SettingsActivity extends AppCompatActivity{
         //Photo Resolution
         selRes = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString(Constants.SELECT_PHOTO_RESOLUTION, null);
         if(VERBOSE)Log.d(TAG, "SELECTED PIC RES PREF MGR = "+selRes);
+        //Memory consumed
+        boolean memCon = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getBoolean(Constants.SHOW_MEMORY_CONSUMED_MSG, false);
+        if(VERBOSE)Log.d(TAG, "MEMORY CONSUMED PREF MGR = "+memCon);
         //Update Phone memory
         if(settingsPref.contains(Constants.PHONE_MEMORY_DISABLE)){
             if(!settingsPref.getBoolean(Constants.PHONE_MEMORY_DISABLE, true)){
@@ -331,73 +329,23 @@ public class SettingsActivity extends AppCompatActivity{
         else{
             switchOnDropbox.setChecked(false);
         }
-        //Show Memory Consumed
-        if(settingsPref.contains(Constants.SHOW_MEMORY_CONSUMED_MSG)){
-            if(settingsPref.getBoolean(Constants.SHOW_MEMORY_CONSUMED_MSG, false)){
-                showMemoryConsumed.setChecked(true);
-            }
-            else{
-                showMemoryConsumed.setChecked(false);
-            }
-        }
-        else{
-            showMemoryConsumed.setChecked(false);
-        }
     }
 
-    RippleDrawable rippleDrawable;
-    View.OnTouchListener photoResOnTouchListener = new View.OnTouchListener(){
-        @Override
-        public boolean onTouch(View view, MotionEvent motionEvent) {
-            RadioButton radioButton = (RadioButton) findViewById(view.getId());
-            if(VERBOSE)Log.d(TAG, "motionEvent.getAction() = "+motionEvent.getAction());
-            switch(motionEvent.getAction()) {
-                case MotionEvent.ACTION_DOWN:
-                    if(VERBOSE)Log.d(TAG, "ACTION_DOWN");
-                    radioButton.setBackgroundColor(getResources().getColor(R.color.rippleColor));
-                    break;
-                default:
-                    if(VERBOSE)Log.d(TAG, "Default");
-                    radioButton.setBackgroundColor(getResources().getColor(R.color.settingsBarColor));
-                    break;
-            }
-            return false;
-        }
-    };
-    View.OnClickListener photoResListener = new View.OnClickListener() {
-        @Override
-        public void onClick(View view) {
-            if(VERBOSE)Log.d(TAG, "view id = "+view.getId());
-            for(int ind : photoResIds){
-                if(ind != view.getId()){
-                    if(VERBOSE)Log.d(TAG, "view id SET to FALSE = "+ind);
-                    RadioButton radioButton = (RadioButton)findViewById(ind);
-                    radioButton.setChecked(false);
-                }
-            }
-            RadioButton selRadioButton = (RadioButton)view;
-            if(VERBOSE)Log.d(TAG, "SEL RES = "+selRadioButton.getText().toString());
-            SharedPreferences.Editor editor = settingsPref.edit();
-            editor.putString(Constants.SELECT_PHOTO_RESOLUTION, selRadioButton.getText().toString());
-            editor.commit();
-        }
-    };
-
     public void resetAllValues(View view){
-        LinearLayout shareMediaParent = (LinearLayout)shareMediaRoot.findViewById(R.id.shareMediaParent);
+        LinearLayout shareMediaParent = shareMediaRoot.findViewById(R.id.shareMediaParent);
         shareMediaParent.setBackgroundColor(getResources().getColor(R.color.backColorSettingMsg));
-        TextView shareTitle = (TextView)shareMediaRoot.findViewById(R.id.shareTitle);
+        TextView shareTitle = shareMediaRoot.findViewById(R.id.shareTitle);
         shareTitle.setText(getString(R.string.resetTitle));
-        TextView shareMsg = (TextView)shareMediaRoot.findViewById(R.id.shareText);
+        TextView shareMsg = shareMediaRoot.findViewById(R.id.shareText);
         shareMsg.setText(getString(R.string.resetMsg));
-        Button okBtn = (Button)shareMediaRoot.findViewById(R.id.okToShare);
+        Button okBtn = shareMediaRoot.findViewById(R.id.okToShare);
         okBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 okReset();
             }
         });
-        Button cancelBtn = (Button)shareMediaRoot.findViewById(R.id.cancelToShare);
+        Button cancelBtn = shareMediaRoot.findViewById(R.id.cancelToShare);
         cancelBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -417,8 +365,6 @@ public class SettingsActivity extends AppCompatActivity{
         //Reset auto upload
         settingsEditor.putBoolean(Constants.SAVE_TO_GOOGLE_DRIVE, false);
         settingsEditor.putBoolean(Constants.SAVE_TO_DROPBOX, false);
-        //Reset memory consumed
-        settingsEditor.putBoolean(Constants.SHOW_MEMORY_CONSUMED_MSG, false);
         settingsEditor.commit();
         updateSettingsValues();
         shareMedia.dismiss();
@@ -488,16 +434,6 @@ public class SettingsActivity extends AppCompatActivity{
         }
         if(VERBOSE)Log.d(TAG, "Update FC Widget");
         appWidgetManager.updateAppWidget(appWidgetId, remoteViews);
-    }
-
-    public void checkShowMemoryConsumed(View view){
-        if(showMemoryConsumed.isChecked()){
-            settingsEditor.putBoolean(Constants.SHOW_MEMORY_CONSUMED_MSG, true);
-        }
-        else{
-            settingsEditor.putBoolean(Constants.SHOW_MEMORY_CONSUMED_MSG, false);
-        }
-        settingsEditor.commit();
     }
 
     public String doesSDCardExist(){
