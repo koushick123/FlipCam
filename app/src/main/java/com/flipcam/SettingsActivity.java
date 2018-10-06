@@ -287,13 +287,9 @@ public class SettingsActivity extends AppCompatActivity{
             sdCardBtn.setChecked(false);
         }
         //Video Resolution
-        String selRes = settingsPref.getString(Constants.SELECT_VIDEO_RESOLUTION, null);
-        if(VERBOSE)Log.d(TAG, "SELECTED VIDEO RES = "+selRes);
-        selRes = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString(Constants.SELECT_VIDEO_RESOLUTION, null);
+        String selRes = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString(Constants.SELECT_VIDEO_RESOLUTION, null);
         if(VERBOSE)Log.d(TAG, "SELECTED VIDEO RES PREF MGR = "+selRes);
         //Photo Resolution
-        selRes = settingsPref.getString(Constants.SELECT_PHOTO_RESOLUTION, null);
-        if(VERBOSE)Log.d(TAG, "SELECTED PIC RES = "+selRes);
         selRes = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString(Constants.SELECT_PHOTO_RESOLUTION, null);
         if(VERBOSE)Log.d(TAG, "SELECTED PIC RES PREF MGR = "+selRes);
         //Update Phone memory

@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceFragment;
+import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -57,7 +58,7 @@ public class PhotoSettingsActivity extends AppCompatActivity {
             Log.d(TAG, "for backCamera? = "+backCamera);
             ListPreference listPreference;
             Set<String> entries;
-            SharedPreferences settingsPrefs = getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
+            SharedPreferences settingsPrefs = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext());
             if(backCamera) {
                 listPreference = new MyListPreference(getActivity(), true);
                 entries = settingsPrefs.getStringSet(Constants.SUPPORT_PHOTO_RESOLUTIONS, null);

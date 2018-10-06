@@ -454,27 +454,12 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
             }
         }
         SharedPreferences sharedPreferences = obtainSettingsPrefs();
-        SharedPreferences fromPrefMgr = PreferenceManager.getDefaultSharedPreferences(appContext);
         String photoDimen;
         if(cameraView.isBackCamera()){
-            if(fromPrefMgr.getString(Constants.SELECT_PHOTO_RESOLUTION, null) == null) {
-                if(VERBOSE)Log.d(TAG, "Obtain from Act shared prefs");
-                photoDimen = sharedPreferences.getString(Constants.SELECT_PHOTO_RESOLUTION, null);
-            }
-            else{
-                if(VERBOSE)Log.d(TAG, "Obtain from PreferenceManager");
-                photoDimen = fromPrefMgr.getString(Constants.SELECT_PHOTO_RESOLUTION, null);
-            }
+            photoDimen = sharedPreferences.getString(Constants.SELECT_PHOTO_RESOLUTION, null);
         }
         else{
-            if(fromPrefMgr.getString(Constants.SELECT_PHOTO_RESOLUTION_FRONT, null) == null) {
-                if(VERBOSE)Log.d(TAG, "Obtain from Act shared prefs = "+cameraView.isBackCamera());
-                photoDimen = sharedPreferences.getString(Constants.SELECT_PHOTO_RESOLUTION_FRONT, null);
-            }
-            else{
-                if(VERBOSE)Log.d(TAG, "Obtain from PreferenceManager = "+cameraView.isBackCamera());
-                photoDimen = fromPrefMgr.getString(Constants.SELECT_PHOTO_RESOLUTION_FRONT, null);
-            }
+            photoDimen = sharedPreferences.getString(Constants.SELECT_PHOTO_RESOLUTION_FRONT, null);
         }
         String[] dimensions = photoDimen.split(" X ");
         if(VERBOSE)Log.d(TAG, "SET PIC SIZE = "+photoDimen);
@@ -506,7 +491,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
 
     @Override
     public void setVideoSize() {
-        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(appContext);
+        SharedPreferences sharedPreferences = obtainSettingsPrefs();
         if(VERBOSE)Log.d(TAG, "cameraView.isRecord() = "+cameraView.isRecord());
         String selectedRes = sharedPreferences.getString(Constants.SELECT_VIDEO_RESOLUTION, null);
         if (selectedRes!= null) {
@@ -599,17 +584,28 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     private void chooseHighestResolution() {
 
         SharedPreferences sharedPreferences = obtainSettingsPrefs();
-        CamcorderProfile highProfile = CamcorderProfile.get(CamcorderProfile.QUALITY_HIGH);
-        cameraView.setCamProfileForRecord(CamcorderProfile.QUALITY_HIGH);
-        targetWidth = String.valueOf(highProfile.videoFrameWidth);
-        targetHeight = String.valueOf(highProfile.videoFrameHeight);
-        targetVideoRatio = (double) highProfile.videoFrameWidth / (double) highProfile.videoFrameHeight;
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        if (VERBOSE)
-            Log.d(TAG, "Selected HIGH RESOLUTION video width = " + targetWidth + " X " + targetHeight);
-        editor.putString(Constants.VIDEO_DIMENSION_HIGH, targetWidth + ":" + targetHeight);
-        editor.putInt(Constants.CAMPROFILE_FOR_RECORD_HIGH, CamcorderProfile.QUALITY_HIGH);
-        editor.commit();
+        if(sharedPreferences.getString(Constants.VIDEO_DIMENSION_HIGH, null) == null) {
+            CamcorderProfile highProfile = CamcorderProfile.get(CamcorderProfile.QUALITY_HIGH);
+            cameraView.setCamProfileForRecord(CamcorderProfile.QUALITY_HIGH);
+            targetWidth = String.valueOf(highProfile.videoFrameWidth);
+            targetHeight = String.valueOf(highProfile.videoFrameHeight);
+            targetVideoRatio = (double) highProfile.videoFrameWidth / (double) highProfile.videoFrameHeight;
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            if (VERBOSE)
+                Log.d(TAG, "Selected HIGH RESOLUTION video width = " + targetWidth + " X " + targetHeight);
+            editor.putString(Constants.VIDEO_DIMENSION_HIGH, targetWidth + ":" + targetHeight);
+            editor.putInt(Constants.CAMPROFILE_FOR_RECORD_HIGH, CamcorderProfile.QUALITY_HIGH);
+            editor.putString(Constants.SELECT_VIDEO_RESOLUTION, resources.getString(R.string.videoResHigh));
+            editor.commit();
+        }
+        else{
+            if (VERBOSE) Log.d(TAG, "ALREADY Selected HIGH RESOLUTION video width = " + targetWidth + " X " + targetHeight);
+            CamcorderProfile highProfile = CamcorderProfile.get(sharedPreferences.getInt(Constants.CAMPROFILE_FOR_RECORD_HIGH, 0));
+            cameraView.setCamProfileForRecord(CamcorderProfile.QUALITY_HIGH);
+            targetWidth = String.valueOf(highProfile.videoFrameWidth);
+            targetHeight = String.valueOf(highProfile.videoFrameHeight);
+            targetVideoRatio = (double) highProfile.videoFrameWidth / (double) highProfile.videoFrameHeight;
+        }
     }
 
     private void chooseMediumResolution(){
