@@ -89,18 +89,19 @@ public class PhotoSettingsActivity extends AppCompatActivity {
             listPreference.setEntryValues(resEntries);
             listPreference.setPersistent(true);
             if(backCamera) {
+                listPreference.setDialogTitle(getResources().getString(R.string.photoResolutionDialogHeadingRear));
                 listPreference.setTitle(getResources().getString(R.string.backCamResTitle));
                 listPreference.setSummary(getResources().getString(R.string.backCamResSummary));
                 listPreference.setKey(Constants.SELECT_PHOTO_RESOLUTION);
                 listPreference.setValue(settingsPrefs.getString(Constants.SELECT_PHOTO_RESOLUTION, null));
             }
             else{
+                listPreference.setDialogTitle(getResources().getString(R.string.photoResolutionDialogHeadingFront));
                 listPreference.setTitle(getResources().getString(R.string.frontCamResTitle));
                 listPreference.setSummary(getResources().getString(R.string.frontCamResSummary));
                 listPreference.setKey(Constants.SELECT_PHOTO_RESOLUTION_FRONT);
                 listPreference.setValue(settingsPrefs.getString(Constants.SELECT_PHOTO_RESOLUTION_FRONT, null));
             }
-            listPreference.setDialogTitle(getResources().getString(R.string.photoResolutionDialogHeading));
             listPreference.setLayoutResource(R.layout.custom_photo_setting);
             getPreferenceScreen().addPreference(listPreference);
             listPreference.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {

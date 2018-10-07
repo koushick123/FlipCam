@@ -233,7 +233,8 @@
     <string name="singleMode">Auto</string>
     <string name="videoResolutionHeading">Video Resolutions</string>
     <string name="videoResolutionSummary">Set the video resolution for rear and front cameras.</string>
-    <string name="photoResolutionDialogHeading">Photo Resolutions</string>
+    <string name="photoResolutionDialogHeadingRear">Rear Camera Photo Resolutions</string>
+    <string name="photoResolutionDialogHeadingFront">Front Camera Photo Resolutions</string>
     <string name="photoSettings">Photo Settings...</string>
     <string name="videoSettings">Video Settings...</string>
     <string name="videoResHigh">HIGH</string>

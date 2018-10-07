@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -135,9 +136,9 @@ public class PermissionActivity extends AppCompatActivity {
                 openCameraFragment();
             } else if(!showPermission){
                 if(VERBOSE)Log.d(TAG, "Permissions not obtained. Obtain explicitly");
-                //Remove SELECT_VIDEO_RESOLUTION from shared preferences. This is necessary, since for some devices it is pre-selected as a medium resolution
-                //leading to incorrect preview size.
-                SharedPreferences videoPref = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
+                //Remove shared preferences. This is necessary, since for some devices it is pre-selected
+                //leading to errors.
+                SharedPreferences videoPref = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
                 String videoResPref = videoPref.getString(Constants.SELECT_VIDEO_RESOLUTION, null);
                 if(VERBOSE)Log.d(TAG, "videoResPref = "+videoResPref);
                 SharedPreferences.Editor editor = videoPref.edit();

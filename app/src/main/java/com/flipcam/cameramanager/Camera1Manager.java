@@ -49,7 +49,7 @@ Camera1.
  */
 public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeListener, Camera.ShutterCallback, Camera.PictureCallback, Camera.PreviewCallback {
 
-    private Camera mCamera;
+    private Camera mCamera = null;
     public final String TAG = "Camera1Manager";
     private static int VIDEO_WIDTH = 640;  // default dimensions.
     private static int VIDEO_HEIGHT = 480;
@@ -124,14 +124,14 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
             supportedPics = sharedPreferences.getStringSet(Constants.SUPPORT_PHOTO_RESOLUTIONS_FRONT, null);
             Log.d(TAG, "SupportedPics FRONT = " + supportedPics);
         }
-        fetchSupportedPicSizesForCamera(supportedPics, sharedPreferences, cameraView.isBackCamera());
+        fetchSupportedPicSizesForCamera(supportedPics, sharedPreferences, cameraView.isBackCamera(), mCamera);
     }
 
-    private void fetchSupportedPicSizesForCamera(Set<String> supportedPics, SharedPreferences sharedPreferences, boolean backCam){
+    private void fetchSupportedPicSizesForCamera(Set<String> supportedPics, SharedPreferences sharedPreferences, boolean backCam, Camera selectedCam){
         if (supportedPics == null) {
             SharedPreferences.Editor editor = sharedPreferences.edit();
             supportedPics = new HashSet<>();
-            List<Camera.Size> picsSizes = mCamera.getParameters().getSupportedPictureSizes();
+            List<Camera.Size> picsSizes = selectedCam.getParameters().getSupportedPictureSizes();
             for (Camera.Size size : picsSizes) {
                 Log.d(TAG, "Adding " + size.width + " , " + size.height);
                 supportedPics.add(size.width + " X " + size.height);
@@ -167,22 +167,52 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
 
     @Override
     public void openCamera(boolean backCamera, Context context) {
-        for (int i = 0; i < Camera.getNumberOfCameras(); i++) {
-            Camera.getCameraInfo(i, info);
-            if (backCamera) {
+        appContext = context;
+        SharedPreferences sharedPreferences = obtainSettingsPrefs();
+        String frontCamResols = sharedPreferences.getString(Constants.SELECT_PHOTO_RESOLUTION_FRONT, null);
+        if(frontCamResols!= null) {
+            for (int i = 0; i < Camera.getNumberOfCameras(); i++) {
+                Camera.getCameraInfo(i, info);
+                if (backCamera) {
+                    if (info.facing == Camera.CameraInfo.CAMERA_FACING_BACK) {
+                        mCamera = Camera.open(i);
+                        if (VERBOSE) Log.d(TAG, "Open back facing camera");
+                        cameraId = i;
+                        break;
+                    }
+                } else {
+                    if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+                        mCamera = Camera.open(i);
+                        if (VERBOSE) Log.d(TAG, "Open front facing camera");
+                        cameraId = i;
+                        break;
+                    }
+                }
+            }
+        }
+        else{
+            for (int i = 0; i < Camera.getNumberOfCameras(); i++) {
+                Camera.getCameraInfo(i, info);
                 if (info.facing == Camera.CameraInfo.CAMERA_FACING_BACK) {
-                    mCamera = Camera.open(i);
-                    if (VERBOSE) Log.d(TAG, "Open back facing camera");
+                    if (VERBOSE) Log.d(TAG, "Open back facing camera FIRST TIME");
                     cameraId = i;
-                    break;
                 }
-            } else {
                 if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
-                    mCamera = Camera.open(i);
-                    if (VERBOSE) Log.d(TAG, "Open front facing camera");
-                    cameraId = i;
-                    break;
+                    if (VERBOSE) Log.d(TAG, "Open front facing camera FIRST TIME");
+                    //This is for front camera, when the app is opening the camera for the very first time.
+                    Camera frontCam = Camera.open(i);
+                    fetchSupportedPicSizesForCamera(null, sharedPreferences, false, frontCam);
+                    frontCam.release();
+                    frontCam = null;
+                    //Now, open the back facing camera.
+                    if(cameraId != -1) {
+                        mCamera = Camera.open(cameraId);
+                        break;
+                    }
                 }
+            }
+            if(mCamera == null){
+                mCamera = Camera.open(cameraId);
             }
         }
         if (cameraId != -1) {
@@ -196,7 +226,6 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         display = windowManager.getDefaultDisplay();
         display.getSize(screenSize);
         screenWidth = screenSize.x;
-        appContext = context;
         resources = appContext.getResources();
     }
 

@@ -1043,7 +1043,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             camera1.setVideoFragmentInstance(null);
         }
         if(!camera1.isCameraReady()) {
-            if(VERBOSE)Log.d(TAG, "camera READY");
+            if(VERBOSE)Log.d(TAG, "camera NOT READY. Must Open");
             measuredWidth = width;
             measuredHeight = height;
             frameCount=0;
