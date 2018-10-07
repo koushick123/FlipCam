@@ -21,6 +21,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.StatFs;
+import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.util.Log;
 import android.view.Gravity;
@@ -796,7 +797,7 @@ public class VideoFragment extends android.app.Fragment{
         memoryConsumedParentLayout.addView(memoryConsumed);
         settingsBar.addView(memoryConsumedParentLayout);
         cameraView.setMemoryConsumedText(memoryConsumed);
-        if(sharedPreferences.getBoolean(Constants.SHOW_MEMORY_CONSUMED_MSG, false)) {
+        if(PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getBoolean(Constants.SHOW_MEMORY_CONSUMED_MSG, false)) {
             memoryConsumed.setVisibility(View.VISIBLE);
         }
         else{
