@@ -16,6 +16,7 @@ import android.view.ViewGroup;
 
 import com.flipcam.constants.Constants;
 import com.flipcam.model.Dimension;
+import com.flipcam.preferences.MyListPreference;
 
 import java.util.Iterator;
 import java.util.Set;

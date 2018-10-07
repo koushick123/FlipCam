@@ -17,6 +17,8 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.flipcam.constants.Constants;
+import com.flipcam.preferences.MemoryConsumedPreference;
+import com.flipcam.preferences.MyListPreference;
 
 import java.util.Iterator;
 import java.util.LinkedHashSet;

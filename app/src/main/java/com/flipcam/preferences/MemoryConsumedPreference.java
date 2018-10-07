@@ -1,4 +1,4 @@
-package com.flipcam;
+package com.flipcam.preferences;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -10,6 +10,7 @@ import android.widget.CheckBox;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.flipcam.R;
 import com.flipcam.constants.Constants;
 
 public class MemoryConsumedPreference extends CheckBoxPreference {

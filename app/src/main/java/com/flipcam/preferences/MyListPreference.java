@@ -1,4 +1,4 @@
-package com.flipcam;
+package com.flipcam.preferences;
 
 import android.content.Context;
 import android.preference.ListPreference;
@@ -6,6 +6,8 @@ import android.util.Log;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+
+import com.flipcam.R;
 
 public class MyListPreference extends ListPreference {
 
