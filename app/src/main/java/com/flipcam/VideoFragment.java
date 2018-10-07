@@ -35,7 +35,6 @@ import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.RemoteViews;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -52,8 +51,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Iterator;
 
 import static android.widget.Toast.makeText;
 import static com.facebook.FacebookSdk.getApplicationContext;
@@ -374,7 +371,6 @@ public class VideoFragment extends android.app.Fragment{
         warningMsg.setContentView(warningMsgRoot);
         warningMsg.setCancelable(false);
         warningMsg.show();
-        updateWidget();
         getLatestFileIfExists();
     }
 
@@ -560,7 +556,6 @@ public class VideoFragment extends android.app.Fragment{
             thresholdDialog.setContentView(thresholdExceededRoot);
             thresholdDialog.setCancelable(false);
             thresholdDialog.show();
-            updateWidget();
             addMediaToDB();
         }
         else {
@@ -609,18 +604,6 @@ public class VideoFragment extends android.app.Fragment{
             dropboxUploadIntent.putExtra("uploadFile", cameraView.getMediaPath());
             if(VERBOSE)Log.d(TAG, "Uploading file = "+cameraView.getMediaPath());
             getActivity().startService(dropboxUploadIntent);
-        }
-    }
-
-    public void updateWidget(){
-        HashSet<String> widgetIds = (HashSet)sharedPreferences.getStringSet(Constants.WIDGET_IDS, null);
-        if(widgetIds != null && widgetIds.size() > 0){
-            Iterator<String> iterator = widgetIds.iterator();
-            while(iterator.hasNext()){
-                String widgetId = iterator.next();
-                if(VERBOSE)Log.d(TAG, "widgetIds = "+widgetId);
-                updateAppWidget(Integer.parseInt(widgetId));
-            }
         }
     }
 
@@ -956,7 +939,6 @@ public class VideoFragment extends android.app.Fragment{
         showRecordSaved();
         addMediaToDB();
         if(!isDetached) {
-            updateWidget();
             microThumbnail.setVisibility(View.VISIBLE);
             thumbnail.setImageBitmap(firstFrame);
             thumbnail.setClickable(true);
@@ -1087,58 +1069,6 @@ public class VideoFragment extends android.app.Fragment{
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putBoolean("startCamera",true);
         editor.commit();
-    }
-
-    public void updateAppWidget(int appWidgetId) {
-        RemoteViews remoteViews = new RemoteViews(getActivity().getPackageName(), R.layout.flipcam_widget);
-        FileMedia[] media = MediaUtil.getMediaList(getActivity());
-        if (media != null && media.length > 0) {
-            String filepath = media[0].getPath();
-            if(VERBOSE)Log.d(TAG, "FilePath = " + filepath);
-            if (filepath.endsWith(getResources().getString(R.string.IMG_EXT))
-                    || filepath.endsWith(getResources().getString(R.string.ANOTHER_IMG_EXT))) {
-                Bitmap latestImage = BitmapFactory.decodeFile(filepath);
-                latestImage = Bitmap.createScaledBitmap(latestImage, (int) getResources().getDimension(R.dimen.thumbnailWidth),
-                        (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
-                if(VERBOSE)Log.d(TAG, "Update Photo thumbnail");
-                remoteViews.setViewVisibility(R.id.playCircleWidget, View.INVISIBLE);
-                remoteViews.setImageViewBitmap(R.id.imageWidget, latestImage);
-                remoteViews.setTextViewText(R.id.widgetMsg, getResources().getString(R.string.widgetMediaMsg));
-            } else {
-                Bitmap vid = null;
-                MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
-                try {
-                    mediaMetadataRetriever.setDataSource(filepath);
-                    vid = mediaMetadataRetriever.getFrameAtTime(Constants.FIRST_SEC_MICRO);
-                } catch (RuntimeException runtime) {
-                    File badFile = new File(filepath);
-                    badFile.delete();
-                    media = MediaUtil.getMediaList(getActivity());
-                    if (media != null && media.length > 0) {
-                        mediaMetadataRetriever.setDataSource(filepath);
-                        vid = mediaMetadataRetriever.getFrameAtTime(Constants.FIRST_SEC_MICRO);
-                    } else {
-                        remoteViews.setImageViewResource(R.id.imageWidget, R.drawable.placeholder);
-                        remoteViews.setViewVisibility(R.id.playCircleWidget, View.INVISIBLE);
-                        remoteViews.setTextViewText(R.id.widgetMsg, getResources().getString(R.string.widgetNoMedia));
-                    }
-                }
-                if (vid != null) {
-                    vid = Bitmap.createScaledBitmap(vid, (int) getResources().getDimension(R.dimen.thumbnailWidth),
-                            (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
-                    if(VERBOSE)Log.d(TAG, "Update Video thumbnail");
-                    remoteViews.setViewVisibility(R.id.playCircleWidget, View.VISIBLE);
-                    remoteViews.setImageViewBitmap(R.id.imageWidget, vid);
-                    remoteViews.setTextViewText(R.id.widgetMsg, getResources().getString(R.string.widgetMediaMsg));
-                }
-            }
-        } else {
-            remoteViews.setImageViewResource(R.id.imageWidget, R.drawable.placeholder);
-            remoteViews.setViewVisibility(R.id.playCircleWidget, View.INVISIBLE);
-            remoteViews.setTextViewText(R.id.widgetMsg, getResources().getString(R.string.widgetNoMedia));
-        }
-        if(VERBOSE)Log.d(TAG, "Update FC Widget");
-        appWidgetManager.updateAppWidget(appWidgetId, remoteViews);
     }
 
     @Override

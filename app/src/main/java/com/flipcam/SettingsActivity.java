@@ -11,9 +11,6 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.media.MediaMetadataRetriever;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
@@ -32,7 +29,6 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
-import android.widget.RemoteViews;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -44,8 +40,6 @@ import com.dropbox.core.v2.files.CreateFolderResult;
 import com.dropbox.core.v2.files.DbxUserFilesRequests;
 import com.dropbox.core.v2.files.GetMetadataErrorException;
 import com.flipcam.constants.Constants;
-import com.flipcam.media.FileMedia;
-import com.flipcam.util.MediaUtil;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
@@ -70,7 +64,6 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 
 import java.io.File;
-import java.util.HashSet;
 import java.util.Iterator;
 
 public class SettingsActivity extends AppCompatActivity{
@@ -374,68 +367,6 @@ public class SettingsActivity extends AppCompatActivity{
         shareMedia.dismiss();
     }
 
-    public void updateWidget(){
-        HashSet<String> widgetIds = (HashSet)settingsPref.getStringSet(Constants.WIDGET_IDS, null);
-        if(widgetIds != null && widgetIds.size() > 0){
-            Iterator<String> iterator = widgetIds.iterator();
-            while(iterator.hasNext()){
-                String widgetId = iterator.next();
-                if(VERBOSE)Log.d(TAG, "widgetIds = "+widgetId);
-                updateAppWidget(Integer.parseInt(widgetId));
-            }
-        }
-    }
-
-    public void updateAppWidget(int appWidgetId) {
-        RemoteViews remoteViews = new RemoteViews(getPackageName(), R.layout.flipcam_widget);
-        FileMedia[] media = MediaUtil.getMediaList(this);
-        if (media != null && media.length > 0) {
-            String filepath = media[0].getPath();
-            if(VERBOSE)Log.d(TAG, "FilePath = " + filepath);
-            if (filepath.endsWith(getString(R.string.IMG_EXT))
-                    || filepath.endsWith(getString(R.string.ANOTHER_IMG_EXT))) {
-                Bitmap latestImage = BitmapFactory.decodeFile(filepath);
-                latestImage = Bitmap.createScaledBitmap(latestImage, (int) getResources().getDimension(R.dimen.thumbnailWidth),
-                        (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
-                if(VERBOSE)Log.d(TAG, "Update Photo thumbnail");
-                remoteViews.setViewVisibility(R.id.playCircleWidget, View.INVISIBLE);
-                remoteViews.setImageViewBitmap(R.id.imageWidget, latestImage);
-                remoteViews.setTextViewText(R.id.widgetMsg, getString(R.string.widgetMediaMsg));
-            } else {
-                Bitmap vid = null;
-                MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
-                try {
-                    mediaMetadataRetriever.setDataSource(filepath);
-                    vid = mediaMetadataRetriever.getFrameAtTime(Constants.FIRST_SEC_MICRO);
-                } catch (RuntimeException runtime) {
-                    File badFile = new File(filepath);
-                    badFile.delete();
-                    media = MediaUtil.getMediaList(this);
-                    if (media != null && media.length > 0) {
-                        mediaMetadataRetriever.setDataSource(filepath);
-                        vid = mediaMetadataRetriever.getFrameAtTime(Constants.FIRST_SEC_MICRO);
-                    } else {
-                        remoteViews.setImageViewResource(R.id.imageWidget, R.drawable.placeholder);
-                        remoteViews.setTextViewText(R.id.widgetMsg, getString(R.string.widgetNoMedia));
-                    }
-                }
-                if (vid != null) {
-                    vid = Bitmap.createScaledBitmap(vid, (int) getResources().getDimension(R.dimen.thumbnailWidth),
-                            (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
-                    if(VERBOSE)Log.d(TAG, "Update Video thumbnail");
-                    remoteViews.setViewVisibility(R.id.playCircleWidget, View.VISIBLE);
-                    remoteViews.setImageViewBitmap(R.id.imageWidget, vid);
-                    remoteViews.setTextViewText(R.id.widgetMsg, getString(R.string.widgetMediaMsg));
-                }
-            }
-        } else {
-            remoteViews.setImageViewResource(R.id.imageWidget, R.drawable.placeholder);
-            remoteViews.setTextViewText(R.id.widgetMsg, getString(R.string.widgetNoMedia));
-        }
-        if(VERBOSE)Log.d(TAG, "Update FC Widget");
-        appWidgetManager.updateAppWidget(appWidgetId, remoteViews);
-    }
-
     public String doesSDCardExist(){
         File[] mediaDirs = getExternalMediaDirs();
         if(mediaDirs != null) {
@@ -463,7 +394,6 @@ public class SettingsActivity extends AppCompatActivity{
                 if(VERBOSE)Log.d(TAG,"Save in phone memory");
                 settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM,true);
                 settingsEditor.commit();
-                updateWidget();
                 phoneMemBtn.setChecked(true);
                 sdCardBtn.setChecked(false);
                 hideSDCardPath();
@@ -494,7 +424,6 @@ public class SettingsActivity extends AppCompatActivity{
                     settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, false);
                     settingsEditor.putString(Constants.SD_CARD_PATH, sdCardPath);
                     settingsEditor.commit();
-                    updateWidget();
                     showSDCardPath(sdCardPath);
                     LinearLayout warningParent = (LinearLayout)warningMsgRoot.findViewById(R.id.warningParent);
                     warningParent.setBackgroundColor(getResources().getColor(R.color.backColorSettingMsg));

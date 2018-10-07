@@ -40,7 +40,6 @@ import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.RemoteViews;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -57,8 +56,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 
 import static com.flipcam.PermissionActivity.FC_MEDIA_PREFERENCE;
@@ -435,7 +432,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 previousSelectedFragment = -1;
             }
             medias = MediaUtil.getMediaList(getApplicationContext());
-            updateWidget(position);
             if(medias != null) {
                 runOnUiThread(new Runnable() {
                     @Override
@@ -465,75 +461,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                     Toast.makeText(getApplicationContext(),getResources().getString(R.string.unableToDelete),Toast.LENGTH_SHORT).show();
                 }
             });
-        }
-    }
-
-    public void updateWidget(int deletePosition){
-        HashSet<String> widgetIds = (HashSet)sharedPreferences.getStringSet(Constants.WIDGET_IDS, null);
-        if(widgetIds != null && widgetIds.size() > 0){
-            Iterator<String> iterator = widgetIds.iterator();
-            while(iterator.hasNext()){
-                String widgetId = iterator.next();
-                if(VERBOSE)Log.d(TAG, "widgetIds = "+widgetId);
-                updateAppWidget(Integer.parseInt(widgetId), deletePosition);
-            }
-        }
-    }
-
-    public void updateAppWidget(int appWidgetId, int deletePosition) {
-        if(deletePosition == 0) {
-            if(VERBOSE)Log.d(TAG, "Deleted first file");
-            RemoteViews remoteViews = new RemoteViews(this.getPackageName(), R.layout.flipcam_widget);
-//            FileMedia[] media = MediaUtil.getMediaList(this);
-            if (medias != null && medias.length > 0) {
-                String filepath = medias[0].getPath();
-                if(VERBOSE)Log.d(TAG, "FilePath = " + filepath);
-                if (filepath.endsWith(getResources().getString(R.string.IMG_EXT))
-                        || filepath.endsWith(getResources().getString(R.string.ANOTHER_IMG_EXT))) {
-                    Bitmap latestImage = BitmapFactory.decodeFile(filepath);
-                    latestImage = Bitmap.createScaledBitmap(latestImage, (int) getResources().getDimension(R.dimen.thumbnailWidth),
-                            (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
-                    if(VERBOSE)Log.d(TAG, "Update Photo thumbnail");
-                    remoteViews.setViewVisibility(R.id.playCircleWidget, View.INVISIBLE);
-                    remoteViews.setImageViewBitmap(R.id.imageWidget, latestImage);
-                    remoteViews.setTextViewText(R.id.widgetMsg, getResources().getString(R.string.widgetMediaMsg));
-                } else {
-                    Bitmap vid = null;
-                    MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
-                    try {
-                        mediaMetadataRetriever.setDataSource(filepath);
-                        vid = mediaMetadataRetriever.getFrameAtTime(Constants.FIRST_SEC_MICRO);
-                    } catch (RuntimeException runtime) {
-                        File badFile = new File(filepath);
-                        badFile.delete();
-                        FileMedia[] media = MediaUtil.getMediaList(this);
-                        if (media != null && media.length > 0) {
-                            mediaMetadataRetriever.setDataSource(filepath);
-                            vid = mediaMetadataRetriever.getFrameAtTime(Constants.FIRST_SEC_MICRO);
-                        } else {
-                            remoteViews.setViewVisibility(R.id.playCircleWidget, View.INVISIBLE);
-                            remoteViews.setImageViewResource(R.id.imageWidget, R.drawable.placeholder);
-                            remoteViews.setTextViewText(R.id.widgetMsg, getResources().getString(R.string.widgetNoMedia));
-                        }
-                    }
-                    if (vid != null) {
-                        vid = Bitmap.createScaledBitmap(vid, (int) getResources().getDimension(R.dimen.thumbnailWidth),
-                                (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
-                        if(VERBOSE)Log.d(TAG, "Update Video thumbnail");
-                        remoteViews.setViewVisibility(R.id.playCircleWidget, View.VISIBLE);
-                        remoteViews.setImageViewBitmap(R.id.imageWidget, vid);
-                        remoteViews.setTextViewText(R.id.widgetMsg, getResources().getString(R.string.widgetMediaMsg));
-                    }
-                }
-            } else {
-                if(VERBOSE)Log.d(TAG, "List empty");
-                //List is now empty
-                remoteViews.setViewVisibility(R.id.playCircleWidget, View.INVISIBLE);
-                remoteViews.setImageViewResource(R.id.imageWidget, R.drawable.placeholder);
-                remoteViews.setTextViewText(R.id.widgetMsg, getResources().getString(R.string.widgetNoMedia));
-            }
-            if(VERBOSE)Log.d(TAG, "Update FC Widget");
-            appWidgetManager.updateAppWidget(appWidgetId, remoteViews);
         }
     }
 

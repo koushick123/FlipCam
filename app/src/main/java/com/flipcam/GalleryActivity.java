@@ -10,23 +10,16 @@ import android.content.IntentFilter;
 import android.content.Loader;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.media.MediaMetadataRetriever;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.GridView;
 import android.widget.ImageView;
-import android.widget.RemoteViews;
 import android.widget.TextView;
 
 import com.flipcam.adapter.MediaAdapter;
@@ -39,8 +32,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Iterator;
 
 public class GalleryActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<FileMedia[]>{
 
@@ -60,32 +51,6 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
     ControlVisbilityPreference controlVisbilityPreference;
     FileMedia[] medias;
     boolean VERBOSE = true;
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()){
-            case R.id.slideView:
-                Intent mediaAct = new Intent(getApplicationContext(), MediaActivity.class);
-                int scrollPos = mediaGrid.getFirstVisiblePosition();
-                Log.d(TAG, "scrollPos = "+scrollPos);
-                mediaAct.putExtra("fromMenu",true);
-                mediaAct.putExtra("scrollTo",scrollPos);
-                mediaAct.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
-                startActivity(mediaAct);
-                finish();
-                return true;
-                default:
-                    return super.onOptionsItemSelected(item);
-        }
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        Log.d(TAG, "onCreateOptionsMenu");
-        MenuInflater menuInflater = getMenuInflater();
-        menuInflater.inflate(R.menu.media_menu, menu);
-        return true;
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -115,7 +80,6 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
     private void updateMediaGridFromSource(){
         ImageView noImage = (ImageView) findViewById(R.id.noImage);
         TextView noImageText = (TextView) findViewById(R.id.noImageText);
-//        medias = MediaUtil.getMediaList(getApplicationContext());
         if(medias != null && medias.length > 0) {
             noImage.setVisibility(View.GONE);
             noImageText.setVisibility(View.GONE);
@@ -154,7 +118,6 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
             noImage.setVisibility(View.VISIBLE);
             noImageText.setVisibility(View.VISIBLE);
         }
-        updateWidget();
     }
 
     @Override
@@ -274,71 +237,5 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
         warningMsg.setContentView(warningMsgRoot);
         warningMsg.setCancelable(false);
         warningMsg.show();
-    }
-
-    void updateWidget(){
-        HashSet<String> widgetIds = (HashSet)sharedPreferences.getStringSet(Constants.WIDGET_IDS, null);
-        if(widgetIds != null && widgetIds.size() > 0){
-            Iterator<String> iterator = widgetIds.iterator();
-            while(iterator.hasNext()){
-                String widgetId = iterator.next();
-                if(VERBOSE)Log.d(TAG, "widgetIds = "+widgetId);
-                updateAppWidget(Integer.parseInt(widgetId));
-            }
-        }
-    }
-
-    public void updateAppWidget(int appWidgetId) {
-        RemoteViews remoteViews = new RemoteViews(this.getPackageName(), R.layout.flipcam_widget);
-        medias = MediaUtil.getMediaList(this);
-        if (medias != null && medias.length > 0) {
-            String filepath = medias[0].getPath();
-            if(VERBOSE)Log.d(TAG, "FilePath = " + filepath);
-            if (filepath.endsWith(getResources().getString(R.string.IMG_EXT))
-                    || filepath.endsWith(getResources().getString(R.string.ANOTHER_IMG_EXT))) {
-                Bitmap latestImage = BitmapFactory.decodeFile(filepath);
-                latestImage = Bitmap.createScaledBitmap(latestImage, (int) getResources().getDimension(R.dimen.thumbnailWidth),
-                        (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
-                if(VERBOSE)Log.d(TAG, "Update Photo thumbnail");
-                remoteViews.setViewVisibility(R.id.playCircleWidget, View.INVISIBLE);
-                remoteViews.setImageViewBitmap(R.id.imageWidget, latestImage);
-                remoteViews.setTextViewText(R.id.widgetMsg, getResources().getString(R.string.widgetMediaMsg));
-            } else {
-                Bitmap vid = null;
-                MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
-                try {
-                    mediaMetadataRetriever.setDataSource(filepath);
-                    vid = mediaMetadataRetriever.getFrameAtTime(Constants.FIRST_SEC_MICRO);
-                } catch (RuntimeException runtime) {
-                    File badFile = new File(filepath);
-                    badFile.delete();
-                    medias = MediaUtil.getMediaList(this);
-                    if (medias != null && medias.length > 0) {
-                        mediaMetadataRetriever.setDataSource(filepath);
-                        vid = mediaMetadataRetriever.getFrameAtTime(Constants.FIRST_SEC_MICRO);
-                    } else {
-                        remoteViews.setImageViewResource(R.id.imageWidget, R.drawable.placeholder);
-                        remoteViews.setViewVisibility(R.id.playCircleWidget, View.INVISIBLE);
-                        remoteViews.setTextViewText(R.id.widgetMsg, getResources().getString(R.string.widgetNoMedia));
-                    }
-                }
-                if (vid != null) {
-                    vid = Bitmap.createScaledBitmap(vid, (int) getResources().getDimension(R.dimen.thumbnailWidth),
-                            (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
-                    if(VERBOSE)Log.d(TAG, "Update Video thumbnail");
-                    remoteViews.setViewVisibility(R.id.playCircleWidget, View.VISIBLE);
-                    remoteViews.setImageViewBitmap(R.id.imageWidget, vid);
-                    remoteViews.setTextViewText(R.id.widgetMsg, getResources().getString(R.string.widgetMediaMsg));
-                }
-            }
-        } else {
-            if(VERBOSE)Log.d(TAG, "List empty");
-            //List is now empty
-            remoteViews.setImageViewResource(R.id.imageWidget, R.drawable.placeholder);
-            remoteViews.setViewVisibility(R.id.playCircleWidget, View.INVISIBLE);
-            remoteViews.setTextViewText(R.id.widgetMsg, getResources().getString(R.string.widgetNoMedia));
-        }
-        if(VERBOSE)Log.d(TAG, "Update FC Widget");
-        appWidgetManager.updateAppWidget(appWidgetId, remoteViews);
     }
 }

@@ -1,9 +1,0 @@
-<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
-    android:minWidth="65dp"
-    android:minHeight="55dp"
-    android:updatePeriodMillis="10000"
-    android:previewImage="@drawable/ic_launcher"
-    android:initialLayout="@layout/flipcam_widget"
-    android:resizeMode="none"
-    android:widgetCategory="home_screen">
-</appwidget-provider>
