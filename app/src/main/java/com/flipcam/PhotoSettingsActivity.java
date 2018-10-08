@@ -16,7 +16,7 @@ import android.view.ViewGroup;
 
 import com.flipcam.constants.Constants;
 import com.flipcam.model.Dimension;
-import com.flipcam.preferences.MyListPreference;
+import com.flipcam.preferences.ResolutionListPreference;
 
 import java.util.Iterator;
 import java.util.Set;
@@ -61,11 +61,11 @@ public class PhotoSettingsActivity extends AppCompatActivity {
             Set<String> entries;
             SharedPreferences settingsPrefs = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext());
             if(backCamera) {
-                listPreference = new MyListPreference(getActivity(), true);
+                listPreference = new ResolutionListPreference(getActivity(), true);
                 entries = settingsPrefs.getStringSet(Constants.SUPPORT_PHOTO_RESOLUTIONS, null);
             }
             else{
-                listPreference = new MyListPreference(getActivity(), true);
+                listPreference = new ResolutionListPreference(getActivity(), true);
                 entries = settingsPrefs.getStringSet(Constants.SUPPORT_PHOTO_RESOLUTIONS_FRONT, null);
             }
             int index=0;

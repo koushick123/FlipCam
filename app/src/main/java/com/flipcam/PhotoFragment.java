@@ -429,6 +429,16 @@ public class PhotoFragment extends Fragment {
         return thumbnail;
     }
 
+    public ImageButton getFlash() {
+
+        return flash;
+    }
+
+    public ImageButton getSettings() {
+
+        return settings;
+    }
+
     public void setThumbnail(ImageView thumbnail) {
         this.thumbnail = thumbnail;
     }
@@ -441,10 +451,13 @@ public class PhotoFragment extends Fragment {
         //Use imageHighlight to highlight the borders when a picture is being taken.
         imageHighlight.setImageDrawable(getResources().getDrawable(R.drawable.photo_highlight));
         imageHighlight.setVisibility(View.VISIBLE);
+        settings.setClickable(false);
+        flash.setClickable(false);
         capturePic.setClickable(false);
         videoMode.setClickable(false);
         switchCamera.setClickable(false);
         thumbnail.setClickable(false);
+        zoombar.setClickable(false);
         cameraView.capturePhoto();
     }
 
@@ -528,7 +541,7 @@ public class PhotoFragment extends Fragment {
         if(!flashOn)
         {
             if(VERBOSE)Log.d(TAG,"Flash on");
-            if(cameraView.isFlashModeSupported(cameraView.getCameraImplementation().getFlashModeTorch())) {
+            if(cameraView.isFlashModeSupported(cameraView.getCameraImplementation().getFlashModeOn())) {
                 flashOn = true;
                 flash.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_off));
                 TextView feature = (TextView)settingsMsgRoot.findViewById(R.id.feature);
@@ -554,7 +567,8 @@ public class PhotoFragment extends Fragment {
                 }).start();
             }
             else{
-                Toast.makeText(getActivity().getApplicationContext(),"Flash Mode " + cameraView.getCameraImplementation().getFlashModeTorch() + " not supported by this camera.",Toast.LENGTH_SHORT).show();
+                Toast.makeText(getActivity().getApplicationContext(),getResources().getString(R.string.flashModeNotSupported, "On") ,
+                        Toast.LENGTH_SHORT).show();
             }
         }
         else

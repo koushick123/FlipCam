@@ -93,6 +93,8 @@ import com.flipcam.view.CameraView;
     String getFocusModePicture();
     //Fetch flash mode torch
     String getFlashModeTorch();
+    //Fetch flash mode on
+    String getFlashModeOn();
     //Get camera info (For Camera 1 API)
     Camera.CameraInfo getCameraInfo();
     //Get display sizes for recording

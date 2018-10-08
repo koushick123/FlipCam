@@ -2,7 +2,6 @@ package com.flipcam;
 
 import android.app.Dialog;
 import android.app.FragmentTransaction;
-import android.appwidget.AppWidgetManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -40,7 +39,6 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
     Dialog warningMsg;
     Button okButton;
     LayoutInflater layoutInflater;
-    AppWidgetManager appWidgetManager;
     SharedPreferences sharedPreferences;
     boolean VERBOSE = true;
     View settingsRootView;
@@ -64,7 +62,6 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
             controlVisbilityPreference.setBrightnessProgress(0.0f);
         }
         layoutInflater = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        appWidgetManager = (AppWidgetManager)getSystemService(Context.APPWIDGET_SERVICE);
         warningMsgRoot = layoutInflater.inflate(R.layout.warning_message,null);
         warningMsg = new Dialog(this);
         settingsRootView = layoutInflater.inflate(R.layout.settings, null);

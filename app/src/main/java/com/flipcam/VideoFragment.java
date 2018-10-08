@@ -925,6 +925,7 @@ public class VideoFragment extends android.app.Fragment{
             if(video != null && video.delete()){
                 if(VERBOSE)Log.d(TAG,"Removed file = "+mediaPath);
             }
+            return;
         }
         if(VERBOSE)Log.d(TAG,"width = "+firstFrame.getWidth()+" , height = "+firstFrame.getHeight());
         boolean isDetached=false;

@@ -489,6 +489,11 @@ public class Camera2Manager implements CameraOperations {
     }
 
     @Override
+    public String getFlashModeOn() {
+        return null;
+    }
+
+    @Override
     public String getFlashModeOff() {
         return CameraMetadata.FLASH_MODE_OFF+"";
     }

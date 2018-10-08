@@ -610,15 +610,14 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     {
         if(backCamera)
         {
-            backCamera = false;
+            setBackCamera(false);
         }
         else
         {
-            backCamera = true;
+            setBackCamera(true);
         }
         focusMode = camera1.getFocusMode();
         stopAndReleaseCamera();
-
         unregisterAccelSensor();
         setSwitch(true);
         isFocusModeSupported = false;
@@ -634,13 +633,11 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             if (flashOn) {
                 camera1.setTorchLight();
             } else {
-                camera1.setFlashOnOff(false);
+                camera1.setFlashOnOff(flashOn);
             }
         }
         else{
-            if(!flashOn) {
-                camera1.setFlashOnOff(false);
-            }
+            camera1.setFlashOnOff(flashOn);
         }
     }
 
@@ -766,7 +763,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             setSwitch(false);
             if(this.photoFragment!=null) {
                 if (this.photoFragment.isFlashOn()) {
-                    flashMode = camera1.getFlashModeTorch();
+                    flashMode = camera1.getFlashModeOn();
                 } else {
                     flashMode = camera1.getFlashModeOff();
                 }
@@ -786,13 +783,20 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                     flashOnOff(false);
                     flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_on));
                     return true;
-                } else if (flashMode.equalsIgnoreCase(camera1.getFlashModeTorch())) {
-                    flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_off));
-                    if(this.videoFragment!=null){
+                } else {
+                    /*if(this.videoFragment!=null) {
+                        flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_off));
                         flashOnOff(true);
                         return true;
                     }
-                    return false;
+                    else{
+                        flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_off));
+                        flashOnOff(true);
+                        return true;
+                    }*/
+                    flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_off));
+                    flashOnOff(true);
+                    return true;
                 }
             } else {
                 if (flashMode != null && !flashMode.equalsIgnoreCase(camera1.getFlashModeOff())) {
@@ -807,7 +811,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         }
                     }
                     else{
-                        Toast.makeText(getContext(), getResources().getString(R.string.flashModeNotSupported, flashMode), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getContext(), getResources().getString(R.string.flashModeNotSupported, flashMode.equalsIgnoreCase(camera1.getFlashModeOn()) ? "On" : flashMode),
+                                Toast.LENGTH_SHORT).show();
                     }
                 }
                 flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_on));
@@ -827,7 +832,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             }
             return true;
         }
-        return true;
     }
 
     public void record(boolean noSDCard)
@@ -936,6 +940,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             VIDEO_WIDTH = temp;
         }
         int degree;
+        Log.d(TAG, "backCamera = "+backCamera);
         if(backCamera) {
             degree = 180;
         }
@@ -944,7 +949,12 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         }
         if(!isCamera2()) {
             if (VERBOSE) Log.d(TAG, "Orientation == " + camera1.getCameraInfo().orientation);
-            int result = (camera1.getCameraInfo().orientation + degree) % 360;
+            int orien = camera1.getCameraInfo().orientation;
+            if(orien == 270 && backCamera){
+                //Fix for Xiaomi Redmi where the camera orientation is upside down for back camera, when the user starts the application for the first time.
+                orien = 90;
+            }
+            int result = (orien + degree) % 360;
             result = (360 - result) % 360;
             if (VERBOSE) Log.d(TAG, "Result == " + result);
             camera1.setDisplayOrientation(result);

@@ -388,7 +388,9 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         previousFocusMode = null;
         int zoomedVal = photoFrag.getZoomBar().getProgress();
         if (VERBOSE) Log.d(TAG, "take pic = "+zoomedVal);
-        capture = true;
+        if(!parameters.getFlashMode().equalsIgnoreCase(Camera.Parameters.FLASH_MODE_TORCH)) {
+            capture = true;
+        }
         Camera.Parameters parameters = mCamera.getParameters();
         parameters.setZoom(zoomedVal);
         mCamera.setParameters(parameters);
@@ -443,6 +445,11 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
             picture = new FileOutputStream(photoPath);
             picture.write(data);
             picture.close();
+            if(parameters.getFlashMode().equalsIgnoreCase(Camera.Parameters.FLASH_MODE_TORCH)) {
+                Bitmap photoCaptured = BitmapFactory.decodeByteArray(data, 0, data.length);
+                photoCaptured = Bitmap.createScaledBitmap(photoCaptured, (int) resources.getDimension(R.dimen.thumbnailWidth), (int) resources.getDimension(R.dimen.thumbnailHeight), false);
+                photoFrag.createAndShowPhotoThumbnail(photoCaptured);
+            }
             SharedPreferences.Editor editor = photoFrag.getActivity().getSharedPreferences(PermissionActivity.FC_SHARED_PREFERENCE, Context.MODE_PRIVATE).edit();
             editor.putBoolean("videoCapture", false);
             editor.commit();
@@ -451,9 +458,14 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
-            if (photoFrag != null && photoFrag.isFlashOn()) {
+            if (photoFrag.isFlashOn()) {
+                if(VERBOSE)Log.d(TAG,"Switch off Torch");
                 setFlashOnOff(false);
             }
+            int zoomedVal = photoFrag.getZoomBar().getProgress();
+            if(VERBOSE)Log.d(TAG, "Zoom = "+zoomedVal);
+            Camera.Parameters parameters = camera.getParameters();
+            parameters.setZoom(zoomedVal);
             //Start the preview no matter if photo is saved or not.
             if (VERBOSE) Log.d(TAG, "photo is ready");
             photoFrag.animatePhotoShrink();
@@ -463,6 +475,9 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
             photoFrag.getVideoMode().setClickable(true);
             photoFrag.getSwitchCamera().setClickable(true);
             photoFrag.getThumbnail().setClickable(true);
+            photoFrag.getFlash().setClickable(true);
+            photoFrag.getSettings().setClickable(true);
+            photoFrag.getZoomBar().setClickable(true);
             //Reset Focus mode to Continuous AF if applicable
             if(previousFocusMode != null){
                 //Cancel AF point
@@ -470,6 +485,10 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
                 parameters.setFocusMode(previousFocusMode);
                 mCamera.setParameters(parameters);
             }
+            if(zoomedVal > 0){
+                parameters.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
+            }
+            camera.setParameters(parameters);
         }
     }
 
@@ -782,9 +801,16 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         @Override
         public void onAutoFocus(boolean success, Camera camera) {
             //Take a picture regardless of AF success, otherwise we would need to keep retrying more number of times, which would delay
-            //the picture capturing process for the user, significantly.
+            //the picture capturing process for the user significantly.
+            if(VERBOSE)Log.d(TAG, "success = "+success);
             if(!isNoPicture()) {
-                mCamera.takePicture(Camera1Manager.getInstance(), null, null, Camera1Manager.getInstance());
+                try{
+                    mCamera.takePicture(Camera1Manager.getInstance(), null, null, Camera1Manager.getInstance());
+                }
+                catch(RuntimeException runtime){
+                    if(VERBOSE)Log.d(TAG, "TAKE PIC EXCEPTION");
+                    //Catch block necessary since, after takePicture fires, the image is actually saved, even though exception is thrown.
+                }
             }
         }
     };
@@ -899,7 +925,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
                 Bitmap thumb = BitmapFactory.decodeByteArray(baos.toByteArray(), 0, baos.size());
                 baos.close();
                 Matrix rotate = new Matrix();
-                rotate.setRotate(270);
+                rotate.setRotate(90);
                 if(VERBOSE)Log.d(TAG,"rotation = "+rotation);
                 thumb = Bitmap.createBitmap(thumb, 0, 0, previewWidth, previewHeight, rotate, false);
                 photoFrag.createAndShowPhotoThumbnail(thumb);
@@ -917,6 +943,11 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     @Override
     public String getFlashModeOff() {
         return Camera.Parameters.FLASH_MODE_OFF;
+    }
+
+    @Override
+    public String getFlashModeOn() {
+        return Camera.Parameters.FLASH_MODE_ON;
     }
 
     @Override

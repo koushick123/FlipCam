@@ -18,7 +18,7 @@ import android.view.ViewGroup;
 
 import com.flipcam.constants.Constants;
 import com.flipcam.preferences.MemoryConsumedPreference;
-import com.flipcam.preferences.MyListPreference;
+import com.flipcam.preferences.ResolutionListPreference;
 
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -52,7 +52,7 @@ public class VideoSettingsActivity extends AppCompatActivity {
             if (VERBOSE) Log.d(TAG, "VideoSettingFragment onCreate");
             addPreferencesFromResource(R.xml.preferences);
             Resources resources = getActivity().getResources();
-            ListPreference listPreference = new MyListPreference(getActivity(), true);
+            ListPreference listPreference = new ResolutionListPreference(getActivity(), true);
             Set<String> resSizes = new LinkedHashSet<>();
             resSizes.add(resources.getString(R.string.videoResHigh));
             resSizes.add(resources.getString(R.string.videoResMedium));
