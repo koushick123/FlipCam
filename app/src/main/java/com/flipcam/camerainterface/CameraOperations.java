@@ -104,7 +104,6 @@ import com.flipcam.view.CameraView;
     //The below methods are not necessary for camera, but are included for the sake of maintaining loose coupling between CameraView and Camera APIs
     void setPhotoFragmentInstance(PhotoFragment photoFragment);
     void setPhotoPath(String mediaPath);
-    void setRotation(float rot);
     void removePreviewCallback();
     void setSurfaceView(CameraView surfaceView);
     //For video fragment instance

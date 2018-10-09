@@ -175,6 +175,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     boolean stopCamera = false;
     int camProfileForRecord;
     public float colorVal = 0.0f;
+    int totalRotation;
 
     public CameraView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -503,6 +504,14 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         return isSwitch;
     }
 
+    public int getTotalRotation() {
+        return totalRotation;
+    }
+
+    public void setTotalRotation(int totalRotation) {
+        this.totalRotation = totalRotation;
+    }
+
     public void setSwitch(boolean aSwitch) {
         isSwitch = aSwitch;
     }
@@ -815,6 +824,13 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                                 Toast.LENGTH_SHORT).show();
                     }
                 }
+                else if(flashMode != null){
+                    if(VERBOSE)Log.d(TAG, "FLASH IS OFF");
+                    //This means flash mode is off.
+                    //If the camera does not support flash mode off, set it manually as default mode.
+                    flashOnOff(false);
+                    return true;
+                }
                 flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_on));
                 return false;
             }
@@ -822,6 +838,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         else {
             //If you are going out of app and coming back, or switching between phone and video modes, switch off flash.
             flashMode = camera1.getFlashModeOff();
+            if(VERBOSE)Log.d(TAG, "SET flashMode TO OFF");
             flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_on));
             flashOnOff(false);
             if(this.photoFragment!=null) {
@@ -909,14 +926,15 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         }
         if(!isCamera2()) {
             orientation = (orientation + 45) / 90 * 90;
-            int rotation;
+
             if (!backCamera) {
-                rotation = (camera1.getCameraInfo().orientation - orientation + 360) % 360;
+                totalRotation = (camera1.getCameraInfo().orientation - orientation + 360) % 360;
             } else {  // back-facing camera
-                rotation = (camera1.getCameraInfo().orientation + orientation) % 360;
+                totalRotation = (camera1.getCameraInfo().orientation + orientation) % 360;
             }
-            //if(VERBOSE)Log.d(TAG,"Rotation = "+rotation);
-            camera1.setRotation(rotation);
+//            if(VERBOSE)Log.d(TAG,"Rotation in CAMVIEW = "+totalRotation);
+            camera1.setRotation(totalRotation);
+            setTotalRotation(totalRotation);
         }
     }
 
@@ -986,7 +1004,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     public void capturePhoto()
     {
         determineOrientation();
-        if(this.photoFragment!=null){
+//        if(this.photoFragment!=null){
             if(this.photoFragment.isFlashOn()){
                 camera1.setTorchLight();
                 try {
@@ -995,8 +1013,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                     e.printStackTrace();
                 }
             }
-        }
-        camera1.setRotation(imageRotationAngle);
+//        }
+//        camera1.setRotation(imageRotationAngle);
         mNextPhotoAbsolutePath = cameraHandler.getCameraRendererInstance().getFilePath(false);
         camera1.setPhotoPath(mNextPhotoAbsolutePath);
         camera1.capturePicture();

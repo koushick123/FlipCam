@@ -529,11 +529,6 @@ public class Camera2Manager implements CameraOperations {
     }
 
     @Override
-    public void setRotation(float rot) {
-
-    }
-
-    @Override
     public void removePreviewCallback() {
 
     }

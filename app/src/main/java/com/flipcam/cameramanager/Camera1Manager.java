@@ -64,7 +64,6 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     private PhotoFragment photoFrag;
     private VideoFragment videoFrag;
     String photoPath;
-    float rotation;
     private static Camera1Manager camera1Manager;
     Bitmap photo;
     boolean VERBOSE = true;
@@ -270,9 +269,8 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
 
     @Override
     public void setAutoExposureAndLock() {
-        Log.d(TAG, "ALL Parameters = "+parameters.flatten());
         if(parameters.isAutoExposureLockSupported()) {
-            Log.d(TAG, "setAutoExposureLock false");
+            if(VERBOSE)Log.d(TAG, "setAutoExposureLock false");
             parameters.setAutoExposureLock(false);
             mCamera.setParameters(parameters);
         }
@@ -431,11 +429,6 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     @Override
     public void setPhotoPath(String mediaPath) {
         photoPath = mediaPath;
-    }
-
-    @Override
-    public void setRotation(float rot) {
-        rotation = rot;
     }
 
     @Override
@@ -867,6 +860,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     //Flash On for photo mode
     @Override
     public void setFlashOnOff(boolean flashOn) {
+        if(VERBOSE)Log.d(TAG, "SET FLASH TO "+flashOn);
         if(!flashOn){
             parameters.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
         }
@@ -925,8 +919,20 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
                 Bitmap thumb = BitmapFactory.decodeByteArray(baos.toByteArray(), 0, baos.size());
                 baos.close();
                 Matrix rotate = new Matrix();
-                rotate.setRotate(90);
-                if(VERBOSE)Log.d(TAG,"rotation = "+rotation);
+                if(cameraView.getTotalRotation() == 0 || cameraView.getTotalRotation() == 180){
+                    //Landscape
+                    rotate.setRotate(cameraView.getTotalRotation());
+                }
+                else {
+                    //Portrait
+                    if(cameraView.isBackCamera()) {
+                        rotate.setRotate(90);
+                    }
+                    else{
+                        rotate.setRotate(270);
+                    }
+                }
+                if(VERBOSE)Log.d(TAG,"Total rotation = "+cameraView.getTotalRotation());
                 thumb = Bitmap.createBitmap(thumb, 0, 0, previewWidth, previewHeight, rotate, false);
                 photoFrag.createAndShowPhotoThumbnail(thumb);
                 if(VERBOSE)Log.d(TAG, "photo thumbnail created");
