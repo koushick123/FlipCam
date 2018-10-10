@@ -353,7 +353,13 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     }
 
     public void smoothZoomInOrOut(int zoomInOrOut) {
-        mCamera.startSmoothZoom(zoomInOrOut);
+        try {
+            mCamera.startSmoothZoom(zoomInOrOut);
+        }
+        catch(RuntimeException runtime){
+            //This catch block is necessary to prevent application crashes when user is trying to zoom in/out.
+            if(VERBOSE)Log.d(TAG, "ZOOM EXCEPTION");
+        }
     }
 
     @Override
