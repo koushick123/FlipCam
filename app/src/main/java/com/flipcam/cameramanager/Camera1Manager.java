@@ -109,6 +109,10 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         return info;
     }
 
+    private void setCameraInfo(Camera.CameraInfo cameraInfo){
+        info = cameraInfo;
+    }
+
     @Override
     public void getSupportedPictureSizes() {
         Set<String> supportedPics;
@@ -175,6 +179,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
                 if (backCamera) {
                     if (info.facing == Camera.CameraInfo.CAMERA_FACING_BACK) {
                         mCamera = Camera.open(i);
+                        setCameraInfo(info);
                         if (VERBOSE) Log.d(TAG, "Open back facing camera");
                         cameraId = i;
                         break;
@@ -182,6 +187,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
                 } else {
                     if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
                         mCamera = Camera.open(i);
+                        setCameraInfo(info);
                         if (VERBOSE) Log.d(TAG, "Open front facing camera");
                         cameraId = i;
                         break;
@@ -194,6 +200,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
                 Camera.getCameraInfo(i, info);
                 if (info.facing == Camera.CameraInfo.CAMERA_FACING_BACK) {
                     if (VERBOSE) Log.d(TAG, "Open back facing camera FIRST TIME");
+                    setCameraInfo(info);
                     cameraId = i;
                 }
                 if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
@@ -914,6 +921,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     @Override
     public void enableShutterSound(boolean enable) {
         if(!enable) {
+            if(VERBOSE)Log.d(TAG, "getCameraInfo().canDisableShutterSound? = "+getCameraInfo().canDisableShutterSound);
             if (getCameraInfo().canDisableShutterSound) {
                 mCamera.enableShutterSound(enable);
             }
