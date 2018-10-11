@@ -910,6 +910,19 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         }
     }
     boolean capture=false;
+
+    @Override
+    public void enableShutterSound(boolean enable) {
+        if(!enable) {
+            if (getCameraInfo().canDisableShutterSound) {
+                mCamera.enableShutterSound(enable);
+            }
+        }
+        else{
+            mCamera.enableShutterSound(enable);
+        }
+    }
+
     @Override
     public void onPreviewFrame(byte[] bytes, Camera camera) {
         if(capture)

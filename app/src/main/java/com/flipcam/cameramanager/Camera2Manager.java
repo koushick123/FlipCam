@@ -529,6 +529,11 @@ public class Camera2Manager implements CameraOperations {
     }
 
     @Override
+    public void enableShutterSound(boolean enable) {
+
+    }
+
+    @Override
     public void removePreviewCallback() {
 
     }

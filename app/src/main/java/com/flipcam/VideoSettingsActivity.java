@@ -17,7 +17,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.flipcam.constants.Constants;
-import com.flipcam.preferences.MemoryConsumedPreference;
+import com.flipcam.preferences.CustomCheckboxPreference;
 import com.flipcam.preferences.ResolutionListPreference;
 
 import java.util.Iterator;
@@ -83,7 +83,7 @@ public class VideoSettingsActivity extends AppCompatActivity {
                     return true;
                 }
             });
-            final CheckBoxPreference memoryConsumedPref = new MemoryConsumedPreference(getActivity(), true);
+            final CheckBoxPreference memoryConsumedPref = new CustomCheckboxPreference(getActivity(), true, Constants.SHOW_MEMORY_CONSUMED_MSG);
             memoryConsumedPref.setTitle(resources.getString(R.string.showMemConsumed));
             memoryConsumedPref.setSummary(resources.getString(R.string.showMemConsumedMsg));
             memoryConsumedPref.setKey(Constants.SHOW_MEMORY_CONSUMED_MSG);

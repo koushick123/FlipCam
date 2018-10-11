@@ -323,53 +323,5 @@
 
         </LinearLayout>
 
-    <LinearLayout
-        android:id="@+id/separator4"
-        android:layout_width="match_parent"
-        android:layout_height="@dimen/separatorHeight"
-        android:background="@color/turqoise"
-        android:orientation="horizontal">
-
-    </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/resetParent"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-
-            <TextView
-                android:id="@+id/textView19"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="@dimen/headTextLeftMargin"
-                android:layout_marginTop="@dimen/headTextTopMargin"
-                android:layout_weight="1"
-                android:text="@string/resetAll"
-                android:textColor="@color/turqoise"
-                android:textSize="@dimen/settingsMainText" />
-
-            <TextView
-                android:id="@+id/resetAllMsgLayout"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="@dimen/headTextLeftMargin"
-                android:layout_marginEnd="@dimen/resetAllTextMsgRightMargin"
-                android:layout_marginTop="@dimen/headTextTopMargin"
-                android:layout_weight="1"
-                android:text="@string/resetAllMsg"
-                android:textColor="@color/turqoise"
-                android:textSize="@dimen/settingsSubText" />
-
-            <Button
-                android:id="@+id/button5"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:layout_weight="1"
-                android:onClick="resetAllValues"
-                android:text="@string/reset" />
-        </LinearLayout>
-
     </LinearLayout>
 </ScrollView>

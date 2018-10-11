@@ -324,32 +324,6 @@ public class SettingsActivity extends AppCompatActivity{
         }
     }
 
-    public void resetAllValues(View view){
-        LinearLayout shareMediaParent = shareMediaRoot.findViewById(R.id.shareMediaParent);
-        shareMediaParent.setBackgroundColor(getResources().getColor(R.color.backColorSettingMsg));
-        TextView shareTitle = shareMediaRoot.findViewById(R.id.shareTitle);
-        shareTitle.setText(getString(R.string.resetTitle));
-        TextView shareMsg = shareMediaRoot.findViewById(R.id.shareText);
-        shareMsg.setText(getString(R.string.resetMsg));
-        Button okBtn = shareMediaRoot.findViewById(R.id.okToShare);
-        okBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                okReset();
-            }
-        });
-        Button cancelBtn = shareMediaRoot.findViewById(R.id.cancelToShare);
-        cancelBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                cancelReset();
-            }
-        });
-        shareMedia.setContentView(shareMediaRoot);
-        shareMedia.setCancelable(true);
-        shareMedia.show();
-    }
-
     public void okReset(){
         //Reset Save Media
         settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);

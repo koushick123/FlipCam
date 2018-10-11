@@ -54,10 +54,10 @@ public class Constants
     public static final String SHOW_MEMORY_CONSUMED_MSG = "ShowMemoryConsumedText";
     public static final String MEDIA_COUNT_MEM = "mediaCountMem";
     public static final String MEDIA_COUNT_SD_CARD = "mediaCountSdCard";
+    //Enable/Disable shutter sound
+    public static final String SHUTTER_SOUND = "ShutterSound";
     //Screen Resolution
     public static final String PREVIEW_RESOLUTION = "PreviewResolution";
-    //Widget Ids
-    public static final String WIDGET_IDS = "Widget_IDs";
     //Video Resolution
     public static final String SELECT_VIDEO_RESOLUTION = "SelectVideoResolution";
     public static final String VIDEO_DIMENSION_HIGH = "videoDimensionHigh";

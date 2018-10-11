@@ -1004,17 +1004,16 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     public void capturePhoto()
     {
         determineOrientation();
-//        if(this.photoFragment!=null){
-            if(this.photoFragment.isFlashOn()){
-                camera1.setTorchLight();
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+        if(this.photoFragment.isFlashOn()){
+            camera1.setTorchLight();
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
-//        }
-//        camera1.setRotation(imageRotationAngle);
+        }
+        if(VERBOSE)Log.d(TAG, "Shutter sound before click? = "+PreferenceManager.getDefaultSharedPreferences(getContext()).getBoolean(Constants.SHUTTER_SOUND, true));
+        camera1.enableShutterSound(PreferenceManager.getDefaultSharedPreferences(getContext()).getBoolean(Constants.SHUTTER_SOUND, true));
         mNextPhotoAbsolutePath = cameraHandler.getCameraRendererInstance().getFilePath(false);
         camera1.setPhotoPath(mNextPhotoAbsolutePath);
         camera1.capturePicture();

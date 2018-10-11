@@ -13,17 +13,19 @@ import android.widget.TextView;
 import com.flipcam.R;
 import com.flipcam.constants.Constants;
 
-public class MemoryConsumedPreference extends CheckBoxPreference {
+public class CustomCheckboxPreference extends CheckBoxPreference {
 
     Context mContext;
     boolean enableSeparator;
     boolean VERBOSE = true;
-    public static final String TAG = "MemoryConsumedPref";
+    String selectedKey = "";
+    public static final String TAG = "CustomCheckboxPref";
 
-    public MemoryConsumedPreference(Context context, boolean enableSep) {
+    public CustomCheckboxPreference(Context context, boolean enableSep, String key) {
         super(context);
         mContext = context;
         enableSeparator = enableSep;
+        selectedKey = key;
     }
 
     @Override
@@ -33,14 +35,20 @@ public class MemoryConsumedPreference extends CheckBoxPreference {
         title.setText(getTitle());
         final CheckBox summary = view.findViewById(R.id.checkboxSummary);
         summary.setText(getSummary());
-        boolean memCon = PreferenceManager.getDefaultSharedPreferences(mContext).getBoolean(Constants.SHOW_MEMORY_CONSUMED_MSG, false);
+        boolean memCon;
+        if(selectedKey.equalsIgnoreCase(Constants.SHUTTER_SOUND)){
+            memCon = PreferenceManager.getDefaultSharedPreferences(mContext).getBoolean(selectedKey, true);
+        }
+        else {
+            memCon = PreferenceManager.getDefaultSharedPreferences(mContext).getBoolean(selectedKey, false);
+        }
         summary.setChecked(memCon);
         summary.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(VERBOSE)Log.d(TAG, "newValue memory consumed = "+summary.isChecked());
+                if(VERBOSE)Log.d(TAG, "selectedKey changed = "+selectedKey+" , "+summary.isChecked());
                 SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(mContext).edit();
-                editor.putBoolean(Constants.SHOW_MEMORY_CONSUMED_MSG, summary.isChecked());
+                editor.putBoolean(selectedKey, summary.isChecked());
                 editor.commit();
             }
         });

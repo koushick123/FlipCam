@@ -101,6 +101,8 @@ import com.flipcam.view.CameraView;
     int[] getDisplaySizes();
     //Set picture orientation (For Camera 1 API)
     void setRotation(int rotation);
+    //For enable/disable shutter sound
+    void enableShutterSound(boolean enable);
     //The below methods are not necessary for camera, but are included for the sake of maintaining loose coupling between CameraView and Camera APIs
     void setPhotoFragmentInstance(PhotoFragment photoFragment);
     void setPhotoPath(String mediaPath);

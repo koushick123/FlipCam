@@ -3,8 +3,8 @@ package com.flipcam;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.CheckBoxPreference;
 import android.preference.ListPreference;
-import android.preference.Preference;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
@@ -16,6 +16,7 @@ import android.view.ViewGroup;
 
 import com.flipcam.constants.Constants;
 import com.flipcam.model.Dimension;
+import com.flipcam.preferences.CustomCheckboxPreference;
 import com.flipcam.preferences.ResolutionListPreference;
 
 import java.util.Iterator;
@@ -53,6 +54,14 @@ public class PhotoSettingsActivity extends AppCompatActivity {
             addResolutionList(true);
             //Add Front camera list prefs
             addResolutionList(false);
+            final CheckBoxPreference shutterSoundPref = new CustomCheckboxPreference(getActivity(), true, Constants.SHUTTER_SOUND);
+            shutterSoundPref.setTitle(getResources().getString(R.string.enableShutterSound));
+            shutterSoundPref.setSummary(getResources().getString(R.string.enableShutterSoundMsg));
+            shutterSoundPref.setKey(Constants.SHUTTER_SOUND);
+            shutterSoundPref.setLayoutResource(R.layout.custom_checkbox_setting);
+            boolean shutterSound = PreferenceManager.getDefaultSharedPreferences(getActivity()).getBoolean(Constants.SHUTTER_SOUND, false);
+            if(VERBOSE)Log.d(TAG, "SHUTTER SOUND PREF MGR = "+shutterSound);
+            getPreferenceScreen().addPreference(shutterSoundPref);
         }
 
         private void addResolutionList(boolean backCamera){
@@ -105,15 +114,6 @@ public class PhotoSettingsActivity extends AppCompatActivity {
             }
             listPreference.setLayoutResource(R.layout.custom_photo_setting);
             getPreferenceScreen().addPreference(listPreference);
-            listPreference.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
-                @Override
-                public boolean onPreferenceChange(Preference preference, Object newValue) {
-                    String newRes = (String)newValue;
-                    Log.d(TAG, "onPreferenceChange = "+newRes);
-                    Log.d(TAG, "onPreferenceChange pref = "+preference.getKey());
-                    return true;
-                }
-            });
         }
     }
 }
