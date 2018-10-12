@@ -15,6 +15,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.Button;
@@ -42,6 +43,8 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
     View warningMsgRoot;
     Dialog warningMsg;
     Button okButton;
+    Dialog taskAlert;
+    View taskInProgressRoot;
     LayoutInflater layoutInflater;
     AppWidgetManager appWidgetManager;
     IntentFilter mediaFilters;
@@ -59,11 +62,14 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
         setContentView(R.layout.activity_media_grid);
         sdCardEventReceiver = new SDCardEventReceiver();
         mediaFilters = new IntentFilter();
-        getSupportActionBar().setTitle(getResources().getString(R.string.flipCamGallery));
+        getSupportActionBar().hide();
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         layoutInflater = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         appWidgetManager = (AppWidgetManager)getSystemService(Context.APPWIDGET_SERVICE);
         warningMsgRoot = layoutInflater.inflate(R.layout.warning_message, null);
+        taskInProgressRoot = layoutInflater.inflate(R.layout.task_in_progress, null);
         warningMsg = new Dialog(this);
+        taskAlert = new Dialog(this);
         sharedPreferences = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
         mediaCount = (TextView)findViewById(R.id.mediaCount);
         mediaGrid = (GridView) findViewById(R.id.mediaGrid);
@@ -154,6 +160,16 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
     @Override
     public Loader<FileMedia[]> onCreateLoader(int i, Bundle bundle) {
         if(VERBOSE)Log.d(TAG, "onCreateLoader");
+        TextView savetocloudtitle = (TextView)taskInProgressRoot.findViewById(R.id.savetocloudtitle);
+        TextView signInText = (TextView)taskInProgressRoot.findViewById(R.id.signInText);
+        ImageView signInImage = (ImageView)taskInProgressRoot.findViewById(R.id.signInImage);
+        signInImage.setVisibility(View.INVISIBLE);
+        signInText.setText(getResources().getString(R.string.loadMediaMsg));
+        savetocloudtitle.setText(getResources().getString(R.string.loadTitle));
+        taskInProgressRoot.setBackgroundColor(getResources().getColor(R.color.mediaControlColor));
+        taskAlert.setContentView(taskInProgressRoot);
+        taskAlert.setCancelable(false);
+        taskAlert.show();
         return new MediaLoader(getApplicationContext());
     }
 
@@ -162,6 +178,7 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
         if(VERBOSE)Log.d(TAG, "onLoadFinished");
         medias = fileMedias;
         updateMediaGridFromSource();
+        taskAlert.dismiss();
     }
 
     @Override

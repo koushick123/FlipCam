@@ -26,6 +26,7 @@
     <string name="IMAGE_SAVED">IMAGE SAVED</string>
     <string name="NO_IMAGE">No Photos or Videos</string>
     <string name="deleteTitle">Delete Media</string>
+    <string name="loadTitle">Load Media</string>
     <string name="deleteMessage">Do you want to delete the %1$s?</string>
     <string name="noConnectionMessage">There seems to be no Internet Connection. Please check your connection, or enable Wi-Fi and try again.</string>
     <string name="okToDelete">OK</string>
@@ -159,6 +160,7 @@
         \n\nDo you want to continue?</string>
     <string name="deleteMediaTitle">Remove Media</string>
     <string name="deleteMediaMsg">Deleting File...</string>
+    <string name="loadMediaMsg">Loading Media...</string>
     <string name="chooserTitleImage">Share Photo with</string>
     <string name="chooserTitleVideo">Share Video with</string>
     <string name="thresholdLimitExceededTitle">Phone Memory Limit Exceeded</string>

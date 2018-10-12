@@ -274,6 +274,7 @@ public class PhotoFragment extends Fragment {
                 flash.setClickable(false);
                 videoMode.setClickable(false);
                 thumbnail.setClickable(false);
+                settings.setClickable(false);
 
                 cameraView.switchCamera();
 
@@ -282,6 +283,7 @@ public class PhotoFragment extends Fragment {
                 flash.setClickable(true);
                 videoMode.setClickable(true);
                 thumbnail.setClickable(true);
+                settings.setClickable(true);
             }
         });
 

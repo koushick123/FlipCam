@@ -216,6 +216,7 @@ public class VideoFragment extends android.app.Fragment{
                 flash.setClickable(false);
                 photoMode.setClickable(false);
                 thumbnail.setClickable(false);
+                settings.setClickable(false);
 
                 cameraView.switchCamera();
 
@@ -224,6 +225,7 @@ public class VideoFragment extends android.app.Fragment{
                 flash.setClickable(true);
                 photoMode.setClickable(true);
                 thumbnail.setClickable(true);
+                settings.setClickable(true);
             }
         });
         startRecord = (ImageButton)view.findViewById(R.id.cameraRecord);
