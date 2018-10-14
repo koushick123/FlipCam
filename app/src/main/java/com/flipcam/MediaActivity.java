@@ -24,6 +24,7 @@ import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
+import android.support.v4.content.FileProvider;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
@@ -198,7 +199,15 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 medias = MediaUtil.getMediaList(getApplicationContext());
                 if(medias != null) {
                     if(VERBOSE)Log.d(TAG, "Share position = " + selectedPosition);
-                    Uri mediaUri = Uri.fromFile(new File(medias[selectedPosition].getPath()));
+                    Uri mediaUri;
+                    if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+                        if(VERBOSE)Log.d(TAG, "For OREO use FileProvider");
+                        mediaUri = FileProvider.getUriForFile(MediaActivity.this, BuildConfig.APPLICATION_ID+".provider",
+                                new File(medias[selectedPosition].getPath()));
+                    }
+                    else {
+                        mediaUri = Uri.fromFile(new File(medias[selectedPosition].getPath()));
+                    }
                     Intent shareIntent = new Intent();
                     shareIntent.setAction(Intent.ACTION_SEND);
                     shareIntent.putExtra(Intent.EXTRA_STREAM, mediaUri);
