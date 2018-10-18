@@ -21,7 +21,7 @@ import javax.mail.internet.MimeMessage;
 
 public class FeedbackMailTask extends AsyncTask<String, Void, Void> {
 
-    static final String TAG = "SendMailTask";
+    static final String TAG = "FeedbackMailTask";
     Context mContext;
     SettingsActivity settingsActivity;
     public FeedbackMailTask(Context context, AppCompatActivity appCompatActivity) {
