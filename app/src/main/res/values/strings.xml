@@ -225,6 +225,14 @@
     <string name="photoResolutionDialogHeadingFront">Front Camera Photo Resolutions</string>
     <string name="photoSettings">Photo Settings...</string>
     <string name="videoSettings">Video Settings...</string>
+    <string name="feedback">Feedback</string>
+    <string name="feedbackMsg">Please provide your feedback on any issues you faced with this application,
+        or how the FlipCam application can be enhanced. Your feedback is valuable and will be kept confidential.</string>
+    <string name="feedbackButton">SEND FEEDBACK</string>
+    <string name="noFeedbackMsg">Please enter a feedback.</string>
+    <string name="thanksFeedbackMsg">Thank you for your feedback.</string>
+    <string name="sendFeedbackMsg">Sending Feedback...</string>
+    <string name="sendFeedbackTitleMsg">Feedback...</string>
     <string name="videoResHigh">HIGH</string>
     <string name="videoResMedium">MEDIUM</string>
     <string name="videoResLow">LOW</string>

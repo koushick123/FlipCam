@@ -19,8 +19,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight=".05"
-            android:src="@mipmap/ic_launcher"
-            android:contentDescription="@string/flipCamContentDescription"/>
+            android:contentDescription="@string/flipCamContentDescription"
+            android:src="@mipmap/ic_launcher" />
 
         <TextView
             android:id="@+id/savetocloudtitle"
@@ -37,9 +37,9 @@
             android:id="@+id/signInImage"
             android:layout_width="64dp"
             android:layout_height="50dp"
+            android:contentDescription="@string/placeholderContentDescription"
             android:paddingStart="10dp"
-            app:srcCompat="@drawable/placeholder"
-            android:contentDescription="@string/placeholderContentDescription"/>
+            app:srcCompat="@drawable/placeholder" />
 
     </LinearLayout>
 

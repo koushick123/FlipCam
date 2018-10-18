@@ -322,6 +322,76 @@
                 android:thumbTint="@color/turqoise" />
 
         </LinearLayout>
+        <LinearLayout
+            android:id="@+id/separator4"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/separatorHeight"
+            android:background="@color/turqoise"
+            android:orientation="horizontal">
 
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/feedbackParent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/ripple"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/feedbackHeading"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/headTextLeftMargin"
+                android:layout_marginLeft="@dimen/headTextLeftMargin"
+                android:layout_marginTop="@dimen/headTextTopMargin"
+                android:text="@string/feedback"
+                android:textColor="@color/turqoise"
+                android:textSize="@dimen/settingsMainText" />
+
+            <TextView
+                android:id="@+id/textViewfeedback"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/headTextTopMargin"
+                android:layout_marginEnd="@dimen/headTextLeftMargin"
+                android:layout_marginStart="@dimen/headTextLeftMargin"
+                android:text="@string/feedbackMsg"
+                android:textColor="@color/turqoise" />
+
+            <TextView
+                android:id="@+id/textViewfeedbackThanks"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/headTextTopMargin"
+                android:layout_marginEnd="@dimen/headTextLeftMargin"
+                android:layout_marginStart="@dimen/headTextLeftMargin"
+                android:gravity="center"
+                android:text="Thank you!"
+                android:textColor="@color/turqoise" />
+
+            <EditText
+                android:id="@+id/feedback_information"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/feedback_background"
+                android:gravity="top|left"
+                android:inputType="textMultiLine"
+                android:lines="5"
+                android:overScrollMode="always"
+                android:scrollHorizontally="false"
+                android:scrollbarStyle="insideInset"
+                android:scrollbars="vertical"
+                android:textAppearance="?android:attr/textAppearanceMedium"
+                android:textColor="@color/turqoise" />
+
+            <Button
+                android:id="@+id/feedbackButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:onClick="sendFeedback"
+                android:text="@string/feedbackButton"/>
+
+        </LinearLayout>
     </LinearLayout>
 </ScrollView>

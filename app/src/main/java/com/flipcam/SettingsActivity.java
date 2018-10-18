@@ -39,6 +39,7 @@ import com.dropbox.core.v2.DbxClientV2;
 import com.dropbox.core.v2.files.CreateFolderResult;
 import com.dropbox.core.v2.files.DbxUserFilesRequests;
 import com.dropbox.core.v2.files.GetMetadataErrorException;
+import com.flipcam.adapter.FeedbackMailTask;
 import com.flipcam.constants.Constants;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
@@ -129,6 +130,11 @@ public class SettingsActivity extends AppCompatActivity{
     boolean VERBOSE = true;
     LinearLayout photoResolutionParent;
     LinearLayout videoSettingParent;
+    EditText feedback_information;
+
+    public EditText getFeedback_information() {
+        return feedback_information;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -184,6 +190,7 @@ public class SettingsActivity extends AppCompatActivity{
         uploadFolderCheck = new Dialog(this);
         accesGrantedDropbox = new Dialog(this);
         shareMedia = new Dialog(this);
+        feedback_information = (EditText) findViewById(R.id.feedback_information);
         accountManager = (AccountManager)getSystemService(Context.ACCOUNT_SERVICE);
         appWidgetManager = (AppWidgetManager)getSystemService(Context.APPWIDGET_SERVICE);
         controlVisbilityPreference = (ControlVisbilityPreference)getApplicationContext();
@@ -245,6 +252,20 @@ public class SettingsActivity extends AppCompatActivity{
         warningMsg.setContentView(warningMsgRoot);
         warningMsg.setCancelable(false);
         warningMsg.show();
+    }
+
+    public void setFeedback_information(EditText feedback_information) {
+        this.feedback_information = feedback_information;
+    }
+
+    public void sendFeedback(View view){
+        if(!getFeedback_information().getText().toString().trim().equals("")){
+
+            new FeedbackMailTask(getApplicationContext(), this).execute();
+        }
+        else{
+            Toast.makeText(getApplicationContext(),getResources().getString(R.string.noFeedbackMsg), Toast.LENGTH_SHORT).show();
+        }
     }
 
     public void updateSettingsValues(){
@@ -1268,6 +1289,20 @@ public class SettingsActivity extends AppCompatActivity{
                     showUploadDisabled();
                 }
         }
+    }
+
+    public void showFeedbackMessage(){
+        TextView signInText = (TextView)signInProgressRoot.findViewById(R.id.signInText);
+        signInText.setText(getString(R.string.sendFeedbackMsg));
+        LinearLayout saveToHeader = (LinearLayout)signInProgressRoot.findViewById(R.id.saveToHeader);
+        saveToHeader.setVisibility(View.GONE);
+        signInProgressDialog.setContentView(signInProgressRoot);
+        signInProgressDialog.setCancelable(false);
+        signInProgressDialog.show();
+    }
+
+    public void hideFeedbackMessage(){
+        signInProgressDialog.hide();
     }
 
     public void showCreateProgress(){
