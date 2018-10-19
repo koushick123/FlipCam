@@ -9,9 +9,11 @@ It provides the following features
   <li>Record videos using both cameras in a single video.</li>
   <li>Share your Photos/Videos via WhatsApp, Facebook, Google Drive, etc.</li>
   <li>Automatically upload to your Google Drive or Dropbox cloud service.</li>  
-  <li>Use a widget on the homescreen to open the latest photo/video taken without opening the app.</li>
+  <li>Choose a resolution with Photo/Video</li>
   <li>Get warned about memory thresholds before hand.</li>
   <li>Store in SD Card, if you run out of memory.</li>
+  <li>Improved UI</li>
+  <li>Bug fixes</li>
   </ul>
  
  FlipCam is now available on the Google Play Store.
