@@ -11,10 +11,13 @@ public class Constants
     public final static int RECORD_STOP = 2000;
     public final static int RECORD_START = 3000;
     public final static int RECORD_COMPLETE = 13000;
+    public final static int RECORD_PAUSE = 14000;
+    public final static int RECORD_RESUME = 15000;
     public final static int SHUTDOWN = 6000;
     public final static int GET_CAMERA_RENDERER_INSTANCE = 8000;
     public final static int SHOW_MEMORY_CONSUMED = 5000;
     public final static int SHOW_ELAPSED_TIME = 7000;
+    public final static int HIDE_ELAPSED_TIME = 16000;
     public final static int RECORD_STOP_ENABLE = 9000;
     public final static int RECORD_STOP_LOW_MEMORY = 10000;
     public final static int RECORD_STOP_NO_SD_CARD = 11000;

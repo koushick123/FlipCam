@@ -14,6 +14,9 @@
     //Start button
     <dimen name="startButtonHeight">73dp</dimen>
     <dimen name="startButtonWidth">67dp</dimen>
+    //Pause button
+    <dimen name="pauseButtonHeight">50dp</dimen>
+    <dimen name="pauseButtonWidth">50dp</dimen>
     //Picture button
     <dimen name="pictureButtonWidth">67dp</dimen>
     <dimen name="pictureButtonHeight">76dp</dimen>

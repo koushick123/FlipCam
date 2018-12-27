@@ -77,6 +77,7 @@ public class VideoFragment extends android.app.Fragment{
     LowestThresholdCheckForVideoInterface lowestThresholdCheckForVideoInterface;
     ImageButton stopRecord;
     ImageView imagePreview;
+    ImageButton pauseRecord;
     TextView modeText;
     TextView resInfo;
     LinearLayout modeLayout;
@@ -94,11 +95,13 @@ public class VideoFragment extends android.app.Fragment{
     SDCardEventReceiver sdCardEventReceiver;
     IntentFilter mediaFilters;
     Button okButton;
+    TextView pauseText;
     boolean sdCardUnavailWarned = false;
     SharedPreferences sharedPreferences;
     ImageView microThumbnail;
     AppWidgetManager appWidgetManager;
     boolean VERBOSE = true;
+    boolean isPause = false;
     ControlVisbilityPreference controlVisbilityPreference;
     View settingsMsgRoot;
     Dialog settingsMsgDialog;
@@ -168,6 +171,7 @@ public class VideoFragment extends android.app.Fragment{
         controlVisbilityPreference = (ControlVisbilityPreference)getApplicationContext();
         cameraView.colorVal = controlVisbilityPreference.getBrightnessProgress();
         if(VERBOSE)Log.d(TAG,"cameraview onresume visibility= "+cameraView.getWindowVisibility());
+        pauseText = view.findViewById(R.id.pauseText);
         zoombar = (SeekBar)view.findViewById(R.id.zoomBar);
         zoombar.setProgressTintList(ColorStateList.valueOf(getResources().getColor(R.color.progressFill)));
         cameraView.setSeekBar(zoombar);
@@ -487,6 +491,14 @@ public class VideoFragment extends android.app.Fragment{
         thumbnail.setRotation(rotationAngle);
     }
 
+    public void showPauseText(){
+        pauseText.setVisibility(View.VISIBLE);
+    }
+
+    public void hidePauseText(){
+        pauseText.setVisibility(View.INVISIBLE);
+    }
+
     public void addStopAndPauseIcons()
     {
         videoBar.setBackgroundColor(getResources().getColor(R.color.transparentBar));
@@ -510,15 +522,48 @@ public class VideoFragment extends android.app.Fragment{
         });
         switchCamera.setBackgroundColor(getResources().getColor(R.color.transparentBar));
         switchCamera.setRotation(rotationAngle);
-        ImageView recordSubstitute = new ImageView(getActivity());
-        recordSubstitute.setImageDrawable(getResources().getDrawable(R.drawable.placeholder));
-        layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,LinearLayout.LayoutParams.WRAP_CONTENT);
-        layoutParams.setMargins(0,0,(int)getResources().getDimension(R.dimen.recordSubsBtnRightMargin),0);
-        recordSubstitute.setLayoutParams(layoutParams);
-        recordSubstitute.setVisibility(View.INVISIBLE);
         videoBar.addView(switchCamera);
         videoBar.addView(stopRecord);
-        videoBar.addView(recordSubstitute);
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N){
+            pauseRecord = new ImageButton(getActivity().getApplicationContext());
+            pauseRecord.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            pauseRecord.setBackgroundColor(getResources().getColor(R.color.transparentBar));
+            pauseRecord.setImageDrawable(getResources().getDrawable(R.drawable.camera_record_pause));
+            pauseRecord.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    pauseRecord.setEnabled(false);
+                    if(!isPause) {
+                        cameraView.recordPause();
+                        pauseRecord.setImageDrawable(getResources().getDrawable(R.drawable.camera_record_resume));
+                        isPause = true;
+                        showPauseText();
+                    }
+                    else{
+                        cameraView.recordResume();
+                        pauseRecord.setImageDrawable(getResources().getDrawable(R.drawable.camera_record_pause));
+                        isPause = false;
+                        hidePauseText();
+                    }
+                    pauseRecord.setEnabled(true);
+                }
+            });
+            layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            layoutParams.setMargins(0, 0, (int) getResources().getDimension(R.dimen.recordSubsBtnRightMargin), 0);
+            layoutParams.width = (int)getResources().getDimension(R.dimen.pauseButtonWidth);
+            layoutParams.height = (int)getResources().getDimension(R.dimen.pauseButtonHeight);
+            pauseRecord.setLayoutParams(layoutParams);
+            videoBar.addView(pauseRecord);
+        }
+        else {
+            ImageView recordSubstitute = new ImageView(getActivity());
+            recordSubstitute.setImageDrawable(getResources().getDrawable(R.drawable.placeholder));
+            layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            layoutParams.setMargins(0, 0, (int) getResources().getDimension(R.dimen.recordSubsBtnRightMargin), 0);
+            recordSubstitute.setLayoutParams(layoutParams);
+            recordSubstitute.setVisibility(View.INVISIBLE);
+            videoBar.addView(recordSubstitute);
+        }
     }
 
     public void stopRecordAndSaveFile(boolean lowMemory){

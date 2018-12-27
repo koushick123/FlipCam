@@ -247,5 +247,6 @@
     <string name="videoSettingsTitle">Video Settings</string>
     <string name="flashSetting">FLASH</string>
     <string name="memoryConsumedTitle">Memory Consumed</string>
+    <string name="pausedText">RECORDING PAUSED</string>
 </resources>
 

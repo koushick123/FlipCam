@@ -38,6 +38,7 @@ import android.view.OrientationEventListener;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.ImageButton;
@@ -67,6 +68,7 @@ import java.util.Date;
 
 import static android.content.Context.SENSOR_SERVICE;
 import static android.os.Environment.getExternalStoragePublicDirectory;
+import static com.flipcam.constants.Constants.HIDE_ELAPSED_TIME;
 import static com.flipcam.constants.Constants.SHOW_ELAPSED_TIME;
 
 /**
@@ -176,6 +178,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     int camProfileForRecord;
     public float colorVal = 0.0f;
     int totalRotation;
+    boolean recordPaused = false;
+    boolean recordPauseOffset = false;
+    long recordedTimeStamp = -1;
 
     public CameraView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -289,6 +294,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 case Constants.SHOW_ELAPSED_TIME:
                     if(FRAME_VERBOSE)Log.d(TAG,"show time now");
                     showTimeElapsed();
+                    break;
+                case Constants.HIDE_ELAPSED_TIME:
+                    Log.d(TAG, "Hide time elapsed");
+                    hideTimeElapsed();
                     break;
                 case Constants.SHOW_MEMORY_CONSUMED:
                     showMemoryConsumed();
@@ -548,6 +557,22 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         isRecord = record;
     }
 
+    public boolean isRecordPaused() {
+        return recordPaused;
+    }
+
+    public void setRecordPaused(boolean recordPaused) {
+        this.recordPaused = recordPaused;
+    }
+
+    public boolean isRecordPauseOffset() {
+        return recordPauseOffset;
+    }
+
+    public void setRecordPauseOffset(boolean recordPauseOffset) {
+        this.recordPauseOffset = recordPauseOffset;
+    }
+
     public void showTimeElapsed()
     {
         if(FRAME_VERBOSE)Log.d(TAG,"displaying time = "+second);
@@ -575,6 +600,16 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             showHr = hour+"";
         }
         timeElapsed.setText(showHr + " : " + showMin + " : " + showSec);
+        //This is added for blinking the timer if recording is paused.
+        timeElapsed.setVisibility(View.VISIBLE);
+    }
+
+    public void hideTimeElapsed(){
+        timeElapsed.setVisibility(View.INVISIBLE);
+    }
+
+    public boolean isTimeVisible(){
+        return timeElapsed.getVisibility() == View.VISIBLE;
     }
 
     public void showMemoryConsumed()
@@ -882,6 +917,14 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             //Reset Rotation angle
             rotationAngle = 0f;
         }
+    }
+
+    public void recordPause(){
+        cameraHandler.sendEmptyMessage(Constants.RECORD_PAUSE);
+    }
+
+    public void recordResume(){
+        cameraHandler.sendEmptyMessage(Constants.RECORD_RESUME);
     }
 
     //This method is used to calculate the orientation necessary for the photo/video when the device is oriented as per portrait or landscape.
@@ -1462,6 +1505,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             return phonePath;
         }
 
+        long pauseDuration = 0;
         void drawFrame()
         {
             if(mEGLConfig!=null && camera1.isCameraReady()) {
@@ -1519,7 +1563,22 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         recordStop = 1;
                     }
                     updateTimer = true;
-                    EGLExt.eglPresentationTimeANDROID(mEGLDisplay, encoderSurface, surfaceTexture.getTimestamp());
+                    if(recordedTimeStamp != -1 && isRecordPauseOffset()){
+                        pauseDuration = Math.abs(recordedTimeStamp - surfaceTexture.getTimestamp());
+                        Log.d(TAG, "pause duration = "+ pauseDuration);
+                        long pauseOffset = surfaceTexture.getTimestamp() - pauseDuration;
+                        Log.d(TAG, "pauseOffset = "+pauseOffset);
+                        EGLExt.eglPresentationTimeANDROID(mEGLDisplay, encoderSurface, pauseOffset);
+                        recordedTimeStamp = -1;
+                        setRecordPauseOffset(false);
+                    }
+                    else{
+                        if(recordedTimeStamp != -1){
+                            Log.d(TAG, "surfaceTexture.getTimestamp DIFF = "+Math.abs(surfaceTexture.getTimestamp() - recordedTimeStamp));
+                        }
+                        EGLExt.eglPresentationTimeANDROID(mEGLDisplay, encoderSurface, surfaceTexture.getTimestamp());
+                        recordedTimeStamp = surfaceTexture.getTimestamp();
+                    }
                     EGL14.eglSwapBuffers(mEGLDisplay, encoderSurface);
                 }
             }
@@ -1629,6 +1688,26 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         if(VERBOSE)Log.d(TAG, "Exit recording...");
                         if(VERBOSE)Log.d(TAG,"Orig frame = "+frameCount+" , Rendered frame "+frameCnt);
                         break;
+                    case Constants.RECORD_PAUSE:
+                        Log.d(TAG, "Pausing record");
+                        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N){
+                            updateTimer = false;
+                            isRecording = false;
+//                            mediaRecorder.pause();
+                            setRecordPaused(true);
+                            setRecordPauseOffset(false);
+                        }
+                        break;
+                    case Constants.RECORD_RESUME:
+                        Log.d(TAG, "Resuming record");
+                        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N){
+                            isRecording = true;
+//                            mediaRecorder.resume();
+                            setRecordPaused(false);
+                            setRecordPauseOffset(true);
+                            updateTimer = true;
+                        }
+                        break;
                     case Constants.RECORD_STOP_NO_SD_CARD:
                         isRecording = false;
                         recordStop = -1;
@@ -1651,16 +1730,19 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         CameraView.VideoTimer videoTimer = new CameraView.VideoTimer();
         videoTimer.start();
     }
+
     public void stopTimerThread()
     {
         startTimer = false;
     }
     volatile boolean startTimer = false;
     volatile boolean updateTimer = false;
+
     //This thread controls the timer for video recording. A separate thread was needed, since the CameraRenderer thread was overloaded with displaying
     //and recording each frame, the timer value was incorrect during recording.
     class VideoTimer extends Thread
     {
+        long previousTimeBlink = 0;
         @Override
         public void run() {
             if(VERBOSE)Log.d(TAG,"VideoTimer STARTED");
@@ -1686,6 +1768,22 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                     }
                     if(!startTimer){
                         break;
+                    }
+                }
+                if(isRecordPaused()){
+                    //Add blinking text effect
+                    if(Math.abs(System.currentTimeMillis() - previousTimeBlink) >= 700){
+                        Log.d(TAG,"difference of 1.5 sec");
+                        previousTimeBlink = System.currentTimeMillis();
+                        if(isTimeVisible()) {
+                            mainHandler.sendEmptyMessage(HIDE_ELAPSED_TIME);
+                        }
+                        else{
+                            mainHandler.sendEmptyMessage(SHOW_ELAPSED_TIME);
+                        }
+                    }
+                    else if(previousTimeBlink == 0){
+                        previousTimeBlink = System.currentTimeMillis();
                     }
                 }
             }
