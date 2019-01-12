@@ -146,4 +146,7 @@
     <dimen name="widthAndHeightForClose">12dp</dimen>
     //Dimension for heading
     <dimen name="widthAndHeightForHeading">27dp</dimen>
+    //Dimension for instant settings
+    <dimen name="settingWidth">25dp</dimen>
+    <dimen name="settingHeight">25dp</dimen>
 </resources>

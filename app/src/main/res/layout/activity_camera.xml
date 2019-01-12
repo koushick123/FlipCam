@@ -83,6 +83,14 @@
         android:orientation="vertical">
 
         <ImageView
+            android:id="@+id/selfieTimer"
+            android:layout_width="@dimen/settingWidth"
+            android:layout_height="@dimen/settingHeight"
+            android:layout_marginBottom="15dp"
+            android:onClick="openSelfieTimerPopup"
+            android:src="@drawable/selfie_timer" />
+
+        <ImageView
             android:id="@+id/brightness"
             android:layout_width="@dimen/brightnessWidth"
             android:layout_height="@dimen/brightnessHeight"
@@ -90,6 +98,7 @@
             android:contentDescription="@string/brightnessContentDescription"
             android:background="?android:attr/selectableItemBackground"
             android:src="@drawable/full_brightness" />
+
     </LinearLayout>
 
     <ImageView

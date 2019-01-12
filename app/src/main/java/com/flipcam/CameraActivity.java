@@ -44,6 +44,7 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
     View settingsRootView;
     Dialog settingsDialog;
     ImageView brightness;
+    ImageView selfieTimer;
     ControlVisbilityPreference controlVisbilityPreference;
 
     @Override
@@ -52,6 +53,7 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
         if(VERBOSE)Log.d(TAG,"onCreate");
         setContentView(R.layout.activity_camera);
         brightness = (ImageView)findViewById(R.id.brightness);
+        selfieTimer = (ImageView)findViewById(R.id.selfieTimer);
         controlVisbilityPreference = (ControlVisbilityPreference)getApplicationContext();
         getSupportActionBar().hide();
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
@@ -64,7 +66,7 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
         layoutInflater = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         warningMsgRoot = layoutInflater.inflate(R.layout.warning_message,null);
         warningMsg = new Dialog(this);
-        settingsRootView = layoutInflater.inflate(R.layout.settings, null);
+        settingsRootView = layoutInflater.inflate(R.layout.brightness_settings, null);
         settingsDialog = new Dialog(this);
         sharedPreferences = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
         SharedPreferences.Editor settingsEditor = sharedPreferences.edit();
@@ -124,8 +126,17 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
         overridePendingTransition(R.anim.slide_from_right,R.anim.slide_to_left);
     }
 
+    public void openSelfieTimerPopup(View view){
+        //The reason this is called twice, is because I am facing an issue where the first time the timer popup is opened, it is improperly sized. In portrait mode the background becomes dark
+        //and in landscape mode the window does not show Set Timer button.
+        //To fix the above issue, I am making two method calls. The second call closes the incorrect window and opens it with correct dimensions.
+        //DO NOT REMOVE TWO METHOD CALLS
+        this.photoFragment.openSelfiePopup();
+        this.photoFragment.openSelfiePopup();
+    }
+
     public void openBrightnessPopup(View view){
-        TextView header = (TextView)settingsRootView.findViewById(R.id.header);
+        TextView header = (TextView)settingsRootView.findViewById(R.id.timerText);
         header.setText(getResources().getString(R.string.brightnessHeading));
         Point size = new Point();
         getWindowManager().getDefaultDisplay().getSize(size);
@@ -170,7 +181,7 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
                 }
             }
         });
-        Button decreaseBrightness = (Button)settingsRootView.findViewById(R.id.decreaseBrightness);
+        Button decreaseBrightness = (Button)settingsRootView.findViewById(R.id.setTimer);
         decreaseBrightness.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -222,11 +233,12 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
         }
         if(VERBOSE)Log.d(TAG, "brightnessLevel SET to = "+controlVisbilityPreference.getBrightnessLevel());
         brightness.setVisibility(View.VISIBLE);
+        selfieTimer.setVisibility(View.GONE);
     }
 
     public void showPhotoFragment()
     {
-        brightness.setVisibility(View.INVISIBLE);
+        brightness.setVisibility(View.GONE);
         FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
         if(photoFragment == null) {
             if(VERBOSE)Log.d(TAG,"creating photofragment");

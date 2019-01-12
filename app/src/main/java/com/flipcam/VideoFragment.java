@@ -524,7 +524,7 @@ public class VideoFragment extends android.app.Fragment{
         switchCamera.setRotation(rotationAngle);
         videoBar.addView(switchCamera);
         videoBar.addView(stopRecord);
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N){
+        /*if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N){
             pauseRecord = new ImageButton(getActivity().getApplicationContext());
             pauseRecord.setScaleType(ImageView.ScaleType.CENTER_CROP);
             pauseRecord.setBackgroundColor(getResources().getColor(R.color.transparentBar));
@@ -555,7 +555,7 @@ public class VideoFragment extends android.app.Fragment{
             pauseRecord.setLayoutParams(layoutParams);
             videoBar.addView(pauseRecord);
         }
-        else {
+        else {*/
             ImageView recordSubstitute = new ImageView(getActivity());
             recordSubstitute.setImageDrawable(getResources().getDrawable(R.drawable.placeholder));
             layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -563,7 +563,7 @@ public class VideoFragment extends android.app.Fragment{
             recordSubstitute.setLayoutParams(layoutParams);
             recordSubstitute.setVisibility(View.INVISIBLE);
             videoBar.addView(recordSubstitute);
-        }
+//        }
     }
 
     public void stopRecordAndSaveFile(boolean lowMemory){

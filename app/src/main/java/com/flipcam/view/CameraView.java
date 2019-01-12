@@ -793,6 +793,15 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             switchFlashOnOff();
         }
         camera1.setAutoExposureAndLock();
+        if(this.photoFragment != null){
+            if(!isBackCamera()) {
+                //Enable Selfie Timer icon if Front camera is used
+                this.photoFragment.getSelfieTimer().setVisibility(View.VISIBLE);
+            }
+            else{
+                this.photoFragment.getSelfieTimer().setVisibility(View.GONE);
+            }
+        }
     }
 
     public SurfaceTexture getSurfaceTexture(){
@@ -1105,11 +1114,13 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             this.videoFragment.showRecordAndThumbnail();
             this.videoFragment.getLatestFileIfExists();
             camera1.setPhotoFragmentInstance(null);
+            this.photoFragment = null;
             camera1.setVideoFragmentInstance(this.videoFragment);
         }
         else{
             this.photoFragment.getLatestFileIfExists();
             camera1.setPhotoFragmentInstance(this.photoFragment);
+            this.videoFragment = null;
             camera1.setVideoFragmentInstance(null);
         }
         if(!camera1.isCameraReady()) {
@@ -1563,7 +1574,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         recordStop = 1;
                     }
                     updateTimer = true;
-                    if(recordedTimeStamp != -1 && isRecordPauseOffset()){
+                    /*if(recordedTimeStamp != -1 && isRecordPauseOffset()){
                         pauseDuration = Math.abs(recordedTimeStamp - surfaceTexture.getTimestamp());
                         Log.d(TAG, "pause duration = "+ pauseDuration);
                         long pauseOffset = surfaceTexture.getTimestamp() - pauseDuration;
@@ -1578,7 +1589,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         }
                         EGLExt.eglPresentationTimeANDROID(mEGLDisplay, encoderSurface, surfaceTexture.getTimestamp());
                         recordedTimeStamp = surfaceTexture.getTimestamp();
-                    }
+                    }*/
+                    EGLExt.eglPresentationTimeANDROID(mEGLDisplay, encoderSurface, surfaceTexture.getTimestamp());
                     EGL14.eglSwapBuffers(mEGLDisplay, encoderSurface);
                 }
             }

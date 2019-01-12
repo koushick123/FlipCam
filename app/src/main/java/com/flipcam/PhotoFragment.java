@@ -98,6 +98,8 @@ public class PhotoFragment extends Fragment {
     boolean VERBOSE = true;
     View settingsMsgRoot;
     Dialog settingsMsgDialog;
+    ImageView selfieTimer;
+    CameraActivity cameraActivity;
 
     public interface PhotoPermission{
         void askPhotoPermission();
@@ -138,6 +140,7 @@ public class PhotoFragment extends Fragment {
         cameraView.setFlashButton(flash);
         modeText = (TextView)getActivity().findViewById(R.id.modeInfo);
         resInfo = (TextView)getActivity().findViewById(R.id.resInfo);
+        selfieTimer = (ImageView)getActivity().findViewById(R.id.selfieTimer);
         imageHighlight = (ImageView)getActivity().findViewById(R.id.imageHighlight);
         modeText.setText(getResources().getString(R.string.PHOTO_MODE));
         photoPermission = (PhotoFragment.PhotoPermission)getActivity();
@@ -152,6 +155,9 @@ public class PhotoFragment extends Fragment {
         sdCardEventReceiver = new SDCardEventReceiver();
         sharedPreferences = getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
         appWidgetManager = (AppWidgetManager)getActivity().getSystemService(Context.APPWIDGET_SERVICE);
+        cameraActivity = (CameraActivity)getActivity();
+        settingsDialog = new Dialog(getActivity());
+        getActivity().getWindowManager().getDefaultDisplay().getSize(size);
     }
 
     @Nullable
@@ -298,16 +304,77 @@ public class PhotoFragment extends Fragment {
                     orientation = i;
                     determineOrientation();
                     rotateIcons();
+                    rotateSelfieTimerPopup();
                 }
             }
         };
-        WindowManager windowManager = (WindowManager) getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
-        Display display = windowManager.getDefaultDisplay();
-        display.getSize(size);
+        windowManager = (WindowManager) getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
+        getWindowSize();
         return view;
     }
 
+    public void getWindowSize(){
+        display = windowManager.getDefaultDisplay();
+        display.getSize(size);
+    }
+
+    WindowManager windowManager;
+    Display display;
+    View settingsRootView;
+    Dialog settingsDialog;
     Point size = new Point();
+    Boolean prevPortrait = null;
+
+    public void openSelfiePopup(){
+        settingsDialog.dismiss();
+        WindowManager.LayoutParams lp = settingsDialog.getWindow().getAttributes();
+        lp.dimAmount = 0.0f;
+        getWindowSize();
+        if (portrait) {
+            settingsRootView = layoutInflater.inflate(R.layout.timer_settings, null);
+            if(VERBOSE)Log.d(TAG, "PORTRAIT after click = "+size.x+", "+size.y);
+            lp.width = (int) (size.x * 0.8);
+            lp.height = (int) (size.y * 0.3);
+        } else {
+            if(VERBOSE)Log.d(TAG, "LANDSCAPE after click = "+size.x+", "+size.y);
+            settingsRootView = layoutInflater.inflate(R.layout.timer_settings_landscape, null);
+            settingsRootView.setRotation(90);
+            lp.width = (int) (size.x * 0.6);
+            lp.height = (int) (size.y * 0.35);
+        }
+        settingsDialog.setContentView(settingsRootView);
+        settingsDialog.setCancelable(true);
+        settingsDialog.getWindow().setBackgroundDrawableResource(R.color.backColorSettingPopup);
+        settingsDialog.show();
+    }
+
+    public void rotateSelfieTimerPopup(){
+        //If there has been a orientation change from Portrait to Landscape or vice versa.
+        if(settingsDialog.isShowing()) {
+            if (prevPortrait.booleanValue() != portrait) {
+                settingsDialog.dismiss();
+                getWindowSize();
+                WindowManager.LayoutParams lp = settingsDialog.getWindow().getAttributes();
+                lp.dimAmount = 0.0f;
+                if (portrait) {
+                    settingsRootView = layoutInflater.inflate(R.layout.timer_settings, null);
+                    if(VERBOSE)Log.d(TAG, "PORTRAIT = "+size.x+", "+size.y);
+                    lp.width = (int) (size.x * 0.8);
+                    lp.height = (int) (size.y * 0.3);
+                } else {
+                    if(VERBOSE)Log.d(TAG, "LANDSCAPE = "+size.x+", "+size.y);
+                    settingsRootView = layoutInflater.inflate(R.layout.timer_settings_landscape, null);
+                    settingsRootView.setRotation(90);
+                    lp.width = (int) (size.x * 0.6);
+                    lp.height = (int) (size.y * 0.35);
+                }
+                settingsDialog.setContentView(settingsRootView);
+                settingsDialog.setCancelable(true);
+                settingsDialog.getWindow().setBackgroundDrawableResource(R.color.backColorSettingPopup);
+                settingsDialog.show();
+            }
+        }
+    }
 
     class SDCardEventReceiver extends BroadcastReceiver {
         @Override
@@ -350,9 +417,11 @@ public class PhotoFragment extends Fragment {
     }
 
     float rotationAngle = 0f;
+    boolean portrait = true;
     public void determineOrientation()
     {
         if(orientation != -1) {
+            prevPortrait = portrait;
             if (((orientation >= 315 && orientation <= 360) || (orientation >= 0 && orientation <= 45)) || (orientation >= 135 && orientation <= 195)) {
                 if (orientation >= 135 && orientation <= 195) {
                     //Reverse portrait
@@ -361,6 +430,7 @@ public class PhotoFragment extends Fragment {
                     //Portrait
                     rotationAngle = 0f;
                 }
+                portrait = true;
             } else {
                 if (orientation >= 46 && orientation <= 134) {
                     //Reverse Landscape
@@ -369,6 +439,7 @@ public class PhotoFragment extends Fragment {
                     //Landscape
                     rotationAngle = 90f;
                 }
+                portrait = false;
             }
         }
     }
@@ -379,6 +450,7 @@ public class PhotoFragment extends Fragment {
         videoMode.setRotation(rotationAngle);
         flash.setRotation(rotationAngle);
         microThumbnail.setRotation(rotationAngle);
+        selfieTimer.setRotation(rotationAngle);
         if(exifInterface!=null && !filePath.equalsIgnoreCase(""))
         {
             if(isImage(filePath)) {
@@ -439,6 +511,10 @@ public class PhotoFragment extends Fragment {
     public ImageButton getSettings() {
 
         return settings;
+    }
+
+    public ImageView getSelfieTimer(){
+        return selfieTimer;
     }
 
     public void setThumbnail(ImageView thumbnail) {

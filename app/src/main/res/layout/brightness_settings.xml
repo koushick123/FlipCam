@@ -6,7 +6,7 @@
     android:orientation="vertical">
 
     <TextView
-        android:id="@+id/header"
+        android:id="@+id/timerText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
@@ -31,7 +31,7 @@
         android:id="@+id/minBrightness"
         android:layout_width="@dimen/brightnessWidth"
         android:layout_height="@dimen/brightnessHeight"
-        android:layout_below="@+id/header"
+        android:layout_below="@+id/timerText"
         android:layout_marginBottom="@dimen/brightnessBottomMargin"
         android:layout_marginStart="@dimen/brightnessBottomMargin"
         app:srcCompat="@drawable/low_brightness" />
@@ -71,7 +71,7 @@
         android:orientation="horizontal">
 
         <Button
-            android:id="@+id/decreaseBrightness"
+            android:id="@+id/setTimer"
             android:layout_width="@dimen/increaseBrightnessWidth"
             android:layout_height="@dimen/increaseBrightnessHeight"
             android:layout_below="@+id/normalBrightness"
@@ -91,7 +91,7 @@
             android:layout_centerInParent="false"
             android:layout_marginLeft="20dp"
             android:layout_marginRight="20dp"
-            android:layout_toRightOf="@+id/decreaseBrightness"
+            android:layout_toRightOf="@+id/setTimer"
             android:layout_weight="1"
             android:background="@color/turqoise"
             android:text="+"
