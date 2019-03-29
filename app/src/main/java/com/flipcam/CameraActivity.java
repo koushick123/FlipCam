@@ -277,13 +277,13 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
             long memoryValue = 0;
             String metric = "";
             switch (memoryMetric) {
-                case "MB":
+                case Constants.METRIC_MB:
                     memoryValue = (memoryThreshold * (long) Constants.MEGA_BYTE);
-                    metric = "MB";
+                    metric = Constants.METRIC_MB;
                     break;
-                case "GB":
+                case Constants.METRIC_GB:
                     memoryValue = (memoryThreshold * (long) Constants.GIGA_BYTE);
-                    metric = "GB";
+                    metric = Constants.METRIC_GB;
                     break;
             }
             if(VERBOSE)Log.d(TAG, "memory value = " + memoryValue);

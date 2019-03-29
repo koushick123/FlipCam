@@ -252,5 +252,7 @@
     <string name="startTimerText">SET TIMER</string>
     <string name="cancelText">CANCEL</string>
     <string name="timerHeader">TIMER</string>
+    <string name="selfieTimerSettingTitle">Front Camera Timer</string>
+    <string name="selfieTimerSettingSummary">Set the front camera timer duration\n(in seconds).</string>
 </resources>
 

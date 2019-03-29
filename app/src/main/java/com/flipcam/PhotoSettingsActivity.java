@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.CheckBoxPreference;
 import android.preference.ListPreference;
+import android.preference.Preference;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
@@ -18,6 +19,7 @@ import com.flipcam.constants.Constants;
 import com.flipcam.model.Dimension;
 import com.flipcam.preferences.CustomCheckboxPreference;
 import com.flipcam.preferences.ResolutionListPreference;
+import com.flipcam.preferences.SelfieTimerPreference;
 
 import java.util.Iterator;
 import java.util.Set;
@@ -38,6 +40,8 @@ public class PhotoSettingsActivity extends AppCompatActivity {
     }
 
     public static class PhotoSettingFragment extends PreferenceFragment {
+        LayoutInflater layoutInflater;
+
         @Override
         public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
             View rootView = super.onCreateView(inflater, container, savedInstanceState);
@@ -62,6 +66,24 @@ public class PhotoSettingsActivity extends AppCompatActivity {
             boolean shutterSound = PreferenceManager.getDefaultSharedPreferences(getActivity()).getBoolean(Constants.SHUTTER_SOUND, false);
             if(VERBOSE)Log.d(TAG, "SHUTTER SOUND PREF MGR = "+shutterSound);
             getPreferenceScreen().addPreference(shutterSoundPref);
+            //Add Selfie Timer prefs
+            SelfieTimerPreference selfieTimerPreference = new SelfieTimerPreference(getActivity(), true, Constants.SELFIE_TIMER);
+            selfieTimerPreference.setTitle(getResources().getString(R.string.selfieTimerSettingTitle));
+            selfieTimerPreference.setSummary(getResources().getString(R.string.selfieTimerSettingSummary));
+            selfieTimerPreference.setKey(Constants.SELFIE_TIMER);
+            selfieTimerPreference.setPersistent(true);
+            selfieTimerPreference.setLayoutResource(R.layout.custom_selfietimer_setting);
+            selfieTimerPreference.setDialogLayoutResource(R.layout.timerpicker);
+            selfieTimerPreference.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+                @Override
+                public boolean onPreferenceChange(Preference preference, Object newValue) {
+                    String newRes = (String) newValue;
+                    Log.d(TAG, "onPreferenceChange timer = " + newValue.toString());
+                    Log.d(TAG, "onPreferenceChange pref timer = " + preference.getKey());
+                    return true;
+                }
+            });
+            getPreferenceScreen().addPreference(selfieTimerPreference);
         }
 
         private void addResolutionList(boolean backCamera){

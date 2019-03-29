@@ -5,4 +5,8 @@
     <!-- Full HD in Landscape-->
     <integer name="fullHDWidth">1920</integer>
     <integer name="fullHDHeight">1080</integer>
+    <!--Range for selfie timer -->
+    <integer name="selfieTimerMin">1</integer>
+    <integer name="selfieTimerMax">10</integer>
+    <integer name="selfieTimerDefault">3</integer>
 </resources>

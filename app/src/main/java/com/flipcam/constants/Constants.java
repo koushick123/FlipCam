@@ -27,6 +27,10 @@ public class Constants
     public final static double MEGA_BYTE = KILO_BYTE * KILO_BYTE;
     public final static double GIGA_BYTE = KILO_BYTE * MEGA_BYTE;
 
+    public static final String METRIC_KB = "KB";
+    public static final String METRIC_MB = "MB";
+    public static final String METRIC_GB = "GB";
+
     //To fetch first frame to display thumbnail
     public static final long FIRST_SEC_MICRO = 1000000;
     //To update seek bar
@@ -59,6 +63,8 @@ public class Constants
     public static final String MEDIA_COUNT_SD_CARD = "mediaCountSdCard";
     //Enable/Disable shutter sound
     public static final String SHUTTER_SOUND = "ShutterSound";
+    //Set Selfie Timer
+    public static final String SELFIE_TIMER = "SelfieTimer";
     //Screen Resolution
     public static final String PREVIEW_RESOLUTION = "PreviewResolution";
     //Video Resolution

@@ -100,6 +100,7 @@ public class PhotoFragment extends Fragment {
     Dialog settingsMsgDialog;
     ImageView selfieTimer;
     CameraActivity cameraActivity;
+    TextView selfieCountdown;
 
     public interface PhotoPermission{
         void askPhotoPermission();
@@ -308,6 +309,7 @@ public class PhotoFragment extends Fragment {
                 }
             }
         };
+        selfieCountdown = view.findViewById(R.id.selfieCountdown);
         windowManager = (WindowManager) getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
         getWindowSize();
         return view;
@@ -324,6 +326,7 @@ public class PhotoFragment extends Fragment {
     Dialog settingsDialog;
     Point size = new Point();
     Boolean prevPortrait = null;
+    Button setTimer;
 
     public void openSelfiePopup(){
         settingsDialog.dismiss();
@@ -342,6 +345,7 @@ public class PhotoFragment extends Fragment {
             lp.width = (int) (size.x * 0.6);
             lp.height = (int) (size.y * 0.35);
         }
+        setTimer = (Button)settingsRootView.findViewById(R.id.setTimer);
         settingsDialog.setContentView(settingsRootView);
         settingsDialog.setCancelable(true);
         settingsDialog.getWindow().setBackgroundDrawableResource(R.color.backColorSettingPopup);
@@ -368,11 +372,29 @@ public class PhotoFragment extends Fragment {
                     lp.width = (int) (size.x * 0.6);
                     lp.height = (int) (size.y * 0.35);
                 }
+                setTimer = (Button)settingsRootView.findViewById(R.id.setTimer);
+                setTimer.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+
+                    }
+                });
                 settingsDialog.setContentView(settingsRootView);
                 settingsDialog.setCancelable(true);
                 settingsDialog.getWindow().setBackgroundDrawableResource(R.color.backColorSettingPopup);
                 settingsDialog.show();
             }
+        }
+    }
+
+    public void startSelfieTimer(){
+        settingsDialog.dismiss();
+    }
+
+    class SelfieTimer extends Thread{
+        @Override
+        public void run(){
+
         }
     }
 
@@ -446,6 +468,7 @@ public class PhotoFragment extends Fragment {
 
     public void rotateIcons()
     {
+        selfieCountdown.setRotation(rotationAngle);
         switchCamera.setRotation(rotationAngle);
         videoMode.setRotation(rotationAngle);
         flash.setRotation(rotationAngle);
