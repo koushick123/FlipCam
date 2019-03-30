@@ -56,7 +56,7 @@ public class SelfieTimerPreference extends DialogPreference {
             numberPicker.setValue(timerValue);
         }
         else{
-            numberPicker.setValue(3);
+            numberPicker.setValue(mContext.getResources().getInteger(R.integer.selfieTimerDefault));
         }
         numberPicker.setMinValue(mContext.getResources().getInteger(R.integer.selfieTimerMin));
         numberPicker.setMaxValue(mContext.getResources().getInteger(R.integer.selfieTimerMax));
