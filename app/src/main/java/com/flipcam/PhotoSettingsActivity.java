@@ -40,7 +40,6 @@ public class PhotoSettingsActivity extends AppCompatActivity {
     }
 
     public static class PhotoSettingFragment extends PreferenceFragment {
-        LayoutInflater layoutInflater;
 
         @Override
         public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -74,15 +73,6 @@ public class PhotoSettingsActivity extends AppCompatActivity {
             selfieTimerPreference.setPersistent(true);
             selfieTimerPreference.setLayoutResource(R.layout.custom_selfietimer_setting);
             selfieTimerPreference.setDialogLayoutResource(R.layout.timerpicker);
-            selfieTimerPreference.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
-                @Override
-                public boolean onPreferenceChange(Preference preference, Object newValue) {
-                    String newRes = (String) newValue;
-                    Log.d(TAG, "onPreferenceChange timer = " + newValue.toString());
-                    Log.d(TAG, "onPreferenceChange pref timer = " + preference.getKey());
-                    return true;
-                }
-            });
             getPreferenceScreen().addPreference(selfieTimerPreference);
         }
 

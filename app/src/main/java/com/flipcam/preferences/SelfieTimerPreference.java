@@ -50,27 +50,29 @@ public class SelfieTimerPreference extends DialogPreference {
         numberPicker = view.findViewById(R.id.timerPickerValue);
         numberPicker.setWrapSelectorWheel(false);
         //Set Number Picker details
-        if(PreferenceManager.getDefaultSharedPreferences(mContext).getString(selectedKey, "3") != null &&
-                !PreferenceManager.getDefaultSharedPreferences(mContext).getString(selectedKey, "3").equalsIgnoreCase("")) {
-            int timerValue = Integer.parseInt(PreferenceManager.getDefaultSharedPreferences(mContext).getString(selectedKey, "3"));
-            numberPicker.setValue(timerValue);
+        String[] displayedVals = new String[(mContext.getResources().getInteger(R.integer.selfieTimerMax) -
+                mContext.getResources().getInteger(R.integer.selfieTimerMin)) + 1];
+        for(int i=0;i<displayedVals.length;i++){
+            displayedVals[i] = String.valueOf(i+1);
         }
-        else{
-            numberPicker.setValue(mContext.getResources().getInteger(R.integer.selfieTimerDefault));
-        }
+        int defaultTime = mContext.getResources().getInteger(R.integer.selfieTimerDefault);
+        SharedPreferences defPrefs = PreferenceManager.getDefaultSharedPreferences(mContext);
+        int timerValue = defPrefs.getInt(selectedKey, defaultTime);
+        Log.d(TAG, "Saved value = "+timerValue);
+//        numberPicker.setDisplayedValues(displayedVals);
         numberPicker.setMinValue(mContext.getResources().getInteger(R.integer.selfieTimerMin));
         numberPicker.setMaxValue(mContext.getResources().getInteger(R.integer.selfieTimerMax));
-        ((EditText)numberPicker.getChildAt(0)).setInputType(InputType.TYPE_NULL);
+        numberPicker.setValue(timerValue);
         super.onBindDialogView(view);
     }
 
     @Override
     protected void onDialogClosed(boolean positiveResult) {
         if(positiveResult) {
-            Log.d(TAG, "onDialogClosed SEL VAL = " + numberPicker.getValue());
-            int timerValue = Integer.parseInt(PreferenceManager.getDefaultSharedPreferences(mContext).getString(selectedKey, "3"));
-            SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(mContext).edit();
-            editor.putInt(selectedKey, timerValue);
+            Log.d(TAG, "onDialogClosed SELECTED VAL = " + numberPicker.getValue());
+            SharedPreferences defPrefs = PreferenceManager.getDefaultSharedPreferences(mContext);
+            SharedPreferences.Editor editor = defPrefs.edit();
+            editor.putInt(selectedKey, numberPicker.getValue());
             editor.commit();
         }
         super.onDialogClosed(positiveResult);

@@ -127,10 +127,11 @@
             android:authorities="@string/content_authority" />
 
         <activity android:name=".PhotoSettingsActivity"
-            android:label="@string/photoSettingsTitle"></activity>
+            android:label="@string/photoSettingsTitle"
+            android:configChanges="orientation|screenSize" />
 
         <activity android:name=".VideoSettingsActivity"
-            android:label="@string/videoSettingsTitle"></activity>
+            android:label="@string/videoSettingsTitle" />
     </application>
 
 </manifest>
