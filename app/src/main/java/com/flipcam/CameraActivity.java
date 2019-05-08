@@ -44,7 +44,6 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
     View settingsRootView;
     Dialog settingsDialog;
     ImageView brightness;
-    ImageView selfieTimer;
     ControlVisbilityPreference controlVisbilityPreference;
 
     @Override
@@ -53,7 +52,6 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
         if(VERBOSE)Log.d(TAG,"onCreate");
         setContentView(R.layout.activity_camera);
         brightness = (ImageView)findViewById(R.id.brightness);
-        selfieTimer = (ImageView)findViewById(R.id.selfieTimer);
         controlVisbilityPreference = (ControlVisbilityPreference)getApplicationContext();
         getSupportActionBar().hide();
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
@@ -124,15 +122,6 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
         Intent settingsIntent = new Intent(this, SettingsActivity.class);
         startActivity(settingsIntent);
         overridePendingTransition(R.anim.slide_from_right,R.anim.slide_to_left);
-    }
-
-    public void openSelfieTimerPopup(View view){
-        //The reason this is called twice, is because I am facing an issue where the first time the timer popup is opened, it is improperly sized. In portrait mode the background becomes dark
-        //and in landscape mode the window does not show Set Timer button.
-        //To fix the above issue, I am making two method calls. The second call closes the incorrect window and opens it with correct dimensions.
-        //DO NOT REMOVE TWO METHOD CALLS
-        this.photoFragment.openSelfiePopup();
-        this.photoFragment.openSelfiePopup();
     }
 
     public void openBrightnessPopup(View view){
@@ -233,7 +222,6 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
         }
         if(VERBOSE)Log.d(TAG, "brightnessLevel SET to = "+controlVisbilityPreference.getBrightnessLevel());
         brightness.setVisibility(View.VISIBLE);
-        selfieTimer.setVisibility(View.GONE);
     }
 
     public void showPhotoFragment()

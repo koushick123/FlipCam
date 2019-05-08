@@ -118,16 +118,4 @@
         android:contentDescription="@string/imagePreview"
         android:visibility="invisible" />
 
-    <TextView
-        android:id="@+id/selfieCountdown"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:gravity="center"
-        android:text="1"
-        android:textColor="@color/turqoise"
-        android:textSize="120sp"
-        android:textStyle="bold"
-        android:visibility="gone" />
-
 </FrameLayout>

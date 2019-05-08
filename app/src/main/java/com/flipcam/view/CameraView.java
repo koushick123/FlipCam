@@ -181,6 +181,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     boolean recordPaused = false;
     boolean recordPauseOffset = false;
     long recordedTimeStamp = -1;
+    SharedPreferences sharedPreferences;
 
     public CameraView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -198,6 +199,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         mSensorManager = (SensorManager)getContext().getSystemService(SENSOR_SERVICE);
         mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         audioManager = (AudioManager)getContext().getSystemService(Context.AUDIO_SERVICE);
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getContext());
     }
 
     private boolean isCamera2(){
@@ -793,15 +795,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             switchFlashOnOff();
         }
         camera1.setAutoExposureAndLock();
-        if(this.photoFragment != null){
-            if(!isBackCamera()) {
-                //Enable Selfie Timer icon if Front camera is used
-                this.photoFragment.getSelfieTimer().setVisibility(View.VISIBLE);
-            }
-            else{
-                this.photoFragment.getSelfieTimer().setVisibility(View.GONE);
-            }
-        }
     }
 
     public SurfaceTexture getSurfaceTexture(){
@@ -1064,8 +1057,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 e.printStackTrace();
             }
         }
-        if(VERBOSE)Log.d(TAG, "Shutter sound before click? = "+PreferenceManager.getDefaultSharedPreferences(getContext()).getBoolean(Constants.SHUTTER_SOUND, true));
-        camera1.enableShutterSound(PreferenceManager.getDefaultSharedPreferences(getContext()).getBoolean(Constants.SHUTTER_SOUND, true));
+        if(VERBOSE)Log.d(TAG, "Shutter sound before click? = "+sharedPreferences.getBoolean(Constants.SHUTTER_SOUND, true));
+        camera1.enableShutterSound(sharedPreferences.getBoolean(Constants.SHUTTER_SOUND, true));
         mNextPhotoAbsolutePath = cameraHandler.getCameraRendererInstance().getFilePath(false);
         camera1.setPhotoPath(mNextPhotoAbsolutePath);
         camera1.capturePicture();
@@ -1151,6 +1144,21 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             //Ensure camera's resources are properly released.
             CameraRenderer cameraRenderer = cameraHandler.getCameraRendererInstance();
             if(camera1.isCameraReady()) {
+                //Switch Off countdown if started for selfie timer
+                if(this.photoFragment != null && !isBackCamera()){
+                    if(this.photoFragment.getCountDown() >= 0) {
+                        Log.d(TAG, "Switch Off Timer");
+                        this.photoFragment.setCountDown(-1);
+                        this.photoFragment.enableButtons();
+                        this.photoFragment.getSelfieCountdown().setVisibility(View.GONE);
+                    }
+                }
+                if(this.photoFragment != null) {
+                    //Hide Image highlight and enable buttons, since user can minimize app just before
+                    //photo is taken when using Front camera timer
+                    this.photoFragment.animatePhotoShrink();
+                    this.photoFragment.enableButtons();
+                }
                 //Switch off flash light if used during recording.
                 if(isCamera2()) {
                     setStopCamera(true);
@@ -1566,7 +1574,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                     else if(previousTime == 0){
                         previousTime = System.currentTimeMillis();
                     }
-                    if(PreferenceManager.getDefaultSharedPreferences(getContext()).getBoolean(Constants.SHOW_MEMORY_CONSUMED_MSG, false)) {
+                    if(sharedPreferences.getBoolean(Constants.SHOW_MEMORY_CONSUMED_MSG, false)) {
                         mainHandler.sendEmptyMessage(Constants.SHOW_MEMORY_CONSUMED);
                     }
                     if (recordStop == -1) {

@@ -59,7 +59,6 @@ public class SelfieTimerPreference extends DialogPreference {
         SharedPreferences defPrefs = PreferenceManager.getDefaultSharedPreferences(mContext);
         int timerValue = defPrefs.getInt(selectedKey, defaultTime);
         Log.d(TAG, "Saved value = "+timerValue);
-//        numberPicker.setDisplayedValues(displayedVals);
         numberPicker.setMinValue(mContext.getResources().getInteger(R.integer.selfieTimerMin));
         numberPicker.setMaxValue(mContext.getResources().getInteger(R.integer.selfieTimerMax));
         numberPicker.setValue(timerValue);

@@ -254,10 +254,6 @@ public class SettingsActivity extends AppCompatActivity{
         warningMsg.show();
     }
 
-    public void setFeedback_information(EditText feedback_information) {
-        this.feedback_information = feedback_information;
-    }
-
     public void sendFeedback(View view){
         if(!getFeedback_information().getText().toString().trim().equals("")){
 
@@ -343,23 +339,6 @@ public class SettingsActivity extends AppCompatActivity{
         else{
             switchOnDropbox.setChecked(false);
         }
-    }
-
-    public void okReset(){
-        //Reset Save Media
-        settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
-        //Reset threshold warning
-        settingsEditor.putBoolean(Constants.PHONE_MEMORY_DISABLE, true);
-        //Reset auto upload
-        settingsEditor.putBoolean(Constants.SAVE_TO_GOOGLE_DRIVE, false);
-        settingsEditor.putBoolean(Constants.SAVE_TO_DROPBOX, false);
-        settingsEditor.commit();
-        updateSettingsValues();
-        shareMedia.dismiss();
-    }
-
-    public void cancelReset(){
-        shareMedia.dismiss();
     }
 
     public String doesSDCardExist(){

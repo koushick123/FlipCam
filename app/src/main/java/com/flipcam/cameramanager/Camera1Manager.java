@@ -477,13 +477,8 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
             photoFrag.animatePhotoShrink();
             camera.startPreview();
             photoFrag.hideImagePreview();
-            photoFrag.getCapturePic().setClickable(true);
-            photoFrag.getVideoMode().setClickable(true);
-            photoFrag.getSwitchCamera().setClickable(true);
-            photoFrag.getThumbnail().setClickable(true);
-            photoFrag.getFlash().setClickable(true);
-            photoFrag.getSettings().setClickable(true);
             photoFrag.getZoomBar().setClickable(true);
+            photoFrag.enableButtons();
             //Reset Focus mode to Continuous AF if applicable
             if(previousFocusMode != null){
                 //Cancel AF point

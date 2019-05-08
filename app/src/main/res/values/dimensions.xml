@@ -116,8 +116,8 @@
     <dimen name="fcGalleryTextTopAndBottomMargin">15dp</dimen>
     <dimen name="fcGalleryTextLeftMargin">15dp</dimen>
     //Size for brightness icon
-    <dimen name="brightnessWidth">25dp</dimen>
-    <dimen name="brightnessHeight">25dp</dimen>
+    <dimen name="brightnessWidth">30dp</dimen>
+    <dimen name="brightnessHeight">30dp</dimen>
     <dimen name="instantSettingWidth">50dp</dimen>
     <dimen name="instantSettingHeight">150dp</dimen>
     //Dimensions for brightness popup
@@ -147,6 +147,6 @@
     //Dimension for heading
     <dimen name="widthAndHeightForHeading">27dp</dimen>
     //Dimension for instant settings
-    <dimen name="settingWidth">25dp</dimen>
-    <dimen name="settingHeight">25dp</dimen>
+    <dimen name="settingWidth">30dp</dimen>
+    <dimen name="settingHeight">30dp</dimen>
 </resources>

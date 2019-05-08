@@ -18,6 +18,9 @@ import android.media.ExifInterface;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
+import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.util.Log;
 import android.view.Display;
@@ -27,6 +30,8 @@ import android.view.OrientationEventListener;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.view.animation.LinearInterpolator;
 import android.view.animation.ScaleAnimation;
 import android.widget.Button;
@@ -51,6 +56,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 
 import static com.facebook.FacebookSdk.getApplicationContext;
 
@@ -90,6 +96,7 @@ public class PhotoFragment extends Fragment {
     IntentFilter mediaFilters;
     Button okButton;
     SharedPreferences sharedPreferences;
+    SharedPreferences timerPreference;
     boolean sdCardUnavailWarned = false;
     FrameLayout thumbnailParent;
     FrameLayout photoCameraView;
@@ -98,9 +105,14 @@ public class PhotoFragment extends Fragment {
     boolean VERBOSE = true;
     View settingsMsgRoot;
     Dialog settingsMsgDialog;
-    ImageView selfieTimer;
     CameraActivity cameraActivity;
     TextView selfieCountdown;
+    int defaultSelfieTimer = 0;
+    WindowManager windowManager;
+    Display display;
+    Dialog settingsDialog;
+    Point size = new Point();
+    Boolean prevPortrait = null;
 
     public interface PhotoPermission{
         void askPhotoPermission();
@@ -120,6 +132,26 @@ public class PhotoFragment extends Fragment {
     public interface LowestThresholdCheckForPictureInterface{
         boolean checkIfPhoneMemoryIsBelowLowestThresholdForPicture();
     }
+
+    class PhotoFragmentHandler extends Handler {
+        WeakReference<PhotoFragment> photoFragmentWeakReference;
+        PhotoFragment photoFragment;
+        public PhotoFragmentHandler(PhotoFragment photoFragment1) {
+            photoFragmentWeakReference = new WeakReference<>(photoFragment1);
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            photoFragment = photoFragmentWeakReference.get();
+            switch(msg.what){
+                case Constants.SHOW_SELFIE_TIMER:
+                    showSelfieTimer(msg.arg1);
+                    break;
+            }
+        }
+    }
+
+    PhotoFragmentHandler photoFragHandler = new PhotoFragmentHandler(this);
 
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
@@ -141,7 +173,6 @@ public class PhotoFragment extends Fragment {
         cameraView.setFlashButton(flash);
         modeText = (TextView)getActivity().findViewById(R.id.modeInfo);
         resInfo = (TextView)getActivity().findViewById(R.id.resInfo);
-        selfieTimer = (ImageView)getActivity().findViewById(R.id.selfieTimer);
         imageHighlight = (ImageView)getActivity().findViewById(R.id.imageHighlight);
         modeText.setText(getResources().getString(R.string.PHOTO_MODE));
         photoPermission = (PhotoFragment.PhotoPermission)getActivity();
@@ -155,10 +186,14 @@ public class PhotoFragment extends Fragment {
         mediaFilters = new IntentFilter();
         sdCardEventReceiver = new SDCardEventReceiver();
         sharedPreferences = getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
+        //Need a separate timerpreference variable since these Photo preferences are maintained using PreferenceManager
+        timerPreference = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         appWidgetManager = (AppWidgetManager)getActivity().getSystemService(Context.APPWIDGET_SERVICE);
         cameraActivity = (CameraActivity)getActivity();
         settingsDialog = new Dialog(getActivity());
+        defaultSelfieTimer = getResources().getInteger(R.integer.selfieTimerDefault);
         getActivity().getWindowManager().getDefaultDisplay().getSize(size);
+        selfieCountdown = getActivity().findViewById(R.id.selfieCountdown);
     }
 
     @Nullable
@@ -221,55 +256,52 @@ public class PhotoFragment extends Fragment {
             }
         });
         capturePic = (ImageButton)view.findViewById(R.id.cameraCapture);
-        capturePic.setOnClickListener(new View.OnClickListener(){
-            @Override
-            public void onClick(View view) {
-                capturePic.setClickable(false);
-                videoMode.setClickable(false);
-                switchCamera.setClickable(false);
-                thumbnail.setClickable(false);
-                if(lowestThresholdCheckForPictureInterface.checkIfPhoneMemoryIsBelowLowestThresholdForPicture()){
-                    LayoutInflater layoutInflater = (LayoutInflater)getActivity().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-                    View thresholdExceededRoot = layoutInflater.inflate(R.layout.threshold_exceeded, null);
-                    final Dialog thresholdDialog = new Dialog(getActivity());
-                    TextView memoryLimitMsg = (TextView)thresholdExceededRoot.findViewById(R.id.memoryLimitMsg);
-                    int lowestThreshold = getResources().getInteger(R.integer.minimumMemoryWarning);
-                    StringBuilder minimumThreshold = new StringBuilder(lowestThreshold+"");
-                    minimumThreshold.append(" ");
-                    minimumThreshold.append(getResources().getString(R.string.MEM_PF_MB));
-                    if(VERBOSE)Log.d(TAG, "minimumThreshold = "+minimumThreshold);
-                    memoryLimitMsg.setText(getResources().getString(R.string.minimumThresholdExceeded, minimumThreshold));
-                    CheckBox disableThreshold = (CheckBox)thresholdExceededRoot.findViewById(R.id.disableThreshold);
-                    disableThreshold.setVisibility(View.GONE);
-                    Button okButton = (Button)thresholdExceededRoot.findViewById(R.id.okButton);
-                    okButton.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View view) {
-                            capturePic.setClickable(true);
-                            videoMode.setClickable(true);
-                            switchCamera.setClickable(true);
-                            thumbnail.setClickable(true);
-                            thresholdDialog.dismiss();
-                        }
-                    });
-                    thresholdDialog.setContentView(thresholdExceededRoot);
-                    thresholdDialog.setCancelable(false);
-                    thresholdDialog.show();
-                }
-                else {
-                    if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
-                        if(doesSDCardExist() == null && !sdCardUnavailWarned){
-                            sdCardUnavailWarned = true;
-                            showSDCardUnavailMessage();
-                        }
-                        else{
-                            sdCardUnavailWarned = false;
-                            showImagePreview();
-                        }
+        capturePic.setOnClickListener((view1)-> {
+            capturePic.setClickable(false);
+            videoMode.setClickable(false);
+            switchCamera.setClickable(false);
+            thumbnail.setClickable(false);
+            if(lowestThresholdCheckForPictureInterface.checkIfPhoneMemoryIsBelowLowestThresholdForPicture()){
+                LayoutInflater layoutInflater = (LayoutInflater)getActivity().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+                View thresholdExceededRoot = layoutInflater.inflate(R.layout.threshold_exceeded, null);
+                final Dialog thresholdDialog = new Dialog(getActivity());
+                TextView memoryLimitMsg = (TextView)thresholdExceededRoot.findViewById(R.id.memoryLimitMsg);
+                int lowestThreshold = getResources().getInteger(R.integer.minimumMemoryWarning);
+                StringBuilder minimumThreshold = new StringBuilder(lowestThreshold+"");
+                minimumThreshold.append(" ");
+                minimumThreshold.append(getResources().getString(R.string.MEM_PF_MB));
+                if(VERBOSE)Log.d(TAG, "minimumThreshold = "+minimumThreshold);
+                memoryLimitMsg.setText(getResources().getString(R.string.minimumThresholdExceeded, minimumThreshold));
+                CheckBox disableThreshold = (CheckBox)thresholdExceededRoot.findViewById(R.id.disableThreshold);
+                disableThreshold.setVisibility(View.GONE);
+                Button okButton = (Button)thresholdExceededRoot.findViewById(R.id.okButton);
+                okButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        capturePic.setClickable(true);
+                        videoMode.setClickable(true);
+                        switchCamera.setClickable(true);
+                        thumbnail.setClickable(true);
+                        thresholdDialog.dismiss();
                     }
-                    else {
+                });
+                thresholdDialog.setContentView(thresholdExceededRoot);
+                thresholdDialog.setCancelable(false);
+                thresholdDialog.show();
+            }
+            else {
+                if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
+                    if(doesSDCardExist() == null && !sdCardUnavailWarned){
+                        sdCardUnavailWarned = true;
+                        showSDCardUnavailMessage();
+                    }
+                    else{
+                        sdCardUnavailWarned = false;
                         showImagePreview();
                     }
+                }
+                else {
+                    showImagePreview();
                 }
             }
         });
@@ -305,11 +337,9 @@ public class PhotoFragment extends Fragment {
                     orientation = i;
                     determineOrientation();
                     rotateIcons();
-                    rotateSelfieTimerPopup();
                 }
             }
         };
-        selfieCountdown = view.findViewById(R.id.selfieCountdown);
         windowManager = (WindowManager) getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
         getWindowSize();
         return view;
@@ -320,83 +350,57 @@ public class PhotoFragment extends Fragment {
         display.getSize(size);
     }
 
-    WindowManager windowManager;
-    Display display;
-    View settingsRootView;
-    Dialog settingsDialog;
-    Point size = new Point();
-    Boolean prevPortrait = null;
-    Button setTimer;
-
-    public void openSelfiePopup(){
-        settingsDialog.dismiss();
-        WindowManager.LayoutParams lp = settingsDialog.getWindow().getAttributes();
-        lp.dimAmount = 0.0f;
-        getWindowSize();
-        if (portrait) {
-            settingsRootView = layoutInflater.inflate(R.layout.timer_settings, null);
-            if(VERBOSE)Log.d(TAG, "PORTRAIT after click = "+size.x+", "+size.y);
-            lp.width = (int) (size.x * 0.8);
-            lp.height = (int) (size.y * 0.3);
-        } else {
-            if(VERBOSE)Log.d(TAG, "LANDSCAPE after click = "+size.x+", "+size.y);
-            settingsRootView = layoutInflater.inflate(R.layout.timer_settings_landscape, null);
-            settingsRootView.setRotation(90);
-            lp.width = (int) (size.x * 0.6);
-            lp.height = (int) (size.y * 0.35);
+    private void showSelfieTimer(int value){
+        if(VERBOSE)Log.d(TAG, "DISP Value == "+value);
+        if(value > 0) {
+            selfieCountdown.startAnimation(fadeOut);
+            selfieCountdown.setText(String.valueOf(value));
         }
-        setTimer = (Button)settingsRootView.findViewById(R.id.setTimer);
-        settingsDialog.setContentView(settingsRootView);
-        settingsDialog.setCancelable(true);
-        settingsDialog.getWindow().setBackgroundDrawableResource(R.color.backColorSettingPopup);
-        settingsDialog.show();
+        else{
+            selfieCountdown.setVisibility(View.GONE);
+            capturePhoto();
+        }
     }
 
-    public void rotateSelfieTimerPopup(){
-        //If there has been a orientation change from Portrait to Landscape or vice versa.
-        if(settingsDialog.isShowing()) {
-            if (prevPortrait.booleanValue() != portrait) {
-                settingsDialog.dismiss();
-                getWindowSize();
-                WindowManager.LayoutParams lp = settingsDialog.getWindow().getAttributes();
-                lp.dimAmount = 0.0f;
-                if (portrait) {
-                    settingsRootView = layoutInflater.inflate(R.layout.timer_settings, null);
-                    if(VERBOSE)Log.d(TAG, "PORTRAIT = "+size.x+", "+size.y);
-                    lp.width = (int) (size.x * 0.8);
-                    lp.height = (int) (size.y * 0.3);
-                } else {
-                    if(VERBOSE)Log.d(TAG, "LANDSCAPE = "+size.x+", "+size.y);
-                    settingsRootView = layoutInflater.inflate(R.layout.timer_settings_landscape, null);
-                    settingsRootView.setRotation(90);
-                    lp.width = (int) (size.x * 0.6);
-                    lp.height = (int) (size.y * 0.35);
-                }
-                setTimer = (Button)settingsRootView.findViewById(R.id.setTimer);
-                setTimer.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-
-                    }
-                });
-                settingsDialog.setContentView(settingsRootView);
-                settingsDialog.setCancelable(true);
-                settingsDialog.getWindow().setBackgroundDrawableResource(R.color.backColorSettingPopup);
-                settingsDialog.show();
-            }
-        }
+    public TextView getSelfieCountdown() {
+        return selfieCountdown;
     }
 
     public void startSelfieTimer(){
         settingsDialog.dismiss();
+        disableButtons();
+        fadeOut = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.countdown_fade_out);
+        selfieCountdown.setVisibility(View.VISIBLE);
+        new Thread(() -> {
+            setCountDown(timerPreference.getInt(Constants.SELFIE_TIMER, defaultSelfieTimer));
+            while(getCountDown() >= 0){
+                if(VERBOSE)Log.d(TAG, "CountDown = "+getCountDown());
+                Message msg = new Message();
+                msg.what = Constants.SHOW_SELFIE_TIMER;
+                photoFragHandler.sendMessage(msg);
+                msg.arg1 = getCountDown();
+                setCountDown(getCountDown() - 1);
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            photoFragHandler.removeMessages(Constants.SHOW_SELFIE_TIMER);
+        }).start();
     }
 
-    class SelfieTimer extends Thread{
-        @Override
-        public void run(){
+    Animation fadeOut;
 
-        }
+    public int getCountDown() {
+        return countDown;
     }
+
+    public void setCountDown(int countDown) {
+        this.countDown = countDown;
+    }
+
+    private int countDown = -1;
 
     class SDCardEventReceiver extends BroadcastReceiver {
         @Override
@@ -473,7 +477,6 @@ public class PhotoFragment extends Fragment {
         videoMode.setRotation(rotationAngle);
         flash.setRotation(rotationAngle);
         microThumbnail.setRotation(rotationAngle);
-        selfieTimer.setRotation(rotationAngle);
         if(exifInterface!=null && !filePath.equalsIgnoreCase(""))
         {
             if(isImage(filePath)) {
@@ -501,69 +504,55 @@ public class PhotoFragment extends Fragment {
         return zoombar;
     }
 
-    public ImageButton getCapturePic()
-    {
-        return capturePic;
-    }
-
-    public ImageButton getSwitchCamera() {
-        return switchCamera;
-    }
-
-    public void setSwitchCamera(ImageButton switchCamera) {
-        this.switchCamera = switchCamera;
-    }
-
-    public ImageButton getVideoMode() {
-        return videoMode;
-    }
-
-    public void setVideoMode(ImageButton videoMode) {
-        this.videoMode = videoMode;
-    }
-
     public ImageView getThumbnail() {
         return thumbnail;
-    }
-
-    public ImageButton getFlash() {
-
-        return flash;
-    }
-
-    public ImageButton getSettings() {
-
-        return settings;
-    }
-
-    public ImageView getSelfieTimer(){
-        return selfieTimer;
     }
 
     public void setThumbnail(ImageView thumbnail) {
         this.thumbnail = thumbnail;
     }
 
-    public void showImagePreview()
-    {
-        //Use imagePreview to show the captured preview even after zoom in.
-        imagePreview.setImageBitmap(cameraView.getDrawingCache());
-        imagePreview.setVisibility(View.VISIBLE);
-        //Use imageHighlight to highlight the borders when a picture is being taken.
-        imageHighlight.setImageDrawable(getResources().getDrawable(R.drawable.photo_highlight));
-        imageHighlight.setVisibility(View.VISIBLE);
+    public void disableButtons(){
         settings.setClickable(false);
         flash.setClickable(false);
         capturePic.setClickable(false);
         videoMode.setClickable(false);
         switchCamera.setClickable(false);
         thumbnail.setClickable(false);
-        zoombar.setClickable(false);
+    }
+
+    public void enableButtons(){
+        settings.setClickable(true);
+        flash.setClickable(true);
+        capturePic.setClickable(true);
+        videoMode.setClickable(true);
+        switchCamera.setClickable(true);
+        thumbnail.setClickable(true);
+    }
+
+    public void showImagePreview()
+    {
+        if(timerPreference.getInt(Constants.SELFIE_TIMER, defaultSelfieTimer) > 0){
+            startSelfieTimer();
+        }
+        else{
+            capturePhoto();
+        }
+    }
+
+    public void capturePhoto(){
+        //Use imagePreview to show the captured preview even after zoom in.
+        imagePreview.setImageBitmap(cameraView.getDrawingCache());
+        imagePreview.setVisibility(View.VISIBLE);
+        //Use imageHighlight to highlight the borders when a picture is being taken.
+        imageHighlight.setImageDrawable(getResources().getDrawable(R.drawable.photo_highlight));
+        imageHighlight.setVisibility(View.VISIBLE);
+        disableButtons();
         cameraView.capturePhoto();
     }
 
     public void animatePhotoShrink(){
-        Log.d(TAG, "animatePhotoShrink");
+        if(VERBOSE)Log.d(TAG, "animatePhotoShrink");
         int adjustWidth = (int)getResources().getDimension(R.dimen.thumbnailWidth);
         int adjustHeight = (int)getResources().getDimension(R.dimen.thumbnailHeight);
         ScaleAnimation scaleAnim = new ScaleAnimation(1.0f,0.1f, 1.0f, 0.1f, size.x - adjustWidth / 2,
@@ -617,9 +606,8 @@ public class PhotoFragment extends Fragment {
             final String sdCardFilePath = sdcardpath;
             final FileOutputStream createTestFile = new FileOutputStream(sdcardpath);
             if(VERBOSE)Log.d(TAG, "Able to create file... SD Card exists");
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
+            new Thread(() -> {
+                {
                     File testfile = new File(sdCardFilePath);
                     try {
                         createTestFile.close();
@@ -655,15 +643,12 @@ public class PhotoFragment extends Fragment {
                 settingsMsg.setGravity(Gravity.CENTER,0,0);
                 settingsMsg.setView(settingsMsgRoot);
                 settingsMsg.show();
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            Thread.sleep(1250);
-                            settingsMsg.cancel();
-                        }catch (InterruptedException ie){
-                            ie.printStackTrace();
-                        }
+                new Thread(() -> {
+                    try {
+                        Thread.sleep(1250);
+                        settingsMsg.cancel();
+                    }catch (InterruptedException ie){
+                        ie.printStackTrace();
                     }
                 }).start();
             }
@@ -687,15 +672,12 @@ public class PhotoFragment extends Fragment {
             settingsMsg.setGravity(Gravity.CENTER,0,0);
             settingsMsg.setView(settingsMsgRoot);
             settingsMsg.show();
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        Thread.sleep(1250);
-                        settingsMsg.cancel();
-                    }catch (InterruptedException ie){
-                        ie.printStackTrace();
-                    }
+            new Thread(() -> {
+                try {
+                    Thread.sleep(1250);
+                    settingsMsg.cancel();
+                }catch (InterruptedException ie){
+                    ie.printStackTrace();
                 }
             }).start();
         }
@@ -725,12 +707,8 @@ public class PhotoFragment extends Fragment {
         microThumbnail.setVisibility(View.INVISIBLE);
         thumbnail.setImageBitmap(firstFrame);
         thumbnail.setClickable(true);
-        thumbnail.setOnClickListener(new View.OnClickListener(){
-            @Override
-            public void onClick(View view)
-            {
-                openMedia();
-            }
+        thumbnail.setOnClickListener((view) -> {
+            openMedia();
         });
     }
 

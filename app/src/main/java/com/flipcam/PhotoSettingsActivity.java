@@ -2,10 +2,10 @@ package com.flipcam;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Bundle;
 import android.preference.CheckBoxPreference;
 import android.preference.ListPreference;
-import android.preference.Preference;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
@@ -21,6 +21,7 @@ import com.flipcam.preferences.CustomCheckboxPreference;
 import com.flipcam.preferences.ResolutionListPreference;
 import com.flipcam.preferences.SelfieTimerPreference;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.TreeSet;
@@ -94,18 +95,39 @@ public class PhotoSettingsActivity extends AppCompatActivity {
             if (VERBOSE) Log.d(TAG, "photoRes SIZE = " + entries.size());
             int width = 0, height = 0;
             //Sort all sizes in descending order.
-            for (String resol : entries) {
-                width = Integer.parseInt(resol.substring(0, resol.indexOf(" ")));
-                height = Integer.parseInt(resol.substring(resol.lastIndexOf(" ") + 1, resol.length()));
-                sortedPicsSizes.add(new Dimension(width, height));
+            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                Log.d(TAG, "Use forEach");
+                entries.forEach((resol) -> {
+                    int wid = Integer.parseInt(resol.substring(0, resol.indexOf(" ")));
+                    int heig = Integer.parseInt(resol.substring(resol.lastIndexOf(" ") + 1));
+                    sortedPicsSizes.add(new Dimension(wid, heig));
+                });
+            }
+            else {
+                for (String resol : entries) {
+                    width = Integer.parseInt(resol.substring(0, resol.indexOf(" ")));
+                    height = Integer.parseInt(resol.substring(resol.lastIndexOf(" ") + 1));
+                    sortedPicsSizes.add(new Dimension(width, height));
+                }
             }
             CharSequence[] resEntries = new CharSequence[sortedPicsSizes.size()];
-            Iterator<Dimension> resolIter = sortedPicsSizes.iterator();
-            while (resolIter.hasNext()) {
-                Dimension dimen = resolIter.next();
-                width = dimen.getWidth();
-                height = dimen.getHeight();
-                resEntries[index++] = width + " X "+height;
+            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                ArrayList<CharSequence> resEntList = new ArrayList<>(sortedPicsSizes.size());
+                sortedPicsSizes.forEach((dimension) -> {
+                    int wid = dimension.getWidth();
+                    int heig = dimension.getHeight();
+                    resEntList.add(wid + " X " + heig);
+                });
+                resEntries = resEntList.toArray(resEntries);
+            }
+            else {
+                Iterator<Dimension> resolIter = sortedPicsSizes.iterator();
+                while (resolIter.hasNext()) {
+                    Dimension dimen = resolIter.next();
+                    width = dimen.getWidth();
+                    height = dimen.getHeight();
+                    resEntries[index++] = width + " X " + height;
+                }
             }
             listPreference.setEntries(resEntries);
             listPreference.setEntryValues(resEntries);

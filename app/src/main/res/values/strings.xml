@@ -248,11 +248,13 @@
     <string name="flashSetting">FLASH</string>
     <string name="memoryConsumedTitle">Memory Consumed</string>
     <string name="pausedText">RECORDING PAUSED</string>
-    <string name="timerText">Click SET TIMER to start the timer for Front Facing Camera.</string>
-    <string name="startTimerText">SET TIMER</string>
+    <string name="timerText">Click START TIMER to start the timer for Front Facing Camera.</string>
+    <string name="startTimerText">START TIMER</string>
     <string name="cancelText">CANCEL</string>
     <string name="timerHeader">TIMER</string>
     <string name="selfieTimerSettingTitle">Front Camera Timer</string>
-    <string name="selfieTimerSettingSummary">Set the front camera timer duration\n(in seconds).</string>
+    <string name="selfieTimerSettingSummary">Set the front camera timer duration\n(in seconds).\n\nZero value turns off timer.
+    </string>
+    <string name="selfieTimerOff">Selfie Timer Off</string>
 </resources>
 
