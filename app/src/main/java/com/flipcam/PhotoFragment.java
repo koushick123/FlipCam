@@ -16,6 +16,7 @@ import android.graphics.Point;
 import android.hardware.SensorManager;
 import android.media.ExifInterface;
 import android.media.MediaMetadataRetriever;
+import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -353,11 +354,17 @@ public class PhotoFragment extends Fragment {
     private void showSelfieTimer(int value){
         if(VERBOSE)Log.d(TAG, "DISP Value == "+value);
         if(value > 0) {
-            selfieCountdown.startAnimation(fadeOut);
+            timerPlayer.start();
+            if(getCountDown() == timerPreference.getInt(Constants.SELFIE_TIMER, defaultSelfieTimer)) {
+                timerPlayer.seekTo(80);
+            }
             selfieCountdown.setText(String.valueOf(value));
+            selfieCountdown.startAnimation(fadeOut);
         }
         else{
             selfieCountdown.setVisibility(View.GONE);
+            setCountDown(timerPreference.getInt(Constants.SELFIE_TIMER, defaultSelfieTimer));
+            setTimerPlayer(null);
             capturePhoto();
         }
     }
@@ -366,28 +373,45 @@ public class PhotoFragment extends Fragment {
         return selfieCountdown;
     }
 
+    public void setTimerPlayer(MediaPlayer timerPlayer) {
+        this.timerPlayer = timerPlayer;
+    }
+
+    MediaPlayer timerPlayer = null;
+    int countDown = -1;
+
+    public MediaPlayer getTimerPlayer() {
+        return timerPlayer;
+    }
+
     public void startSelfieTimer(){
         settingsDialog.dismiss();
         disableButtons();
+        timerPlayer = MediaPlayer.create(getApplicationContext(), R.raw.selfie_timer_tick);
         fadeOut = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.countdown_fade_out);
         selfieCountdown.setVisibility(View.VISIBLE);
-        new Thread(() -> {
-            setCountDown(timerPreference.getInt(Constants.SELFIE_TIMER, defaultSelfieTimer));
-            while(getCountDown() >= 0){
-                if(VERBOSE)Log.d(TAG, "CountDown = "+getCountDown());
+        timerPlayer.setOnCompletionListener((listener) -> {
+            Log.d(TAG, "COMPLETED FOR = "+getCountDown());
+            if(getCountDown() > 0) {
+                Message msg = new Message();
+                setCountDown(getCountDown() - 1);
+                msg.what = Constants.SHOW_SELFIE_TIMER;
+                msg.arg1 = getCountDown();
+                photoFragHandler.sendMessage(msg);
+            }
+            else{
                 Message msg = new Message();
                 msg.what = Constants.SHOW_SELFIE_TIMER;
+                msg.arg1 = 0;
                 photoFragHandler.sendMessage(msg);
-                msg.arg1 = getCountDown();
-                setCountDown(getCountDown() - 1);
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
             }
-            photoFragHandler.removeMessages(Constants.SHOW_SELFIE_TIMER);
-        }).start();
+        });
+        //Start the countdown
+        setCountDown(timerPreference.getInt(Constants.SELFIE_TIMER, defaultSelfieTimer));
+        Message msg = new Message();
+        msg.what = Constants.SHOW_SELFIE_TIMER;
+        msg.arg1 = getCountDown();
+        photoFragHandler.sendMessage(msg);
     }
 
     Animation fadeOut;
@@ -400,7 +424,6 @@ public class PhotoFragment extends Fragment {
         this.countDown = countDown;
     }
 
-    private int countDown = -1;
 
     class SDCardEventReceiver extends BroadcastReceiver {
         @Override
@@ -512,6 +535,10 @@ public class PhotoFragment extends Fragment {
         this.thumbnail = thumbnail;
     }
 
+    public ImageView getImageHighlight() {
+        return imageHighlight;
+    }
+
     public void disableButtons(){
         settings.setClickable(false);
         flash.setClickable(false);
@@ -532,8 +559,13 @@ public class PhotoFragment extends Fragment {
 
     public void showImagePreview()
     {
-        if(timerPreference.getInt(Constants.SELFIE_TIMER, defaultSelfieTimer) > 0){
-            startSelfieTimer();
+        if(!cameraView.isBackCamera()){
+            if(timerPreference.getInt(Constants.SELFIE_TIMER, defaultSelfieTimer) > 0) {
+                startSelfieTimer();
+            }
+            else{
+                capturePhoto();
+            }
         }
         else{
             capturePhoto();

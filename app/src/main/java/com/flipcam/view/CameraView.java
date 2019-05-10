@@ -1145,19 +1145,23 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             CameraRenderer cameraRenderer = cameraHandler.getCameraRendererInstance();
             if(camera1.isCameraReady()) {
                 //Switch Off countdown if started for selfie timer
-                if(this.photoFragment != null && !isBackCamera()){
-                    if(this.photoFragment.getCountDown() >= 0) {
+                if(this.photoFragment != null){
+                    if(this.photoFragment.getCountDown() >= 0 && !isBackCamera()) {
                         Log.d(TAG, "Switch Off Timer");
                         this.photoFragment.setCountDown(-1);
                         this.photoFragment.enableButtons();
                         this.photoFragment.getSelfieCountdown().setVisibility(View.GONE);
                     }
-                }
-                if(this.photoFragment != null) {
                     //Hide Image highlight and enable buttons, since user can minimize app just before
                     //photo is taken when using Front camera timer
-                    this.photoFragment.animatePhotoShrink();
+                    this.photoFragment.getImageHighlight().setVisibility(View.INVISIBLE);
                     this.photoFragment.enableButtons();
+                    //Since Mediaplayer is initialized for selfie timer, need to stop and release it here
+                    if(this.photoFragment.getTimerPlayer() != null) {
+                        this.photoFragment.getTimerPlayer().stop();
+                        this.photoFragment.getTimerPlayer().release();
+                        this.photoFragment.setTimerPlayer(null);
+                    }
                 }
                 //Switch off flash light if used during recording.
                 if(isCamera2()) {
