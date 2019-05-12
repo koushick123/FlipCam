@@ -356,7 +356,7 @@ public class PhotoFragment extends Fragment {
         if(value > 0) {
             timerPlayer.start();
             if(getCountDown() == timerPreference.getInt(Constants.SELFIE_TIMER, defaultSelfieTimer)) {
-                timerPlayer.seekTo(80);
+                timerPlayer.seekTo(70);
             }
             selfieCountdown.setText(String.valueOf(value));
             selfieCountdown.startAnimation(fadeOut);
