@@ -12,11 +12,11 @@ android {
             storePassword keystoreProperties['storePassword']
         }
     }*/
-    compileSdkVersion 27
+    compileSdkVersion 28
     defaultConfig {
         applicationId "com.flipcam"
         minSdkVersion 21
-        targetSdkVersion 27
+        targetSdkVersion 28
         versionCode 3
         versionName "1.01"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
