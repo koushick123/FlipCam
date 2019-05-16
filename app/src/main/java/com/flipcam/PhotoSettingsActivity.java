@@ -17,9 +17,10 @@ import android.view.ViewGroup;
 
 import com.flipcam.constants.Constants;
 import com.flipcam.model.Dimension;
-import com.flipcam.preferences.CustomCheckboxPreference;
 import com.flipcam.preferences.ResolutionListPreference;
+import com.flipcam.preferences.SelfieTimerCheckboxPreference;
 import com.flipcam.preferences.SelfieTimerPreference;
+import com.flipcam.preferences.ShutterCheckboxPreference;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -58,23 +59,32 @@ public class PhotoSettingsActivity extends AppCompatActivity {
             addResolutionList(true);
             //Add Front camera list prefs
             addResolutionList(false);
-            final CheckBoxPreference shutterSoundPref = new CustomCheckboxPreference(getActivity(), true, Constants.SHUTTER_SOUND);
+            //Add camera shutter sound prefs
+            final CheckBoxPreference shutterSoundPref = new ShutterCheckboxPreference(getActivity(), true, Constants.SHUTTER_SOUND);
             shutterSoundPref.setTitle(getResources().getString(R.string.enableShutterSound));
             shutterSoundPref.setSummary(getResources().getString(R.string.enableShutterSoundMsg));
             shutterSoundPref.setKey(Constants.SHUTTER_SOUND);
-            shutterSoundPref.setLayoutResource(R.layout.custom_checkbox_setting);
+            shutterSoundPref.setLayoutResource(R.layout.shutter_checkbox_setting);
             boolean shutterSound = PreferenceManager.getDefaultSharedPreferences(getActivity()).getBoolean(Constants.SHUTTER_SOUND, false);
             if(VERBOSE)Log.d(TAG, "SHUTTER SOUND PREF MGR = "+shutterSound);
             getPreferenceScreen().addPreference(shutterSoundPref);
-            //Add Selfie Timer prefs
+            //Add Selfie Timer Value Prefs
             SelfieTimerPreference selfieTimerPreference = new SelfieTimerPreference(getActivity(), true, Constants.SELFIE_TIMER);
-            selfieTimerPreference.setTitle(getResources().getString(R.string.selfieTimerSettingTitle));
-            selfieTimerPreference.setSummary(getResources().getString(R.string.selfieTimerSettingSummary));
+            selfieTimerPreference.setTitle(getResources().getString(R.string.selfieTimerValueSettingTitle));
+            selfieTimerPreference.setSummary(getResources().getString(R.string.selfieTimerValueSettingSummary));
             selfieTimerPreference.setKey(Constants.SELFIE_TIMER);
             selfieTimerPreference.setPersistent(true);
             selfieTimerPreference.setLayoutResource(R.layout.custom_selfietimer_setting);
             selfieTimerPreference.setDialogLayoutResource(R.layout.timerpicker);
             getPreferenceScreen().addPreference(selfieTimerPreference);
+            //Add Selfie Timer prefs as Checkbox
+            final CheckBoxPreference selfieTimerCheckboxPreference = new SelfieTimerCheckboxPreference(getActivity(), true, Constants.SELFIE_TIMER_ENABLE, getPreferenceScreen());
+            selfieTimerCheckboxPreference.setTitle(getResources().getString(R.string.selfieTimerSettingTitle));
+            selfieTimerCheckboxPreference.setSummary(getResources().getString(R.string.selfieTimerSettingSummary));
+            selfieTimerCheckboxPreference.setKey(Constants.SELFIE_TIMER_ENABLE);
+            selfieTimerCheckboxPreference.setLayoutResource(R.layout.selfie_timer_checkbox_setting);
+            getPreferenceScreen().addPreference(selfieTimerCheckboxPreference);
+            Log.d(TAG, "PREFERENCES ADDED");
         }
 
         private void addResolutionList(boolean backCamera){

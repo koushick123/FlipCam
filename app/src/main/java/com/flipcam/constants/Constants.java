@@ -66,6 +66,7 @@ public class Constants
     public static final String SHUTTER_SOUND = "ShutterSound";
     //Set Selfie Timer
     public static final String SELFIE_TIMER = "SelfieTimer";
+    public static final String SELFIE_TIMER_ENABLE = "SelfieTimerEnable";
     //Screen Resolution
     public static final String PREVIEW_RESOLUTION = "PreviewResolution";
     //Video Resolution

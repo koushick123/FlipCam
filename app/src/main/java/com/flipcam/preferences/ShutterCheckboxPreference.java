@@ -13,15 +13,15 @@ import android.widget.TextView;
 import com.flipcam.R;
 import com.flipcam.constants.Constants;
 
-public class CustomCheckboxPreference extends CheckBoxPreference {
+public class ShutterCheckboxPreference extends CheckBoxPreference {
 
     Context mContext;
     boolean enableSeparator;
     boolean VERBOSE = true;
     String selectedKey = "";
-    public static final String TAG = "CustomCheckboxPref";
+    public static final String TAG = "ShutterChkboxPreference";
 
-    public CustomCheckboxPreference(Context context, boolean enableSep, String key) {
+    public ShutterCheckboxPreference(Context context, boolean enableSep, String key) {
         super(context);
         mContext = context;
         enableSeparator = enableSep;

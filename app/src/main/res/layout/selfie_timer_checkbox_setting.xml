@@ -8,7 +8,7 @@
     android:orientation="vertical">
 
     <TextView
-        android:id="@+id/selfieTimerTitle"
+        android:id="@+id/checkboxTitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginEnd="@dimen/photoResLeftMargin"
@@ -18,15 +18,16 @@
         android:textSize="@dimen/photoResTitleSize"
         android:textStyle="bold" />
 
-    <TextView
-        android:id="@+id/selfieTimerCount"
+    <CheckBox
+        android:id="@+id/checkboxSummary"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="@dimen/photoResSummaryTopBottomMargin"
         android:layout_marginEnd="@dimen/photoResLeftMargin"
-        android:layout_marginStart="@dimen/photoResLeftMargin"
+        android:layout_marginStart="5dp"
         android:layout_marginTop="@dimen/photoResSummaryTopBottomMargin"
         android:buttonTint="@color/turqoise"
+        android:paddingLeft="15dp"
         android:textColor="@color/turqoise" />
 
     <LinearLayout

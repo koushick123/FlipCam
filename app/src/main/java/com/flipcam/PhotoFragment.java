@@ -560,7 +560,7 @@ public class PhotoFragment extends Fragment {
     public void showImagePreview()
     {
         if(!cameraView.isBackCamera()){
-            if(timerPreference.getInt(Constants.SELFIE_TIMER, defaultSelfieTimer) > 0) {
+            if(timerPreference.getBoolean(Constants.SELFIE_TIMER_ENABLE, false)) {
                 startSelfieTimer();
             }
             else{

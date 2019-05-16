@@ -4,10 +4,8 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.DialogPreference;
 import android.preference.PreferenceManager;
-import android.text.InputType;
 import android.util.Log;
 import android.view.View;
-import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.NumberPicker;
 import android.widget.TextView;
@@ -22,6 +20,17 @@ public class SelfieTimerPreference extends DialogPreference {
     String selectedKey = "";
     NumberPicker numberPicker;
     int timerDefault;
+    TextView selfieTimerTitle;
+    TextView selfieTimerCount;
+
+    public TextView getSelfieTimerTitle() {
+        return selfieTimerTitle;
+    }
+
+    public TextView getSelfieTimerCount() {
+        return selfieTimerCount;
+    }
+
     public static final String TAG = "SelfieTimerPreference";
 
     public SelfieTimerPreference(Context context, boolean enableSep, String key) {
@@ -35,9 +44,9 @@ public class SelfieTimerPreference extends DialogPreference {
     @Override
     protected void onBindView(View view) {
         if(VERBOSE)Log.d(TAG, "onBindView");
-        TextView selfieTimerTitle = (TextView)view.findViewById(R.id.selfieTimerTitle);
+        selfieTimerTitle = (TextView)view.findViewById(R.id.selfieTimerTitle);
         selfieTimerTitle.setText(getTitle());
-        TextView selfieTimerCount = (TextView)view.findViewById(R.id.selfieTimerCount);
+        selfieTimerCount = (TextView)view.findViewById(R.id.selfieTimerCount);
         selfieTimerCount.setText(getSummary());
         LinearLayout seperator = view.findViewById(R.id.separator);
         seperator.setVisibility(enableSeparator ? View.VISIBLE : View.GONE);

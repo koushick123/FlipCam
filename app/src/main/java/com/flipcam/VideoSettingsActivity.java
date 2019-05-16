@@ -17,8 +17,8 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.flipcam.constants.Constants;
-import com.flipcam.preferences.CustomCheckboxPreference;
 import com.flipcam.preferences.ResolutionListPreference;
+import com.flipcam.preferences.ShutterCheckboxPreference;
 
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -83,11 +83,11 @@ public class VideoSettingsActivity extends AppCompatActivity {
                     return true;
                 }
             });
-            final CheckBoxPreference memoryConsumedPref = new CustomCheckboxPreference(getActivity(), true, Constants.SHOW_MEMORY_CONSUMED_MSG);
+            final CheckBoxPreference memoryConsumedPref = new ShutterCheckboxPreference(getActivity(), true, Constants.SHOW_MEMORY_CONSUMED_MSG);
             memoryConsumedPref.setTitle(resources.getString(R.string.showMemConsumed));
             memoryConsumedPref.setSummary(resources.getString(R.string.showMemConsumedMsg));
             memoryConsumedPref.setKey(Constants.SHOW_MEMORY_CONSUMED_MSG);
-            memoryConsumedPref.setLayoutResource(R.layout.custom_checkbox_setting);
+            memoryConsumedPref.setLayoutResource(R.layout.shutter_checkbox_setting);
             boolean memCon = PreferenceManager.getDefaultSharedPreferences(getActivity()).getBoolean(Constants.SHOW_MEMORY_CONSUMED_MSG, false);
             if(VERBOSE)Log.d(TAG, "MEMORY CONSUMED PREF MGR = "+memCon);
             getPreferenceScreen().addPreference(memoryConsumedPref);

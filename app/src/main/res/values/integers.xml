@@ -6,7 +6,7 @@
     <integer name="fullHDWidth">1920</integer>
     <integer name="fullHDHeight">1080</integer>
     <!--Range for selfie timer -->
-    <integer name="selfieTimerMin">0</integer>
+    <integer name="selfieTimerMin">3</integer>
     <integer name="selfieTimerMax">20</integer>
-    <integer name="selfieTimerDefault">0</integer>
+    <integer name="selfieTimerDefault">3</integer>
 </resources>
