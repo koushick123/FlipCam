@@ -15,6 +15,8 @@ import android.graphics.Typeface;
 import android.hardware.SensorManager;
 import android.media.AudioManager;
 import android.media.ExifInterface;
+import android.media.MediaCodecInfo;
+import android.media.MediaCodecList;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Build;
@@ -24,6 +26,7 @@ import android.os.StatFs;
 import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.util.Log;
+import android.util.Range;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.OrientationEventListener;
@@ -51,6 +54,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
 
 import static android.widget.Toast.makeText;
 import static com.facebook.FacebookSdk.getApplicationContext;
@@ -312,7 +316,61 @@ public class VideoFragment extends android.app.Fragment{
         memoryConsumedParentLayout = new LinearLayout(getActivity());
         parentLayoutParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
         parentLayoutParams.weight = 1;
+        MediaCodecList mediaCodecList = new MediaCodecList(MediaCodecList.ALL_CODECS);
+        MediaCodecInfo[] mediaCodecInfos = mediaCodecList.getCodecInfos();
+        if(getAudioBitRate() == -1 || getAudioChannelInput() == -1 || getAudioSampleRate() == -1) {
+            for (MediaCodecInfo info : mediaCodecInfos) {
+                Log.d(TAG, "Name = " + info.getName());
+                if (info.getName().contains("aac")) {
+                    String[] medTypes = info.getSupportedTypes();
+                    for (String medType : medTypes) {
+                        Log.d(TAG, "media types = " + medType);
+                        if (medType.contains("mp4a") || medType.contains("mp4") || medType.contains("mpeg4")) {
+                            MediaCodecInfo.AudioCapabilities audioCapabilities = info.getCapabilitiesForType(medType).getAudioCapabilities();
+                            Range<Integer> bitRates = audioCapabilities.getBitrateRange();
+                            Log.d(TAG, "Bit rate range = " + bitRates.getLower() + " , " + bitRates.getUpper());
+                            setAudioBitRate(bitRates.getUpper());
+                            int[] sampleRates = audioCapabilities.getSupportedSampleRates();
+                            Arrays.sort(sampleRates);
+                            Log.d(TAG, "Sample rate = " + sampleRates[sampleRates.length - 1]);
+                            setAudioSampleRate(sampleRates[sampleRates.length - 1]);
+                            setAudioChannelInput(audioCapabilities.getMaxInputChannelCount() > 1 ? 2 : 1);
+                            break;
+                        }
+                    }
+                    break;
+                }
+            }
+        }
         return view;
+    }
+
+    int audioSampleRate = -1;
+    int audioBitRate = -1;
+    int audioChannelInput = -1;
+
+    public int getAudioSampleRate() {
+        return audioSampleRate;
+    }
+
+    public void setAudioSampleRate(int audioSampleRate) {
+        this.audioSampleRate = audioSampleRate;
+    }
+
+    public int getAudioBitRate() {
+        return audioBitRate;
+    }
+
+    public void setAudioBitRate(int audioBitRate) {
+        this.audioBitRate = audioBitRate;
+    }
+
+    public int getAudioChannelInput() {
+        return audioChannelInput;
+    }
+
+    public void setAudioChannelInput(int audioChannelInput) {
+        this.audioChannelInput = audioChannelInput;
     }
 
     class SDCardEventReceiver extends BroadcastReceiver {

@@ -1462,6 +1462,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             mediaRecorder.setVideoSize(width, height);
             mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
             mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+            mediaRecorder.setAudioEncodingBitRate(videoFragment.getAudioBitRate());
+            mediaRecorder.setAudioSamplingRate(videoFragment.getAudioSampleRate());
+            mediaRecorder.setAudioChannels(videoFragment.getAudioChannelInput());
             try {
                 mediaRecorder.prepare();
             } catch (IOException e) {
