@@ -256,6 +256,8 @@
     <string name="selfieTimerSettingSummary">Enable Front Camera Timer.</string>
     <string name="selfieTimerValueSettingTitle">Timer Duration</string>
     <string name="selfieTimerValueSettingSummary">Set the front camera timer duration (in seconds).</string>
-    <string name="selfieTimerOff">Selfie Timer Off</string>
+    <string name="folderSelectTitle">FlipCam Folders</string>
+    <string name="photoContentDescription">Photos Folder</string>
+    <string name="videoContentDescription">Videos Folder</string>
 </resources>
 

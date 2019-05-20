@@ -34,13 +34,13 @@
             android:authorities="com.facebook.app.FacebookContentProvider308890512940081"
             android:exported="true" />
         <provider
-            android:authorities="${applicationId}.provider"
             android:name="android.support.v4.content.FileProvider"
+            android:authorities="${applicationId}.provider"
             android:exported="false"
             android:grantUriPermissions="true">
-                <meta-data
-                    android:name="android.support.FILE_PROVIDER_PATHS"
-                    android:resource="@xml/provider_paths" />
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/provider_paths" />
         </provider>
 
         <meta-data
@@ -117,7 +117,6 @@
         <activity
             android:name=".MemoryLimitActivity"
             android:windowSoftInputMode="adjustResize" />
-
         <activity
             android:name=".GalleryActivity"
             android:configChanges="orientation|screenSize" />
@@ -126,12 +125,14 @@
             android:name=".data.MediaProvider"
             android:authorities="@string/content_authority" />
 
-        <activity android:name=".PhotoSettingsActivity"
-            android:label="@string/photoSettingsTitle"
-            android:configChanges="orientation|screenSize" />
-
-        <activity android:name=".VideoSettingsActivity"
+        <activity
+            android:name=".PhotoSettingsActivity"
+            android:configChanges="orientation|screenSize"
+            android:label="@string/photoSettingsTitle" />
+        <activity
+            android:name=".VideoSettingsActivity"
             android:label="@string/videoSettingsTitle" />
+        <activity android:name=".FolderSelectActivity"></activity>
     </application>
 
 </manifest>

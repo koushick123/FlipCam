@@ -71,14 +71,14 @@
             android:src="@drawable/ic_share" />
 
         <ImageView
-            android:id="@+id/gridViewOn"
+            android:id="@+id/folderViewOn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight=".33"
             android:background="@drawable/ripple"
             android:scaleX="1.5"
             android:scaleY="1.5"
-            app:srcCompat="@drawable/ic_view_comfy" />
+            app:srcCompat="@drawable/folder" />
 
     </LinearLayout>
 
