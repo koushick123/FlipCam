@@ -10,11 +10,38 @@
     tools:context=".FolderSelectActivity">
 
     <ImageView
-        android:id="@+id/imageView6"
-        android:layout_width="205dp"
-        android:layout_height="157dp"
-        android:layout_alignParentStart="true"
-        android:layout_centerVertical="true"
-        android:layout_marginStart="23dp"
-        app:srcCompat="@drawable/folder_photo" />
+        android:id="@+id/phone_folder"
+        android:layout_width="110dp"
+        android:layout_height="110dp"
+        android:layout_gravity="bottom"
+        android:layout_marginStart="46dp"
+        android:layout_toStartOf="@+id/sdcard_folder"
+        android:background="@drawable/folder_border_no_circle"
+        android:contentDescription="@string/phoneContentDescription"
+        android:padding="15dp"
+        android:src="@drawable/folder_phone" />
+
+    <ImageView
+        android:id="@+id/sdcard_folder"
+        android:layout_width="110dp"
+        android:layout_height="110dp"
+        android:layout_gravity="bottom"
+        android:layout_marginStart="115dp"
+        android:layout_marginEnd="46dp"
+        android:background="@drawable/folder_border_no_circle"
+        android:contentDescription="@string/memoryContentDescription"
+        android:padding="15dp"
+        android:src="@drawable/folder_memory" />
+
+    <ImageView
+        android:id="@+id/both_folder"
+        android:layout_width="110dp"
+        android:layout_height="110dp"
+        android:layout_below="@+id/phone_folder"
+        android:layout_marginTop="30dp"
+        android:background="@drawable/folder_border_no_circle"
+        android:contentDescription="@string/bothContentDescription"
+        android:padding="15dp"
+        android:src="@drawable/folder_both" />
+
 </RelativeLayout>

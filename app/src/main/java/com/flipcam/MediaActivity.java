@@ -283,10 +283,12 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             }
         }
         folderViewOn.setOnClickListener((view1) -> {
-                Intent mediaGridAct = new Intent(getApplicationContext(), GalleryActivity.class);
-                mediaGridAct.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
-                startActivity(mediaGridAct);
-                finish();
+//                Intent mediaGridAct = new Intent(getApplicationContext(), GalleryActivity.class);
+                Intent folderViewAct = new Intent(getApplicationContext(), FolderSelectActivity.class);
+//                mediaGridAct.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(folderViewAct);
+            overridePendingTransition(R.anim.folder_view_fade_in, R.anim.folder_view_fade_out);
+//                finish();
         });
         notifyIcon = BitmapFactory.decodeResource(getApplicationContext().getResources(),R.drawable.ic_launcher);
         mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);

@@ -76,6 +76,7 @@
             android:layout_height="wrap_content"
             android:layout_weight=".33"
             android:background="@drawable/ripple"
+            android:contentDescription="@string/folderView"
             android:scaleX="1.5"
             android:scaleY="1.5"
             app:srcCompat="@drawable/folder" />
