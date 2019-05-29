@@ -7,8 +7,8 @@
     android:thicknessRatio="1.9">
     <stroke
         android:width="1.75dp"
-        android:color="#4dc2a5" />
+        android:color="@color/turqoise" />
     <size
-        android:width="220dp"
-        android:height="220dp"/>
+        android:width="125dp"
+        android:height="125dp"/>
 </shape>

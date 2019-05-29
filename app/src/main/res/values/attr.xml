@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="FolderLayout">
+        <attr name="displayText" format="string" />
+        <attr name="displayImage" format="reference" />
+    </declare-styleable>
+</resources>

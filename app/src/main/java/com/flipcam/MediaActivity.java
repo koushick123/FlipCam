@@ -97,6 +97,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     Dialog logoutFB;
     Dialog permissionFB;
     Dialog appNotExist;
+    Dialog mediaLocation;
     CallbackManager callbackManager;
     NotificationManager mNotificationManager;
     Bitmap notifyIcon;
@@ -104,6 +105,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     ImageView playCircle;
     View deleteMediaRoot;
     View taskInProgressRoot;
+    View mediaLocationView;
     LayoutInflater layoutInflater;
     Dialog taskAlert;
     View warningMsgRoot;
@@ -135,6 +137,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         layoutInflater = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         audioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
         warningMsgRoot = layoutInflater.inflate(R.layout.warning_message, null);
+        mediaLocationView = layoutInflater.inflate(R.layout.medialocation, null);
         sharedPreferences = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
         videoControls = (LinearLayout)findViewById(R.id.videoControls);
         if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
@@ -185,6 +188,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 }
             }
         });
+        mediaLocation = new Dialog(this);
         noConnAlert = new Dialog(this);
         pause = (ImageButton) findViewById(R.id.playButton);
         shareMedia = (ImageButton)findViewById(R.id.shareMedia);
@@ -283,12 +287,9 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             }
         }
         folderViewOn.setOnClickListener((view1) -> {
-//                Intent mediaGridAct = new Intent(getApplicationContext(), GalleryActivity.class);
-                Intent folderViewAct = new Intent(getApplicationContext(), FolderSelectActivity.class);
-//                mediaGridAct.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
-                startActivity(folderViewAct);
-            overridePendingTransition(R.anim.folder_view_fade_in, R.anim.folder_view_fade_out);
-//                finish();
+                mediaLocation.setContentView(mediaLocationView);
+                mediaLocation.setCancelable(true);
+                mediaLocation.show();
         });
         notifyIcon = BitmapFactory.decodeResource(getApplicationContext().getResources(),R.drawable.ic_launcher);
         mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);

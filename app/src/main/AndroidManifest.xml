@@ -96,7 +96,6 @@
         <activity
             android:name=".VideoSettingsActivity"
             android:label="@string/videoSettingsTitle" />
-        <activity android:name=".FolderSelectActivity"></activity>
     </application>
 
 </manifest>

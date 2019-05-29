@@ -149,4 +149,6 @@
     //Dimension for instant settings
     <dimen name="settingWidth">30dp</dimen>
     <dimen name="settingHeight">30dp</dimen>
+    //Dimension for all folder top margin
+    <dimen name="allTopMargin">20dp</dimen>
 </resources>
