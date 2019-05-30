@@ -50,6 +50,7 @@ import com.flipcam.constants.Constants;
 import com.flipcam.data.MediaTableConstants;
 import com.flipcam.media.FileMedia;
 import com.flipcam.util.MediaUtil;
+import com.flipcam.view.FolderLayout;
 import com.flipcam.view.MediaFragment;
 
 import java.io.File;
@@ -58,6 +59,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
+
+import butterknife.BindView;
+import butterknife.ButterKnife;
 
 import static com.flipcam.PermissionActivity.FC_MEDIA_PREFERENCE;
 
@@ -117,6 +121,9 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     boolean VERBOSE = true;
     AudioManager audioManager;
     ImageView folderViewOn;
+    FolderLayout phoneFolder;
+    FolderLayout sdcardFolder;
+    FolderLayout bothFolder;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -291,6 +298,12 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 mediaLocation.setCancelable(true);
                 mediaLocation.show();
         });
+        phoneFolder = mediaLocationView.findViewById(R.id.phoneFolder);
+        sdcardFolder = mediaLocationView.findViewById(R.id.sdcardFolder);
+        bothFolder = mediaLocationView.findViewById(R.id.bothFolder);
+        phoneFolder.setMediaActivity(this);
+        sdcardFolder.setMediaActivity(this);
+        bothFolder.setMediaActivity(this);
         notifyIcon = BitmapFactory.decodeResource(getApplicationContext().getResources(),R.drawable.ic_launcher);
         mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         queueNotification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
@@ -322,6 +335,10 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             }
         }
     };
+
+    public Dialog getMediaLocation(){
+        return mediaLocation;
+    }
 
     @Override
     protected void onStop() {

@@ -34,7 +34,7 @@ public class MediaUtil {
     private static void sortAsPerLatest() {
         File dcimFc;
         SharedPreferences sharedPreferences = appContext.getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
-        if(sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)) {
+        if(sharedPreferences.getBoolean(Constants.MEDIA_LOCATION_PHONE_MEM, true)) {
             dcimFc = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + appContext.getResources().getString(R.string.FC_ROOT));
         }
         else{

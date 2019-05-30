@@ -8,7 +8,4 @@
     <stroke
         android:width="1.75dp"
         android:color="@color/turqoise" />
-    <size
-        android:width="125dp"
-        android:height="125dp"/>
 </shape>

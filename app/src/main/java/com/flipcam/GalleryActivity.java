@@ -34,10 +34,12 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
+import butterknife.BindView;
+import butterknife.ButterKnife;
+
 public class GalleryActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<FileMedia[]>{
 
     public static final String TAG = "GalleryActivity";
-    GridView mediaGrid;
     int scrollPosition = 0;
     SharedPreferences sharedPreferences;
     View warningMsgRoot;
@@ -50,7 +52,12 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
     IntentFilter mediaFilters;
     SDCardEventReceiver sdCardEventReceiver;
     boolean sdCardUnavailWarned = false;
+    @BindView(R.id.mediaCount)
     TextView mediaCount;
+    @BindView(R.id.mediaGrid)
+    GridView mediaGrid;
+    @BindView(R.id.mediaSourceImage)
+    ImageView mediaSourceImage;
     ControlVisbilityPreference controlVisbilityPreference;
     FileMedia[] medias;
     boolean VERBOSE = true;
@@ -60,6 +67,7 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
         super.onCreate(savedInstanceState);
         if(VERBOSE)Log.d(TAG, "onCreate");
         setContentView(R.layout.activity_media_grid);
+        ButterKnife.bind(this);
         sdCardEventReceiver = new SDCardEventReceiver();
         mediaFilters = new IntentFilter();
         getSupportActionBar().hide();
@@ -71,8 +79,6 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
         warningMsg = new Dialog(this);
         taskAlert = new Dialog(this);
         sharedPreferences = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
-        mediaCount = (TextView)findViewById(R.id.mediaCount);
-        mediaGrid = (GridView) findViewById(R.id.mediaGrid);
         controlVisbilityPreference = (ControlVisbilityPreference)getApplicationContext();
     }
 

@@ -14,6 +14,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.flipcam.MediaActivity;
 import com.flipcam.R;
 
 import butterknife.BindView;
@@ -29,6 +30,7 @@ public class FolderLayout extends LinearLayout {
     ImageView mediaFolder;
     Drawable folder_circle;
     Drawable folder_no_circle;
+    MediaActivity mediaActivity;
 
     public FolderLayout(Context context, AttributeSet attributeSet) {
         super(context, attributeSet);
@@ -55,9 +57,14 @@ public class FolderLayout extends LinearLayout {
                 case MotionEvent.ACTION_POINTER_UP:
                     mediaFolder.setBackground(folder_no_circle);
                     Log.d(TAG, "DispLabel = "+displayLabel.getText());
+                    mediaActivity.getMediaLocation().dismiss();
                     break;
             }
             return true;
         });
+    }
+
+    public void setMediaActivity(MediaActivity mediaAct){
+        mediaActivity = mediaAct;
     }
 }

@@ -264,5 +264,6 @@
     <string name="sdcardLocation">SD CARD</string>
     <string name="allLocation">ALL</string>
     <string name="folderView">Media Folder</string>
+    <string name="mediaSource">LOCATION</string>
 </resources>
 

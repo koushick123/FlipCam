@@ -52,12 +52,12 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_below="@+id/heading"
-        android:layout_marginTop="10dp"
+        android:layout_marginTop="5dp"
         android:gravity="center_horizontal"
         android:orientation="horizontal">
 
         <com.flipcam.view.FolderLayout
-            android:id="@+id/sdCardFolder"
+            android:id="@+id/phoneFolder"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginEnd="20dp"
@@ -65,7 +65,7 @@
             custom:displayText="@string/phoneLocation" />
 
         <com.flipcam.view.FolderLayout
-            android:id="@+id/phoneFolder"
+            android:id="@+id/sdcardFolder"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="20dp"
@@ -79,8 +79,7 @@
         android:layout_height="wrap_content"
         android:layout_below="@+id/folderParent"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="5dp"
-        android:layout_marginBottom="10dp"
+        android:layout_marginBottom="20dp"
         custom:displayImage="@drawable/folder_both"
         custom:displayText="@string/allLocation" />
 
