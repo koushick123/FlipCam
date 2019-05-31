@@ -60,9 +60,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 
-import butterknife.BindView;
-import butterknife.ButterKnife;
-
 import static com.flipcam.PermissionActivity.FC_MEDIA_PREFERENCE;
 
 public class MediaActivity extends AppCompatActivity implements ViewPager.OnPageChangeListener{
@@ -338,6 +335,16 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
 
     public Dialog getMediaLocation(){
         return mediaLocation;
+    }
+
+    public void goToGallery(String selectedFolderLabel){
+        //Save media location selection in a FC Setting preference. Use this in Gallery to load media.
+        SharedPreferences.Editor mediaLocEdit = sharedPreferences.edit();
+        mediaLocEdit.putString(Constants.MEDIA_LOCATION_VIEW_SELECT, selectedFolderLabel);
+        mediaLocEdit.commit();
+        Intent galleryAct = new Intent(getApplicationContext(), GalleryActivity.class);
+        startActivity(galleryAct);
+        overridePendingTransition(R.anim.slide_from_right,R.anim.slide_to_left);
     }
 
     @Override

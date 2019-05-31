@@ -1,6 +1,7 @@
 package com.flipcam.view;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
@@ -14,6 +15,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.flipcam.GalleryActivity;
 import com.flipcam.MediaActivity;
 import com.flipcam.R;
 
@@ -58,6 +60,7 @@ public class FolderLayout extends LinearLayout {
                     mediaFolder.setBackground(folder_no_circle);
                     Log.d(TAG, "DispLabel = "+displayLabel.getText());
                     mediaActivity.getMediaLocation().dismiss();
+                    mediaActivity.goToGallery(displayLabel.getText().toString());
                     break;
             }
             return true;
@@ -67,4 +70,6 @@ public class FolderLayout extends LinearLayout {
     public void setMediaActivity(MediaActivity mediaAct){
         mediaActivity = mediaAct;
     }
+
+
 }

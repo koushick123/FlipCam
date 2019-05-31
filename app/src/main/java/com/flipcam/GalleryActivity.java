@@ -89,6 +89,12 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
         controlVisbilityPreference.setMediaSelectedPosition(0);
     }
 
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        overridePendingTransition(R.anim.slide_from_left, R.anim.slide_to_right);
+    }
+
     private void updateMediaGridFromSource(){
         ImageView noImage = (ImageView) findViewById(R.id.noImage);
         TextView noImageText = (TextView) findViewById(R.id.noImageText);
@@ -96,6 +102,10 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
             noImage.setVisibility(View.GONE);
             noImageText.setVisibility(View.GONE);
             mediaCount.setText(getResources().getString(R.string.galleryCount, MediaUtil.getPhotosCount(), MediaUtil.getVideosCount()));
+            String phoneLoc = getResources().getString(R.string.phoneLocation);
+            if(sharedPreferences.getString(Constants.MEDIA_LOCATION_VIEW_SELECT, phoneLoc).equalsIgnoreCase(phoneLoc)){
+
+            }
             MediaAdapter mediaAdapter = new MediaAdapter(getApplicationContext(), medias);
             mediaGrid.setAdapter(mediaAdapter);
             mediaGrid.invalidate();
@@ -147,6 +157,7 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
         mediaFilters.addDataScheme("file");
         registerReceiver(sdCardEventReceiver, mediaFilters);
         if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)) {
+            //SD Card Location
             if (doesSDCardExist() == null && !sdCardUnavailWarned) {
                 SharedPreferences.Editor settingsEditor = sharedPreferences.edit();
                 settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
