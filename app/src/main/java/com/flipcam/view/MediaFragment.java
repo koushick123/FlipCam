@@ -90,12 +90,14 @@ MediaPlayer.OnErrorListener, Serializable{
     boolean VERBOSE = true;
     AudioManager audioManager;
     boolean imageScaled = false;
+    boolean fromGallery = false;
 
-    public static MediaFragment newInstance(int pos,boolean recreate){
+    public static MediaFragment newInstance(int pos,boolean recreate, boolean fromGal){
         MediaFragment mediaFragment = new MediaFragment();
         Bundle args = new Bundle();
         args.putInt("position", pos);
         args.putBoolean("recreate",recreate);
+        args.putBoolean("fromGallery", fromGal);
         mediaFragment.setArguments(args);
         return mediaFragment;
     }
@@ -385,8 +387,9 @@ MediaPlayer.OnErrorListener, Serializable{
         super.onCreate(savedInstanceState);
         framePosition = getArguments().getInt("position");
         recreate = getArguments().getBoolean("recreate");
+        fromGallery = getArguments().getBoolean("fromGallery");
         //if(VERBOSE)Log.d(TAG,"framePosition = "+framePosition);
-        images = MediaUtil.getMediaList(getContext());
+        images = MediaUtil.getMediaList(getContext(), fromGallery);
         path = images[framePosition].getPath();
         if(VERBOSE)Log.d(TAG,"media is == "+path+", recreate = "+recreate);
         setRetainInstance(true);

@@ -46,7 +46,8 @@ public class Constants
     public static final String SAVE_MEDIA_PHONE_MEM = "Save_Media_Phone_Mem";
     public static final String SD_CARD_PATH = "SD_Card_Path";
     //Media Location
-    public static final String MEDIA_LOCATION_PHONE_MEM = "Media_Location_Phone";
+    //To check if SD Card location is valid
+    public static final String EMPTY = "";
     public static final String MEDIA_LOCATION_VIEW_SELECT = "Media_Location_View_Select";
     //Phone Memory Limit
     public static final String PHONE_MEMORY_LIMIT = "PhoneMemoryLimit";

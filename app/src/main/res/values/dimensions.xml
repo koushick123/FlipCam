@@ -151,4 +151,11 @@
     <dimen name="settingHeight">30dp</dimen>
     //Dimension for all folder top margin
     <dimen name="allTopMargin">20dp</dimen>
+    //Dimension for grid header Text
+    <dimen name="gridHeaderTextHeight">50dp</dimen>
+    <dimen name="gridHeaderTextWidth">50dp</dimen>
+    <dimen name="gridHeaderTextEndMargin">10dp</dimen>
+    //Dimensions for media source image
+    <dimen name="mediaSourceImageWidth">30dp</dimen>
+    <dimen name="mediaSourceImageHeight">30dp</dimen>
 </resources>

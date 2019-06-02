@@ -766,7 +766,7 @@ public class PhotoFragment extends Fragment {
 
     public void getLatestFileIfExists()
     {
-        FileMedia[] medias = MediaUtil.getMediaList(getActivity().getApplicationContext());
+        FileMedia[] medias = MediaUtil.getMediaList(getActivity().getApplicationContext(), false);
         if (medias != null && medias.length > 0) {
             if(VERBOSE)Log.d(TAG, "Latest file is = " + medias[0].getPath());
             filePath = medias[0].getPath();

@@ -13,14 +13,16 @@ import com.flipcam.util.MediaUtil;
 public class MediaLoader extends AsyncTaskLoader<FileMedia[]> {
 
     Context context;
+    boolean fromGallery;
 
-    public MediaLoader(Context ctx){
+    public MediaLoader(Context ctx, boolean fromGal){
         super(ctx);
         context = ctx;
+        fromGallery = fromGal;
     }
 
     @Override
     public FileMedia[] loadInBackground() {
-        return MediaUtil.getMediaList(context);
+        return MediaUtil.getMediaList(context, fromGallery);
     }
 }

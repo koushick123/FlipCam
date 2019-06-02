@@ -28,14 +28,21 @@ public class MediaUtil {
     public static final String TAG = "MediaUtil";
     private static FileMedia[] mediaList;
     private static Context appContext;
-    static boolean VERBOSE = false;
-    public static FileMedia[] getMediaList(Context ctx){
+    static boolean VERBOSE = true;
+    static boolean fromGallery = false;
+    public static FileMedia[] getMediaList(Context ctx, boolean fromGal){
         appContext = ctx;
-        sortAsPerLatest();
+        fromGallery = fromGal;
+        if(fromGallery) {
+            sortAsPerLatestForGallery();
+        }
+        else{
+            sortAsPerLatest();
+        }
         return mediaList;
     }
 
-    private static void sortAsPerLatest() {
+    private static void sortAsPerLatestForGallery() {
         File dcimFc = null;
         boolean allLoc = false;
         SharedPreferences sharedPreferences = appContext.getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
@@ -43,6 +50,7 @@ public class MediaUtil {
         String sdcardLoc = appContext.getResources().getString(R.string.sdcardLocation);
         if(sharedPreferences.getString(Constants.MEDIA_LOCATION_VIEW_SELECT, phoneLoc).equalsIgnoreCase(phoneLoc)) {
             dcimFc = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + appContext.getResources().getString(R.string.FC_ROOT));
+            Log.d(TAG, "PHONE");
         }
         else if(sharedPreferences.getString(Constants.MEDIA_LOCATION_VIEW_SELECT, phoneLoc).equalsIgnoreCase(sdcardLoc)){
             dcimFc = new File(sharedPreferences.getString(Constants.SD_CARD_PATH, ""));
@@ -54,34 +62,43 @@ public class MediaUtil {
             File phoneMedia = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + appContext.getResources().getString(R.string.FC_ROOT));
             File sdcardMedia = new File(sharedPreferences.getString(Constants.SD_CARD_PATH, ""));
             File[] phonemediaFiles;
-            File[] sdcardmediaFiles;
+            File[] sdcardmediaFiles = null;
             File[] allMedia = null;
-            //Use Streams for Java 1.8 and above
-            Stream<File> streamphoneMedia = null;
-            Stream<File> streamsdcardMedia = null;
-            Stream<File> allStreamMedia;
             //Check for phone media
+            Log.d(TAG, "sdcardMedia = "+sdcardMedia);
+            if(sdcardMedia != null) {
+                Log.d(TAG, "sdcardMedia abs path = " + sdcardMedia.getAbsolutePath());
+                Log.d(TAG, "sdcardMedia name = " + sdcardMedia.getName());
+            }
             phonemediaFiles = getFilesList(phoneMedia);
             //Check for sd card media
-            sdcardmediaFiles = getFilesList(sdcardMedia);
+            if(sdcardMedia!=null && !sdcardMedia.getName().trim().equalsIgnoreCase(Constants.EMPTY)) {
+                sdcardmediaFiles = getFilesList(sdcardMedia);
+            }
+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                //Use Streams for Java 1.8 and above
+                Stream<File> streamphoneMedia = null;
+                Stream<File> streamsdcardMedia = null;
+                Stream<File> allStreamMedia;
                 if(phonemediaFiles != null && phonemediaFiles.length > 0){
-                    streamphoneMedia = Stream.of(phonemediaFiles);
+                    streamphoneMedia = Arrays.stream(phonemediaFiles);
                 }
                 if(sdcardmediaFiles != null && sdcardmediaFiles.length > 0){
-                    streamsdcardMedia = Stream.of(sdcardmediaFiles);
+                    streamsdcardMedia = Arrays.stream(sdcardmediaFiles);
                 }
                 //Concat both streams
                 if(streamphoneMedia != null && streamsdcardMedia!= null) {
                     allStreamMedia = Stream.concat(streamphoneMedia, streamsdcardMedia);
-                    allMedia = (File[])allStreamMedia.toArray();
+                    allMedia = allStreamMedia.toArray(File[]::new);
+                    Log.d(TAG, "allMedia count = "+allMedia.length);
                     mediaList = getSortedList(allMedia);
                 }
                 else if(streamphoneMedia != null){
-                    mediaList = getSortedList((File[])streamphoneMedia.toArray());
+                    mediaList = getSortedList(streamphoneMedia.toArray(File[]::new));
                 }
                 else if(streamsdcardMedia != null){
-                    mediaList = getSortedList((File[])streamsdcardMedia.toArray());
+                    mediaList = getSortedList(streamsdcardMedia.toArray(File[]::new));
                 }
                 else{
                     mediaList = null;
@@ -89,17 +106,32 @@ public class MediaUtil {
             }
             else{
                 //Iterate phone media
-                if(phonemediaFiles != null && sdcardmediaFiles != null) {
-                    allMedia = new File[phonemediaFiles.length + sdcardmediaFiles.length];
-                    int index = 0;
-                    if(phonemediaFiles.length > 0) {
-                        for (File media : phonemediaFiles) {
-                            allMedia[index++] = media;
-                        }
+                int allMediaCount = 0;
+                if(phonemediaFiles != null) {
+                    allMediaCount += phonemediaFiles.length;
+                }
+                if(sdcardmediaFiles != null){
+                    allMediaCount += sdcardmediaFiles.length;
+                }
+                Log.d(TAG, "allMediaCount = "+allMediaCount);
+                allMedia = new File[allMediaCount];
+                int index=0;
+                if(phonemediaFiles != null){
+                    for(File phMed : phonemediaFiles){
+                        allMedia[index++] = phMed;
                     }
-                    for(File media : sdcardmediaFiles){
-                        allMedia[index++] = media;
+                }
+                if(sdcardmediaFiles != null){
+                    for(File sdcdMedia : sdcardmediaFiles){
+                        allMedia[index++] = sdcdMedia;
                     }
+                }
+                if(allMedia != null) {
+                    Log.d(TAG, "allMedia length = "+allMedia.length);
+                    mediaList = getSortedList(allMedia);
+                }
+                else{
+                    mediaList = null;
                 }
             }
         }
@@ -111,6 +143,27 @@ public class MediaUtil {
             else{
                 mediaList = null;
             }
+        }
+    }
+
+    private static void sortAsPerLatest() {
+        File dcimFc = null;
+        boolean allLoc = false;
+        SharedPreferences sharedPreferences = appContext.getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
+        if(sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)) {
+            dcimFc = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + appContext.getResources().getString(R.string.FC_ROOT));
+            Log.d(TAG, "PHONE");
+        }
+        else{
+            dcimFc = new File(sharedPreferences.getString(Constants.SD_CARD_PATH, ""));
+            if(VERBOSE) Log.d(TAG, "SD card path = "+sharedPreferences.getString(Constants.SD_CARD_PATH, ""));
+        }
+        File[] mediaFiles = getFilesList(dcimFc);
+        if(mediaFiles != null) {
+            mediaList = getSortedList(mediaFiles);
+        }
+        else{
+            mediaList = null;
         }
     }
 
@@ -129,6 +182,11 @@ public class MediaUtil {
         return mediaFiles;
     }
 
+    public static boolean deleteFile(FileMedia media) {
+        File deleteFile = new File(media.getPath());
+        return deleteFile.delete();
+    }
+
     private static FileMedia[] getSortedList(File[] mediaFiles){
         ArrayList<FileMedia> mediaArrayList = new ArrayList<>();
         for (int i = 0; i < mediaFiles.length; i++) {
@@ -142,7 +200,7 @@ public class MediaUtil {
         return mediaList;
     }
 
-    private static boolean doesPathExist(String path){
+    public static boolean doesPathExist(String path){
         sortAsPerLatest();
         for(int i=0;i<mediaList.length;i++){
             if(path.equalsIgnoreCase(mediaList[i].getPath())){
@@ -152,7 +210,7 @@ public class MediaUtil {
         return false;
     }
 
-    private static int getPhotosCount(){
+    public static int getPhotosCount(){
         int count = 0;
         if(mediaList != null && mediaList.length > 0){
             for(int i=0;i<mediaList.length;i++){
@@ -165,7 +223,7 @@ public class MediaUtil {
         return count;
     }
 
-    private static int getVideosCount() {
+    public static int getVideosCount() {
         int count = 0;
         if (mediaList != null && mediaList.length > 0) {
             for (int i = 0; i < mediaList.length; i++) {

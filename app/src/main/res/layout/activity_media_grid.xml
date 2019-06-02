@@ -33,8 +33,10 @@
         android:orientation="vertical">
 
         <LinearLayout
+            android:id="@+id/gridHeader"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:gravity="center_vertical"
             android:orientation="horizontal"
             android:weightSum="1">
 
@@ -46,7 +48,6 @@
                 android:layout_marginTop="@dimen/fcGalleryTextTopAndBottomMargin"
                 android:layout_marginBottom="@dimen/fcGalleryTextTopAndBottomMargin"
                 android:layout_weight=".7"
-                android:text="Heading"
                 android:textColor="@color/turqoise" />
 
             <TextView
@@ -63,8 +64,8 @@
 
             <ImageView
                 android:id="@+id/mediaSourceImage"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
+                android:layout_width="@dimen/mediaSourceImageWidth"
+                android:layout_height="@dimen/mediaSourceImageHeight"
                 android:layout_marginEnd="10dp"
                 android:layout_weight=".7"
                 app:srcCompat="@drawable/phone" />
