@@ -57,8 +57,6 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import static android.widget.Toast.makeText;
-import static com.facebook.FacebookSdk.getApplicationContext;
-
 
 public class VideoFragment extends android.app.Fragment{
 
@@ -109,6 +107,7 @@ public class VideoFragment extends android.app.Fragment{
     ControlVisbilityPreference controlVisbilityPreference;
     View settingsMsgRoot;
     Dialog settingsMsgDialog;
+    Context mContext;
 
     public static VideoFragment newInstance() {
         VideoFragment fragment = new VideoFragment();
@@ -126,6 +125,16 @@ public class VideoFragment extends android.app.Fragment{
     public interface LowestThresholdCheckForVideoInterface{
         boolean checkIfPhoneMemoryIsBelowLowestThresholdForVideo();
     }
+
+    public void setApplicationContext(Context ctx){
+        mContext = ctx;
+    }
+
+    public Context getApplicationContext(){
+        return mContext;
+    }
+
+
 
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {

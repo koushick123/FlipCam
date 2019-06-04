@@ -17,10 +17,6 @@
         android:name="android.hardware.camera2"
         android:required="false" />
 
-    <meta-data
-        android:name="com.facebook.sdk.AutoLogAppEventsEnabled"
-        android:value="false" />
-
     <application
         android:name=".ControlVisbilityPreference"
         android:allowBackup="true"
@@ -40,9 +36,6 @@
         </provider>
 
         <meta-data
-            android:name="com.facebook.sdk.ApplicationId"
-            android:value="@string/facebook_app_id" />
-        <meta-data
             android:name="com.google.android.apps.drive.APP_ID"
             android:value="790824425492" />
 
@@ -59,11 +52,6 @@
         <activity
             android:name=".MediaActivity"
             android:configChanges="orientation|screenSize" />
-
-        <service
-            android:name=".service.MediaUploadService"
-            android:description="@string/mediaService"
-            android:exported="false" />
         <service
             android:name=".service.GoogleDriveUploadService"
             android:description="@string/googleDriveService"

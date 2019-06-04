@@ -210,6 +210,7 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
         if(videoFragment == null) {
             if(VERBOSE)Log.d(TAG,"creating videofragment");
             videoFragment = VideoFragment.newInstance();
+            videoFragment.setApplicationContext(getApplicationContext());
         }
         FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
         if(photoFragment!=null) {
@@ -231,6 +232,7 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
         if(photoFragment == null) {
             if(VERBOSE)Log.d(TAG,"creating photofragment");
             photoFragment = PhotoFragment.newInstance();
+            photoFragment.setApplicationContext(getApplicationContext());
         }
         fragmentTransaction.replace(R.id.cameraPreview, photoFragment).commit();
         if(VERBOSE)Log.d(TAG,"photofragment added");

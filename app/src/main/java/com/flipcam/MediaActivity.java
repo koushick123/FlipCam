@@ -45,7 +45,6 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.facebook.CallbackManager;
 import com.flipcam.constants.Constants;
 import com.flipcam.data.MediaTableConstants;
 import com.flipcam.media.FileMedia;
@@ -99,7 +98,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     Dialog permissionFB;
     Dialog appNotExist;
     Dialog mediaLocation;
-    CallbackManager callbackManager;
     NotificationManager mNotificationManager;
     Bitmap notifyIcon;
     Uri queueNotification;
@@ -573,12 +571,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     public void cancel(View view){
         if(VERBOSE)Log.d(TAG,"CANCEL");
         deleteAlert.dismiss();
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        callbackManager.onActivityResult(requestCode, resultCode, data);
     }
 
     @Override

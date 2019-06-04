@@ -59,8 +59,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 
-import static com.facebook.FacebookSdk.getApplicationContext;
-
 /**
  * Created by koushick on 02-Oct-17.
  */
@@ -114,6 +112,15 @@ public class PhotoFragment extends Fragment {
     Dialog settingsDialog;
     Point size = new Point();
     Boolean prevPortrait = null;
+    Context mContext;
+
+    public Context getApplicationContext() {
+        return mContext;
+    }
+
+    public void setApplicationContext(Context mContext) {
+        this.mContext = mContext;
+    }
 
     public interface PhotoPermission{
         void askPhotoPermission();
