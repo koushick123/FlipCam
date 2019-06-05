@@ -4,16 +4,16 @@
     android:id="@+id/frameMedia"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/backColorDialog">
+    android:background="@color/settingsBarColor">
 
     <ImageView
         android:id="@+id/noImage"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@color/mediaControlColor"
+        android:contentDescription="@string/noImage"
         android:src="@drawable/ic_no_media"
-        android:visibility="gone"
-        android:contentDescription="@string/noImage"/>
+        android:visibility="gone" />
 
     <TextView
         android:id="@+id/noImageText"
@@ -68,6 +68,7 @@
                 android:layout_height="@dimen/mediaSourceImageHeight"
                 android:layout_marginEnd="10dp"
                 android:layout_weight=".7"
+                android:contentDescription="@string/mediaSourceContentDescription"
                 app:srcCompat="@drawable/phone" />
         </LinearLayout>
 
@@ -82,4 +83,22 @@
             android:stretchMode="columnWidth"
             android:verticalSpacing="4px" />
     </LinearLayout>
+
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/videoCapture"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="@dimen/fabBottomAndEndMargin"
+        android:layout_marginBottom="@dimen/fabBottomAndEndMargin"
+        android:clickable="true"
+        android:contentDescription="@string/videoMode"
+        android:cropToPadding="false"
+        android:elevation="@dimen/fabElevation"
+        android:focusable="true"
+        android:scaleType="center"
+        android:src="@drawable/video_mode"
+        app:borderWidth="0dp"
+        app:fabCustomSize="@dimen/fabCustomDimension"
+        app:maxImageSize="@dimen/fabVideoDimension" />
 </FrameLayout>

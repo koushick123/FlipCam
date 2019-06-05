@@ -11,6 +11,7 @@ import android.content.Loader;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.os.Bundle;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Gravity;
@@ -25,6 +26,7 @@ import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.flipcam.adapter.MediaAdapter;
 import com.flipcam.adapter.MediaLoader;
@@ -63,6 +65,8 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
     ImageView mediaSourceImage;
     @BindView(R.id.gridHeader)
     LinearLayout gridHeader;
+    @BindView(R.id.videoCapture)
+    FloatingActionButton videoCapture;
     ControlVisbilityPreference controlVisbilityPreference;
     FileMedia[] medias;
     boolean VERBOSE = true;
@@ -89,6 +93,11 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
         controlVisbilityPreference = (ControlVisbilityPreference)getApplicationContext();
         phoneLoc = getResources().getString(R.string.phoneLocation);
         sdcardLoc = getResources().getString(R.string.sdcardLocation);
+        videoCapture.setOnClickListener((view) -> {
+            Intent videoCamAct = new Intent(this, CameraActivity.class);
+            videoCamAct.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(videoCamAct);
+        });
     }
 
     @Override

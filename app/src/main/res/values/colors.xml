@@ -48,4 +48,6 @@
     <color name="backColorSettingPopup">#80000000</color>
     //Background color for ripple
     <color name="rippleColor">#387171</color>
+    //Transparent color for floating button
+    <color name="fabBackground">#90000000</color>
 </resources>

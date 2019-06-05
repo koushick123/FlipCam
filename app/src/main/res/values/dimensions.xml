@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     //Settings bar
     <dimen name="flashOnHeight">33dp</dimen>
     <dimen name="flashOnWidth">30dp</dimen>
@@ -158,4 +158,8 @@
     //Dimensions for media source image
     <dimen name="mediaSourceImageWidth">30dp</dimen>
     <dimen name="mediaSourceImageHeight">30dp</dimen>
+    <dimen name="fabVideoDimension">63dp</dimen>
+    <dimen name="fabCustomDimension">55dp</dimen>
+    <dimen name="fabBottomAndEndMargin">20dp</dimen>
+    <dimen name="fabElevation">20dp</dimen>
 </resources>

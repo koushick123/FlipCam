@@ -260,6 +260,7 @@
     <string name="phoneContentDescription">Phone Folder</string>
     <string name="memoryContentDescription">SD Card Folder</string>
     <string name="bothContentDescription">Both Folder</string>
+    <string name="mediaSourceContentDescription">Media Source</string>
     <string name="phoneLocation">PHONE</string>
     <string name="sdcardLocation">SD CARD</string>
     <string name="allLocation">ALL</string>
