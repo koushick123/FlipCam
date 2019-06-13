@@ -63,7 +63,6 @@ public class MediaUtil {
             File sdcardMedia = new File(sharedPreferences.getString(Constants.SD_CARD_PATH, ""));
             File[] phonemediaFiles;
             File[] sdcardmediaFiles = null;
-            File[] allMedia = null;
             //Check for phone media
             Log.d(TAG, "sdcardMedia = "+sdcardMedia);
             if(sdcardMedia != null) {
@@ -76,61 +75,19 @@ public class MediaUtil {
                 sdcardmediaFiles = getFilesList(sdcardMedia);
             }
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                //Use Streams for Java 1.8 and above
-                Stream<File> streamphoneMedia = null;
-                Stream<File> streamsdcardMedia = null;
-                Stream<File> allStreamMedia;
-                if(phonemediaFiles != null && phonemediaFiles.length > 0){
-                    streamphoneMedia = Arrays.stream(phonemediaFiles);
-                }
-                if(sdcardmediaFiles != null && sdcardmediaFiles.length > 0){
-                    streamsdcardMedia = Arrays.stream(sdcardmediaFiles);
-                }
-                //Concat both streams
-                if(streamphoneMedia != null && streamsdcardMedia!= null) {
-                    allStreamMedia = Stream.concat(streamphoneMedia, streamsdcardMedia);
-                    allMedia = allStreamMedia.toArray(File[]::new);
-                    Log.d(TAG, "allMedia count = "+allMedia.length);
-                    mediaList = getSortedList(allMedia);
-                }
-                else if(streamphoneMedia != null){
-                    mediaList = getSortedList(streamphoneMedia.toArray(File[]::new));
-                }
-                else if(streamsdcardMedia != null){
-                    mediaList = getSortedList(streamsdcardMedia.toArray(File[]::new));
-                }
-                else{
-                    mediaList = null;
-                }
+            if(phonemediaFiles != null && sdcardmediaFiles != null) {
+                concatAllMedia(phonemediaFiles, sdcardmediaFiles);
             }
             else{
-                //Iterate phone media
-                int allMediaCount = 0;
-                if(phonemediaFiles != null) {
-                    allMediaCount += phonemediaFiles.length;
+                if(phonemediaFiles != null && phonemediaFiles.length > 0){
+                    Log.d(TAG, "Stream Phone");
+                    mediaList = getSortedList(phonemediaFiles);
                 }
-                if(sdcardmediaFiles != null){
-                    allMediaCount += sdcardmediaFiles.length;
+                else if(sdcardmediaFiles != null && sdcardmediaFiles.length > 0){
+                    Log.d(TAG, "Stream SD Card");
+                    mediaList = getSortedList(sdcardmediaFiles);
                 }
-                Log.d(TAG, "allMediaCount = "+allMediaCount);
-                allMedia = new File[allMediaCount];
-                int index=0;
-                if(phonemediaFiles != null){
-                    for(File phMed : phonemediaFiles){
-                        allMedia[index++] = phMed;
-                    }
-                }
-                if(sdcardmediaFiles != null){
-                    for(File sdcdMedia : sdcardmediaFiles){
-                        allMedia[index++] = sdcdMedia;
-                    }
-                }
-                if(allMedia != null) {
-                    Log.d(TAG, "allMedia length = "+allMedia.length);
-                    mediaList = getSortedList(allMedia);
-                }
-                else{
+                else {
                     mediaList = null;
                 }
             }
@@ -146,9 +103,40 @@ public class MediaUtil {
         }
     }
 
+    private static void concatAllMedia(File[] phonemediaFiles, File[] sdcardmediaFiles){
+        File[] allMedia;
+        //Iterate phone media
+        int allMediaCount = 0;
+        if(phonemediaFiles != null) {
+            allMediaCount += phonemediaFiles.length;
+        }
+        if(sdcardmediaFiles != null){
+            allMediaCount += sdcardmediaFiles.length;
+        }
+        Log.d(TAG, "allMediaCount = "+allMediaCount);
+        allMedia = new File[allMediaCount];
+        int index=0;
+        if(phonemediaFiles != null){
+            for(File phMed : phonemediaFiles){
+                allMedia[index++] = phMed;
+            }
+        }
+        if(sdcardmediaFiles != null){
+            for(File sdcdMedia : sdcardmediaFiles){
+                allMedia[index++] = sdcdMedia;
+            }
+        }
+        if(allMedia != null) {
+            Log.d(TAG, "allMedia length = "+allMedia.length);
+            mediaList = getSortedList(allMedia);
+        }
+        else{
+            mediaList = null;
+        }
+    }
+
     private static void sortAsPerLatest() {
-        File dcimFc = null;
-        boolean allLoc = false;
+        File dcimFc;
         SharedPreferences sharedPreferences = appContext.getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
         if(sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)) {
             dcimFc = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + appContext.getResources().getString(R.string.FC_ROOT));

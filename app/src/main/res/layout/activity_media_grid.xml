@@ -56,9 +56,10 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="@dimen/fcGalleryTextLeftMargin"
                 android:layout_marginTop="@dimen/fcGalleryTextTopAndBottomMargin"
+                android:layout_marginEnd="@dimen/fcGalleryTextEndMargin"
                 android:layout_marginBottom="@dimen/fcGalleryTextTopAndBottomMargin"
                 android:layout_weight=".3"
-                android:gravity="center_horizontal"
+                android:gravity="end"
                 android:text="@string/mediaSource"
                 android:textColor="@color/turqoise" />
 

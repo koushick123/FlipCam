@@ -72,6 +72,7 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
     boolean VERBOSE = true;
     String phoneLoc;
     String sdcardLoc;
+    String allLoc;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -93,10 +94,12 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
         controlVisbilityPreference = (ControlVisbilityPreference)getApplicationContext();
         phoneLoc = getResources().getString(R.string.phoneLocation);
         sdcardLoc = getResources().getString(R.string.sdcardLocation);
+        allLoc = getResources().getString(R.string.allLocation);
         videoCapture.setOnClickListener((view) -> {
             Intent videoCamAct = new Intent(this, CameraActivity.class);
             videoCamAct.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(videoCamAct);
+            overridePendingTransition(R.anim.slide_from_left, R.anim.slide_to_right);
         });
     }
 
@@ -151,6 +154,7 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
                 Intent mediaAct = new Intent(getApplicationContext(), MediaActivity.class);
                 mediaAct.putExtra("mediaPosition",position);
                 mediaAct.putExtra("fromGallery",true);
+                mediaAct.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(mediaAct);
             });
             if(VERBOSE)Log.d(TAG, "selectedMedia Pos = "+controlVisbilityPreference.getMediaSelectedPosition());
@@ -194,18 +198,10 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
         if(sharedPreferences.getString(Constants.MEDIA_LOCATION_VIEW_SELECT, phoneLoc).equalsIgnoreCase(sdcardLoc)) {
             //SD Card Location
             if (doesSDCardExist() == null && !sdCardUnavailWarned) {
-                /*
-                showSDCardUnavailMessage();
-                getLoaderManager().initLoader(1, null, this).forceLoad();*/
                 sdCardUnavailWarned = true;
                 showSDCardNotDetectedMessage();
-            } else {
-//                getLoaderManager().initLoader(1, null, this).forceLoad();
             }
-        }/*
-        else{
-            getLoaderManager().initLoader(1, null, this).forceLoad();
-        }*/
+        }
         getLoaderManager().initLoader(1, null, this).forceLoad();
     }
 
@@ -245,13 +241,14 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
             if (intent.getAction().equalsIgnoreCase(Intent.ACTION_MEDIA_UNMOUNTED)) {
                 //Check if SD Card was selected
                 SharedPreferences.Editor settingsEditor = sharedPreferences.edit();
-                if (!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true) && !sdCardUnavailWarned) {
+                if ((sharedPreferences.getString(Constants.MEDIA_LOCATION_VIEW_SELECT, phoneLoc).equalsIgnoreCase(sdcardLoc)
+                        || sharedPreferences.getString(Constants.MEDIA_LOCATION_VIEW_SELECT, phoneLoc).equalsIgnoreCase(allLoc))
+                        && !sdCardUnavailWarned) {
                     if(VERBOSE)Log.d(TAG, "SD Card Removed");
-                    settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
+                    settingsEditor.putString(Constants.MEDIA_LOCATION_VIEW_SELECT, phoneLoc);
                     settingsEditor.commit();
                     sdCardUnavailWarned = true;
                     showSDCardUnavailMessage();
-                    updateMediaGridFromSource();
                 }
             }
         }
@@ -313,10 +310,11 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
         TextView warningTitle = (TextView)warningMsgRoot.findViewById(R.id.warningTitle);
         warningTitle.setText(getResources().getString(R.string.sdCardRemovedTitle));
         TextView warningText = (TextView)warningMsgRoot.findViewById(R.id.warningText);
-        warningText.setText(getResources().getString(R.string.sdCardNotPresentForRecord));
+        warningText.setText(getResources().getString(R.string.sdCardNotPresentForView));
         okButton = (Button)warningMsgRoot.findViewById(R.id.okButton);
         okButton.setOnClickListener((view)  -> {
             warningMsg.dismiss();
+            getLoaderManager().initLoader(1, null, this).forceLoad();
         });
         warningMsg.setContentView(warningMsgRoot);
         warningMsg.setCancelable(false);

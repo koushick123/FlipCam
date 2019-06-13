@@ -174,21 +174,17 @@
     <string name="sdCardRemovedTitle">SD Card Removed</string>
     <string name="sdCardNotDetectMessage">No SD Card has been detected.\n\nPlease insert an SD Card and try again.</string>
     <string name="sdCardNotPresentForRecord">SD Card has been removed.\n\nDefault storage location is now Phone Memory.</string>
+    <string name="sdCardNotPresentForView">SD Card has been removed.\n\nGallery will now show media only from Phone Memory.</string>
     <string name="sdCardRemovedWhileRecord">Unable to save video. SD Card has been removed.\n\nDefault storage location is now Phone Memory.</string>
-    <string name="resetTitle">Reset ALL Settings</string>
-    <string name="resetMsg">This will reset ALL your settings to default values that were set when FlipCam was installed.\n\nThis cannot be undone.\n\n
-    Do you want to proceed?</string>
-    <string name="reset">RESET</string>
-    <string name="widgetTitle">FlipCam</string>
-    <string name="widgetMediaMsg">Click to see all FlipCam Photos/Videos</string>
-    <string name="widgetNoMedia">No Photos/Videos</string>
+    <string name="sdCardWriteError">SD Card Write Error</string>
+    <string name="sdCardWriteErrorMessage">Unable to write onto SD Card. Please verify that SD Card is not Read-only.</string>
     <string name="flipCamGallery">FlipCam Gallery</string>
     <string name="galleryCount">%1$d Photos, %2$d Videos</string>
     <string name="content_authority">com.flipcam.data</string>
     <string name="flashModeNotSupported">Flash Mode %1$s not supported by this camera.</string>
     <string name="noFrontFaceCamera">Front facing camera not available in this device.</string>
     <string name="flipCamContentDescription">FlipCam Icon</string>
-    <string name="placeholderContentDescription">Plcaeholder Icon</string>
+    <string name="placeholderContentDescription">Placeholder Icon</string>
     <string name="uploadFolderDesc">Upload Folder</string>
     <string name="dropboxContentDescription">Dropbox Icon</string>
     <string name="brightnessContentDescription">Brightness Icon</string>
@@ -201,7 +197,6 @@
     <string name="playVideo">Play Video</string>
     <string name="greenArrow">Navigate to Memory Threshold Activity</string>
     <string name="folderCreated">Folder Created Successfully.</string>
-    <string name="imageWidget">Image Widget for Latest Photo/Video.</string>
     <string name="imagePreview">Camera Preview</string>
     <string name="thumbnail">Photo/Video Thumbnail</string>
     <string name="switchCamera">Switch Camera</string>

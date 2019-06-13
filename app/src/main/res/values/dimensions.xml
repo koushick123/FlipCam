@@ -162,4 +162,5 @@
     <dimen name="fabCustomDimension">55dp</dimen>
     <dimen name="fabBottomAndEndMargin">20dp</dimen>
     <dimen name="fabElevation">20dp</dimen>
+    <dimen name="fcGalleryTextEndMargin">20dp</dimen>
 </resources>
