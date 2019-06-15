@@ -170,6 +170,8 @@
     <string name="sdCardDetectTitle">SD Card Detected</string>
     <string name="sdCardDetectMessage">SD Card has been detected. Files will be stored in below location.\n\n%1$s\n\nNOTE: If the application is uninstalled,
     you will lose the files in above location.</string>
+    <string name="sdCardDetectGalleryView">Gallery will refresh to show SD Card media contents that were created by FlipCam.</string>
+    <string name="sdCardDetectNoMediaGalleryView">SD Card does not contain media or folder created by FlipCam.</string>
     <string name="sdCardNotDetectTitle">SD Card Not Detected</string>
     <string name="sdCardRemovedTitle">SD Card Removed</string>
     <string name="sdCardNotDetectMessage">No SD Card has been detected.\n\nPlease insert an SD Card and try again.</string>

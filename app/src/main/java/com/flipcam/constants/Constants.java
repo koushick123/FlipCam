@@ -66,6 +66,7 @@ public class Constants
     public static final String SHOW_MEMORY_CONSUMED_MSG = "ShowMemoryConsumedText";
     public static final String MEDIA_COUNT_MEM = "mediaCountMem";
     public static final String MEDIA_COUNT_SD_CARD = "mediaCountSdCard";
+    public static final String MEDIA_COUNT_ALL = "mediaCountAll";
     //Enable/Disable shutter sound
     public static final String SHUTTER_SOUND = "ShutterSound";
     //Set Selfie Timer
@@ -89,4 +90,7 @@ public class Constants
     public static final String SELECT_PHOTO_RESOLUTION_FRONT = "SelectPhotoResolutionFront";
     public static final String SUPPORT_PHOTO_RESOLUTIONS = "SupportedPhotoResolutions";
     public static final String SUPPORT_PHOTO_RESOLUTIONS_FRONT = "SupportedPhotoResolutionsFront";
+    //Unmounted/Mounted Intent
+    public static final String MEDIA_UNMOUNTED = "android.intent.action.MEDIA_UNMOUNTED";
+    public static final String MEDIA_MOUNTED = "android.intent.action.MEDIA_MOUNTED";
 }

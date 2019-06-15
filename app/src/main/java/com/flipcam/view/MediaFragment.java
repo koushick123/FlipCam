@@ -385,9 +385,11 @@ MediaPlayer.OnErrorListener, Serializable{
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if(VERBOSE)Log.d(TAG, "onCreate");
         framePosition = getArguments().getInt("position");
         recreate = getArguments().getBoolean("recreate");
         fromGallery = getArguments().getBoolean("fromGallery");
+        if(VERBOSE)Log.d(TAG, "fromGallery = "+fromGallery);
         //if(VERBOSE)Log.d(TAG,"framePosition = "+framePosition);
         images = MediaUtil.getMediaList(getContext(), fromGallery);
         path = images[framePosition].getPath();

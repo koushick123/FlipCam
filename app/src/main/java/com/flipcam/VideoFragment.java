@@ -386,7 +386,8 @@ public class VideoFragment extends android.app.Fragment{
         @Override
         public void onReceive(Context ctx, Intent intent) {
             if(VERBOSE)Log.d(TAG, "onReceive = "+intent.getAction());
-            if(intent.getAction().equalsIgnoreCase(Intent.ACTION_MEDIA_UNMOUNTED)){
+            if(intent.getAction().equalsIgnoreCase(Intent.ACTION_MEDIA_UNMOUNTED) ||
+                    intent.getAction().equalsIgnoreCase(Constants.MEDIA_UNMOUNTED)){
                 //Check if SD Card was selected
                 SharedPreferences.Editor settingsEditor = sharedPreferences.edit();
                 if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true) && !sdCardUnavailWarned){

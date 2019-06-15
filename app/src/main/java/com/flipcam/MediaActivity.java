@@ -143,24 +143,34 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         mediaLocationView = layoutInflater.inflate(R.layout.medialocation, null);
         sharedPreferences = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
         videoControls = (LinearLayout)findViewById(R.id.videoControls);
-        if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
-            if(doesSDCardExist() == null){
-                exitToPreviousActivity();
-                return;
+        fromGallery = getIntent().getExtras().getBoolean("fromGallery");
+        Log.d(TAG, "fromGallery = "+fromGallery);
+        if(!fromGallery){
+            if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
+                if(doesSDCardExist() == null){
+                    exitToPreviousActivity();
+                    return;
+                }
+                else {
+                    medias = MediaUtil.getMediaList(getApplicationContext(), fromGallery);
+                }
             }
             else {
-                medias = MediaUtil.getMediaList(getApplicationContext(), false);
+                medias = MediaUtil.getMediaList(getApplicationContext(), fromGallery);
             }
         }
-        else {
-            medias = MediaUtil.getMediaList(getApplicationContext(), false);
+        else{
+            //If the MediaActivity is opened from Gallery we should not check for SAVE_MEDIA_PHONE_MEM preferences
+            //The MediaUtil will open based on selection.
+            //All over the app, where ever we use SAVE_MEDIA_PHONE_MEM to check for location preferences, we need to see if
+            //we are coming from Video/Photo fragment or Gallery using fromGallery. A user can choose to see SD Card media even
+            //though under location preferences he may choose phone storage, and vice versa.
+            medias = MediaUtil.getMediaList(getApplicationContext(), fromGallery);
         }
         mPager = (ViewPager) findViewById(R.id.mediaPager);
         mPager.setOffscreenPageLimit(1);
         mPagerAdapter = new MediaSlidePager(getSupportFragmentManager());
         mPager.setAdapter(mPagerAdapter);
-        fromGallery = getIntent().getExtras().getBoolean("fromGallery");
-        Log.d(TAG, "fromGallery = "+fromGallery);
         if(fromGallery) {
             int mediaPos = getIntent().getExtras().getInt("mediaPosition");
             if(VERBOSE)Log.d(TAG, "Intent extra = " +mediaPos);
@@ -230,10 +240,23 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                     }
                     if (shareIntent.resolveActivity(getPackageManager()) != null) {
                         if(VERBOSE)Log.d(TAG, "Start activity to choose");
-                        if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
-                            if(doesSDCardExist() == null){
-                                exitToPreviousActivity();
-                                return;
+                        if(!fromGallery) {
+                            if (!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)) {
+                                if (doesSDCardExist() == null) {
+                                    exitToPreviousActivity();
+                                    return;
+                                }
+                            }
+                        }
+                        else{
+                            if(sharedPreferences.getString(Constants.MEDIA_LOCATION_VIEW_SELECT, phoneLoc).
+                                    equalsIgnoreCase(sdcardLoc) ||
+                                sharedPreferences.getString(Constants.MEDIA_LOCATION_VIEW_SELECT, phoneLoc).
+                                        equalsIgnoreCase(allLoc)){
+                                if (doesSDCardExist() == null) {
+                                    exitToPreviousActivity();
+                                    return;
+                                }
                             }
                         }
                         startActivity(chooser);
@@ -304,6 +327,9 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         taskInProgressRoot = layoutInflater.inflate(R.layout.task_in_progress, null);
         taskAlert = new Dialog(this);
         appWidgetManager = (AppWidgetManager)getSystemService(Context.APPWIDGET_SERVICE);
+        phoneLoc = getResources().getString(R.string.phoneLocation);
+        sdcardLoc = getResources().getString(R.string.sdcardLocation);
+        allLoc = getResources().getString(R.string.allLocation);
     }
 
     AudioManager.OnAudioFocusChangeListener onAudioFocusChangeListener = new AudioManager.OnAudioFocusChangeListener(){
@@ -338,20 +364,38 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         mediaLocEdit.putString(Constants.MEDIA_LOCATION_VIEW_SELECT, selectedFolderLabel);
         mediaLocEdit.commit();
         Intent galleryAct = new Intent(getApplicationContext(), GalleryActivity.class);
+        galleryAct.putExtra("fromGallery", true);
         startActivity(galleryAct);
         overridePendingTransition(R.anim.slide_from_right,R.anim.slide_to_left);
     }
+    String phoneLoc;
+    String sdcardLoc;
+    String allLoc;
     @Override
     protected void onStop() {
         super.onStop();
-        if(VERBOSE)Log.d(TAG,"onStop");
+        if(VERBOSE)Log.d(TAG,"onStop fromGal = "+fromGallery);
         if(medias != null) {
             SharedPreferences.Editor mediaState = sharedPreferences.edit();
-            if(sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)) {
-                mediaState.putInt(Constants.MEDIA_COUNT_MEM, medias.length);
+            if(!fromGallery) {
+                if (sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)) {
+                    mediaState.putInt(Constants.MEDIA_COUNT_MEM, medias.length);
+                } else {
+                    mediaState.putInt(Constants.MEDIA_COUNT_SD_CARD, medias.length);
+                }
             }
             else{
-                mediaState.putInt(Constants.MEDIA_COUNT_SD_CARD, medias.length);
+                if(sharedPreferences.getString(Constants.MEDIA_LOCATION_VIEW_SELECT, phoneLoc).equalsIgnoreCase(
+                        sdcardLoc)){
+                    mediaState.putInt(Constants.MEDIA_COUNT_SD_CARD, medias.length);
+                }
+                else if(sharedPreferences.getString(Constants.MEDIA_LOCATION_VIEW_SELECT, phoneLoc).equalsIgnoreCase(
+                        phoneLoc)){
+                    mediaState.putInt(Constants.MEDIA_COUNT_MEM, medias.length);
+                }
+                else{
+                    mediaState.putInt(Constants.MEDIA_COUNT_ALL, medias.length);
+                }
             }
             mediaState.commit();
             if(VERBOSE)Log.d(TAG, "Media length before leaving = " + medias.length);
@@ -439,11 +483,13 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
 
     public void deleteMedia(int position)
     {
-        if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
-            if(doesSDCardExist() == null){
-                taskAlert.dismiss();
-                exitToPreviousActivity();
-                return;
+        if(!fromGallery) {
+            if (!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)) {
+                if (doesSDCardExist() == null) {
+                    taskAlert.dismiss();
+                    exitToPreviousActivity();
+                    return;
+                }
             }
         }
         if(VERBOSE)Log.d(TAG,"Length before delete = "+medias.length);
@@ -592,11 +638,13 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
 
     @Override
     public void onPageSelected(int position) {
-        if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
-            String sdCard = doesSDCardExist();
-            if(sdCard == null){
-                exitToPreviousActivity();
-                return;
+        if(!fromGallery) {
+            if (!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)) {
+                String sdCard = doesSDCardExist();
+                if (sdCard == null) {
+                    exitToPreviousActivity();
+                    return;
+                }
             }
         }
         if(VERBOSE)Log.d(TAG,"onPageSelected = "+position+", previousSelectedFragment = "+previousSelectedFragment);
@@ -714,9 +762,11 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             if(VERBOSE)Log.d(TAG,"CATCH onError = "+extra);
             if(extra == MediaPlayer.MEDIA_ERROR_IO){
                 //Possible file not found since SD Card removed
-                if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
-                    exitMediaAndShowNoSDCard();
-                    return true;
+                if(!fromGallery) {
+                    if (!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)) {
+                        exitMediaAndShowNoSDCard();
+                        return true;
+                    }
                 }
             }
             currentFrag.mediaPlayer.reset();
@@ -811,10 +861,19 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         @Override
         public void onReceive(Context ctx, Intent intent) {
             if(VERBOSE)Log.d(TAG, "onReceive = "+intent.getAction());
-            if(intent.getAction().equalsIgnoreCase(Intent.ACTION_MEDIA_UNMOUNTED)){
+            if(intent.getAction().equalsIgnoreCase(Intent.ACTION_MEDIA_UNMOUNTED) ||
+                    intent.getAction().equalsIgnoreCase(Constants.MEDIA_UNMOUNTED)){
                 //Check if SD Card was selected
-                if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
-                    exitMediaAndShowNoSDCard();
+                if(!fromGallery) {
+                    if (!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)) {
+                        exitMediaAndShowNoSDCard();
+                    }
+                }
+                else{
+                    if(sharedPreferences.getString(Constants.MEDIA_LOCATION_VIEW_SELECT, phoneLoc).equalsIgnoreCase(sdcardLoc)
+                    || sharedPreferences.getString(Constants.MEDIA_LOCATION_VIEW_SELECT, phoneLoc).equalsIgnoreCase(allLoc)){
+                        exitMediaAndShowNoSDCard();
+                    }
                 }
             }
         }
@@ -823,19 +882,24 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     @Override
     protected void onResume() {
         super.onResume();
-        if(VERBOSE)Log.d(TAG,"onResume");
+        if(VERBOSE)Log.d(TAG,"onResume from Gal = "+fromGallery);
         registerReceiver(sdCardEventReceiver, mediaFilters);
         mPager.addOnPageChangeListener(this);
         mediaFilters.addAction(Intent.ACTION_MEDIA_UNMOUNTED);
         mediaFilters.addDataScheme("file");
-        if (!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)) {
-            if (doesSDCardExist() == null) {
-                exitToPreviousActivity();
-                return;
+        if(!fromGallery) {
+            if (!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)) {
+                if (doesSDCardExist() == null) {
+                    exitToPreviousActivity();
+                    return;
+                } else {
+                    refreshMediaFromSource();
+                }
             } else {
                 refreshMediaFromSource();
             }
-        } else {
+        }
+        else{
             refreshMediaFromSource();
         }
     }
@@ -843,13 +907,26 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     public void refreshMediaFromSource(){
         itemCount = 0;
         int oldLength;
-        if(sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)) {
-            oldLength = getSharedPreferences(FC_MEDIA_PREFERENCE, Context.MODE_PRIVATE).getInt(Constants.MEDIA_COUNT_MEM, 0);
+        if(VERBOSE)Log.d(TAG, "refreshMediaSource fromGallery = "+fromGallery);
+        if(!fromGallery) {
+            if (sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)) {
+                oldLength = getSharedPreferences(FC_MEDIA_PREFERENCE, Context.MODE_PRIVATE).getInt(Constants.MEDIA_COUNT_MEM, 0);
+            } else {
+                oldLength = getSharedPreferences(FC_MEDIA_PREFERENCE, Context.MODE_PRIVATE).getInt(Constants.MEDIA_COUNT_SD_CARD, 0);
+            }
         }
-        else {
-            oldLength = getSharedPreferences(FC_MEDIA_PREFERENCE, Context.MODE_PRIVATE).getInt(Constants.MEDIA_COUNT_SD_CARD, 0);
+        else{
+            if(sharedPreferences.getString(Constants.MEDIA_LOCATION_VIEW_SELECT, phoneLoc).equalsIgnoreCase(phoneLoc)){
+                oldLength = getSharedPreferences(FC_MEDIA_PREFERENCE, Context.MODE_PRIVATE).getInt(Constants.MEDIA_COUNT_MEM, 0);
+            }
+            else if(sharedPreferences.getString(Constants.MEDIA_LOCATION_VIEW_SELECT, sdcardLoc).equalsIgnoreCase(sdcardLoc)){
+                oldLength = getSharedPreferences(FC_MEDIA_PREFERENCE, Context.MODE_PRIVATE).getInt(Constants.MEDIA_COUNT_SD_CARD, 0);
+            }
+            else{
+                oldLength = getSharedPreferences(FC_MEDIA_PREFERENCE, Context.MODE_PRIVATE).getInt(Constants.MEDIA_COUNT_ALL, 0);
+            }
         }
-        medias = MediaUtil.getMediaList(getApplicationContext(), false);
+        medias = MediaUtil.getMediaList(getApplicationContext(), fromGallery);
         if(medias != null) {
             if (medias.length < oldLength) {
                 if(VERBOSE)Log.d(TAG, "Possible deletions outside of App");
@@ -871,6 +948,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         if(VERBOSE)Log.d(TAG, "exitMediaAndShowNoSDCard");
         Intent camera = new Intent(this,CameraActivity.class);
         camera.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_NEW_TASK);
+        camera.putExtra("fromGallery", fromGallery);
         startActivity(camera);
         finish();
     }
@@ -933,6 +1011,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             MediaFragment mediaFragment;
             if(isDelete) {
                 isDelete = false;
+                if(VERBOSE)Log.d(TAG, "fromGallery sent to MediaFragment = "+fromGallery);
                 mediaFragment = MediaFragment.newInstance(position, true, fromGallery);
                 if(mediaFragment.getUserVisibleHint()) {
                     if (isImage(medias[position].getPath())) {

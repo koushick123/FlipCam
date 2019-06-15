@@ -50,11 +50,12 @@ public class MediaUtil {
         String sdcardLoc = appContext.getResources().getString(R.string.sdcardLocation);
         if(sharedPreferences.getString(Constants.MEDIA_LOCATION_VIEW_SELECT, phoneLoc).equalsIgnoreCase(phoneLoc)) {
             dcimFc = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + appContext.getResources().getString(R.string.FC_ROOT));
-            Log.d(TAG, "PHONE");
+            Log.d(TAG, "PHONE For Gallery");
         }
         else if(sharedPreferences.getString(Constants.MEDIA_LOCATION_VIEW_SELECT, phoneLoc).equalsIgnoreCase(sdcardLoc)){
             dcimFc = new File(sharedPreferences.getString(Constants.SD_CARD_PATH, ""));
-            if(VERBOSE) Log.d(TAG, "SD card path = "+sharedPreferences.getString(Constants.SD_CARD_PATH, ""));
+            if(VERBOSE) Log.d(TAG, "SD card path For Gallery = "+
+                    sharedPreferences.getString(Constants.SD_CARD_PATH, ""));
         }
         else{
             //Combine ALL media content

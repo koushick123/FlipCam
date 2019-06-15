@@ -45,6 +45,7 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
     Dialog settingsDialog;
     ImageView brightness;
     ControlVisbilityPreference controlVisbilityPreference;
+    boolean fromGallery = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,26 +69,50 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
         settingsDialog = new Dialog(this);
         sharedPreferences = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
         SharedPreferences.Editor settingsEditor = sharedPreferences.edit();
-        if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
-            if(doesSDCardExist() == null){
-                settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
-                settingsEditor.commit();
-                TextView warningTitle = (TextView)warningMsgRoot.findViewById(R.id.warningTitle);
-                warningTitle.setText(getResources().getString(R.string.sdCardRemovedTitle));
-                TextView warningText = (TextView)warningMsgRoot.findViewById(R.id.warningText);
-                warningText.setText(getResources().getString(R.string.sdCardNotPresentForRecord));
-                okButton = (Button)warningMsgRoot.findViewById(R.id.okButton);
-                okButton.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        warningMsg.dismiss();
-                        videoFragment.getLatestFileIfExists();
-                    }
-                });
-                warningMsg.setContentView(warningMsgRoot);
-                warningMsg.setCancelable(false);
-                warningMsg.show();
+        Bundle bundle = getIntent().getExtras();
+        if(bundle != null) {
+            fromGallery = bundle.getBoolean("fromGallery");
+        }
+        if(!fromGallery) {
+            if (!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)) {
+                if (doesSDCardExist() == null) {
+                    settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
+                    settingsEditor.commit();
+                    TextView warningTitle = (TextView) warningMsgRoot.findViewById(R.id.warningTitle);
+                    warningTitle.setText(getResources().getString(R.string.sdCardRemovedTitle));
+                    TextView warningText = (TextView) warningMsgRoot.findViewById(R.id.warningText);
+                    warningText.setText(getResources().getString(R.string.sdCardNotPresentForRecord));
+                    okButton = (Button) warningMsgRoot.findViewById(R.id.okButton);
+                    okButton.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            warningMsg.dismiss();
+                            videoFragment.getLatestFileIfExists();
+                        }
+                    });
+                    warningMsg.setContentView(warningMsgRoot);
+                    warningMsg.setCancelable(false);
+                    warningMsg.show();
+                }
             }
+        }
+        else{
+            //Show SD Card not detected, please insert sd card to try again.
+            TextView warningTitle = (TextView) warningMsgRoot.findViewById(R.id.warningTitle);
+            warningTitle.setText(getResources().getString(R.string.sdCardNotDetectTitle));
+            TextView warningText = (TextView) warningMsgRoot.findViewById(R.id.warningText);
+            warningText.setText(getResources().getString(R.string.sdCardNotDetectMessage));
+            okButton = (Button) warningMsgRoot.findViewById(R.id.okButton);
+            okButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    warningMsg.dismiss();
+                    videoFragment.getLatestFileIfExists();
+                }
+            });
+            warningMsg.setContentView(warningMsgRoot);
+            warningMsg.setCancelable(false);
+            warningMsg.show();
         }
     }
 
