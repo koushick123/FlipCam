@@ -187,7 +187,8 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         deleteMedia = (ImageButton)findViewById(R.id.deleteMedia);
         deleteAlert = new Dialog(this);
         deleteMedia.setOnClickListener((view) -> {
-            medias = MediaUtil.getMediaList(getApplicationContext(), false);
+            Log.d(TAG, "from the Gallery = "+fromGallery);
+            medias = MediaUtil.getMediaList(getApplicationContext(), fromGallery);
             if(medias != null) {
                 if(VERBOSE)Log.d(TAG, "Delete position = " + selectedPosition);
                 TextView deleteMsg = (TextView) deleteMediaRoot.findViewById(R.id.deleteMsg);
@@ -211,7 +212,8 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         permissionFB = new Dialog(this);
         appNotExist = new Dialog(this);
         shareMedia.setOnClickListener((view) -> {
-            medias = MediaUtil.getMediaList(getApplicationContext(), false);
+            Log.d(TAG, "from Gallery? = "+fromGallery);
+            medias = MediaUtil.getMediaList(getApplicationContext(), fromGallery);
             if(medias != null) {
                 if(VERBOSE)Log.d(TAG, "Share position = " + selectedPosition);
                 Uri mediaUri;
@@ -505,7 +507,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 //onPageSelected is called when deleting last media. Need to make previousSelectedFragment as -1.
                 previousSelectedFragment = -1;
             }
-            medias = MediaUtil.getMediaList(getApplicationContext(), false);
+            medias = MediaUtil.getMediaList(getApplicationContext(), fromGallery);
             if(medias != null) {
                 runOnUiThread(() -> {
                     if(VERBOSE)Log.d(TAG, "BEFORE notifyDataSetChanged");
