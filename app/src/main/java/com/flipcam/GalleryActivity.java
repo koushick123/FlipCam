@@ -97,7 +97,7 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
         //fromMedia is set to true only if Gallery is opened from MediaActivity. This should be reset to false in onResume()
         Bundle bundle = getIntent().getExtras();
         if(bundle != null) {
-            fromMedia = bundle.getBoolean("fromGallery");
+            fromMedia = bundle.getBoolean("fromMedia");
         }
     }
 

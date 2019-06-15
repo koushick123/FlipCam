@@ -1,6 +1,8 @@
 package com.flipcam.view;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
@@ -35,6 +37,7 @@ import android.widget.TextView;
 
 import com.flipcam.ControlVisbilityPreference;
 import com.flipcam.GlideApp;
+import com.flipcam.MediaActivity;
 import com.flipcam.R;
 import com.flipcam.media.FileMedia;
 import com.flipcam.media.Media;
@@ -91,6 +94,7 @@ MediaPlayer.OnErrorListener, Serializable{
     AudioManager audioManager;
     boolean imageScaled = false;
     boolean fromGallery = false;
+    MediaActivity mediaActivity;
 
     public static MediaFragment newInstance(int pos,boolean recreate, boolean fromGal){
         MediaFragment mediaFragment = new MediaFragment();
@@ -120,6 +124,7 @@ MediaPlayer.OnErrorListener, Serializable{
         frameMedia = (FrameLayout)getActivity().findViewById(R.id.frameMedia);
         controlVisbilityPreference = (ControlVisbilityPreference) getActivity().getApplicationContext();
         playCircle = (ImageView)getActivity().findViewById(R.id.playVideo);
+        mediaActivity = (MediaActivity)getActivity();
 
         if(getUserVisibleHint()) {
             if(!isImage()) {
