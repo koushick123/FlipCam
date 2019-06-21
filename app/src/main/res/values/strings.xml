@@ -177,6 +177,10 @@
     <string name="sdCardNotDetectMessage">No SD Card has been detected.\n\nPlease insert an SD Card and try again.</string>
     <string name="sdCardNotPresentForRecord">SD Card has been removed.\n\nDefault storage location is now Phone Memory.</string>
     <string name="sdCardNotPresentForView">SD Card has been removed.\n\nGallery will now show media only from Phone Memory.</string>
+    <string name="sdCardNotPresentForViewDefLocChanged">SD Card has been removed.\n\nGallery will now show media only from Phone Memory.
+    \n\nDefault storage location is now Phone Memory.</string>
+    <string name="sdCardNotDetectMessageDefLocChanged">No SD Card has been detected.\n\nPlease insert an SD Card and try again.
+    \n\nDefault storage location is now Phone Memory.</string>
     <string name="sdCardRemovedWhileRecord">Unable to save video. SD Card has been removed.\n\nDefault storage location is now Phone Memory.</string>
     <string name="sdCardWriteError">SD Card Write Error</string>
     <string name="sdCardWriteErrorMessage">Unable to write onto SD Card. Please verify that SD Card is not Read-only.</string>

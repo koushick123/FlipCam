@@ -206,12 +206,11 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
                 if(fromMedia) {
                     if(sharedPreferences.getString(Constants.MEDIA_LOCATION_VIEW_SELECT, phoneLoc).equalsIgnoreCase(sdcardLoc)) {
                         closePreviousMessages();
-                        showMessage(getString(R.string.sdCardNotDetectTitle), getString(R.string.sdCardNotDetectMessage), true);
+                        checkForSDCardAndShowMessage();
                     }
                     else if(sharedPreferences.getString(Constants.MEDIA_LOCATION_VIEW_SELECT, phoneLoc).equalsIgnoreCase(allLoc)){
                         closePreviousMessages();
-                        showMessage(getResources().getString(R.string.sdCardRemovedTitle),
-                                getResources().getString(R.string.sdCardNotPresentForView), true);
+                        checkForSDCardAndShowGalleryMessage();
                     }
                     fromMedia = false;
                 }
@@ -220,13 +219,12 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
                     Log.d(TAG, "medias content = "+medias);
                     if(medias != null && medias.length > 0){
                         closePreviousMessages();
-                        showMessage(getResources().getString(R.string.sdCardRemovedTitle),
-                                getResources().getString(R.string.sdCardNotPresentForView), true);
+                        checkForSDCardAndShowGalleryMessage();
                     }
                     else{
                         //No Media content was shown earlier.
                         closePreviousMessages();
-                        showMessage(getString(R.string.sdCardNotDetectTitle), getString(R.string.sdCardNotDetectMessage), true);
+                        checkForSDCardAndShowMessage();
                     }
                 }
             }
@@ -285,14 +283,20 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
             if (receivedAction.equalsIgnoreCase(Intent.ACTION_MEDIA_UNMOUNTED) ||
                     receivedAction.equalsIgnoreCase(Constants.MEDIA_UNMOUNTED)) {
                 //Check if SD Card was selected
-                if ((sharedPreferences.getString(Constants.MEDIA_LOCATION_VIEW_SELECT, phoneLoc).equalsIgnoreCase(sdcardLoc)
-                        || sharedPreferences.getString(Constants.MEDIA_LOCATION_VIEW_SELECT, phoneLoc).equalsIgnoreCase(allLoc))
+                if (sharedPreferences.getString(Constants.MEDIA_LOCATION_VIEW_SELECT, phoneLoc).equalsIgnoreCase(allLoc)
                         && !sdCardUnavailWarned) {
-                    if(VERBOSE)Log.d(TAG, "SD Card Removed");
+                    if(VERBOSE)Log.d(TAG, "SD Card Removed For ALL Select");
                     closePreviousMessages();
                     sdCardUnavailWarned = true;
-                    showMessage(getResources().getString(R.string.sdCardRemovedTitle),
-                            getResources().getString(R.string.sdCardNotPresentForView), true);
+                    checkForSDCardAndShowGalleryMessage();
+                    loadMediaContent();
+                }
+                else if(sharedPreferences.getString(Constants.MEDIA_LOCATION_VIEW_SELECT, phoneLoc).equalsIgnoreCase(sdcardLoc)
+                    && !sdCardUnavailWarned){
+                    if(VERBOSE)Log.d(TAG, "SD Card Removed For SD Card Select");
+                    closePreviousMessages();
+                    sdCardUnavailWarned = true;
+                    checkForSDCardAndShowMessage();
                     loadMediaContent();
                 }
             }
@@ -324,6 +328,36 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
                     }
                 }
             }
+        }
+    }
+
+    private void checkForSDCardAndShowGalleryMessage(){
+        if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
+            //If SD Card was selected, show an additional message about switching back to phone memory.
+            showMessage(getResources().getString(R.string.sdCardRemovedTitle),
+                    getResources().getString(R.string.sdCardNotPresentForViewDefLocChanged), true);
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
+            editor.commit();
+        }
+        else {
+            showMessage(getResources().getString(R.string.sdCardRemovedTitle),
+                    getResources().getString(R.string.sdCardNotPresentForView), true);
+        }
+    }
+
+    private void checkForSDCardAndShowMessage(){
+        if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
+            //If SD Card was selected, show an additional message about switching back to phone memory.
+            showMessage(getResources().getString(R.string.sdCardNotDetectTitle),
+                    getResources().getString(R.string.sdCardNotDetectMessageDefLocChanged), true);
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
+            editor.commit();
+        }
+        else {
+            showMessage(getResources().getString(R.string.sdCardNotDetectTitle),
+                    getResources().getString(R.string.sdCardNotDetectMessage), true);
         }
     }
 

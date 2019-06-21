@@ -134,7 +134,7 @@ public class VideoFragment extends android.app.Fragment{
         return mContext;
     }
 
-
+    CameraActivity cameraActivity;
 
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
@@ -143,6 +143,7 @@ public class VideoFragment extends android.app.Fragment{
         if(cameraView!=null) {
             cameraView.setWindowManager(getActivity().getWindowManager());
         }
+        cameraActivity = (CameraActivity)getActivity();
         settingsBar = (LinearLayout)getActivity().findViewById(R.id.settingsBar);
         settings = (ImageButton)getActivity().findViewById(R.id.settings);
         flash = (ImageButton)getActivity().findViewById(R.id.flashOn);
@@ -456,8 +457,13 @@ public class VideoFragment extends android.app.Fragment{
                 if(VERBOSE)Log.d(TAG, "SD Card Removed");
                 settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
                 settingsEditor.commit();
+                if(VERBOSE)Log.d(TAG, "showSDCardUnavailableMessage");
                 showSDCardUnavailableMessage();
             }
+        }
+        else{
+            if(VERBOSE)Log.d(TAG, "displaySDCardNotDetectMessage 2222");
+            cameraActivity.displaySDCardNotDetectMessage();
         }
     }
 

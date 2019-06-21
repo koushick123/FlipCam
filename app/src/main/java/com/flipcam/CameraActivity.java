@@ -73,30 +73,13 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
         if(bundle != null) {
             fromGallery = bundle.getBoolean("fromGallery");
         }
-        if(!fromGallery) {
-            if (!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)) {
-                if (doesSDCardExist() == null) {
-                    settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
-                    settingsEditor.commit();
-                    TextView warningTitle = (TextView) warningMsgRoot.findViewById(R.id.warningTitle);
-                    warningTitle.setText(getResources().getString(R.string.sdCardRemovedTitle));
-                    TextView warningText = (TextView) warningMsgRoot.findViewById(R.id.warningText);
-                    warningText.setText(getResources().getString(R.string.sdCardNotPresentForRecord));
-                    okButton = (Button) warningMsgRoot.findViewById(R.id.okButton);
-                    okButton.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View view) {
-                            warningMsg.dismiss();
-                            videoFragment.getLatestFileIfExists();
-                        }
-                    });
-                    warningMsg.setContentView(warningMsgRoot);
-                    warningMsg.setCancelable(false);
-                    warningMsg.show();
-                }
-            }
-        }
-        else{
+    }
+
+    void displaySDCardNotDetectMessage(){
+        if(VERBOSE)Log.d(TAG, "displaySDCardNotDetectMessage");
+        //The below variable is needed to check if there was SD Card removed in MediaActivity which caused the control
+        // to come here.
+        if(fromGallery) {
             //Show SD Card not detected, please insert sd card to try again.
             TextView warningTitle = (TextView) warningMsgRoot.findViewById(R.id.warningTitle);
             warningTitle.setText(getResources().getString(R.string.sdCardNotDetectTitle));
@@ -113,6 +96,7 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
             warningMsg.setContentView(warningMsgRoot);
             warningMsg.setCancelable(false);
             warningMsg.show();
+            if(VERBOSE)Log.d(TAG, "MESSAGE SHOWN");
         }
     }
 
