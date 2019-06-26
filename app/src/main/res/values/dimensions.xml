@@ -163,4 +163,9 @@
     <dimen name="fabBottomAndEndMargin">20dp</dimen>
     <dimen name="fabElevation">20dp</dimen>
     <dimen name="fcGalleryTextEndMargin">20dp</dimen>
+    //Dimensions for Media Info
+    <dimen name="mediaInfoTopMargin">20dp</dimen>
+    <dimen name="mediaInfoStartMargin">15dp</dimen>
+    <dimen name="okBtnBottomMargin">20dp</dimen>
+    <dimen name="okBtnTopMargin">20dp</dimen>
 </resources>

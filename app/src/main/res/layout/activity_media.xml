@@ -42,7 +42,7 @@
         android:visibility="invisible"
         app:srcCompat="@drawable/ic_play_circle_outline" />
 
-    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    <LinearLayout
         android:id="@+id/topMediaControls"
         android:layout_width="match_parent"
         android:layout_height="@dimen/topMediaBarPortrait"
@@ -52,11 +52,21 @@
         android:orientation="horizontal"
         android:weightSum="1">
 
+        <ImageView
+            android:id="@+id/infoMedia"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight=".25"
+            android:background="@drawable/ripple"
+            android:contentDescription="@string/infoMediaContentDescription"
+            android:onClick="showMediaInfo"
+            app:srcCompat="@drawable/ic_info" />
+
         <ImageButton
             android:id="@+id/deleteMedia"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight=".33"
+            android:layout_weight=".25"
             android:background="@drawable/ripple"
             android:contentDescription="@string/deleteMedia"
             android:src="@drawable/ic_delete" />
@@ -65,7 +75,7 @@
             android:id="@+id/shareMedia"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight=".33"
+            android:layout_weight=".25"
             android:background="@drawable/ripple"
             android:contentDescription="@string/shareMedia"
             android:src="@drawable/ic_share" />
@@ -74,7 +84,7 @@
             android:id="@+id/folderViewOn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight=".33"
+            android:layout_weight=".25"
             android:background="@drawable/ripple"
             android:contentDescription="@string/folderView"
             android:scaleX="1.5"

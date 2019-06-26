@@ -11,10 +11,12 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
 import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Point;
 import android.media.AudioManager;
+import android.media.ExifInterface;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
 import android.media.RingtoneManager;
@@ -37,6 +39,7 @@ import android.view.Surface;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -48,6 +51,8 @@ import android.widget.Toast;
 import com.flipcam.constants.Constants;
 import com.flipcam.data.MediaTableConstants;
 import com.flipcam.media.FileMedia;
+import com.flipcam.model.Dimension;
+import com.flipcam.model.MediaDetail;
 import com.flipcam.util.MediaUtil;
 import com.flipcam.util.SDCardUtil;
 import com.flipcam.view.FolderLayout;
@@ -57,8 +62,13 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+
+import butterknife.BindView;
+import butterknife.ButterKnife;
 
 import static com.flipcam.PermissionActivity.FC_MEDIA_PREFERENCE;
 
@@ -106,10 +116,10 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     View deleteMediaRoot;
     View taskInProgressRoot;
     View mediaLocationView;
+    View mediaInfoView;
     LayoutInflater layoutInflater;
     Dialog taskAlert;
-    View warningMsgRoot;
-    Dialog warningMsg;
+    Dialog mediaMsg;
     IntentFilter mediaFilters;
     SharedPreferences sharedPreferences;
     SDCardEventReceiver sdCardEventReceiver;
@@ -117,6 +127,8 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     boolean VERBOSE = true;
     AudioManager audioManager;
     ImageView folderViewOn;
+    @BindView(R.id.infoMedia)
+    ImageView infoMedia;
     FolderLayout phoneFolder;
     FolderLayout sdcardFolder;
     FolderLayout bothFolder;
@@ -127,6 +139,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         super.onCreate(savedInstanceState);
         if(VERBOSE)Log.d(TAG,"onCreate");
         setContentView(R.layout.activity_media);
+        ButterKnife.bind(this);
         DisplayMetrics displayMetrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
         WindowManager windowManager = (WindowManager)getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
@@ -135,13 +148,11 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         display.getRealSize(screenSize);
         getSupportActionBar().hide();
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        warningMsg = new Dialog(this);
         mediaFilters = new IntentFilter();
         sdCardEventReceiver = new SDCardEventReceiver();
         layoutInflater = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         audioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
-        warningMsgRoot = layoutInflater.inflate(R.layout.warning_message, null);
-        mediaLocationView = layoutInflater.inflate(R.layout.medialocation, null);
+//        mediaLocationView = layoutInflater.inflate(R.layout.medialocation, null);
         sharedPreferences = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
         videoControls = (LinearLayout)findViewById(R.id.videoControls);
         fromGallery = getIntent().getExtras().getBoolean("fromGallery");
@@ -185,11 +196,11 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             selectedPosition = previousSelectedFragment = scrollPos;
         }
         deleteMedia = (ImageButton)findViewById(R.id.deleteMedia);
-        deleteAlert = new Dialog(this);
         deleteMedia.setOnClickListener((view) -> {
             Log.d(TAG, "from the Gallery = "+fromGallery);
             medias = MediaUtil.getMediaList(getApplicationContext(), fromGallery);
             if(medias != null) {
+                deleteMediaRoot = layoutInflater.inflate(R.layout.delete_media, null);
                 if(VERBOSE)Log.d(TAG, "Delete position = " + selectedPosition);
                 TextView deleteMsg = (TextView) deleteMediaRoot.findViewById(R.id.deleteMsg);
                 if (isImage(medias[selectedPosition].getPath())) {
@@ -197,6 +208,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 } else {
                     deleteMsg.setText(getResources().getString(R.string.deleteMessage, getResources().getString(R.string.video)));
                 }
+                deleteAlert = new Dialog(this);
                 deleteAlert.setContentView(deleteMediaRoot);
                 deleteAlert.setCancelable(true);
                 deleteAlert.show();
@@ -312,21 +324,21 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             }
         }
         folderViewOn.setOnClickListener((view1) -> {
+                mediaLocationView = layoutInflater.inflate(R.layout.medialocation, null);
+                phoneFolder = mediaLocationView.findViewById(R.id.phoneFolder);
+                sdcardFolder = mediaLocationView.findViewById(R.id.sdcardFolder);
+                bothFolder = mediaLocationView.findViewById(R.id.bothFolder);
+                phoneFolder.setMediaActivity(this);
+                sdcardFolder.setMediaActivity(this);
+                bothFolder.setMediaActivity(this);
                 mediaLocation.setContentView(mediaLocationView);
                 mediaLocation.setCancelable(true);
                 mediaLocation.show();
         });
-        phoneFolder = mediaLocationView.findViewById(R.id.phoneFolder);
-        sdcardFolder = mediaLocationView.findViewById(R.id.sdcardFolder);
-        bothFolder = mediaLocationView.findViewById(R.id.bothFolder);
-        phoneFolder.setMediaActivity(this);
-        sdcardFolder.setMediaActivity(this);
-        bothFolder.setMediaActivity(this);
         notifyIcon = BitmapFactory.decodeResource(getApplicationContext().getResources(),R.drawable.ic_launcher);
         mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         queueNotification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
         layoutInflater = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        deleteMediaRoot = layoutInflater.inflate(R.layout.delete_media, null);
         taskInProgressRoot = layoutInflater.inflate(R.layout.task_in_progress, null);
         taskAlert = new Dialog(this);
         appWidgetManager = (AppWidgetManager)getSystemService(Context.APPWIDGET_SERVICE);
@@ -482,6 +494,106 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             e.printStackTrace();
         }
         return sharedPreferences.getString(Constants.SD_CARD_PATH, "");
+    }
+
+    public void showMediaInfo(View view){
+        if(medias!=null) {
+            mediaMsg = new Dialog(this);
+            mediaInfoView = layoutInflater.inflate(R.layout.media_info, null);
+            mediaMsg.setContentView(mediaInfoView);
+            mediaMsg.setCancelable(true);
+            mediaMsg.show();
+            MediaDetail mediaInfo = new MediaDetail();
+            Dimension dimension;
+            String path = medias[selectedPosition].getPath();
+            boolean isAnImage = true;
+            try {
+                int width;
+                int height;
+                if(isImage(path)) {
+                    ExifInterface photoMetaData = new ExifInterface(path);
+                    width = Integer.parseInt(photoMetaData.getAttribute(ExifInterface.TAG_IMAGE_WIDTH));
+                    height = Integer.parseInt(photoMetaData.getAttribute(ExifInterface.TAG_IMAGE_LENGTH));
+                    if(width == 0 || width == -1 || height == 0 || height == -1){
+                        Log.d(TAG, "PATH = "+path);
+                        Bitmap selImage = BitmapFactory.decodeFile(path);
+                        width = selImage.getWidth();
+                        height = selImage.getHeight();
+                    }
+                }
+                else{
+                    MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
+                    mediaMetadataRetriever.setDataSource(path);
+                    width = Integer.parseInt(mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH));
+                    height = Integer.parseInt(mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT));
+                    isAnImage = false;
+                }
+                if(VERBOSE)Log.d(TAG, "WIDTH X HEIGHT = "+width +" X "+height);
+                dimension = new Dimension(width, height);
+                mediaInfo.setResolution(dimension);
+                File selectedFile = new File(path);
+                Date dateCreated = new Date(selectedFile.lastModified());
+                SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd MMMM yyyy HH:mm:ss");
+                String dateDisplay = simpleDateFormat.format(dateCreated);
+                if (VERBOSE) Log.d(TAG, "Date display = " + dateDisplay);
+                mediaInfo.setDateCreated(dateDisplay);
+                String name = path.substring(path.lastIndexOf("/") + 1);
+                if (VERBOSE) Log.d(TAG, "Name = " + name);
+                mediaInfo.setName(name);
+                if (VERBOSE) Log.d(TAG, "Path = " + path.substring(0, path.lastIndexOf("/")));
+                mediaInfo.setPath(path.substring(0, path.lastIndexOf("/")));
+                mediaInfo.setSize(MediaUtil.convertMemoryForDisplay(selectedFile.length()));
+                populateMediaDetail(mediaInfo, isAnImage);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void populateMediaDetail(MediaDetail mediaInfo, boolean isImage){
+        TextView mediaName = mediaInfoView.findViewById(R.id.name);
+        TextView mediaPath = mediaInfoView.findViewById(R.id.path);
+        TextView mediaDimension = mediaInfoView.findViewById(R.id.dimension);
+        TextView mediaDateCreated = mediaInfoView.findViewById(R.id.dateCreated);
+        TextView mediaSize = mediaInfoView.findViewById(R.id.size);
+        TextView mediaInfoTitle = mediaInfoView.findViewById(R.id.mediaInfoTitle);
+        Button okBtn = mediaInfoView.findViewById(R.id.okButton);
+        okBtn.setOnClickListener((view) -> {
+            mediaMsg.dismiss();
+        });
+        //Set the labels and values for Media Info
+        Resources resources = getResources();
+        if(isImage){
+            mediaInfoTitle.setText(resources.getString(R.string.mediaInfoTitle, resources.getString(R.string.PHOTO_MODE)));
+        }
+        else{
+            mediaInfoTitle.setText(resources.getString(R.string.mediaInfoTitle, resources.getString(R.string.VIDEO_MODE)));
+        }
+        StringBuffer mediaLabelAndValue = new StringBuffer();
+        //NAME
+        mediaLabelAndValue.append(resources.getString(R.string.mediaInfoName));
+        mediaLabelAndValue.append(mediaInfo.getName());
+        mediaName.setText(mediaLabelAndValue.toString());
+        mediaLabelAndValue.delete(0, mediaLabelAndValue.length());
+        //PATH
+        mediaLabelAndValue.append(resources.getString(R.string.mediaInfoPath));
+        mediaLabelAndValue.append(mediaInfo.getPath());
+        mediaPath.setText(mediaLabelAndValue.toString());
+        mediaLabelAndValue.delete(0, mediaLabelAndValue.length());
+        //DATE CREATED
+        mediaLabelAndValue.append(resources.getString(R.string.mediaInfoDateCreated));
+        mediaLabelAndValue.append(mediaInfo.getDateCreated());
+        mediaDateCreated.setText(mediaLabelAndValue.toString());
+        mediaLabelAndValue.delete(0, mediaLabelAndValue.length());
+        //DIMENSION
+        mediaLabelAndValue.append(resources.getString(R.string.mediaInfoDimension));
+        mediaLabelAndValue.append(mediaInfo.getResolution());
+        mediaDimension.setText(mediaLabelAndValue.toString());
+        mediaLabelAndValue.delete(0, mediaLabelAndValue.length());
+        //SIZE
+        mediaLabelAndValue.append(resources.getString(R.string.mediaInfoSize));
+        mediaLabelAndValue.append(mediaInfo.getSize());
+        mediaSize.setText(mediaLabelAndValue.toString());
     }
 
     public void deleteMedia(int position)

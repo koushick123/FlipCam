@@ -200,6 +200,7 @@
     <string name="playVideoCircle">Play inside circle</string>
     <string name="deleteMedia">Delete Photo/Video</string>
     <string name="shareMedia">Share Photo/Video</string>
+    <string name="infoMediaContentDescription">Display Media Info</string>
     <string name="playVideo">Play Video</string>
     <string name="greenArrow">Navigate to Memory Threshold Activity</string>
     <string name="folderCreated">Folder Created Successfully.</string>
@@ -267,5 +268,12 @@
     <string name="allLocation">ALL</string>
     <string name="folderView">Media Folder</string>
     <string name="mediaSource">LOCATION</string>
+    //Media Info
+    <string name="mediaInfoTitle">%1$s Info</string>
+    <string name="mediaInfoName">Name :&#160;</string>
+    <string name="mediaInfoPath">Path :&#160;</string>
+    <string name="mediaInfoSize">Size :&#160;</string>
+    <string name="mediaInfoDateCreated">Date Created :&#160;</string>
+    <string name="mediaInfoDimension">Dimension :&#160;</string>
 </resources>
 

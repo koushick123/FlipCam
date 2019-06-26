@@ -70,6 +70,4 @@ public class FolderLayout extends LinearLayout {
     public void setMediaActivity(MediaActivity mediaAct){
         mediaActivity = mediaAct;
     }
-
-
 }

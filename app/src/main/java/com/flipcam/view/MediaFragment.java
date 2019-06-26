@@ -1,8 +1,6 @@
 package com.flipcam.view;
 
-import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
@@ -41,6 +39,7 @@ import com.flipcam.MediaActivity;
 import com.flipcam.R;
 import com.flipcam.media.FileMedia;
 import com.flipcam.media.Media;
+import com.flipcam.model.MediaDetail;
 import com.flipcam.util.MediaUtil;
 
 import java.io.File;
@@ -95,6 +94,7 @@ MediaPlayer.OnErrorListener, Serializable{
     boolean imageScaled = false;
     boolean fromGallery = false;
     MediaActivity mediaActivity;
+    MediaDetail mediaInfo;
 
     public static MediaFragment newInstance(int pos,boolean recreate, boolean fromGal){
         MediaFragment mediaFragment = new MediaFragment();
@@ -209,19 +209,13 @@ MediaPlayer.OnErrorListener, Serializable{
             }
         });
         if(isImage()){
-            picture.setOnTouchListener(new View.OnTouchListener() {
-                @Override
-                public boolean onTouch(View view, MotionEvent motionEvent) {
+            picture.setOnTouchListener((view, motionEvent) -> {
                     return detector.onTouchEvent(motionEvent);
-                }
             });
         }
         else{
-            videoView.setOnTouchListener(new View.OnTouchListener(){
-                @Override
-                public boolean onTouch(View view, MotionEvent motionEvent) {
-                    return detector.onTouchEvent(motionEvent);
-                }
+            videoView.setOnTouchListener((view, motionEvent)-> {
+                return detector.onTouchEvent(motionEvent);
             });
         }
     }
@@ -268,30 +262,24 @@ MediaPlayer.OnErrorListener, Serializable{
             pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow));
             play = false;
         }
-        pause.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (!play) {
-                    if(VERBOSE)Log.d(TAG, "Set PLAY post rotate");
-                    startPlayingMedia();
-                } else {
-                    int audioFocus = audioManager.abandonAudioFocus(onAudioFocusChangeListener);
-                    if(VERBOSE)Log.d(TAG, "Set PAUSE post rotate = "+audioFocus);
-                    if(audioFocus == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-                        mediaPlayer.pause();
-                        pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow));
-                        play = false;
-                    }
+        pause.setOnClickListener((view) -> {
+            if (!play) {
+                if (VERBOSE) Log.d(TAG, "Set PLAY post rotate");
+                startPlayingMedia();
+            } else {
+                int audioFocus = audioManager.abandonAudioFocus(onAudioFocusChangeListener);
+                if (VERBOSE) Log.d(TAG, "Set PAUSE post rotate = " + audioFocus);
+                if (audioFocus == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                    mediaPlayer.pause();
+                    pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow));
+                    play = false;
                 }
             }
         });
-        playCircle.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (!play) {
-                    if(VERBOSE)Log.d(TAG, "Set PLAY Circle post rotate");
-                    startPlayingMedia();
-                }
+        playCircle.setOnClickListener((view) -> {
+            if (!play) {
+                if(VERBOSE)Log.d(TAG, "Set PLAY Circle post rotate");
+                startPlayingMedia();
             }
         });
         //Get SAVED MEDIA CONTROLS VIEW STATE
@@ -431,6 +419,7 @@ MediaPlayer.OnErrorListener, Serializable{
             if(savedInstanceState!=null){
                 imageScaled = savedInstanceState.getBoolean("imageScaled");
             }
+
         }
         else {
             if(VERBOSE)Log.d(TAG,"show video");

@@ -56,6 +56,7 @@ import com.flipcam.cameramanager.Camera1Manager;
 import com.flipcam.cameramanager.Camera2Manager;
 import com.flipcam.constants.Constants;
 import com.flipcam.util.GLUtil;
+import com.flipcam.util.MediaUtil;
 
 import java.io.File;
 import java.io.IOException;
@@ -153,9 +154,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     ImageButton flashBtn;
     VideoFragment videoFragment;
     PhotoFragment photoFragment;
-    double kBDelimiter = Constants.KILO_BYTE;
-    double mBDelimiter = Constants.MEGA_BYTE;
-    double gBDelimiter = Constants.GIGA_BYTE;
     private final SensorManager mSensorManager;
     private AudioManager audioManager;
     private final Sensor mAccelerometer;
@@ -616,21 +614,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
 
     public void showMemoryConsumed()
     {
-        if(videoFile.length() >= kBDelimiter && videoFile.length() < mBDelimiter){
-            if(VERBOSE)Log.d(TAG,"KB = "+videoFile.length());
-            double kbconsumed = videoFile.length()/kBDelimiter;
-            memoryConsumed.setText((Math.floor(kbconsumed * 100.0))/100.0 + getResources().getString(R.string.MEM_PF_KB));
-        }
-        else if(videoFile.length() >= mBDelimiter && videoFile.length() < gBDelimiter){
-            if(VERBOSE)Log.d(TAG,"MB = "+videoFile.length());
-            double mbconsumed = videoFile.length()/mBDelimiter;
-            memoryConsumed.setText((Math.floor(mbconsumed * 100.0))/100.0 + " " + getResources().getString(R.string.MEM_PF_MB));
-        }
-        else {
-            if(VERBOSE)Log.d(TAG,"GB = "+videoFile.length());
-            double gbconsumed = videoFile.length()/gBDelimiter;
-            memoryConsumed.setText((Math.floor(gbconsumed * 100.0))/100.0 + " " + getResources().getString(R.string.MEM_PF_GB));
-        }
+        memoryConsumed.setText(MediaUtil.convertMemoryForDisplay(videoFile.length()));
     }
 
     public void setFlashButton(ImageButton flashButton)

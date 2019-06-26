@@ -30,6 +30,9 @@ public class MediaUtil {
     private static Context appContext;
     static boolean VERBOSE = true;
     static boolean fromGallery = false;
+    static double kBDelimiter = Constants.KILO_BYTE;
+    static double mBDelimiter = Constants.MEGA_BYTE;
+    static double gBDelimiter = Constants.GIGA_BYTE;
     public static FileMedia[] getMediaList(Context ctx, boolean fromGal){
         appContext = ctx;
         fromGallery = fromGal;
@@ -222,5 +225,31 @@ public class MediaUtil {
             }
         }
         return count;
+    }
+    
+    public static String convertMemoryForDisplay(long fileLength){
+        StringBuffer memoryConsumed = new StringBuffer();
+        if(fileLength >= kBDelimiter && fileLength < mBDelimiter){
+            if(VERBOSE)Log.d(TAG,"KB = "+fileLength);
+            double kbconsumed = fileLength/kBDelimiter;
+            memoryConsumed.append((Math.floor(kbconsumed * 100.0))/100.0);
+            memoryConsumed.append(" ");
+            memoryConsumed.append(appContext.getResources().getString(R.string.MEM_PF_KB));
+        }
+        else if(fileLength >= mBDelimiter && fileLength < gBDelimiter){
+            if(VERBOSE)Log.d(TAG,"MB = "+fileLength);
+            double mbconsumed = fileLength/mBDelimiter;
+            memoryConsumed.append((Math.floor(mbconsumed * 100.0))/100.0);
+            memoryConsumed.append(" ");
+            memoryConsumed.append(appContext.getResources().getString(R.string.MEM_PF_MB));
+        }
+        else {
+            if(VERBOSE)Log.d(TAG,"GB = "+fileLength);
+            double gbconsumed = fileLength/gBDelimiter;
+            memoryConsumed.append((Math.floor(gbconsumed * 100.0))/100.0);
+            memoryConsumed.append(" ");
+            memoryConsumed.append(appContext.getResources().getString(R.string.MEM_PF_GB));
+        }
+        return memoryConsumed.toString();
     }
 }
