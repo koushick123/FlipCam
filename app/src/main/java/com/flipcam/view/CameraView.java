@@ -57,6 +57,7 @@ import com.flipcam.cameramanager.Camera2Manager;
 import com.flipcam.constants.Constants;
 import com.flipcam.util.GLUtil;
 import com.flipcam.util.MediaUtil;
+import com.flipcam.util.SDCardUtil;
 
 import java.io.File;
 import java.io.IOException;
@@ -814,16 +815,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                     flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_on));
                     return true;
                 } else {
-                    /*if(this.videoFragment!=null) {
-                        flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_off));
-                        flashOnOff(true);
-                        return true;
-                    }
-                    else{
-                        flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_off));
-                        flashOnOff(true);
-                        return true;
-                    }*/
                     flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_off));
                     flashOnOff(true);
                     return true;
@@ -1186,7 +1177,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 rotationAngle = 0f;
                 Message recordStop = new Message();
                 if(!memoryPrefs.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
-                    if(videoFragment.doesSDCardExist() != null){
+                    if(SDCardUtil.doesSDCardExist(getContext()) != null){
                         recordStop.what = Constants.RECORD_STOP;
                     }
                     else{

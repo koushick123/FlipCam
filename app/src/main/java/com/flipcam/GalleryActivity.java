@@ -200,7 +200,7 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
         registerReceiver(sdCardEventReceiver, mediaFilters);
         if(!sharedPreferences.getString(Constants.MEDIA_LOCATION_VIEW_SELECT, phoneLoc).equalsIgnoreCase(phoneLoc)) {
             //SD Card Location
-            String sdCardPath = doesSDCardExist();
+            String sdCardPath = SDCardUtil.doesSDCardExist(getApplicationContext());
             if ((sdCardPath == null || sdCardPath.equalsIgnoreCase("")) && !sdCardUnavailWarned) {
                 sdCardUnavailWarned = true;
                 if(fromMedia) {
@@ -226,6 +226,12 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
                         closePreviousMessages();
                         checkForSDCardAndShowMessage();
                     }
+                }
+            }
+            else if(sdCardPath != null){
+                //SD Card Exists. Check if com.flipcam folder exists and is not empty
+                if (!SDCardUtil.doesSDCardFlipCamFolderContainMedia(sdCardPath, getApplicationContext())) {
+                    showMessage(getResources().getString(R.string.sdCardFCFolderEmptyTitle), getResources().getString(R.string.sdCardFCFolderEmptyMessage), true);
                 }
             }
         }
@@ -366,16 +372,6 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
         super.onConfigurationChanged(newConfig);
         if(VERBOSE)Log.d(TAG, "scrollPos = "+scrollPosition);
         mediaGrid.setSelection(scrollPosition);
-    }
-
-    private String doesSDCardExist(){
-        String sdcardpath = sharedPreferences.getString(Constants.SD_CARD_PATH, "");
-        if(SDCardUtil.isPathWritable(sdcardpath)) {
-            return sharedPreferences.getString(Constants.SD_CARD_PATH, "");
-        }
-        else{
-            return null;
-        }
     }
 
     private void showMessage(String title, String text, boolean warngSig){

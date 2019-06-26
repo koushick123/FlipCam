@@ -177,6 +177,12 @@
     <string name="sdCardNotDetectMessage">No SD Card has been detected.\n\nPlease insert an SD Card and try again.</string>
     <string name="sdCardNotPresentForRecord">SD Card has been removed.\n\nDefault storage location is now Phone Memory.</string>
     <string name="sdCardNotPresentForView">SD Card has been removed.\n\nGallery will now show media only from Phone Memory.</string>
+    //For SD Card Removed and Empty Messages
+    <string name="sdCardFCFolderNotExistTitle">FlipCam Folder Does Not Exist</string>
+    <string name="sdCardFCFolderNotExistMessage">FlipCam folder (com.flipcam) does not exist in SD Card.</string>
+    <string name="sdCardFCFolderEmptyTitle">FlipCam Folder Empty</string>
+    <string name="sdCardFCFolderEmptyMessage">FlipCam folder (com.flipcam) is empty in SD Card.</string>
+
     <string name="sdCardNotPresentForViewDefLocChanged">SD Card has been removed.\n\nGallery will now show media only from Phone Memory.
     \n\nDefault storage location is now Phone Memory.</string>
     <string name="sdCardNotDetectMessageDefLocChanged">No SD Card has been detected.\n\nPlease insert an SD Card and try again.
@@ -269,11 +275,12 @@
     <string name="folderView">Media Folder</string>
     <string name="mediaSource">LOCATION</string>
     //Media Info
-    <string name="mediaInfoTitle">%1$s Info</string>
-    <string name="mediaInfoName">Name :&#160;</string>
-    <string name="mediaInfoPath">Path :&#160;</string>
-    <string name="mediaInfoSize">Size :&#160;</string>
-    <string name="mediaInfoDateCreated">Date Created :&#160;</string>
-    <string name="mediaInfoDimension">Dimension :&#160;</string>
+    <string name="mediaInfoTitle">%1$s INFO</string>
+    <string name="mediaInfoName">NAME :&#160;</string>
+    <string name="mediaInfoPath">PATH :&#160;</string>
+    <string name="mediaInfoSize">SIZE :&#160;</string>
+    <string name="mediaInfoDateCreated">DATE CREATED :&#160;</string>
+    <string name="mediaInfoDimension">DIMENSION :&#160;</string>
+    <string name="closeButton">CLOSE</string>
 </resources>
 

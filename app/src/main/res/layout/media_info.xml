@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:background="@color/settingsBarColor"
     android:orientation="vertical">
 
@@ -18,8 +19,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight=".05"
-            android:src="@mipmap/ic_launcher"
-            android:contentDescription="@string/flipCamContentDescription"/>
+            android:contentDescription="@string/flipCamContentDescription"
+            android:src="@mipmap/ic_launcher" />
 
         <TextView
             android:id="@+id/mediaInfoTitle"
@@ -36,9 +37,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight=".05"
+            android:contentDescription="@string/placeholderContentDescription"
             android:visibility="invisible"
-            app:srcCompat="@drawable/placeholder"
-            android:contentDescription="@string/placeholderContentDescription"/>
+            app:srcCompat="@drawable/placeholder" />
 
     </LinearLayout>
 
@@ -49,7 +50,8 @@
         android:layout_marginStart="@dimen/mediaInfoStartMargin"
         android:layout_marginTop="@dimen/mediaInfoTopMargin"
         android:layout_marginEnd="@dimen/mediaInfoStartMargin"
-        android:textColor="@color/turqoise" />
+        android:textColor="@color/turqoise"
+        tools:text="TextView" />
 
     <TextView
         android:id="@+id/path"
@@ -58,7 +60,8 @@
         android:layout_marginStart="@dimen/mediaInfoStartMargin"
         android:layout_marginTop="@dimen/mediaInfoTopMargin"
         android:layout_marginEnd="@dimen/mediaInfoStartMargin"
-        android:textColor="@color/turqoise" />
+        android:textColor="@color/turqoise"
+        tools:text="TextView" />
 
     <TextView
         android:id="@+id/size"
@@ -67,7 +70,8 @@
         android:layout_marginStart="@dimen/mediaInfoStartMargin"
         android:layout_marginTop="@dimen/mediaInfoTopMargin"
         android:layout_marginEnd="@dimen/mediaInfoStartMargin"
-        android:textColor="@color/turqoise" />
+        android:textColor="@color/turqoise"
+        tools:text="TextView" />
 
     <TextView
         android:id="@+id/dateCreated"
@@ -76,7 +80,8 @@
         android:layout_marginStart="@dimen/mediaInfoStartMargin"
         android:layout_marginTop="@dimen/mediaInfoTopMargin"
         android:layout_marginEnd="@dimen/mediaInfoStartMargin"
-        android:textColor="@color/turqoise" />
+        android:textColor="@color/turqoise"
+        tools:text="TextView" />
 
     <TextView
         android:id="@+id/dimension"
@@ -85,7 +90,8 @@
         android:layout_marginStart="@dimen/mediaInfoStartMargin"
         android:layout_marginTop="@dimen/mediaInfoTopMargin"
         android:layout_marginEnd="@dimen/mediaInfoStartMargin"
-        android:textColor="@color/turqoise" />
+        android:textColor="@color/turqoise"
+        tools:text="TextView" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -96,7 +102,7 @@
 
         <Button
             android:id="@+id/okButton"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/okBtnLeftAndRightMargin"
             android:layout_marginTop="@dimen/okBtnTopMargin"
@@ -105,7 +111,7 @@
             android:layout_weight="0.5"
             android:background="@color/thumbnailPlaceholder"
             android:onClick="okToClose"
-            android:text="@string/okToDelete"
+            android:text="@string/closeButton"
             android:textColor="@color/turqoise" />
     </LinearLayout>
 

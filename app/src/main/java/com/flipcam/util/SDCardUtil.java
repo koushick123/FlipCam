@@ -1,11 +1,11 @@
 package com.flipcam.util;
 
 import android.content.Context;
-import android.content.SharedPreferences;
+import android.content.res.Resources;
 import android.os.Environment;
 import android.util.Log;
 
-import com.flipcam.constants.Constants;
+import com.flipcam.R;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -45,11 +45,12 @@ public class SDCardUtil {
     public static boolean isPathWritable(String sdcardpath){
         try {
             String filename = "/doesSDCardExist_"+String.valueOf(System.currentTimeMillis()).substring(0,5);
-            sdcardpath += filename;
-            final String sdCardFilePath = sdcardpath;
-            final FileOutputStream createTestFile = new FileOutputStream(sdcardpath);
+            StringBuffer sbsdcardpath = new StringBuffer(sdcardpath);
+            sbsdcardpath.append(filename);
+            final FileOutputStream createTestFile = new FileOutputStream(sbsdcardpath.toString());
             if(VERBOSE)Log.d(TAG, "Able to create file... SD Card exists");
-            File testfile = new File(sdCardFilePath);
+            if(VERBOSE)Log.d(TAG, "SD Card PATH = "+sbsdcardpath.toString());
+            File testfile = new File(sbsdcardpath.toString());
             createTestFile.close();
             testfile.delete();
         } catch (FileNotFoundException e) {
@@ -59,5 +60,36 @@ public class SDCardUtil {
             e.printStackTrace();
         }
         return true;
+    }
+
+    //Check if the com.flipcam folder that is created for FlipCam application exists or was removed.
+    public static boolean doesSDCardFlipCamFolderExist(String sdCardPath){
+        if(VERBOSE)Log.d(TAG, "doesSDCardFlipCamFolderExist");
+        if(VERBOSE)Log.d(TAG, "SD Card Path = "+sdCardPath);
+        File flipCamFolder = new File(sdCardPath);
+        if(flipCamFolder.exists() && flipCamFolder.isDirectory()){
+            //The flipcam folder exists.
+            return true;
+        }
+        else{
+            return false;
+        }
+    }
+
+    //Check if the com.flipcam folder that is created is empty or contains media.
+    public static boolean doesSDCardFlipCamFolderContainMedia(String sdCardPath, Context context){
+        if(VERBOSE)Log.d(TAG, "doesSDCardFlipCamFolderContainMedia");
+        if(VERBOSE)Log.d(TAG, "SD Card Path = "+sdCardPath);
+        Resources resources = context.getResources();
+        File flipCamFolder = new File(sdCardPath);
+        return (flipCamFolder.list((dir, name) -> {
+            if(name.endsWith(resources.getString(R.string.VID_EXT)) || name.endsWith(resources.getString(R.string.IMG_EXT))
+            || name.endsWith(resources.getString(R.string.ANOTHER_IMG_EXT))){
+                return true;
+            }
+            else{
+                return false;
+            }
+        })).length > 0;
     }
 }

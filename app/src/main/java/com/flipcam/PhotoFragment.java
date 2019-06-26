@@ -51,11 +51,10 @@ import com.flipcam.media.FileMedia;
 import com.flipcam.service.DropboxUploadService;
 import com.flipcam.service.GoogleDriveUploadService;
 import com.flipcam.util.MediaUtil;
+import com.flipcam.util.SDCardUtil;
 import com.flipcam.view.CameraView;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 
@@ -299,7 +298,7 @@ public class PhotoFragment extends Fragment {
             }
             else {
                 if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
-                    if(doesSDCardExist() == null && !sdCardUnavailWarned){
+                    if(SDCardUtil.doesSDCardExist(getApplicationContext()) == null && !sdCardUnavailWarned){
                         sdCardUnavailWarned = true;
                         showSDCardUnavailMessage();
                     }
@@ -632,36 +631,30 @@ public class PhotoFragment extends Fragment {
     public void checkForSDCard(){
         if(VERBOSE)Log.d(TAG, "getActivity = "+getActivity());
         if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
-            if(doesSDCardExist() == null) {
-                showSDCardUnavailMessage();
+            if(!SDCardUtil.doesSDCardFlipCamFolderExist(sharedPreferences.getString(Constants.SD_CARD_PATH, ""))) {
+                if(VERBOSE)Log.d(TAG, "FC Folder not exist SD Card");
+                if(VERBOSE)Log.d(TAG, "showFCFolderNotExistMessage");
+                showErrorWarningMessage(getResources().getString(R.string.sdCardFCFolderNotExistTitle), getResources().getString(R.string.sdCardFCFolderNotExistMessage));
             }
         }
     }
 
-    public String doesSDCardExist(){
-        String sdcardpath = sharedPreferences.getString(Constants.SD_CARD_PATH, "");
-        try {
-            String filename = "/doesSDCardExist_"+String.valueOf(System.currentTimeMillis()).substring(0,5);
-            sdcardpath += filename;
-            final String sdCardFilePath = sdcardpath;
-            final FileOutputStream createTestFile = new FileOutputStream(sdcardpath);
-            if(VERBOSE)Log.d(TAG, "Able to create file... SD Card exists");
-            new Thread(() -> {
-                {
-                    File testfile = new File(sdCardFilePath);
-                    try {
-                        createTestFile.close();
-                        testfile.delete();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }).start();
-        } catch (FileNotFoundException e) {
-            if(VERBOSE)Log.d(TAG, "Unable to create file... SD Card NOT exists..... "+e.getMessage());
-            return null;
-        }
-        return sharedPreferences.getString(Constants.SD_CARD_PATH, "");
+    public void showErrorWarningMessage(String title, String message){
+        TextView warningTitle = (TextView)warningMsgRoot.findViewById(R.id.warningTitle);
+        warningTitle.setText(title);
+        TextView warningText = (TextView)warningMsgRoot.findViewById(R.id.warningText);
+        warningText.setText(message);
+        okButton = (Button)warningMsgRoot.findViewById(R.id.okButton);
+        okButton.setOnClickListener((view) -> {
+            capturePic.setClickable(true);
+            videoMode.setClickable(true);
+            thumbnail.setClickable(true);
+            switchCamera.setClickable(true);
+            warningMsg.dismiss();
+        });
+        warningMsg.setContentView(warningMsgRoot);
+        warningMsg.setCancelable(false);
+        warningMsg.show();
     }
 
     boolean flashOn=false;
