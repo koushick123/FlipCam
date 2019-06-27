@@ -282,5 +282,7 @@
     <string name="mediaInfoDateCreated">DATE CREATED :&#160;</string>
     <string name="mediaInfoDimension">DIMENSION :&#160;</string>
     <string name="closeButton">CLOSE</string>
+    //Nokia 7.1 model
+    <string name="nokia71">Nokia 7.1</string>
 </resources>
 

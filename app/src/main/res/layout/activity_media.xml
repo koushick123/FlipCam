@@ -60,6 +60,8 @@
             android:background="@drawable/ripple"
             android:contentDescription="@string/infoMediaContentDescription"
             android:onClick="showMediaInfo"
+            android:paddingTop="5dp"
+            android:paddingBottom="5dp"
             app:srcCompat="@drawable/ic_info" />
 
         <ImageButton
@@ -69,6 +71,8 @@
             android:layout_weight=".25"
             android:background="@drawable/ripple"
             android:contentDescription="@string/deleteMedia"
+            android:paddingTop="5dp"
+            android:paddingBottom="5dp"
             android:src="@drawable/ic_delete" />
 
         <ImageButton
@@ -78,6 +82,8 @@
             android:layout_weight=".25"
             android:background="@drawable/ripple"
             android:contentDescription="@string/shareMedia"
+            android:paddingTop="5dp"
+            android:paddingBottom="5dp"
             android:src="@drawable/ic_share" />
 
         <ImageView
@@ -87,6 +93,8 @@
             android:layout_weight=".25"
             android:background="@drawable/ripple"
             android:contentDescription="@string/folderView"
+            android:paddingTop="5dp"
+            android:paddingBottom="5dp"
             android:scaleX="1.5"
             android:scaleY="1.5"
             app:srcCompat="@drawable/folder" />

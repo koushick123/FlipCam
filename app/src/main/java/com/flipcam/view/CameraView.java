@@ -739,7 +739,21 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             //Set the video resolution as per selection in settings.
             if(VERBOSE)Log.d(TAG, "call setResolution");
             camera1.setResolution();
-            camera1.setFPS();
+            if(!Build.MODEL.contains(getResources().getString(R.string.nokia71))) {
+                camera1.setFPS();
+            }
+            else{
+                //Nokia 7.1 front camera shows slow refresh if FPS is set. So, FPS is not being set for the phone.
+                if(this.videoFragment!=null){
+                    camera1.setFPS();
+                }
+                else{
+                    //Restrict only for Front camera
+                    if(isBackCamera()){
+                        camera1.setFPS();
+                    }
+                }
+            }
             //Resize the preview to match the aspect ratio of selected video resolution.
             if(VERBOSE)Log.d(TAG, "call setLayoutAspectRatio");
             setLayoutAspectRatio();

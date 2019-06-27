@@ -257,9 +257,10 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
             if (!iter.hasNext()) {
                 MIN_FPS = frames[0];
                 MAX_FPS = frames[1];
+                if (VERBOSE) Log.d(TAG, "Setting min and max Fps  == " + MIN_FPS + " , " + MAX_FPS);
+                break;
             }
         }
-        if (VERBOSE) Log.d(TAG, "Setting min and max Fps  == " + MIN_FPS + " , " + MAX_FPS);
         parameters.setPreviewFpsRange(MIN_FPS, MAX_FPS);
         mCamera.setParameters(parameters);
     }

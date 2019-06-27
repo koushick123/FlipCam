@@ -514,11 +514,21 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                     ExifInterface photoMetaData = new ExifInterface(path);
                     width = Integer.parseInt(photoMetaData.getAttribute(ExifInterface.TAG_IMAGE_WIDTH));
                     height = Integer.parseInt(photoMetaData.getAttribute(ExifInterface.TAG_IMAGE_LENGTH));
+                    int orientation = Integer.parseInt(photoMetaData.getAttribute(ExifInterface.TAG_ORIENTATION));
+                    Log.d(TAG, "Image Orientation = "+orientation);
                     if(width == 0 || width == -1 || height == 0 || height == -1){
                         Log.d(TAG, "PATH = "+path);
                         Bitmap selImage = BitmapFactory.decodeFile(path);
                         width = selImage.getWidth();
                         height = selImage.getHeight();
+                    }
+                    if(orientation != ExifInterface.ORIENTATION_UNDEFINED){
+                        if(orientation == ExifInterface.ORIENTATION_ROTATE_90 || orientation == ExifInterface.ORIENTATION_ROTATE_270){
+                            //For Portrait, swap dimension values
+                            int temp = width;
+                            width = height;
+                            height = temp;
+                        }
                     }
                 }
                 else{
