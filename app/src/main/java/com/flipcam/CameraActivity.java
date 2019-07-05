@@ -12,6 +12,8 @@ import android.os.StatFs;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
+import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
@@ -22,6 +24,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.flipcam.constants.Constants;
+import com.flipcam.view.PinchZoomGestureListener;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -46,6 +49,14 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
     ImageView brightness;
     ControlVisbilityPreference controlVisbilityPreference;
     boolean fromGallery = false;
+    PinchZoomGestureListener pinchZoomGestureListener;
+    ScaleGestureDetector scaleGestureDetector;
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        scaleGestureDetector.onTouchEvent(event);
+        return true;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,11 +79,12 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
         settingsRootView = layoutInflater.inflate(R.layout.brightness_settings, null);
         settingsDialog = new Dialog(this);
         sharedPreferences = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
-        SharedPreferences.Editor settingsEditor = sharedPreferences.edit();
         Bundle bundle = getIntent().getExtras();
         if(bundle != null) {
             fromGallery = bundle.getBoolean("fromGallery");
         }
+        pinchZoomGestureListener = new PinchZoomGestureListener(getApplicationContext());
+        scaleGestureDetector = new ScaleGestureDetector(getApplicationContext(), pinchZoomGestureListener);
     }
 
     void displaySDCardNotDetectMessage(){
