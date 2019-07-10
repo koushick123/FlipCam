@@ -50,11 +50,6 @@ import com.flipcam.service.GoogleDriveUploadService;
 import com.flipcam.util.MediaUtil;
 import com.flipcam.util.SDCardUtil;
 import com.flipcam.view.CameraView;
-import com.github.hiteshsondhi88.libffmpeg.ExecuteBinaryResponseHandler;
-import com.github.hiteshsondhi88.libffmpeg.FFmpeg;
-import com.github.hiteshsondhi88.libffmpeg.LoadBinaryResponseHandler;
-import com.github.hiteshsondhi88.libffmpeg.exceptions.FFmpegCommandAlreadyRunningException;
-import com.github.hiteshsondhi88.libffmpeg.exceptions.FFmpegNotSupportedException;
 
 import java.io.File;
 import java.io.IOException;
@@ -108,7 +103,6 @@ public class VideoFragment extends android.app.Fragment{
     AppWidgetManager appWidgetManager;
     boolean VERBOSE = true;
     boolean isPause = false;
-    ControlVisbilityPreference controlVisbilityPreference;
     View settingsMsgRoot;
     Dialog settingsMsgDialog;
     Context mContext;
@@ -186,8 +180,7 @@ public class VideoFragment extends android.app.Fragment{
         substitute = (ImageView)view.findViewById(R.id.substitute);
         substitute.setVisibility(View.INVISIBLE);
         cameraView = (CameraView)view.findViewById(R.id.cameraSurfaceView);
-        controlVisbilityPreference = (ControlVisbilityPreference)getApplicationContext();
-        cameraView.colorVal = controlVisbilityPreference.getBrightnessProgress();
+        cameraView.colorVal = Constants.NORMAL_BRIGHTNESS_PROGRESS;
         if(VERBOSE)Log.d(TAG,"cameraview onresume visibility= "+cameraView.getWindowVisibility());
         pauseText = view.findViewById(R.id.pauseText);
         zoombar = (SeekBar)view.findViewById(R.id.zoomBar);
@@ -712,56 +705,6 @@ public class VideoFragment extends android.app.Fragment{
             dropboxUploadIntent.putExtra("uploadFile", cameraView.getMediaPath());
             if(VERBOSE)Log.d(TAG, "Uploading file = "+cameraView.getMediaPath());
             getActivity().startService(dropboxUploadIntent);
-        }
-    }
-
-    private void parseMP4(){
-        FFmpeg ffmpeg = FFmpeg.getInstance(getApplicationContext());
-        try {
-            ffmpeg.loadBinary(new LoadBinaryResponseHandler() {
-
-                @Override
-                public void onStart() {
-                    Log.d(TAG, "onStart FFMPEG");
-                }
-
-                @Override
-                public void onFailure() {}
-
-                @Override
-                public void onSuccess() {
-                    Log.d(TAG, "onSuccess FFMPEG");
-                }
-
-                @Override
-                public void onFinish() {
-                    Log.d(TAG, "onFinish FFMPEG");
-                }
-            });
-            String[] cmds = new String[1];
-            cmds[0] = "";
-            // to execute "ffmpeg -version" command you just need to pass "-version"
-            ffmpeg.execute(cmds, new ExecuteBinaryResponseHandler() {
-
-                @Override
-                public void onStart() {}
-
-                @Override
-                public void onProgress(String message) {}
-
-                @Override
-                public void onFailure(String message) {}
-
-                @Override
-                public void onSuccess(String message) {}
-
-                @Override
-                public void onFinish() {}
-            });
-        } catch (FFmpegNotSupportedException e) {
-            Log.d(TAG, "FFmpegNotSupportedException = "+e.getMessage());
-        } catch (FFmpegCommandAlreadyRunningException e) {
-            e.printStackTrace();
         }
     }
 
