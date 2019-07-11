@@ -25,6 +25,7 @@ import android.os.Environment;
 import android.os.StatFs;
 import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
+import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.util.Range;
 import android.view.Gravity;
@@ -57,7 +58,7 @@ import java.util.Arrays;
 
 import static android.widget.Toast.makeText;
 
-public class VideoFragment extends android.app.Fragment{
+public class VideoFragment extends Fragment{
 
     public static final String TAG = "VideoFragment";
     SeekBar zoombar;
@@ -106,9 +107,13 @@ public class VideoFragment extends android.app.Fragment{
     View settingsMsgRoot;
     Dialog settingsMsgDialog;
     Context mContext;
+    private static VideoFragment fragment = null;
 
     public static VideoFragment newInstance() {
-        VideoFragment fragment = new VideoFragment();
+        Log.d(TAG, "NEW INSTANCE");
+        if(fragment == null) {
+            fragment = new VideoFragment();
+        }
         return fragment;
     }
 
@@ -168,6 +173,12 @@ public class VideoFragment extends android.app.Fragment{
         sdCardEventReceiver = new SDCardEventReceiver();
         sharedPreferences = getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
         appWidgetManager = (AppWidgetManager)getActivity().getSystemService(Context.APPWIDGET_SERVICE);
+    }
+
+    @Override
+    public void onCreate(@androidx.annotation.Nullable @Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setRetainInstance(true);
     }
 
     @Override

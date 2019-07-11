@@ -14,7 +14,12 @@ public class PinchZoomGestureListener extends ScaleGestureDetector.SimpleOnScale
 
     @Override
     public boolean onScale(ScaleGestureDetector detector) {
-        Log.d(TAG, "scale factor = "+detector.getScaleFactor());
+        if(detector.getCurrentSpan() - detector.getPreviousSpan() > 0){
+            Log.d(TAG, "Zoom IN");
+        }
+        else if(detector.getCurrentSpan() - detector.getPreviousSpan() < 0){
+            Log.d(TAG, "Zoom OUT");
+        }
         return true;
     }
 }

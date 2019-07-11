@@ -1,7 +1,6 @@
 package com.flipcam;
 
 import android.app.Dialog;
-import android.app.FragmentTransaction;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -9,6 +8,7 @@ import android.graphics.Point;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.StatFs;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -233,15 +233,8 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
             videoFragment = VideoFragment.newInstance();
             videoFragment.setApplicationContext(getApplicationContext());
         }
-        FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
-        if(photoFragment!=null) {
-            fragmentTransaction.replace(R.id.cameraPreview, videoFragment).commit();
-            if(VERBOSE)Log.d(TAG,"photofragment removed");
-        }
-        else{
-            fragmentTransaction.add(R.id.cameraPreview, videoFragment, VIDEO).commit();
-            if(VERBOSE)Log.d(TAG,"videofragment added");
-        }
+        FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
+        fragmentTransaction.replace(R.id.cameraPreview, videoFragment).commit();
         if(VERBOSE)Log.d(TAG, "brightnessLevel SET to = "+controlVisbilityPreference.getBrightnessLevel());
         brightness.setVisibility(View.VISIBLE);
     }
@@ -249,7 +242,7 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
     public void showPhotoFragment()
     {
         brightness.setVisibility(View.GONE);
-        FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
+        FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
         if(photoFragment == null) {
             if(VERBOSE)Log.d(TAG,"creating photofragment");
             photoFragment = PhotoFragment.newInstance();
