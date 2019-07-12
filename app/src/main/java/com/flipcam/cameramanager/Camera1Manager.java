@@ -341,7 +341,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     @Override
     public boolean zoomInOrOut(int zoomInOrOut) {
         if (VERBOSE) Log.d(TAG, "Current zoom = " + zoomInOrOut);
-        if (isZoomSupported() && zoomInOrOut >= 0 && zoomInOrOut <= parameters.getMaxZoom()) {
+        if (zoomInOrOut >= 0 && zoomInOrOut <= parameters.getMaxZoom()) {
             if (VERBOSE) Log.d(TAG, "Set Current zoom = " + zoomInOrOut);
             parameters.setZoom(zoomInOrOut);
             mCamera.setParameters(parameters);

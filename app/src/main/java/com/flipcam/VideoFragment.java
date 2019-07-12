@@ -181,6 +181,14 @@ public class VideoFragment extends Fragment{
         setRetainInstance(true);
     }
 
+    public CameraView getCameraView() {
+        return cameraView;
+    }
+
+    public int getCameraMaxZoom(){
+        return cameraView.getCameraMaxZoom();
+    }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
