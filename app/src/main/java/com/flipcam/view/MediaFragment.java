@@ -39,7 +39,6 @@ import com.flipcam.MediaActivity;
 import com.flipcam.R;
 import com.flipcam.media.FileMedia;
 import com.flipcam.media.Media;
-import com.flipcam.model.MediaDetail;
 import com.flipcam.util.MediaUtil;
 
 import java.io.File;
