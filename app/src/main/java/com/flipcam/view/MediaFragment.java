@@ -93,13 +93,9 @@ MediaPlayer.OnErrorListener, Serializable{
     boolean imageScaled = false;
     boolean fromGallery = false;
     MediaActivity mediaActivity;
-    MediaDetail mediaInfo;
-    private static MediaFragment mediaFragment = null;
 
     public static MediaFragment newInstance(int pos,boolean recreate, boolean fromGal){
-        if(mediaFragment == null) {
-            mediaFragment = new MediaFragment();
-        }
+        MediaFragment mediaFragment = new MediaFragment();
         Bundle args = new Bundle();
         args.putInt("position", pos);
         args.putBoolean("recreate",recreate);
