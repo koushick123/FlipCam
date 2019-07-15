@@ -447,6 +447,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         return camera1.isSmoothZoomSupported();
     }
 
+    public int getCameraMaxZoom(){
+        return camera1.getMaxZoom();
+    }
+
     public void smoothZoomInOrOut(int zoom)
     {
         camera1.smoothZoomInOrOut(zoom);

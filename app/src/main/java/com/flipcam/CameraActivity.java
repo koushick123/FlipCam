@@ -83,7 +83,15 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
         if(bundle != null) {
             fromGallery = bundle.getBoolean("fromGallery");
         }
-        pinchZoomGestureListener = new PinchZoomGestureListener(getApplicationContext());
+        setPinchZoomScaleListener(videoFragment!=null ? videoFragment : null, photoFragment!=null ? photoFragment : null);
+    }
+
+    private void setPinchZoomScaleListener(VideoFragment videoFragment, PhotoFragment photoFragment){
+        if(pinchZoomGestureListener != null){
+            pinchZoomGestureListener = null;
+        }
+        pinchZoomGestureListener = new PinchZoomGestureListener(getApplicationContext(), videoFragment,
+                photoFragment);
         scaleGestureDetector = new ScaleGestureDetector(getApplicationContext(), pinchZoomGestureListener);
     }
 
@@ -237,6 +245,7 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
         fragmentTransaction.replace(R.id.cameraPreview, videoFragment).commit();
         if(VERBOSE)Log.d(TAG, "brightnessLevel SET to = "+controlVisbilityPreference.getBrightnessLevel());
         brightness.setVisibility(View.VISIBLE);
+        setPinchZoomScaleListener(videoFragment, null);
     }
 
     public void showPhotoFragment()
@@ -248,6 +257,7 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
             photoFragment = PhotoFragment.newInstance();
             photoFragment.setApplicationContext(getApplicationContext());
         }
+        setPinchZoomScaleListener(null, photoFragment);
         fragmentTransaction.replace(R.id.cameraPreview, photoFragment).commit();
         if(VERBOSE)Log.d(TAG,"photofragment added");
         SharedPreferences.Editor settingsEditor = sharedPreferences.edit();
