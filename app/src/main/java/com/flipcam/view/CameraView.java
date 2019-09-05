@@ -1420,12 +1420,12 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         {
             camcorderProfile = CamcorderProfile.get(camera1.getCameraId(),camcorderProf);
             mediaRecorder = new MediaRecorder();
-            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+            /*if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
                 //When recording video for Android Oreo and above, video appears frozen and only audio will play.
                 //Configuring audio source to use MIC fixes the issue.
                 mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-            }
-            else {
+            }*/
+//            else {
                 try {
                     mediaRecorder.setAudioSource(MediaRecorder.AudioSource.CAMCORDER);
                 } catch (Exception e) {
@@ -1433,7 +1433,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         Log.e(TAG, "Camera not having a mic oriented in the same way. Use the default microphone");
                     mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
                 }
-            }
+//            }
             mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
             mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
             mNextVideoAbsolutePath = getFilePath(true);
@@ -1598,7 +1598,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         EGLExt.eglPresentationTimeANDROID(mEGLDisplay, encoderSurface, surfaceTexture.getTimestamp());
                         recordedTimeStamp = surfaceTexture.getTimestamp();
                     }*/
-                    EGLExt.eglPresentationTimeANDROID(mEGLDisplay, encoderSurface, surfaceTexture.getTimestamp());
+                    EGLExt.eglPresentationTimeANDROID(mEGLDisplay, encoderSurface, System.nanoTime());
                     EGL14.eglSwapBuffers(mEGLDisplay, encoderSurface);
                 }
             }
