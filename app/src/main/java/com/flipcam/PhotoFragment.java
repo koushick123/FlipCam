@@ -716,6 +716,14 @@ public class PhotoFragment extends Fragment {
         }
     }
 
+    public CameraView getCameraView() {
+        return cameraView;
+    }
+
+    public int getCameraMaxZoom(){
+        return cameraView.getCameraMaxZoom();
+    }
+
     public boolean isFlashOn()
     {
         return flashOn;

@@ -14,45 +14,87 @@ public class PinchZoomGestureListener extends ScaleGestureDetector.SimpleOnScale
     PhotoFragment photoFragment;
     CameraView cameraView;
     Context appContext;
-    int progress = 0;
+    float progress = 0.0f;
+    float progressStep = 1.5f;
+    Boolean isSmoothZoom = null;
+    int cameraMaxZoom = -1;
+    int zoomLevel = -1;
+    //Set max zoom in restriction to 5.0x level
+    int restrictedMaxZoom = -1;
     public PinchZoomGestureListener(Context context, VideoFragment vFrag, PhotoFragment pFrag){
         appContext = context;
         videoFragment = vFrag;
         photoFragment = pFrag;
     }
 
+    private void checkSmoothZoom(){
+        if(videoFragment != null) {
+            cameraView = videoFragment.getCameraView();
+            cameraMaxZoom = videoFragment.getCameraMaxZoom();
+        }
+        else{
+            cameraView = photoFragment.getCameraView();
+            cameraMaxZoom = photoFragment.getCameraMaxZoom();
+        }
+
+        restrictedMaxZoom = (int)(cameraMaxZoom * 0.5);
+        Log.d(TAG, "cameraMaxZoom = "+cameraMaxZoom);
+        Log.d(TAG, "restrictedMaxZoom = "+restrictedMaxZoom);
+        zoomLevel = (int)Math.ceil(restrictedMaxZoom / 10);
+        Log.d(TAG, "zoom level = "+zoomLevel);
+
+        if (cameraView.isSmoothZoomSupported()) {
+            isSmoothZoom = true;
+        } else if (cameraView.isZoomSupported()) {
+            isSmoothZoom = false;
+        }
+    }
+
+    @Override
+    public boolean onScaleBegin(ScaleGestureDetector detector) {
+        Log.d(TAG, "onScaleBegin");
+        if(isSmoothZoom == null){
+            checkSmoothZoom();
+        }
+        return super.onScaleBegin(detector);
+    }
+
+    @Override
+    public void onScaleEnd(ScaleGestureDetector detector) {
+        Log.d(TAG, "onScaleEnd");
+        super.onScaleEnd(detector);
+    }
+
     @Override
     public boolean onScale(ScaleGestureDetector detector) {
-        if(detector.getCurrentSpan() - detector.getPreviousSpan() > 0){
-            Log.d(TAG, "Zoom IN = "+progress++);
-            /*if(progress < videoFragment.getCameraMaxZoom()) {
-                progress += 3;
-            }*/
-        }
-        else if(detector.getCurrentSpan() - detector.getPreviousSpan() < 0){
-            Log.d(TAG, "Zoom OUT = "+progress--);
-            /*if(progress > 0) {
-                progress -= 3;
+        if(detector.isInProgress()) {
+            if (detector.getCurrentSpan() - detector.getPreviousSpan() > 0) {
+                if (progress < restrictedMaxZoom) {
+                    Log.d(TAG, "Zoom IN = " + progress);
+                    progress += progressStep;
+                }
+            } else if (detector.getCurrentSpan() - detector.getPreviousSpan() < 0) {
+                if (progress > 0) {
+                    Log.d(TAG, "Zoom OUT = " + progress);
+                    progress -= progressStep;
+                } else {
+                    progress = 0;
+                }
             }
-            else{
-                progress = 0;
-            }*/
+            performZoomOperation((int)progress);
+            return true;
         }
-//        performZoomOperation(progress);
-        return true;
+        else{
+            return false;
+        }
     }
 
     private void performZoomOperation(int progressValue){
-        if(videoFragment != null){
-            cameraView = videoFragment.getCameraView();
-            if(cameraView.isCameraReady()) {
-                if (cameraView.isSmoothZoomSupported()) {
-                    //if(VERBOSE)Log.d(TAG, "Smooth zoom supported");
-                    cameraView.smoothZoomInOrOut(progressValue);
-                } else if (cameraView.isZoomSupported()) {
-                    cameraView.zoomInAndOut(progressValue);
-                }
-            }
+        if(isSmoothZoom) {
+            cameraView.smoothZoomInOrOut(progressValue);
+        }
+        else{
+            cameraView.zoomInAndOut(progressValue);
         }
     }
 }
