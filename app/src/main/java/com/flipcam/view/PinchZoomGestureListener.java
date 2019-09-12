@@ -7,7 +7,7 @@ import android.view.ScaleGestureDetector;
 import com.flipcam.PhotoFragment;
 import com.flipcam.VideoFragment;
 
-public class PinchZoomGestureListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
+public class PinchZoomGestureListener extends ScaleGestureDetector.SimpleOnScaleGestureListener{
 
     public static final String TAG = "PinchZoomGestureListner";
     VideoFragment videoFragment;
@@ -15,13 +15,13 @@ public class PinchZoomGestureListener extends ScaleGestureDetector.SimpleOnScale
     CameraView cameraView;
     Context appContext;
     float progress = 0.0f;
-    float progressStep = 0.7f;
+    float progressZoomInStep = 1f;
+    float progressZoomOutStep = 1.5f;
     Boolean isSmoothZoom = null;
     int cameraMaxZoom = -1;
-    float scaleSensitivity = 2.0f;
+    float zoomInSensitivity = 1f;
+    float zoomOutSensitivity = -13f;
     int zoomLevel = -1;
-    //Set max zoom in restriction to 50% of max level
-    int restrictedMaxZoom = -1;
     public PinchZoomGestureListener(Context context, VideoFragment vFrag, PhotoFragment pFrag){
         appContext = context;
         videoFragment = vFrag;
@@ -38,10 +38,8 @@ public class PinchZoomGestureListener extends ScaleGestureDetector.SimpleOnScale
             cameraMaxZoom = photoFragment.getCameraMaxZoom();
         }
 
-        restrictedMaxZoom = (int)(cameraMaxZoom * 0.5);
         Log.d(TAG, "cameraMaxZoom = "+cameraMaxZoom);
-        Log.d(TAG, "restrictedMaxZoom = "+restrictedMaxZoom);
-        zoomLevel = (int)Math.ceil(restrictedMaxZoom / 10);
+        zoomLevel = (int)Math.ceil(cameraMaxZoom / 10);
         Log.d(TAG, "zoom level = "+zoomLevel);
 
         if (cameraView.isSmoothZoomSupported()) {
@@ -72,20 +70,20 @@ public class PinchZoomGestureListener extends ScaleGestureDetector.SimpleOnScale
             float currentSpan = detector.getCurrentSpan();
             float previousSpan = detector.getPreviousSpan();
             Log.d(TAG, "currentSpan = "+currentSpan+" , previousSpan = "+previousSpan);
-            if (currentSpan - previousSpan > scaleSensitivity)
+            if (currentSpan - previousSpan > zoomInSensitivity)
             {
-                if (progress < restrictedMaxZoom) {
+                if (progress < cameraMaxZoom) {
                     Log.d(TAG, "Zoom IN = " + progress);
-                    progress += progressStep;
+                    progress += progressZoomInStep;
                     performZoomOperation((int)progress);
                     return true;
                 }
             }
-            else if (currentSpan - previousSpan < 0)
+            else if (currentSpan - previousSpan < zoomOutSensitivity)
             {
                 if (progress > 0) {
                     Log.d(TAG, "Zoom OUT = " + progress);
-                    progress -= progressStep;
+                    progress -= progressZoomOutStep;
                     performZoomOperation((int)progress);
                     return true;
                 } else {
