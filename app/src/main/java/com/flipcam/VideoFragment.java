@@ -51,6 +51,7 @@ import com.flipcam.service.GoogleDriveUploadService;
 import com.flipcam.util.MediaUtil;
 import com.flipcam.util.SDCardUtil;
 import com.flipcam.view.CameraView;
+import com.flipcam.view.PinchZoomGestureListener;
 
 import java.io.File;
 import java.io.IOException;
@@ -108,6 +109,7 @@ public class VideoFragment extends Fragment{
     Dialog settingsMsgDialog;
     Context mContext;
     private static VideoFragment fragment = null;
+    PinchZoomGestureListener pinchZoomGestureListener;
 
     public static VideoFragment newInstance() {
         Log.d(TAG, "NEW INSTANCE");
@@ -147,9 +149,9 @@ public class VideoFragment extends Fragment{
             cameraView.setWindowManager(getActivity().getWindowManager());
         }
         cameraActivity = (CameraActivity)getActivity();
-        settingsBar = (LinearLayout)getActivity().findViewById(R.id.settingsBar);
-        settings = (ImageButton)getActivity().findViewById(R.id.settings);
-        flash = (ImageButton)getActivity().findViewById(R.id.flashOn);
+        settingsBar = (LinearLayout)cameraActivity.findViewById(R.id.settingsBar);
+        settings = (ImageButton)cameraActivity.findViewById(R.id.settings);
+        flash = (ImageButton)cameraActivity.findViewById(R.id.flashOn);
         flash.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view)
@@ -158,21 +160,22 @@ public class VideoFragment extends Fragment{
             }
         });
         cameraView.setFlashButton(flash);
-        modeText = (TextView)getActivity().findViewById(R.id.modeInfo);
-        resInfo = (TextView)getActivity().findViewById(R.id.resInfo);
-        modeLayout = (LinearLayout)getActivity().findViewById(R.id.modeLayout);
-        permissionInterface = (PermissionInterface)getActivity();
-        switchInterface = (SwitchInterface)getActivity();
-        lowestThresholdCheckForVideoInterface = (LowestThresholdCheckForVideoInterface)getActivity();
-        layoutInflater = (LayoutInflater)getActivity().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        modeText = (TextView)cameraActivity.findViewById(R.id.modeInfo);
+        resInfo = (TextView)cameraActivity.findViewById(R.id.resInfo);
+        modeLayout = (LinearLayout)cameraActivity.findViewById(R.id.modeLayout);
+        permissionInterface = (PermissionInterface)cameraActivity;
+        switchInterface = (SwitchInterface)cameraActivity;
+        lowestThresholdCheckForVideoInterface = (LowestThresholdCheckForVideoInterface)cameraActivity;
+        layoutInflater = (LayoutInflater)cameraActivity.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         warningMsgRoot = layoutInflater.inflate(R.layout.warning_message, null);
-        warningMsg = new Dialog(getActivity());
+        warningMsg = new Dialog(cameraActivity);
         settingsMsgRoot = layoutInflater.inflate(R.layout.settings_message, null);
-        settingsMsgDialog = new Dialog(getActivity());
+        settingsMsgDialog = new Dialog(cameraActivity);
         mediaFilters = new IntentFilter();
         sdCardEventReceiver = new SDCardEventReceiver();
-        sharedPreferences = getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
-        appWidgetManager = (AppWidgetManager)getActivity().getSystemService(Context.APPWIDGET_SERVICE);
+        sharedPreferences = cameraActivity.getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
+        appWidgetManager = (AppWidgetManager)cameraActivity.getSystemService(Context.APPWIDGET_SERVICE);
+        pinchZoomGestureListener = cameraActivity.getPinchZoomGestureListener();
     }
 
     @Override
@@ -184,6 +187,8 @@ public class VideoFragment extends Fragment{
     public CameraView getCameraView() {
         return cameraView;
     }
+
+
 
     public int getCameraMaxZoom(){
         return cameraView.getCameraMaxZoom();
@@ -209,8 +214,7 @@ public class VideoFragment extends Fragment{
         zoombar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                //if(VERBOSE)Log.d(TAG, "progress = " + progress);
-                if(cameraView.isCameraReady()) {
+                if(cameraView.isCameraReady() && fromUser) {
                     if (cameraView.isSmoothZoomSupported()) {
                         //if(VERBOSE)Log.d(TAG, "Smooth zoom supported");
                         cameraView.smoothZoomInOrOut(progress);
@@ -229,7 +233,8 @@ public class VideoFragment extends Fragment{
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-
+                Log.d(TAG, "onStopTrackingTouch = "+seekBar.getProgress());
+                cameraActivity.getPinchZoomGestureListener().setProgress(seekBar.getProgress());
             }
         });
         thumbnail = (ImageView)view.findViewById(R.id.thumbnail);
@@ -253,6 +258,8 @@ public class VideoFragment extends Fragment{
                 settings.setClickable(false);
 
                 cameraView.switchCamera();
+                getZoomBar().setProgress(0);
+                cameraActivity.getPinchZoomGestureListener().setProgress(0);
 
                 zoombar.setProgress(0);
                 startRecord.setClickable(true);
@@ -571,6 +578,11 @@ public class VideoFragment extends Fragment{
 
     public void hidePauseText(){
         pauseText.setVisibility(View.INVISIBLE);
+    }
+
+    public SeekBar getZoomBar()
+    {
+        return zoombar;
     }
 
     public void addStopAndPauseIcons()

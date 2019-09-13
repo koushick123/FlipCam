@@ -747,7 +747,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 camera1.setFPS();
             }
             else{
-                //Nokia 7.1 front camera shows slow refresh if FPS is set. So, FPS is not being set for the phone.
+                //Nokia 7.1 front camera shows slow refresh if FPS is set. So, FPS is not being set for the phone for photos.
                 if(this.videoFragment!=null){
                     camera1.setFPS();
                 }

@@ -229,7 +229,7 @@ public class PhotoFragment extends Fragment {
                         cameraView.registerAccelSensor();
                     }
                 }
-                if(cameraView.isCameraReady()) {
+                if(cameraView.isCameraReady() && fromUser) {
                     if (cameraView.isSmoothZoomSupported()) {
                         //if(VERBOSE)Log.d(TAG, "Smooth zoom supported");
                         cameraView.smoothZoomInOrOut(progress);
@@ -248,7 +248,8 @@ public class PhotoFragment extends Fragment {
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-
+                Log.d(TAG, "onStopTrackingTouch = "+seekBar.getProgress());
+                cameraActivity.getPinchZoomGestureListener().setProgress(seekBar.getProgress());
             }
         });
         thumbnail = (ImageView)view.findViewById(R.id.photoThumbnail);
@@ -323,6 +324,8 @@ public class PhotoFragment extends Fragment {
                 settings.setClickable(false);
 
                 cameraView.switchCamera();
+                getZoomBar().setProgress(0);
+                cameraActivity.getPinchZoomGestureListener().setProgress(0);
 
                 zoombar.setProgress(0);
                 capturePic.setClickable(true);

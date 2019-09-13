@@ -95,6 +95,10 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
         scaleGestureDetector = new ScaleGestureDetector(getApplicationContext(), pinchZoomGestureListener);
     }
 
+    public PinchZoomGestureListener getPinchZoomGestureListener(){
+        return pinchZoomGestureListener;
+    }
+
     void displaySDCardNotDetectMessage(){
         if(VERBOSE)Log.d(TAG, "displaySDCardNotDetectMessage");
         //The below variable is needed to check if there was SD Card removed in MediaActivity which caused the control
@@ -392,6 +396,13 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
     protected void onPause() {
         super.onPause();
         if(VERBOSE)Log.d(TAG,"onPause");
+        if(this.videoFragment!=null) {
+            this.videoFragment.getZoomBar().setProgress(0);
+        }
+        else{
+            this.photoFragment.getZoomBar().setProgress(0);
+        }
+        pinchZoomGestureListener.setProgress(0);
     }
 
     @Override

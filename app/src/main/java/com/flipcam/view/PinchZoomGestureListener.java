@@ -21,7 +21,7 @@ public class PinchZoomGestureListener extends ScaleGestureDetector.SimpleOnScale
     int cameraMaxZoom = -1;
     float zoomInSensitivity = 1f;
     float zoomOutSensitivity = -13f;
-    int zoomLevel = -1;
+    float zoomDiff = 0.5f;
     public PinchZoomGestureListener(Context context, VideoFragment vFrag, PhotoFragment pFrag){
         appContext = context;
         videoFragment = vFrag;
@@ -39,8 +39,6 @@ public class PinchZoomGestureListener extends ScaleGestureDetector.SimpleOnScale
         }
 
         Log.d(TAG, "cameraMaxZoom = "+cameraMaxZoom);
-        zoomLevel = (int)Math.ceil(cameraMaxZoom / 10);
-        Log.d(TAG, "zoom level = "+zoomLevel);
 
         if (cameraView.isSmoothZoomSupported()) {
             isSmoothZoom = true;
@@ -54,6 +52,21 @@ public class PinchZoomGestureListener extends ScaleGestureDetector.SimpleOnScale
         Log.d(TAG, "onScaleBegin");
         if(isSmoothZoom == null){
             checkSmoothZoom();
+            if(cameraMaxZoom <= 10){
+                progressZoomInStep = 0.25f;
+                progressZoomOutStep = 0.5f;
+                zoomDiff = 0.25f;
+            }
+            else if(cameraMaxZoom > 10 && cameraMaxZoom <= 20){
+                progressZoomInStep = 0.35f;
+                progressZoomOutStep = 0.70f;
+                zoomDiff = 0.2f;
+            }
+            else if(cameraMaxZoom > 20 && cameraMaxZoom <= 30){
+                progressZoomInStep = 0.4f;
+                progressZoomOutStep = 0.8f;
+                zoomDiff = 0.2f;
+            }
         }
         return super.onScaleBegin(detector);
     }
@@ -69,13 +82,13 @@ public class PinchZoomGestureListener extends ScaleGestureDetector.SimpleOnScale
         if(detector.isInProgress()) {
             float currentSpan = detector.getCurrentSpan();
             float previousSpan = detector.getPreviousSpan();
-            Log.d(TAG, "currentSpan = "+currentSpan+" , previousSpan = "+previousSpan);
+//            Log.d(TAG, "currentSpan = "+currentSpan+" , previousSpan = "+previousSpan);
             if (currentSpan - previousSpan > zoomInSensitivity)
             {
                 if (progress < cameraMaxZoom) {
                     Log.d(TAG, "Zoom IN = " + progress);
                     progress += progressZoomInStep;
-                    performZoomOperation((int)progress);
+                    performZoomOperation();
                     return true;
                 }
             }
@@ -84,7 +97,7 @@ public class PinchZoomGestureListener extends ScaleGestureDetector.SimpleOnScale
                 if (progress > 0) {
                     Log.d(TAG, "Zoom OUT = " + progress);
                     progress -= progressZoomOutStep;
-                    performZoomOperation((int)progress);
+                    performZoomOperation();
                     return true;
                 } else {
                     progress = 0;
@@ -97,12 +110,30 @@ public class PinchZoomGestureListener extends ScaleGestureDetector.SimpleOnScale
         }
     }
 
-    private void performZoomOperation(int progressValue){
+    public void setProgress(int progressValue){
+        progress = progressValue;
+    }
+
+    private void performZoomOperation(){
         if(isSmoothZoom) {
-            cameraView.smoothZoomInOrOut(progressValue);
+            cameraView.smoothZoomInOrOut((int)progress);
         }
         else{
-            cameraView.zoomInAndOut(progressValue);
+            cameraView.zoomInAndOut((int)progress);
+        }
+        double closestWholeNum = Math.ceil(progress);
+        Log.d(TAG, "closestWholeNum = "+closestWholeNum+", for progress = "+progress);
+        if(Math.abs(closestWholeNum - progress) <= zoomDiff) {
+            incrementProgressBar();
+        }
+    }
+
+    private void incrementProgressBar(){
+        if(videoFragment!=null){
+            videoFragment.getZoomBar().setProgress((int)progress);
+        }
+        else{
+            photoFragment.getZoomBar().setProgress((int)progress);
         }
     }
 }
