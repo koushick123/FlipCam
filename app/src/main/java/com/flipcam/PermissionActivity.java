@@ -150,6 +150,7 @@ public class PermissionActivity extends AppCompatActivity {
                 editor.remove(Constants.SELECT_PHOTO_RESOLUTION);
                 editor.remove(Constants.SUPPORT_PHOTO_RESOLUTIONS_FRONT);
                 editor.remove(Constants.SELECT_PHOTO_RESOLUTION_FRONT);
+                editor.remove(Constants.SELECT_VIDEO_PLAYER);
                 editor.commit();
                 if(VERBOSE)Log.d(TAG, "REMOVED SHAREDPREFS");
                 ActivityCompat.requestPermissions(this,

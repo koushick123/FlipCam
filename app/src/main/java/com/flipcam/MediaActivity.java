@@ -133,6 +133,8 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     FolderLayout sdcardFolder;
     FolderLayout bothFolder;
     boolean fromGallery = false;
+    String fcPlayer;
+    String externalPlayer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -149,10 +151,11 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         getSupportActionBar().hide();
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         mediaFilters = new IntentFilter();
+        fcPlayer = getResources().getString(R.string.videoFCPlayer);
+        externalPlayer = getResources().getString(R.string.videoExternalPlayer);
         sdCardEventReceiver = new SDCardEventReceiver();
         layoutInflater = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         audioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
-//        mediaLocationView = layoutInflater.inflate(R.layout.medialocation, null);
         sharedPreferences = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
         videoControls = (LinearLayout)findViewById(R.id.videoControls);
         fromGallery = getIntent().getExtras().getBoolean("fromGallery");
@@ -230,7 +233,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 if(VERBOSE)Log.d(TAG, "Share position = " + selectedPosition);
                 Uri mediaUri;
                 if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
-                    if(VERBOSE)Log.d(TAG, "For OREO use FileProvider");
+                    if(VERBOSE)Log.d(TAG, "For OREO and above use FileProvider");
                     mediaUri = FileProvider.getUriForFile(MediaActivity.this, BuildConfig.APPLICATION_ID+".provider",
                             new File(medias[selectedPosition].getPath()));
                 }
@@ -241,9 +244,9 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 shareIntent.setAction(Intent.ACTION_SEND);
                 shareIntent.putExtra(Intent.EXTRA_STREAM, mediaUri);
                 if (isImage(medias[selectedPosition].getPath())) {
-                    shareIntent.setType("image/jpeg");
+                    shareIntent.setType(getResources().getString(R.string.imageType));
                 } else {
-                    shareIntent.setType("video/mp4");
+                    shareIntent.setType(getResources().getString(R.string.videoType));
                 }
                 if (doesAppExistForIntent(shareIntent)) {
                     if(VERBOSE)Log.d(TAG, "Apps exists");
@@ -302,10 +305,17 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 hidePlayForVideo();
             }
             else{
-                if(!controlVisbilityPreference.isHideControl()) {
-                    if(VERBOSE)Log.d(TAG, "Show PlayForVideo");
-                    setupPlayForVideo(0);
-                    showPlayForVideo();
+                if(sharedPreferences.getString(Constants.SELECT_VIDEO_PLAYER, externalPlayer).equalsIgnoreCase(fcPlayer)) {
+                    playCircle.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_circle_outline));
+                    if (!controlVisbilityPreference.isHideControl()) {
+                        if (VERBOSE) Log.d(TAG, "Show PlayForVideo");
+                        setupPlayForVideo(0);
+                        showPlayForVideo();
+                    }
+                }
+                else{
+                    removeVideoControls();
+                    setupPlayCircleForExternalPlayer();
                 }
             }
         }
@@ -317,9 +327,16 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 hidePlayForVideo();
             }
             else{
-                if(!controlVisbilityPreference.isHideControl()) {
-                    setupPlayForVideo(0);
-                    showPlayForVideo();
+                if(sharedPreferences.getString(Constants.SELECT_VIDEO_PLAYER, externalPlayer).equalsIgnoreCase(fcPlayer)) {
+                    playCircle.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_circle_outline));
+                    if (!controlVisbilityPreference.isHideControl()) {
+                        setupPlayForVideo(0);
+                        showPlayForVideo();
+                    }
+                }
+                else{
+                    removeVideoControls();
+                    setupPlayCircleForExternalPlayer();
                 }
             }
         }
@@ -761,6 +778,17 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         }
     }
 
+    private void setupPlayCircleForExternalPlayer(){
+        playCircle.setVisibility(View.VISIBLE);
+        playCircle.setImageDrawable(getResources().getDrawable(R.drawable.ic_external_play_circle_outline));
+        playCircle.setOnClickListener((view) -> {
+            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(medias[selectedPosition].getPath()));
+            intent.setDataAndType(Uri.parse(medias[selectedPosition].getPath()),
+                    getResources().getString(R.string.videoType));
+            startActivity(intent);
+        });
+    }
+
     @Override
     public void onPageSelected(int position) {
         if(!fromGallery) {
@@ -798,19 +826,26 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             removeVideoControls();
         }
         else{
-            if(controlVisbilityPreference.isHideControl()) {
-                if(VERBOSE)Log.d(TAG,"show controls");
-                showControls();
+            if(sharedPreferences.getString(Constants.SELECT_VIDEO_PLAYER, externalPlayer).equalsIgnoreCase(fcPlayer)) {
+                playCircle.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_circle_outline));
+                if (controlVisbilityPreference.isHideControl()) {
+                    if (VERBOSE) Log.d(TAG, "show controls");
+                    showControls();
+                } else {
+                    if (VERBOSE) Log.d(TAG, "hide controls");
+                    removeVideoControls();
+                }
+                setupVideo(currentFrag, position);
+                currentFrag.previousPos = 0;
+                if (VERBOSE)
+                    Log.d(TAG, "Has VIDEO TRACKER STARTED? = " + currentFrag.isStartTracker());
+                if (!currentFrag.isStartTracker()) {
+                    currentFrag.startTrackerThread();
+                }
             }
             else{
-                if(VERBOSE)Log.d(TAG,"hide controls");
                 removeVideoControls();
-            }
-            setupVideo(currentFrag,position);
-            currentFrag.previousPos = 0;
-            if(VERBOSE)Log.d(TAG,"Has VIDEO TRACKER STARTED? = "+currentFrag.isStartTracker());
-            if(!currentFrag.isStartTracker()){
-                currentFrag.startTrackerThread();
+                setupPlayCircleForExternalPlayer();
             }
         }
         previousSelectedFragment = position;
@@ -843,7 +878,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         videoControls.addView(parentMedia);
         videoSeek.setMax(Integer.parseInt(duration));
         videoSeek.setProgress(0);
-        //videoSeek.setThumb(getResources().getDrawable(R.drawable.turqoise));
         videoSeek.setProgressTintList(ColorStateList.valueOf(getResources().getColor(R.color.turqoise)));
         videoSeek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override

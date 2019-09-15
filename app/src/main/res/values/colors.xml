@@ -17,6 +17,7 @@
     <color name="progressFill">#4dc2a5</color>
     //Theme color for the app
     <color name="turqoise">#4dc2a5</color>
+    <color name="external_play_color">#0A2ECF</color>
     //Color for thumbnail
     <color name="turqoiseLight">#04f9bc</color>
     <color name="turqoiseDark">#354540</color>

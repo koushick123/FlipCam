@@ -32,7 +32,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 
 public class CameraActivity extends AppCompatActivity implements VideoFragment.PermissionInterface, PhotoFragment.PhotoPermission,VideoFragment.SwitchInterface,
-PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, PhotoFragment.LowestThresholdCheckForPictureInterface{
+PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, PhotoFragment.LowestThresholdCheckForPictureInterface
+{
 
     private static final String TAG = "CameraActivity";
     private static final String VIDEO = "1";
@@ -399,7 +400,7 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
         if(this.videoFragment!=null) {
             this.videoFragment.getZoomBar().setProgress(0);
         }
-        else{
+        else if(this.photoFragment!=null) {
             this.photoFragment.getZoomBar().setProgress(0);
         }
         pinchZoomGestureListener.setProgress(0);

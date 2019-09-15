@@ -1,6 +1,8 @@
 package com.flipcam.view;
 
 import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
@@ -14,6 +16,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.util.Log;
@@ -37,6 +40,7 @@ import com.flipcam.ControlVisbilityPreference;
 import com.flipcam.GlideApp;
 import com.flipcam.MediaActivity;
 import com.flipcam.R;
+import com.flipcam.constants.Constants;
 import com.flipcam.media.FileMedia;
 import com.flipcam.media.Media;
 import com.flipcam.util.MediaUtil;
@@ -93,6 +97,7 @@ MediaPlayer.OnErrorListener, Serializable{
     boolean imageScaled = false;
     boolean fromGallery = false;
     MediaActivity mediaActivity;
+    SharedPreferences sharedPreferences;
 
     public static MediaFragment newInstance(int pos,boolean recreate, boolean fromGal){
         MediaFragment mediaFragment = new MediaFragment();
@@ -403,6 +408,7 @@ MediaPlayer.OnErrorListener, Serializable{
         display = windowManager.getDefaultDisplay();
         Point screenSize=new Point();
         display.getRealSize(screenSize);
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getContext());
         if(VERBOSE)Log.d(TAG,"onCreateView = "+path);
         if(isImage()) {
             if(VERBOSE)Log.d(TAG,"show image");
@@ -503,6 +509,17 @@ MediaPlayer.OnErrorListener, Serializable{
         }
     }
 
+    private boolean isUseFCPlayer(){
+        String fcPlayer = getResources().getString(R.string.videoFCPlayer);
+        String externalPlayer = getResources().getString(R.string.videoExternalPlayer);
+        if(sharedPreferences.getString(Constants.SELECT_VIDEO_PLAYER, externalPlayer).equalsIgnoreCase(fcPlayer)){
+            return true;
+        }
+        else{
+            return false;
+        }
+    }
+
     @Override
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
@@ -565,15 +582,41 @@ MediaPlayer.OnErrorListener, Serializable{
             }
         }
         else{
-            if(VERBOSE)Log.d(TAG,"hide = "+controlVisbilityPreference.isHideControl());
-            if (controlVisbilityPreference.isHideControl()) {
-                controlVisbilityPreference.setHideControl(false);
-                hideAllControls();
-            } else {
-                controlVisbilityPreference.setHideControl(true);
-                showAllControls();
+            if(isUseFCPlayer()) {
+                if (VERBOSE) Log.d(TAG, "hide = " + controlVisbilityPreference.isHideControl());
+                playCircle.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_circle_outline));
+                if (controlVisbilityPreference.isHideControl()) {
+                    controlVisbilityPreference.setHideControl(false);
+                    hideAllControls();
+                } else {
+                    controlVisbilityPreference.setHideControl(true);
+                    showAllControls();
+                }
+            }
+            else{
+                removeVideoControls();
+                setupPlayCircleForExternalPlayer();
+                if (controlVisbilityPreference.isHideControl()) {
+                    topBar.setVisibility(View.INVISIBLE);
+                    controlVisbilityPreference.setHideControl(false);
+                }
+                else{
+                    topBar.setVisibility(View.VISIBLE);
+                    controlVisbilityPreference.setHideControl(true);
+                }
             }
         }
+    }
+
+    private void setupPlayCircleForExternalPlayer(){
+        playCircle.setVisibility(View.VISIBLE);
+        playCircle.setImageDrawable(getResources().getDrawable(R.drawable.ic_external_play_circle_outline));
+        playCircle.setOnClickListener((view) -> {
+            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(path));
+            intent.setDataAndType(Uri.parse(path),
+                    getResources().getString(R.string.videoType));
+            startActivity(intent);
+        });
     }
 
     public void hideAllControls(){

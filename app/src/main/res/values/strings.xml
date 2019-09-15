@@ -24,6 +24,8 @@
     <string name="MODE">MODE</string>
     <string name="RECORD_SAVED">VIDEO SAVED</string>
     <string name="IMAGE_SAVED">IMAGE SAVED</string>
+    <string name="imageType">"image/jpeg"</string>
+    <string name="videoType">"video/mp4"</string>
     <string name="NO_IMAGE">No Photos or Videos</string>
     <string name="deleteTitle">Delete Media</string>
     <string name="loadTitle">Load Media</string>
@@ -229,6 +231,14 @@
     <string name="singleMode">Auto</string>
     <string name="videoResolutionHeading">Video Resolutions</string>
     <string name="videoResolutionSummary">Set the video resolution for rear and front cameras.</string>
+    <string name="videoResHigh">HIGH</string>
+    <string name="videoResMedium">MEDIUM</string>
+    <string name="videoResLow">LOW</string>
+    <string name="videoPlayerHeading">Video Player</string>
+    <string name="videoPlayerSummary">Choose a player to playback videos.</string>
+    <string name="videoFCPlayer">FlipCam Video Player</string>
+    <string name="videoPlayerMessage">Using External media player. Click here to change media player.</string>
+    <string name="videoExternalPlayer">External Video Player</string>
     <string name="photoResolutionDialogHeadingRear">Rear Camera Photo Resolutions</string>
     <string name="photoResolutionDialogHeadingFront">Front Camera Photo Resolutions</string>
     <string name="photoSettings">Photo Settings...</string>
@@ -241,9 +251,6 @@
     <string name="thanksFeedbackMsg">Thank you for your feedback.</string>
     <string name="sendFeedbackMsg">Sending Feedback...</string>
     <string name="sendFeedbackTitleMsg">Feedback...</string>
-    <string name="videoResHigh">HIGH</string>
-    <string name="videoResMedium">MEDIUM</string>
-    <string name="videoResLow">LOW</string>
     <string name="mediaSlideview">Slide View</string>
     <string name="brightnessHeading">BRIGHTNESS</string>
     <string name="resolutionDisplay">%1$s X %2$s</string>

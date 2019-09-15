@@ -17,7 +17,7 @@ import android.view.ViewGroup;
 
 import com.flipcam.constants.Constants;
 import com.flipcam.model.Dimension;
-import com.flipcam.preferences.ResolutionListPreference;
+import com.flipcam.preferences.CustomListPreference;
 import com.flipcam.preferences.SelfieTimerCheckboxPreference;
 import com.flipcam.preferences.SelfieTimerPreference;
 import com.flipcam.preferences.ShutterCheckboxPreference;
@@ -93,11 +93,11 @@ public class PhotoSettingsActivity extends AppCompatActivity {
             Set<String> entries;
             SharedPreferences settingsPrefs = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext());
             if(backCamera) {
-                listPreference = new ResolutionListPreference(getActivity(), true);
+                listPreference = new CustomListPreference(getActivity(), true);
                 entries = settingsPrefs.getStringSet(Constants.SUPPORT_PHOTO_RESOLUTIONS, null);
             }
             else{
-                listPreference = new ResolutionListPreference(getActivity(), true);
+                listPreference = new CustomListPreference(getActivity(), true);
                 entries = settingsPrefs.getStringSet(Constants.SUPPORT_PHOTO_RESOLUTIONS_FRONT, null);
             }
             int index=0;
@@ -156,7 +156,7 @@ public class PhotoSettingsActivity extends AppCompatActivity {
                 listPreference.setKey(Constants.SELECT_PHOTO_RESOLUTION_FRONT);
                 listPreference.setValue(settingsPrefs.getString(Constants.SELECT_PHOTO_RESOLUTION_FRONT, null));
             }
-            listPreference.setLayoutResource(R.layout.custom_photo_setting);
+            listPreference.setLayoutResource(R.layout.custom_list_setting);
             getPreferenceScreen().addPreference(listPreference);
         }
     }

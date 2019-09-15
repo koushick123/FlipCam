@@ -6,7 +6,6 @@ import android.content.res.Resources;
 import android.os.Bundle;
 import android.preference.CheckBoxPreference;
 import android.preference.ListPreference;
-import android.preference.Preference;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
@@ -17,7 +16,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.flipcam.constants.Constants;
-import com.flipcam.preferences.ResolutionListPreference;
+import com.flipcam.preferences.CustomListPreference;
 import com.flipcam.preferences.ShutterCheckboxPreference;
 
 import java.util.Iterator;
@@ -52,7 +51,8 @@ public class VideoSettingsActivity extends AppCompatActivity {
             if (VERBOSE) Log.d(TAG, "VideoSettingFragment onCreate");
             addPreferencesFromResource(R.xml.preferences);
             Resources resources = getActivity().getResources();
-            ListPreference listPreference = new ResolutionListPreference(getActivity(), true);
+            //Video Resolutions
+            ListPreference listPreference = new CustomListPreference(getActivity(), true);
             Set<String> resSizes = new LinkedHashSet<>();
             resSizes.add(resources.getString(R.string.videoResHigh));
             resSizes.add(resources.getString(R.string.videoResMedium));
@@ -72,17 +72,15 @@ public class VideoSettingsActivity extends AppCompatActivity {
             listPreference.setKey(Constants.SELECT_VIDEO_RESOLUTION);
             listPreference.setValue(settingsPrefs.getString(Constants.SELECT_VIDEO_RESOLUTION, null));
             listPreference.setDialogTitle(getResources().getString(R.string.videoResolutionHeading));
-            listPreference.setLayoutResource(R.layout.custom_photo_setting);
+            listPreference.setLayoutResource(R.layout.custom_list_setting);
             getPreferenceScreen().addPreference(listPreference);
-            listPreference.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
-                @Override
-                public boolean onPreferenceChange(Preference preference, Object newValue) {
-                    String newRes = (String) newValue;
-                    Log.d(TAG, "onPreferenceChange = " + newRes);
-                    Log.d(TAG, "onPreferenceChange pref = " + preference.getKey());
-                    return true;
-                }
+            listPreference.setOnPreferenceChangeListener((preference,newValue ) -> {
+                String newRes = (String) newValue;
+                Log.d(TAG, "onPreferenceChange = " + newRes);
+                Log.d(TAG, "onPreferenceChange pref = " + preference.getKey());
+                return true;
             });
+            //Show Memory
             final CheckBoxPreference memoryConsumedPref = new ShutterCheckboxPreference(getActivity(), true, Constants.SHOW_MEMORY_CONSUMED_MSG);
             memoryConsumedPref.setTitle(resources.getString(R.string.showMemConsumed));
             memoryConsumedPref.setSummary(resources.getString(R.string.showMemConsumedMsg));
@@ -91,6 +89,34 @@ public class VideoSettingsActivity extends AppCompatActivity {
             boolean memCon = PreferenceManager.getDefaultSharedPreferences(getActivity()).getBoolean(Constants.SHOW_MEMORY_CONSUMED_MSG, false);
             if(VERBOSE)Log.d(TAG, "MEMORY CONSUMED PREF MGR = "+memCon);
             getPreferenceScreen().addPreference(memoryConsumedPref);
+            //Video Player
+            ListPreference playerPreference = new CustomListPreference(getActivity(), true);
+            Set<String> playerEntries = new LinkedHashSet<>();
+            playerEntries.add(resources.getString(R.string.videoFCPlayer));
+            playerEntries.add(resources.getString(R.string.videoExternalPlayer));
+            CharSequence[] playerSummaries = new CharSequence[playerEntries.size()];
+            index = 0;
+            Iterator<String> playerIter = playerEntries.iterator();
+            while (playerIter.hasNext()) {
+                String resol = playerIter.next();
+                playerSummaries[index++] = resol;
+            }
+            playerPreference.setEntries(playerSummaries);
+            playerPreference.setEntryValues(playerSummaries);
+            playerPreference.setTitle(resources.getString(R.string.videoPlayerHeading));
+            playerPreference.setSummary(resources.getString(R.string.videoPlayerSummary));
+            playerPreference.setKey(Constants.SELECT_VIDEO_PLAYER);
+            playerPreference.setValue(settingsPrefs.getString(Constants.SELECT_VIDEO_PLAYER,
+                    resources.getString(R.string.videoExternalPlayer)));
+            playerPreference.setDialogTitle(getResources().getString(R.string.videoPlayerHeading));
+            playerPreference.setLayoutResource(R.layout.custom_list_setting);
+            getPreferenceScreen().addPreference(playerPreference);
+            playerPreference.setOnPreferenceChangeListener((preference,newValue ) -> {
+                String newRes = (String) newValue;
+                Log.d(TAG, "onPreferenceChange 2222 = " + newRes);
+                Log.d(TAG, "onPreferenceChange pref 2222 = " + preference.getKey());
+                return true;
+            });
         }
     }
 }

@@ -9,13 +9,13 @@ import android.widget.TextView;
 
 import com.flipcam.R;
 
-public class ResolutionListPreference extends ListPreference {
+public class CustomListPreference extends ListPreference {
 
     Context mContext;
     boolean enableSeparator;
-    public static final String TAG = "ResolutionListPref";
+    public static final String TAG = "CustomListPreference";
 
-    public ResolutionListPreference(Context context, boolean enableSep) {
+    public CustomListPreference(Context context, boolean enableSep) {
         super(context);
         mContext = context;
         enableSeparator = enableSep;

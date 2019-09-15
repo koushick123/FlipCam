@@ -1420,20 +1420,13 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         {
             camcorderProfile = CamcorderProfile.get(camera1.getCameraId(),camcorderProf);
             mediaRecorder = new MediaRecorder();
-            /*if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
-                //When recording video for Android Oreo and above, video appears frozen and only audio will play.
-                //Configuring audio source to use MIC fixes the issue.
+            try {
+                mediaRecorder.setAudioSource(MediaRecorder.AudioSource.CAMCORDER);
+            } catch (Exception e) {
+                if (VERBOSE)
+                    Log.e(TAG, "Camera not having a mic oriented in the same way. Use the default microphone");
                 mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-            }*/
-//            else {
-                try {
-                    mediaRecorder.setAudioSource(MediaRecorder.AudioSource.CAMCORDER);
-                } catch (Exception e) {
-                    if (VERBOSE)
-                        Log.e(TAG, "Camera not having a mic oriented in the same way. Use the default microphone");
-                    mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-                }
-//            }
+            }
             mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
             mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
             mNextVideoAbsolutePath = getFilePath(true);

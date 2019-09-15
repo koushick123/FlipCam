@@ -110,6 +110,9 @@ public class VideoFragment extends Fragment{
     Context mContext;
     private static VideoFragment fragment = null;
     PinchZoomGestureListener pinchZoomGestureListener;
+    int audioSampleRate = -1;
+    int audioBitRate = -1;
+    int audioChannelInput = -1;
 
     public static VideoFragment newInstance() {
         Log.d(TAG, "NEW INSTANCE");
@@ -389,10 +392,6 @@ public class VideoFragment extends Fragment{
         return view;
     }
 
-    int audioSampleRate = -1;
-    int audioBitRate = -1;
-    int audioChannelInput = -1;
-
     public int getAudioSampleRate() {
         return audioSampleRate;
     }
@@ -429,7 +428,6 @@ public class VideoFragment extends Fragment{
                     if(VERBOSE)Log.d(TAG, "SD Card Removed");
                     settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
                     settingsEditor.commit();
-//                    showSDCardUnavailableMessage();
                     showErrorWarningMessage(getResources().getString(R.string.sdCardRemovedTitle), getResources().getString(R.string.sdCardNotPresentForRecord));
                     getLatestFileIfExists();
                 }
