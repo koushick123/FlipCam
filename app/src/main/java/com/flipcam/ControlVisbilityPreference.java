@@ -16,6 +16,24 @@ public class ControlVisbilityPreference extends Application implements Serializa
     private int mediaSelectedPosition;
     private int brightnessLevel = Constants.NORMAL_BRIGHTNESS;
     private float brightnessProgress = Constants.NORMAL_BRIGHTNESS_PROGRESS;
+    private boolean fromGallery = false;
+    private boolean pressBackFromGallery = false;
+
+    public boolean isPressBackFromGallery() {
+        return pressBackFromGallery;
+    }
+
+    public void setPressBackFromGallery(boolean pressBackFromGallery) {
+        this.pressBackFromGallery = pressBackFromGallery;
+    }
+
+    public boolean isFromGallery() {
+        return fromGallery;
+    }
+
+    public void setFromGallery(boolean fromGallery) {
+        this.fromGallery = fromGallery;
+    }
 
     public float getBrightnessProgress() {
         return brightnessProgress;

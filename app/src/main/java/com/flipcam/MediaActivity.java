@@ -23,6 +23,7 @@ import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
@@ -122,6 +123,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     Dialog mediaMsg;
     IntentFilter mediaFilters;
     SharedPreferences sharedPreferences;
+    SharedPreferences videoPrefs;
     SDCardEventReceiver sdCardEventReceiver;
     AppWidgetManager appWidgetManager;
     boolean VERBOSE = true;
@@ -150,6 +152,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         display.getRealSize(screenSize);
         getSupportActionBar().hide();
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        controlVisbilityPreference = (ControlVisbilityPreference)getApplicationContext();
         mediaFilters = new IntentFilter();
         fcPlayer = getResources().getString(R.string.videoFCPlayer);
         externalPlayer = getResources().getString(R.string.videoExternalPlayer);
@@ -157,8 +160,10 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         layoutInflater = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         audioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
         sharedPreferences = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
+        videoPrefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         videoControls = (LinearLayout)findViewById(R.id.videoControls);
-        fromGallery = getIntent().getExtras().getBoolean("fromGallery");
+//        fromGallery = getIntent().getExtras().getBoolean("fromGallery");
+        fromGallery = controlVisbilityPreference.isFromGallery();
         Log.d(TAG, "fromGallery = "+fromGallery);
         if(!fromGallery){
             if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
@@ -187,7 +192,8 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         mPagerAdapter = new MediaSlidePager(getSupportFragmentManager());
         mPager.setAdapter(mPagerAdapter);
         if(fromGallery) {
-            int mediaPos = getIntent().getExtras().getInt("mediaPosition");
+//            int mediaPos = getIntent().getExtras().getInt("mediaPosition");
+            int mediaPos = controlVisbilityPreference.getMediaSelectedPosition();
             if(VERBOSE)Log.d(TAG, "Intent extra = " +mediaPos);
             mPager.setCurrentItem(mediaPos);
             selectedPosition = previousSelectedFragment = mediaPos;
@@ -288,7 +294,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         topMediaControls = (LinearLayout)findViewById(R.id.topMediaControls);
         timeControls = (LinearLayout)findViewById(R.id.timeControls);
         parentMedia = (LinearLayout)findViewById(R.id.parentMedia);
-        controlVisbilityPreference = (ControlVisbilityPreference)getApplicationContext();
         noImage = (ImageView)findViewById(R.id.noImage);
         noImageText = (TextView)findViewById(R.id.noImageText);
         playCircle = (ImageView)findViewById(R.id.playVideo);
@@ -299,13 +304,19 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             controlVisbilityPreference.setHideControl(true);
             reDrawPause();
             reDrawTopMediaControls();
-            if(isImage(medias[0].getPath())) {
+            //When coming from gallery check media type based on selected position.
+            if(!fromGallery){
+                selectedPosition = 0;
+            }
+            Log.d(TAG, "selectedPosition === "+selectedPosition);
+
+            if(isImage(medias[selectedPosition].getPath())) {
                 if(VERBOSE)Log.d(TAG, "Hide PlayForVideo");
                 removeVideoControls();
                 hidePlayForVideo();
             }
             else{
-                if(sharedPreferences.getString(Constants.SELECT_VIDEO_PLAYER, externalPlayer).equalsIgnoreCase(fcPlayer)) {
+                if(videoPrefs.getString(Constants.SELECT_VIDEO_PLAYER, externalPlayer).equalsIgnoreCase(fcPlayer)) {
                     playCircle.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_circle_outline));
                     if (!controlVisbilityPreference.isHideControl()) {
                         if (VERBOSE) Log.d(TAG, "Show PlayForVideo");
@@ -327,7 +338,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 hidePlayForVideo();
             }
             else{
-                if(sharedPreferences.getString(Constants.SELECT_VIDEO_PLAYER, externalPlayer).equalsIgnoreCase(fcPlayer)) {
+                if(videoPrefs.getString(Constants.SELECT_VIDEO_PLAYER, externalPlayer).equalsIgnoreCase(fcPlayer)) {
                     playCircle.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_circle_outline));
                     if (!controlVisbilityPreference.isHideControl()) {
                         setupPlayForVideo(0);
@@ -393,10 +404,12 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     public void goToGallery(String selectedFolderLabel){
         //Save media location selection in a FC Setting preference. Use this in Gallery to load media.
         SharedPreferences.Editor mediaLocEdit = sharedPreferences.edit();
+        mediaLocEdit.putString(Constants.MEDIA_LOCATION_VIEW_SELECT_PREV, sharedPreferences.getString(Constants.MEDIA_LOCATION_VIEW_SELECT, phoneLoc));
         mediaLocEdit.putString(Constants.MEDIA_LOCATION_VIEW_SELECT, selectedFolderLabel);
         mediaLocEdit.commit();
         Intent galleryAct = new Intent(getApplicationContext(), GalleryActivity.class);
         galleryAct.putExtra("fromMedia", true);
+        galleryAct.putExtra("selectedFolder", selectedFolderLabel);
         startActivity(galleryAct);
         overridePendingTransition(R.anim.slide_from_right,R.anim.slide_to_left);
     }
@@ -779,6 +792,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     }
 
     private void setupPlayCircleForExternalPlayer(){
+        Log.d(TAG, "setupPlayCircleForExternalPlayer");
         playCircle.setVisibility(View.VISIBLE);
         playCircle.setImageDrawable(getResources().getDrawable(R.drawable.ic_external_play_circle_outline));
         playCircle.setOnClickListener((view) -> {
@@ -826,7 +840,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             removeVideoControls();
         }
         else{
-            if(sharedPreferences.getString(Constants.SELECT_VIDEO_PLAYER, externalPlayer).equalsIgnoreCase(fcPlayer)) {
+            if(videoPrefs.getString(Constants.SELECT_VIDEO_PLAYER, externalPlayer).equalsIgnoreCase(fcPlayer)) {
                 playCircle.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_circle_outline));
                 if (controlVisbilityPreference.isHideControl()) {
                     if (VERBOSE) Log.d(TAG, "show controls");
@@ -1047,44 +1061,55 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     @Override
     protected void onResume() {
         super.onResume();
+        fromGallery = controlVisbilityPreference.isFromGallery();
         if(VERBOSE)Log.d(TAG,"onResume from Gallery = "+fromGallery);
+        if(VERBOSE)Log.d(TAG,"controlVisbilityPreference.isPressBackFromGallery = "+controlVisbilityPreference.isPressBackFromGallery());
         mPager.addOnPageChangeListener(this);
         mediaFilters.addAction(Intent.ACTION_MEDIA_UNMOUNTED);
         mediaFilters.addDataScheme("file");
         registerReceiver(sdCardEventReceiver, mediaFilters);
+        if(controlVisbilityPreference.isPressBackFromGallery()){
+            //User has pressed back button from Gallery. Need to reload previous media select option.
+            checkAndLoadMediaFromMediaLocationOption(true);
+            return;
+        }
         if(!fromGallery) {
             if (!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)) {
                 if (doesSDCardExist() == null) {
                     exitToPreviousActivity();
                     return;
                 } else {
-                    refreshMediaFromSource();
+                    refreshMediaFromSource(fromGallery);
                 }
             } else {
-                refreshMediaFromSource();
+                refreshMediaFromSource(fromGallery);
             }
         }
         else{
-            Log.d(TAG, "Media Location View Select = "+
-                    sharedPreferences.getString(Constants.MEDIA_LOCATION_VIEW_SELECT, phoneLoc));
-            if(sharedPreferences.getString(Constants.MEDIA_LOCATION_VIEW_SELECT, phoneLoc).equalsIgnoreCase(sdcardLoc) ||
-                    sharedPreferences.getString(Constants.MEDIA_LOCATION_VIEW_SELECT, phoneLoc).equalsIgnoreCase(allLoc)){
-                String sdcardPath = SDCardUtil.doesSDCardExist(getApplicationContext());
-                if((sdcardPath == null || sdcardPath.equalsIgnoreCase("")) ||
-                        !SDCardUtil.isPathWritable(sdcardPath)){
-                    exitToPreviousActivity();
-                    return;
-                }
-            }
-            refreshMediaFromSource();
+            checkAndLoadMediaFromMediaLocationOption(fromGallery);
         }
     }
 
-    public void refreshMediaFromSource(){
+    private void checkAndLoadMediaFromMediaLocationOption(boolean fromGalSource){
+        Log.d(TAG, "Media Location View Select = "+
+                sharedPreferences.getString(Constants.MEDIA_LOCATION_VIEW_SELECT, phoneLoc));
+        if(sharedPreferences.getString(Constants.MEDIA_LOCATION_VIEW_SELECT, phoneLoc).equalsIgnoreCase(sdcardLoc) ||
+                sharedPreferences.getString(Constants.MEDIA_LOCATION_VIEW_SELECT, phoneLoc).equalsIgnoreCase(allLoc)){
+            String sdcardPath = SDCardUtil.doesSDCardExist(getApplicationContext());
+            if((sdcardPath == null || sdcardPath.equalsIgnoreCase("")) ||
+                    !SDCardUtil.isPathWritable(sdcardPath)){
+                exitToPreviousActivity();
+                return;
+            }
+        }
+        refreshMediaFromSource(fromGalSource);
+    }
+
+    public void refreshMediaFromSource(boolean fromGalSource){
         itemCount = 0;
         int oldLength;
-        if(VERBOSE)Log.d(TAG, "refreshMediaSource fromGallery = "+fromGallery);
-        if(!fromGallery) {
+        if(VERBOSE)Log.d(TAG, "refreshMediaSource fromGallery = "+fromGalSource);
+        if(!fromGalSource) {
             if (sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)) {
                 oldLength = getSharedPreferences(FC_MEDIA_PREFERENCE, Context.MODE_PRIVATE).getInt(Constants.MEDIA_COUNT_MEM, 0);
             } else {
@@ -1095,24 +1120,28 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             if(sharedPreferences.getString(Constants.MEDIA_LOCATION_VIEW_SELECT, phoneLoc).equalsIgnoreCase(phoneLoc)){
                 oldLength = getSharedPreferences(FC_MEDIA_PREFERENCE, Context.MODE_PRIVATE).getInt(Constants.MEDIA_COUNT_MEM, 0);
             }
-            else if(sharedPreferences.getString(Constants.MEDIA_LOCATION_VIEW_SELECT, sdcardLoc).equalsIgnoreCase(sdcardLoc)){
+            else if(sharedPreferences.getString(Constants.MEDIA_LOCATION_VIEW_SELECT, phoneLoc).equalsIgnoreCase(sdcardLoc)){
                 oldLength = getSharedPreferences(FC_MEDIA_PREFERENCE, Context.MODE_PRIVATE).getInt(Constants.MEDIA_COUNT_SD_CARD, 0);
             }
             else{
                 oldLength = getSharedPreferences(FC_MEDIA_PREFERENCE, Context.MODE_PRIVATE).getInt(Constants.MEDIA_COUNT_ALL, 0);
             }
         }
-        medias = MediaUtil.getMediaList(getApplicationContext(), fromGallery);
+        medias = MediaUtil.getMediaList(getApplicationContext(), fromGalSource);
         if(medias != null) {
-            if (medias.length < oldLength) {
-                if(VERBOSE)Log.d(TAG, "Possible deletions outside of App");
-                isDelete = true;
-                previousSelectedFragment = -1;
-            } else {
-                if(VERBOSE)Log.d(TAG, "Files added or no change");
+            if (medias.length > 0) {
+                if(medias.length < oldLength) {
+                    if (VERBOSE) Log.d(TAG, "Possible deletions outside of App");
+                    isDelete = true;
+                    previousSelectedFragment = -1;
+                }
+                hideNoImagePlaceholder();
+                mPagerAdapter.notifyDataSetChanged();
             }
-            hideNoImagePlaceholder();
-            mPagerAdapter.notifyDataSetChanged();
+            else{
+                clearMediaPreferences();
+                showNoImagePlaceholder();
+            }
         }
         else{
             clearMediaPreferences();
@@ -1191,6 +1220,11 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                     if (isImage(medias[position].getPath())) {
                         if(VERBOSE)Log.d(TAG, "IS image");
                         removeVideoControls();
+                        if(videoPrefs.getString(Constants.SELECT_VIDEO_PLAYER, externalPlayer).equalsIgnoreCase(externalPlayer)){
+                            //Playcircle icon will always be visible. Need to hide it for image
+                            Log.d(TAG, "HIDE PLAYCIRCLE");
+                            playCircle.setVisibility(View.GONE);
+                        }
                     } else {
                         if(VERBOSE)Log.d(TAG, "IS video");
                         showControls();

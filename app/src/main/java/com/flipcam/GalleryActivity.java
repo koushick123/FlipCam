@@ -66,6 +66,7 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
     String sdcardLoc;
     String allLoc;
     boolean fromMedia = false;
+    String selectedFolder;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -98,6 +99,7 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
         Bundle bundle = getIntent().getExtras();
         if(bundle != null) {
             fromMedia = bundle.getBoolean("fromMedia");
+            selectedFolder = bundle.getString("selectedFolder");
         }
     }
 
@@ -111,6 +113,13 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
     @Override
     public void onBackPressed() {
         super.onBackPressed();
+        Log.d(TAG, "onBackPressed");
+        controlVisbilityPreference.setFromGallery(false);
+        controlVisbilityPreference.setPressBackFromGallery(true);
+        SharedPreferences.Editor mediaLocEdit = sharedPreferences.edit();
+        //Since user did not select any media, go back to previous option for view
+        mediaLocEdit.putString(Constants.MEDIA_LOCATION_VIEW_SELECT, sharedPreferences.getString(Constants.MEDIA_LOCATION_VIEW_SELECT_PREV, phoneLoc));
+        mediaLocEdit.commit();
         overridePendingTransition(R.anim.slide_from_left, R.anim.slide_to_right);
     }
 
@@ -151,8 +160,15 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
             mediaGrid.setOnItemClickListener((adapterView, view, position, l) -> {
                 if(VERBOSE)Log.d(TAG, "onItemSelected = "+position);
                 Intent mediaAct = new Intent(getApplicationContext(), MediaActivity.class);
-                mediaAct.putExtra("mediaPosition",position);
-                mediaAct.putExtra("fromGallery",true);
+//                mediaAct.putExtra("mediaPosition",position);
+//                mediaAct.putExtra("fromGallery",true);
+                SharedPreferences.Editor mediaLocEdit = sharedPreferences.edit();
+                mediaLocEdit.putString(Constants.MEDIA_LOCATION_VIEW_SELECT, selectedFolder);
+                mediaLocEdit.commit();
+                if(VERBOSE) Log.d(TAG, "SAVE selectedFolder = "+selectedFolder);
+                controlVisbilityPreference.setFromGallery(true);
+                controlVisbilityPreference.setPressBackFromGallery(false);
+                controlVisbilityPreference.setMediaSelectedPosition(position);
                 mediaAct.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(mediaAct);
             });

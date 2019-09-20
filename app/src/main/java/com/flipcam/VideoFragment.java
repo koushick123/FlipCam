@@ -113,6 +113,7 @@ public class VideoFragment extends Fragment{
     int audioSampleRate = -1;
     int audioBitRate = -1;
     int audioChannelInput = -1;
+    ControlVisbilityPreference controlVisbilityPreference;
 
     public static VideoFragment newInstance() {
         Log.d(TAG, "NEW INSTANCE");
@@ -389,6 +390,7 @@ public class VideoFragment extends Fragment{
                 }
             }
         }
+        controlVisbilityPreference = (ControlVisbilityPreference)getApplicationContext();
         return view;
     }
 
@@ -1156,6 +1158,12 @@ public class VideoFragment extends Fragment{
         setCameraClose();
         Intent mediaIntent = new Intent(getActivity().getApplicationContext(), MediaActivity.class);
         mediaIntent.putExtra("fromGallery", false);
+        SharedPreferences.Editor mediaLocEdit = sharedPreferences.edit();
+        String mediaLocValue = sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true) ?
+                getResources().getString(R.string.phoneLocation) : getResources().getString(R.string.sdcardLocation);
+        mediaLocEdit.putString(Constants.MEDIA_LOCATION_VIEW_SELECT, mediaLocValue);
+        mediaLocEdit.commit();
+        controlVisbilityPreference.setPressBackFromGallery(false);
         startActivity(mediaIntent);
     }
 

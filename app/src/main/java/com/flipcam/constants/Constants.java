@@ -49,6 +49,7 @@ public class Constants
     //To check if SD Card location is valid
     public static final String EMPTY = "";
     public static final String MEDIA_LOCATION_VIEW_SELECT = "Media_Location_View_Select";
+    public static final String MEDIA_LOCATION_VIEW_SELECT_PREV = "Media_Location_View_Select_Previous";
     //Phone Memory Limit
     public static final String PHONE_MEMORY_LIMIT = "PhoneMemoryLimit";
     public static final String PHONE_MEMORY_METRIC = "PhoneMemoryMetric";

@@ -112,6 +112,7 @@ public class PhotoFragment extends Fragment {
     Point size = new Point();
     Boolean prevPortrait = null;
     Context mContext;
+    ControlVisbilityPreference controlVisbilityPreference;
 
     public Context getApplicationContext() {
         return mContext;
@@ -352,6 +353,7 @@ public class PhotoFragment extends Fragment {
         };
         windowManager = (WindowManager) getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
         getWindowSize();
+        controlVisbilityPreference = (ControlVisbilityPreference)getApplicationContext();
         return view;
     }
 
@@ -851,6 +853,12 @@ public class PhotoFragment extends Fragment {
         setCameraClose();
         Intent intent = new Intent(getActivity().getApplicationContext(), MediaActivity.class);
         intent.putExtra("fromGallery",false);
+        controlVisbilityPreference.setPressBackFromGallery(false);
+        SharedPreferences.Editor mediaLocEdit = sharedPreferences.edit();
+        String mediaLocValue = sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true) ?
+                getResources().getString(R.string.phoneLocation) : getResources().getString(R.string.sdcardLocation);
+        mediaLocEdit.putString(Constants.MEDIA_LOCATION_VIEW_SELECT, mediaLocValue);
+        mediaLocEdit.commit();
         startActivity(intent);
     }
 

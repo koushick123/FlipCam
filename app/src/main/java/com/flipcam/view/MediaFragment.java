@@ -131,18 +131,30 @@ MediaPlayer.OnErrorListener, Serializable{
 
         if(getUserVisibleHint()) {
             if(!isImage()) {
-                Media newVideo;
-                if (savedInstanceState != null) {
-                    newVideo = savedInstanceState.getParcelable("currentVideo");
-                    if(newVideo != null){
-                        //Since we will re-construct the saved video using 'currentVideo' Parcelable, no need for this.
-                        //This Bundle is created to maintain the saved video state when the user minimizes the app or opens task manager directly.
-                        //We will use this in onResume() if it's not null.
-                        getActivity().getIntent().removeExtra("saveVideoForMinimize");
-                    }
-                    if(recreate){
-                        recreate = false;
-                        if(VERBOSE)Log.d(TAG,"recreate video");
+                if (isUseFCPlayer()) {
+                    Media newVideo;
+                    if (savedInstanceState != null) {
+                        newVideo = savedInstanceState.getParcelable("currentVideo");
+                        if (newVideo != null) {
+                            //Since we will re-construct the saved video using 'currentVideo' Parcelable, no need for this.
+                            //This Bundle is created to maintain the saved video state when the user minimizes the app or opens task manager directly.
+                            //We will use this in onResume() if it's not null.
+                            getActivity().getIntent().removeExtra("saveVideoForMinimize");
+                        }
+                        if (recreate) {
+                            recreate = false;
+                            if (VERBOSE) Log.d(TAG, "recreate video");
+                            newVideo = new Media();
+                            newVideo.setMediaActualDuration(duration);
+                            newVideo.setMediaCompleted(false);
+                            newVideo.setMediaControlsHide(true);
+                            newVideo.setMediaPlaying(false);
+                            newVideo.setMediaPosition(0);
+                            newVideo.setMediaPreviousPos(0);
+                            newVideo.setSeekDuration(Integer.parseInt(duration));
+                        }
+                    } else {
+                        if (VERBOSE) Log.d(TAG, "setup video");
                         newVideo = new Media();
                         newVideo.setMediaActualDuration(duration);
                         newVideo.setMediaCompleted(false);
@@ -152,22 +164,15 @@ MediaPlayer.OnErrorListener, Serializable{
                         newVideo.setMediaPreviousPos(0);
                         newVideo.setSeekDuration(Integer.parseInt(duration));
                     }
+                    if (VERBOSE) Log.d(TAG, "Set Seek BAR");
+                    reConstructVideo(newVideo);
+                    showTimeElapsed();
+                    calculateAndDisplayEndTime(Integer.parseInt(duration), true);
                 }
                 else{
-                    if(VERBOSE)Log.d(TAG,"setup video");
-                    newVideo = new Media();
-                    newVideo.setMediaActualDuration(duration);
-                    newVideo.setMediaCompleted(false);
-                    newVideo.setMediaControlsHide(true);
-                    newVideo.setMediaPlaying(false);
-                    newVideo.setMediaPosition(0);
-                    newVideo.setMediaPreviousPos(0);
-                    newVideo.setSeekDuration(Integer.parseInt(duration));
+                    removeVideoControls();
+                    setupPlayCircleForExternalPlayer();
                 }
-                if(VERBOSE)Log.d(TAG, "Set Seek BAR");
-                reConstructVideo(newVideo);
-                showTimeElapsed();
-                calculateAndDisplayEndTime(Integer.parseInt(duration), true);
             }
         }
         final GestureDetector detector = new GestureDetector(getActivity().getApplicationContext(), new GestureDetector.SimpleOnGestureListener(){
@@ -526,24 +531,26 @@ MediaPlayer.OnErrorListener, Serializable{
         if(VERBOSE)Log.d(TAG,"onSaveInstanceState = "+path+" , "+playInProgress);
         if(VERBOSE)Log.d(TAG,"getUserVisibleHint ? ="+getUserVisibleHint());
         if(!isImage()) {
-            outState.putBoolean("videoPlayed", playInProgress);
             if (getUserVisibleHint()) {
-                Media media = new Media();
-                media.setMediaPlaying(isMediaPlayingForMinmize);
-                media.setMediaPosition(mediaPositionForMinimize);
-                media.setMediaControlsHide(controlVisbilityPreference.isHideControl());
-                media.setMediaActualDuration(duration);
-                if(videoSeek != null) {
-                    media.setSeekDuration(videoSeek.getMax());
-                }
-                media.setMediaCompleted(isCompleted);
-                media.setMediaPreviousPos(previousPos);
-                outState.putParcelable("currentVideo",media);
-                if(VERBOSE)Log.d(TAG,"saving isplaying = "+media.isMediaPlaying());
-                if(VERBOSE)Log.d(TAG,"saving seek to = "+media.getMediaPosition());
-                getActivity().getIntent().putExtra("saveVideoForMinimize",media);
-                if(mediaPlayer.isPlaying()){
-                    mediaPlayer.pause();
+                if(isUseFCPlayer()) {
+                    outState.putBoolean("videoPlayed", playInProgress);
+                    Media media = new Media();
+                    media.setMediaPlaying(isMediaPlayingForMinmize);
+                    media.setMediaPosition(mediaPositionForMinimize);
+                    media.setMediaControlsHide(controlVisbilityPreference.isHideControl());
+                    media.setMediaActualDuration(duration);
+                    if (videoSeek != null) {
+                        media.setSeekDuration(videoSeek.getMax());
+                    }
+                    media.setMediaCompleted(isCompleted);
+                    media.setMediaPreviousPos(previousPos);
+                    outState.putParcelable("currentVideo", media);
+                    if (VERBOSE) Log.d(TAG, "saving isplaying = " + media.isMediaPlaying());
+                    if (VERBOSE) Log.d(TAG, "saving seek to = " + media.getMediaPosition());
+                    getActivity().getIntent().putExtra("saveVideoForMinimize", media);
+                    if (mediaPlayer.isPlaying()) {
+                        mediaPlayer.pause();
+                    }
                 }
             }
         }
@@ -609,6 +616,7 @@ MediaPlayer.OnErrorListener, Serializable{
     }
 
     private void setupPlayCircleForExternalPlayer(){
+        Log.d(TAG, "setupPlayCircleForExternalPlayer");
         playCircle.setVisibility(View.VISIBLE);
         playCircle.setImageDrawable(getResources().getDrawable(R.drawable.ic_external_play_circle_outline));
         playCircle.setOnClickListener((view) -> {
@@ -840,7 +848,6 @@ MediaPlayer.OnErrorListener, Serializable{
         if(VERBOSE)Log.d(TAG,"Path = "+images[framePosition].getPath());
         if (videoView != null) {
             if(VERBOSE)Log.d(TAG, "Save media state hide = "+controlVisbilityPreference.isHideControl());
-            //stopTrackerThread();
         }
         if(!isImage()) {
             if (getUserVisibleHint()) {
