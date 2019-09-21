@@ -114,8 +114,7 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
     public void onBackPressed() {
         super.onBackPressed();
         Log.d(TAG, "onBackPressed");
-        controlVisbilityPreference.setFromGallery(false);
-        controlVisbilityPreference.setPressBackFromGallery(true);
+        controlVisbilityPreference.setFromGallery(true);
         SharedPreferences.Editor mediaLocEdit = sharedPreferences.edit();
         //Since user did not select any media, go back to previous option for view
         mediaLocEdit.putString(Constants.MEDIA_LOCATION_VIEW_SELECT, sharedPreferences.getString(Constants.MEDIA_LOCATION_VIEW_SELECT_PREV, phoneLoc));
@@ -160,15 +159,13 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
             mediaGrid.setOnItemClickListener((adapterView, view, position, l) -> {
                 if(VERBOSE)Log.d(TAG, "onItemSelected = "+position);
                 Intent mediaAct = new Intent(getApplicationContext(), MediaActivity.class);
-//                mediaAct.putExtra("mediaPosition",position);
-//                mediaAct.putExtra("fromGallery",true);
                 SharedPreferences.Editor mediaLocEdit = sharedPreferences.edit();
                 mediaLocEdit.putString(Constants.MEDIA_LOCATION_VIEW_SELECT, selectedFolder);
                 mediaLocEdit.commit();
                 if(VERBOSE) Log.d(TAG, "SAVE selectedFolder = "+selectedFolder);
                 controlVisbilityPreference.setFromGallery(true);
-                controlVisbilityPreference.setPressBackFromGallery(false);
                 controlVisbilityPreference.setMediaSelectedPosition(position);
+                mediaAct.putExtra("fromGallery",true);
                 mediaAct.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(mediaAct);
             });

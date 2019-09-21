@@ -162,8 +162,12 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         sharedPreferences = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
         videoPrefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         videoControls = (LinearLayout)findViewById(R.id.videoControls);
-//        fromGallery = getIntent().getExtras().getBoolean("fromGallery");
-        fromGallery = controlVisbilityPreference.isFromGallery();
+        if(savedInstanceState == null) {
+            fromGallery = controlVisbilityPreference.isFromGallery();
+        }
+        else{
+            fromGallery = savedInstanceState.getBoolean("fromGallery");
+        }
         Log.d(TAG, "fromGallery = "+fromGallery);
         if(!fromGallery){
             if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
@@ -192,17 +196,10 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         mPagerAdapter = new MediaSlidePager(getSupportFragmentManager());
         mPager.setAdapter(mPagerAdapter);
         if(fromGallery) {
-//            int mediaPos = getIntent().getExtras().getInt("mediaPosition");
             int mediaPos = controlVisbilityPreference.getMediaSelectedPosition();
             if(VERBOSE)Log.d(TAG, "Intent extra = " +mediaPos);
             mPager.setCurrentItem(mediaPos);
             selectedPosition = previousSelectedFragment = mediaPos;
-        }
-        else if(getIntent().getExtras().getBoolean("fromMenu")){
-            int scrollPos = getIntent().getExtras().getInt("scrollTo");
-            Log.d(TAG, "go to page = "+scrollPos);
-            mPager.setCurrentItem(scrollPos);
-            selectedPosition = previousSelectedFragment = scrollPos;
         }
         deleteMedia = (ImageButton)findViewById(R.id.deleteMedia);
         deleteMedia.setOnClickListener((view) -> {
@@ -320,27 +317,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                     playCircle.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_circle_outline));
                     if (!controlVisbilityPreference.isHideControl()) {
                         if (VERBOSE) Log.d(TAG, "Show PlayForVideo");
-                        setupPlayForVideo(0);
-                        showPlayForVideo();
-                    }
-                }
-                else{
-                    removeVideoControls();
-                    setupPlayCircleForExternalPlayer();
-                }
-            }
-        }
-        else{
-            selectedPosition = savedInstanceState.getInt("selectedPosition");
-            if(VERBOSE)Log.d(TAG, "get selectedPosition = "+selectedPosition);
-            if(isImage(medias[selectedPosition].getPath())) {
-                removeVideoControls();
-                hidePlayForVideo();
-            }
-            else{
-                if(videoPrefs.getString(Constants.SELECT_VIDEO_PLAYER, externalPlayer).equalsIgnoreCase(fcPlayer)) {
-                    playCircle.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_circle_outline));
-                    if (!controlVisbilityPreference.isHideControl()) {
                         setupPlayForVideo(0);
                         showPlayForVideo();
                     }
@@ -573,7 +549,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 mediaInfo.setResolution(dimension);
                 File selectedFile = new File(path);
                 Date dateCreated = new Date(selectedFile.lastModified());
-                SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd MMMM yyyy HH:mm:ss");
+                SimpleDateFormat simpleDateFormat = new SimpleDateFormat(getResources().getString(R.string.mediaInfoDateFormat));
                 String dateDisplay = simpleDateFormat.format(dateCreated);
                 if (VERBOSE) Log.d(TAG, "Date display = " + dateDisplay);
                 mediaInfo.setDateCreated(dateDisplay);
@@ -683,22 +659,12 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         }
     }
 
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        if(VERBOSE)Log.d(TAG, "onSaveInstanceState = "+selectedPosition);
-        outState.putInt("selectedPosition",selectedPosition);
-    }
-
     public void setupPlayForVideo(final int videoPos){
         if(VERBOSE)Log.d(TAG, "setupPlayForVideo");
         playCircle.setClickable(true);
-        playCircle.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                MediaFragment currentFrag = hashMapFrags.get(videoPos);
-                startPlayingMedia(currentFrag, false);
-            }
+        playCircle.setOnClickListener((view) -> {
+            MediaFragment currentFrag = hashMapFrags.get(videoPos);
+            startPlayingMedia(currentFrag, false);
         });
     }
 
@@ -1063,16 +1029,16 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         super.onResume();
         fromGallery = controlVisbilityPreference.isFromGallery();
         if(VERBOSE)Log.d(TAG,"onResume from Gallery = "+fromGallery);
-        if(VERBOSE)Log.d(TAG,"controlVisbilityPreference.isPressBackFromGallery = "+controlVisbilityPreference.isPressBackFromGallery());
+//        if(VERBOSE)Log.d(TAG,"controlVisbilityPreference.isPressBackFromGallery = "+controlVisbilityPreference.isPressBackFromGallery());
         mPager.addOnPageChangeListener(this);
         mediaFilters.addAction(Intent.ACTION_MEDIA_UNMOUNTED);
         mediaFilters.addDataScheme("file");
         registerReceiver(sdCardEventReceiver, mediaFilters);
-        if(controlVisbilityPreference.isPressBackFromGallery()){
+        /*if(controlVisbilityPreference.isPressBackFromGallery()){
             //User has pressed back button from Gallery. Need to reload previous media select option.
             checkAndLoadMediaFromMediaLocationOption(true);
             return;
-        }
+        }*/
         if(!fromGallery) {
             if (!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)) {
                 if (doesSDCardExist() == null) {

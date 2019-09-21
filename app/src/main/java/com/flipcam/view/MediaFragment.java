@@ -428,7 +428,6 @@ MediaPlayer.OnErrorListener, Serializable{
             if(savedInstanceState!=null){
                 imageScaled = savedInstanceState.getBoolean("imageScaled");
             }
-
         }
         else {
             if(VERBOSE)Log.d(TAG,"show video");

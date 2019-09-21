@@ -237,7 +237,7 @@
     <string name="videoPlayerHeading">Video Player</string>
     <string name="videoPlayerSummary">Choose a player to playback videos.</string>
     <string name="videoFCPlayer">FlipCam Video Player</string>
-    <string name="videoPlayerMessage">Using External media player. Click here to change media player.</string>
+    <string name="videoPlayerMessage">FlipCam will use External media player to play videos.\nThis can be changed in Settings.</string>
     <string name="videoExternalPlayer">External Video Player</string>
     <string name="photoResolutionDialogHeadingRear">Rear Camera Photo Resolutions</string>
     <string name="photoResolutionDialogHeadingFront">Front Camera Photo Resolutions</string>
@@ -289,6 +289,7 @@
     <string name="mediaInfoDateCreated">DATE CREATED :&#160;</string>
     <string name="mediaInfoDimension">DIMENSION :&#160;</string>
     <string name="closeButton">CLOSE</string>
+    <string name="mediaInfoDateFormat">dd MMMM yyyy HH:mm:ss</string>
     //Nokia 7.1 model
     <string name="nokia71">Nokia 7.1</string>
 </resources>

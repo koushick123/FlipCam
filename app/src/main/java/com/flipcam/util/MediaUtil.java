@@ -2,7 +2,6 @@ package com.flipcam.util;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.os.Build;
 import android.os.Environment;
 import android.util.Log;
 
@@ -12,12 +11,8 @@ import com.flipcam.media.FileMedia;
 import com.flipcam.media.FileMediaLastModifiedComparator;
 
 import java.io.File;
-import java.io.FileFilter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Created by koushick on 23-Nov-17.
@@ -193,7 +188,12 @@ public class MediaUtil {
     }
 
     public static boolean doesPathExist(String path){
-        sortAsPerLatest();
+        if(fromGallery) {
+            sortAsPerLatestForGallery();
+        }
+        else{
+            sortAsPerLatest();
+        }
         for(int i=0;i<mediaList.length;i++){
             if(path.equalsIgnoreCase(mediaList[i].getPath())){
                 return true;

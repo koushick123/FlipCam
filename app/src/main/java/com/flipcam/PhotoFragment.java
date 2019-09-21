@@ -852,8 +852,7 @@ public class PhotoFragment extends Fragment {
     {
         setCameraClose();
         Intent intent = new Intent(getActivity().getApplicationContext(), MediaActivity.class);
-        intent.putExtra("fromGallery",false);
-        controlVisbilityPreference.setPressBackFromGallery(false);
+        controlVisbilityPreference.setFromGallery(false);
         SharedPreferences.Editor mediaLocEdit = sharedPreferences.edit();
         String mediaLocValue = sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true) ?
                 getResources().getString(R.string.phoneLocation) : getResources().getString(R.string.sdcardLocation);

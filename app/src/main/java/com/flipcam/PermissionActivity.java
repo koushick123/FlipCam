@@ -152,6 +152,12 @@ public class PermissionActivity extends AppCompatActivity {
                 editor.remove(Constants.SELECT_PHOTO_RESOLUTION_FRONT);
                 editor.remove(Constants.SELECT_VIDEO_PLAYER);
                 editor.commit();
+                String phoneLoc = getResources().getString(R.string.phoneLocation);
+                SharedPreferences.Editor mediaLocEditor = sharedPreferences.edit();
+                mediaLocEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
+                mediaLocEditor.putString(Constants.MEDIA_LOCATION_VIEW_SELECT, phoneLoc);
+                mediaLocEditor.putString(Constants.MEDIA_LOCATION_VIEW_SELECT_PREV, phoneLoc);
+                mediaLocEditor.commit();
                 if(VERBOSE)Log.d(TAG, "REMOVED SHAREDPREFS");
                 ActivityCompat.requestPermissions(this,
                         new String[]{Manifest.permission.CAMERA,Manifest.permission.RECORD_AUDIO,Manifest.permission.WRITE_EXTERNAL_STORAGE},

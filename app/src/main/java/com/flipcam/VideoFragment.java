@@ -1157,13 +1157,12 @@ public class VideoFragment extends Fragment{
     {
         setCameraClose();
         Intent mediaIntent = new Intent(getActivity().getApplicationContext(), MediaActivity.class);
-        mediaIntent.putExtra("fromGallery", false);
         SharedPreferences.Editor mediaLocEdit = sharedPreferences.edit();
         String mediaLocValue = sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true) ?
                 getResources().getString(R.string.phoneLocation) : getResources().getString(R.string.sdcardLocation);
         mediaLocEdit.putString(Constants.MEDIA_LOCATION_VIEW_SELECT, mediaLocValue);
         mediaLocEdit.commit();
-        controlVisbilityPreference.setPressBackFromGallery(false);
+        controlVisbilityPreference.setFromGallery(false);
         startActivity(mediaIntent);
     }
 
