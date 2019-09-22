@@ -771,6 +771,27 @@ public class PhotoFragment extends Fragment {
     }
     String filePath = "";
 
+    private void updateMicroThumbnailAsPerPlayer(){
+        if(isUseFCPlayer()){
+            microThumbnail.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_circle_outline));
+        }
+        else{
+            microThumbnail.setImageDrawable(getResources().getDrawable(R.drawable.ic_external_play_circle_outline));
+        }
+    }
+
+    private boolean isUseFCPlayer(){
+        String fcPlayer = getResources().getString(R.string.videoFCPlayer);
+        String externalPlayer = getResources().getString(R.string.videoExternalPlayer);
+        SharedPreferences videoPrefs = PreferenceManager.getDefaultSharedPreferences(getContext());
+        if(videoPrefs.getString(Constants.SELECT_VIDEO_PLAYER, externalPlayer).equalsIgnoreCase(fcPlayer)){
+            return true;
+        }
+        else{
+            return false;
+        }
+    }
+
     public void deleteFileAndRefreshThumbnail(){
         File badFile = new File(filePath);
         badFile.delete();
@@ -802,6 +823,7 @@ public class PhotoFragment extends Fragment {
                     vid = Bitmap.createScaledBitmap(vid, (int) getResources().getDimension(R.dimen.thumbnailWidth),
                             (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
                     thumbnail.setImageBitmap(vid);
+                    updateMicroThumbnailAsPerPlayer();
                     microThumbnail.setVisibility(View.VISIBLE);
                     thumbnail.setClickable(true);
                     thumbnail.setOnClickListener(new View.OnClickListener() {

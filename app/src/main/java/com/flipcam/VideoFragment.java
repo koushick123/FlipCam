@@ -474,6 +474,18 @@ public class VideoFragment extends Fragment{
         }
     }
 
+    private boolean isUseFCPlayer(){
+        String fcPlayer = getResources().getString(R.string.videoFCPlayer);
+        String externalPlayer = getResources().getString(R.string.videoExternalPlayer);
+        SharedPreferences videoPrefs = PreferenceManager.getDefaultSharedPreferences(getContext());
+        if(videoPrefs.getString(Constants.SELECT_VIDEO_PLAYER, externalPlayer).equalsIgnoreCase(fcPlayer)){
+            return true;
+        }
+        else{
+            return false;
+        }
+    }
+
     public void prepareAndStartRecord(){
         AudioManager audioManager = cameraView.getAudioManager();
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && Build.VERSION.SDK_INT < Build.VERSION_CODES.M){
@@ -1045,6 +1057,7 @@ public class VideoFragment extends Fragment{
         showRecordSaved();
         addMediaToDB();
         if(!isDetached) {
+            updateMicroThumbnailAsPerPlayer();
             microThumbnail.setVisibility(View.VISIBLE);
             thumbnail.setImageBitmap(firstFrame);
             thumbnail.setClickable(true);
@@ -1054,6 +1067,15 @@ public class VideoFragment extends Fragment{
                     openMedia();
                 }
             });
+        }
+    }
+
+    private void updateMicroThumbnailAsPerPlayer(){
+        if(isUseFCPlayer()){
+            microThumbnail.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_circle_outline));
+        }
+        else{
+            microThumbnail.setImageDrawable(getResources().getDrawable(R.drawable.ic_external_play_circle_outline));
         }
     }
 
@@ -1106,6 +1128,7 @@ public class VideoFragment extends Fragment{
                     vid = Bitmap.createScaledBitmap(vid, (int) getResources().getDimension(R.dimen.thumbnailWidth),
                             (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
                     thumbnail.setImageBitmap(vid);
+                    updateMicroThumbnailAsPerPlayer();
                     microThumbnail.setVisibility(View.VISIBLE);
                     if(VERBOSE)Log.d(TAG, "set as image bitmap");
                     thumbnail.setClickable(true);
