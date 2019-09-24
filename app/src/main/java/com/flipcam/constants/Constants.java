@@ -85,6 +85,7 @@ public class Constants
     public static final String CAMPROFILE_FOR_RECORD_LOW = "CamcorderProfileForRecordLow";
     //Video Player
     public static final String SELECT_VIDEO_PLAYER = "SelectVideoPlayer";
+    public static final String SHOW_EXTERNAL_PLAYER_MESSAGE = "ShowExternalPlayerMessage";
     //Normal brightness level
     public static final int NORMAL_BRIGHTNESS = 5;
     public static final float NORMAL_BRIGHTNESS_PROGRESS = 0.0f;

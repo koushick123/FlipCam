@@ -151,6 +151,7 @@ public class PermissionActivity extends AppCompatActivity {
                 editor.remove(Constants.SUPPORT_PHOTO_RESOLUTIONS_FRONT);
                 editor.remove(Constants.SELECT_PHOTO_RESOLUTION_FRONT);
                 editor.remove(Constants.SELECT_VIDEO_PLAYER);
+                editor.putBoolean(Constants.SHOW_EXTERNAL_PLAYER_MESSAGE, true);
                 editor.commit();
                 String phoneLoc = getResources().getString(R.string.phoneLocation);
                 SharedPreferences.Editor mediaLocEditor = sharedPreferences.edit();

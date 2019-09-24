@@ -41,6 +41,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -110,6 +111,8 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     Dialog permissionFB;
     Dialog appNotExist;
     Dialog mediaLocation;
+    Dialog taskAlert;
+    Dialog mediaMsg;
     NotificationManager mNotificationManager;
     Bitmap notifyIcon;
     Uri queueNotification;
@@ -118,9 +121,8 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     View taskInProgressRoot;
     View mediaLocationView;
     View mediaInfoView;
+    View externalPlayerView;
     LayoutInflater layoutInflater;
-    Dialog taskAlert;
-    Dialog mediaMsg;
     IntentFilter mediaFilters;
     SharedPreferences sharedPreferences;
     SharedPreferences videoPrefs;
@@ -137,6 +139,9 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     boolean fromGallery = false;
     String fcPlayer;
     String externalPlayer;
+    Dialog externalPlayerDialog;
+    CheckBox donotShowBox;
+    Button externalPlayerClose;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -324,6 +329,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 else{
                     removeVideoControls();
                     setupPlayCircleForExternalPlayer();
+                    showExternalPlayerMessage();
                 }
             }
         }
@@ -342,9 +348,10 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         notifyIcon = BitmapFactory.decodeResource(getApplicationContext().getResources(),R.drawable.ic_launcher);
         mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         queueNotification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-        layoutInflater = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         taskInProgressRoot = layoutInflater.inflate(R.layout.task_in_progress, null);
         taskAlert = new Dialog(this);
+        externalPlayerView = layoutInflater.inflate(R.layout.external_player_message, null);
+        externalPlayerDialog = new Dialog(this);
         appWidgetManager = (AppWidgetManager)getSystemService(Context.APPWIDGET_SERVICE);
         phoneLoc = getResources().getString(R.string.phoneLocation);
         sdcardLoc = getResources().getString(R.string.sdcardLocation);
@@ -372,6 +379,25 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             }
         }
     };
+
+    private void showExternalPlayerMessage(){
+        if(videoPrefs.getBoolean(Constants.SHOW_EXTERNAL_PLAYER_MESSAGE,false)) {
+            donotShowBox = externalPlayerView.findViewById(R.id.externalVideoPlayerRoot).findViewById(R.id.donotShowAgain);
+            externalPlayerClose = externalPlayerView.findViewById(R.id.externalVideoPlayerRoot).findViewById(R.id.closeButton);
+            externalPlayerClose.setOnClickListener((view) -> {
+                externalPlayerDialog.dismiss();
+            });
+            donotShowBox.setOnClickListener((view) -> {
+                if(VERBOSE)Log.d(TAG, "DO NOT SHOW AGAIN");
+                SharedPreferences.Editor editor = videoPrefs.edit();
+                editor.remove(Constants.SHOW_EXTERNAL_PLAYER_MESSAGE);
+                editor.commit();
+            });
+            externalPlayerDialog.setContentView(externalPlayerView);
+            externalPlayerDialog.setCancelable(true);
+            externalPlayerDialog.show();
+        }
+    }
 
     public Dialog getMediaLocation(){
         return mediaLocation;
@@ -826,6 +852,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             else{
                 removeVideoControls();
                 setupPlayCircleForExternalPlayer();
+                showExternalPlayerMessage();
             }
         }
         previousSelectedFragment = position;
