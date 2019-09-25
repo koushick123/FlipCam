@@ -139,9 +139,9 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     boolean fromGallery = false;
     String fcPlayer;
     String externalPlayer;
-    Dialog externalPlayerDialog;
+    Dialog externalPlayerDialog = null;
     CheckBox donotShowBox;
-    Button externalPlayerClose;
+    ImageView externalPlayerClose;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -167,6 +167,8 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         sharedPreferences = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
         videoPrefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         videoControls = (LinearLayout)findViewById(R.id.videoControls);
+        externalPlayerView = layoutInflater.inflate(R.layout.external_player_message, null);
+        externalPlayerDialog = new Dialog(this);
         if(savedInstanceState == null) {
             fromGallery = controlVisbilityPreference.isFromGallery();
         }
@@ -350,8 +352,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         queueNotification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
         taskInProgressRoot = layoutInflater.inflate(R.layout.task_in_progress, null);
         taskAlert = new Dialog(this);
-        externalPlayerView = layoutInflater.inflate(R.layout.external_player_message, null);
-        externalPlayerDialog = new Dialog(this);
         appWidgetManager = (AppWidgetManager)getSystemService(Context.APPWIDGET_SERVICE);
         phoneLoc = getResources().getString(R.string.phoneLocation);
         sdcardLoc = getResources().getString(R.string.sdcardLocation);
@@ -382,18 +382,29 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
 
     private void showExternalPlayerMessage(){
         if(videoPrefs.getBoolean(Constants.SHOW_EXTERNAL_PLAYER_MESSAGE,false)) {
+            WindowManager.LayoutParams winParams = externalPlayerDialog.getWindow().getAttributes();
+            winParams.gravity = Gravity.BOTTOM;
+            winParams.y = 60;
+            externalPlayerDialog.getWindow().setAttributes(winParams);
+            externalPlayerDialog.setContentView(externalPlayerView);
+            externalPlayerDialog.setCancelable(true);
             donotShowBox = externalPlayerView.findViewById(R.id.externalVideoPlayerRoot).findViewById(R.id.donotShowAgain);
             externalPlayerClose = externalPlayerView.findViewById(R.id.externalVideoPlayerRoot).findViewById(R.id.closeButton);
             externalPlayerClose.setOnClickListener((view) -> {
                 externalPlayerDialog.dismiss();
             });
             donotShowBox.setOnClickListener((view) -> {
-                if(VERBOSE)Log.d(TAG, "DO NOT SHOW AGAIN");
                 SharedPreferences.Editor editor = videoPrefs.edit();
-                editor.remove(Constants.SHOW_EXTERNAL_PLAYER_MESSAGE);
+                if(donotShowBox.isChecked()) {
+                    if(VERBOSE)Log.d(TAG, "DO NOT SHOW AGAIN");
+                    editor.remove(Constants.SHOW_EXTERNAL_PLAYER_MESSAGE);
+                }
+                else{
+                    if(VERBOSE)Log.d(TAG, "DO NOT SHOW AGAIN-- Unchecked");
+                    editor.putBoolean(Constants.SHOW_EXTERNAL_PLAYER_MESSAGE, true);
+                }
                 editor.commit();
             });
-            externalPlayerDialog.setContentView(externalPlayerView);
             externalPlayerDialog.setCancelable(true);
             externalPlayerDialog.show();
         }
@@ -974,6 +985,8 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     public void onPageScrollStateChanged(int state) {
     }
 
+    StringBuffer timeToDisplay = new StringBuffer();
+
     public void calculateAndDisplayEndTime(int latestPos, boolean eTime, int videoPos)
     {
         int videoLength = latestPos;
@@ -988,38 +1001,53 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             }
             secs = secs % 60;
         }
-        String showSec = "0";
-        String showMin = "0";
-        String showHr = "0";
+        StringBuffer showSec = new StringBuffer("0");
+        StringBuffer showMin = new StringBuffer("0");
+        StringBuffer showHr = new StringBuffer("0");
         if(secs < 10){
-            showSec += secs;
+            showSec.append(secs);
         }
         else{
-            showSec = secs+"";
+            showSec.delete(0, showSec.length());
+            showSec.append(secs);
         }
 
         if(mins < 10){
-            showMin += mins;
+            showMin.append(mins);
         }
         else{
-            showMin = mins+"";
+            showMin.delete(0, showMin.length());
+            showMin.append(mins);
         }
 
         if(hour < 10){
-            showHr += hour;
+            showHr.append(hour);
         }
         else{
-            showHr = hour+"";
+            showHr.delete(0, showHr.length());
+            showHr.append(hour);
         }
         if(eTime) {
             startTime.setText(getResources().getString(R.string.START_TIME));
-            endTime.setText(showHr + " : " + showMin + " : " + showSec);
+            timeToDisplay.delete(0, timeToDisplay.length());
+            timeToDisplay.append(showHr);
+            timeToDisplay.append(" : ");
+            timeToDisplay.append(showMin);
+            timeToDisplay.append(" : ");
+            timeToDisplay.append(showSec);
+            endTime.setText(timeToDisplay.toString());
         }
         else{
             hashMapFrags.get(videoPos).setSeconds(secs);
             hashMapFrags.get(videoPos).setMinutes(mins);
             hashMapFrags.get(videoPos).setHours(hour);
-            startTime.setText(showHr + " : " + showMin + " : " + showSec);
+            timeToDisplay.delete(0, timeToDisplay.length());
+            timeToDisplay.append(showHr);
+            timeToDisplay.append(" : ");
+            timeToDisplay.append(showMin);
+            timeToDisplay.append(" : ");
+            timeToDisplay.append(showSec);
+            endTime.setText(timeToDisplay.toString());
         }
     }
 
@@ -1056,16 +1084,10 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         super.onResume();
         fromGallery = controlVisbilityPreference.isFromGallery();
         if(VERBOSE)Log.d(TAG,"onResume from Gallery = "+fromGallery);
-//        if(VERBOSE)Log.d(TAG,"controlVisbilityPreference.isPressBackFromGallery = "+controlVisbilityPreference.isPressBackFromGallery());
         mPager.addOnPageChangeListener(this);
         mediaFilters.addAction(Intent.ACTION_MEDIA_UNMOUNTED);
         mediaFilters.addDataScheme("file");
         registerReceiver(sdCardEventReceiver, mediaFilters);
-        /*if(controlVisbilityPreference.isPressBackFromGallery()){
-            //User has pressed back button from Gallery. Need to reload previous media select option.
-            checkAndLoadMediaFromMediaLocationOption(true);
-            return;
-        }*/
         if(!fromGallery) {
             if (!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)) {
                 if (doesSDCardExist() == null) {

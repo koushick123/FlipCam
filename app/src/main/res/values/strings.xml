@@ -237,8 +237,8 @@
     <string name="videoPlayerHeading">Video Player</string>
     <string name="videoPlayerSummary">Choose a player to playback videos.</string>
     <string name="videoFCPlayer">FlipCam Video Player</string>
-    <string name="externalVideoPlayerMessage">FlipCam will use your favorite media player to play videos.\n
-        This can be changed in Settings.</string>
+    <string name="externalVideoPlayerMessage">FlipCam will use your favorite media player to play videos.\n\n
+        This can be changed in Video Settings.</string>
     <string name="externalVideoPlayerCheckbox">Do not Show Again</string>
     <string name="externalVideoPlayerTitle">Favorite Video Player</string>
     <string name="externalPlayerOkToClose">CLOSE</string>
