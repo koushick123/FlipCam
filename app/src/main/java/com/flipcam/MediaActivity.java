@@ -142,6 +142,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     Dialog externalPlayerDialog = null;
     CheckBox donotShowBox;
     ImageView externalPlayerClose;
+    boolean externalPlayerMessageShown = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -331,7 +332,10 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 else{
                     removeVideoControls();
                     setupPlayCircleForExternalPlayer();
-                    showExternalPlayerMessage();
+                    if(!externalPlayerMessageShown) {
+                        externalPlayerMessageShown = true;
+                        showExternalPlayerMessage();
+                    }
                 }
             }
         }
@@ -863,7 +867,10 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             else{
                 removeVideoControls();
                 setupPlayCircleForExternalPlayer();
-                showExternalPlayerMessage();
+                if(!externalPlayerMessageShown) {
+                    externalPlayerMessageShown = true;
+                    showExternalPlayerMessage();
+                }
             }
         }
         previousSelectedFragment = position;
