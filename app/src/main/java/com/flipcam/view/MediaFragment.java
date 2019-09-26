@@ -308,7 +308,6 @@ MediaPlayer.OnErrorListener, Serializable{
         previousPos = savedVideo.getMediaPreviousPos();
 
         //Get CURRENT TIME
-        //if(VERBOSE)Log.d(TAG, "Retrieve current time = " + savedInstanceState.getString(MEDIA_CURRENT_TIME));
         if(VERBOSE)Log.d(TAG, "Retrieve current time = " +savedVideo.getMediaPosition() / 1000);
         if(!isCompleted) {
             seconds = savedVideo.getMediaPosition() / 1000;

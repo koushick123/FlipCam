@@ -23,18 +23,18 @@ public class SDCardUtil {
     public static String doesSDCardExist(Context context){
         File[] mediaDirs = context.getExternalMediaDirs();
         if(mediaDirs != null) {
-            if(VERBOSE) Log.d(TAG, "mediaDirs = " + mediaDirs.length);
-        }
-        for(int i=0;i<mediaDirs.length;i++){
-            if(VERBOSE)Log.d(TAG, "external media dir = "+mediaDirs[i]);
-            if(mediaDirs[i] != null) {
-                try {
-                    if (Environment.isExternalStorageRemovable(mediaDirs[i])) {
-                        if(VERBOSE)Log.d(TAG, "Removable storage = " + mediaDirs[i]);
-                        return mediaDirs[i].getPath();
+            if (VERBOSE) Log.d(TAG, "mediaDirs = " + mediaDirs.length);
+            for (int i = 0; i < mediaDirs.length; i++) {
+                if (VERBOSE) Log.d(TAG, "external media dir = " + mediaDirs[i]);
+                if (mediaDirs[i] != null) {
+                    try {
+                        if (Environment.isExternalStorageRemovable(mediaDirs[i])) {
+                            if (VERBOSE) Log.d(TAG, "Removable storage = " + mediaDirs[i]);
+                            return mediaDirs[i].getPath();
+                        }
+                    } catch (IllegalArgumentException illegal) {
+                        if (VERBOSE) Log.d(TAG, "Not a valid storage device");
                     }
-                } catch (IllegalArgumentException illegal) {
-                    if(VERBOSE)Log.d(TAG, "Not a valid storage device");
                 }
             }
         }

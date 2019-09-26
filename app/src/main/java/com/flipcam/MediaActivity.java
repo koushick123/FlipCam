@@ -40,9 +40,7 @@ import android.view.Surface;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.widget.Button;
 import android.widget.CheckBox;
-import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -308,7 +306,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             clearMediaPreferences();
             controlVisbilityPreference.setHideControl(true);
             reDrawPause();
-            reDrawTopMediaControls();
             //When coming from gallery check media type based on selected position.
             if(!fromGallery){
                 selectedPosition = 0;
@@ -500,27 +497,11 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         }
     }
 
-    public void reDrawTopMediaControls(){
-        FrameLayout.LayoutParams topMediaParams = new FrameLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        if(display.getRotation() == Surface.ROTATION_0){
-            topMediaParams.height = (int) getResources().getDimension(R.dimen.topMediaBarPortrait);
-            deleteMedia.setImageDrawable(getResources().getDrawable(R.drawable.ic_delete_portrait));
-            shareMedia.setImageDrawable(getResources().getDrawable(R.drawable.ic_share_portrait));
-        }
-        else{
-            topMediaParams.height = (int) getResources().getDimension(R.dimen.topMediaBarLandscape);
-            deleteMedia.setImageDrawable(getResources().getDrawable(R.drawable.ic_delete));
-            shareMedia.setImageDrawable(getResources().getDrawable(R.drawable.ic_share));
-        }
-        topMediaControls.setLayoutParams(topMediaParams);
-    }
-
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         if(VERBOSE)Log.d(TAG,"onConfigurationChanged = "+display.getRotation());
         reDrawPause();
-        reDrawTopMediaControls();
     }
 
     public String doesSDCardExist(){
@@ -614,8 +595,8 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         TextView mediaDateCreated = mediaInfoView.findViewById(R.id.dateCreated);
         TextView mediaSize = mediaInfoView.findViewById(R.id.size);
         TextView mediaInfoTitle = mediaInfoView.findViewById(R.id.mediaInfoTitle);
-        Button okBtn = mediaInfoView.findViewById(R.id.okButton);
-        okBtn.setOnClickListener((view) -> {
+        ImageView closeButton = mediaInfoView.findViewById(R.id.closeBtn);
+        closeButton.setOnClickListener((view) -> {
             mediaMsg.dismiss();
         });
         //Set the labels and values for Media Info

@@ -325,7 +325,6 @@ public class VideoFragment extends Fragment{
                                     sdCardUnavailWarned = true;
                                     settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
                                     settingsEditor.commit();
-//                                showSDCardUnavailableMessage();
                                     showErrorWarningMessage(getResources().getString(R.string.sdCardRemovedTitle), getResources().getString(R.string.sdCardNotPresentForRecord));
                                     getLatestFileIfExists();
                                 }
@@ -717,7 +716,6 @@ public class VideoFragment extends Fragment{
                     SharedPreferences.Editor settingsEditor = sharedPreferences.edit();
                     settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
                     settingsEditor.commit();
-//                    showSDCardUnavailWhileRecordMessage();
                     showErrorWarningMessage(getResources().getString(R.string.sdCardRemovedTitle), getResources().getString(R.string.sdCardRemovedWhileRecord));
                     getLatestFileIfExists();
                     new Thread(() -> {

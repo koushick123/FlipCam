@@ -96,23 +96,24 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="20dp"
+        android:layout_gravity="center"
+        android:layout_marginBottom="@dimen/okBtnParentBottomMargin"
         android:gravity="center"
         android:orientation="horizontal">
 
-        <Button
-            android:id="@+id/okButton"
-            android:layout_width="0dp"
+        <ImageView
+            android:id="@+id/closeBtn"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/okBtnLeftAndRightMargin"
             android:layout_marginTop="@dimen/okBtnTopMargin"
             android:layout_marginEnd="@dimen/okBtnLeftAndRightMargin"
             android:layout_marginBottom="@dimen/okBtnBottomMargin"
-            android:layout_weight="0.5"
-            android:background="@color/thumbnailPlaceholder"
+            android:contentDescription="@string/closeBtnContentDescription"
             android:onClick="okToClose"
             android:text="@string/closeButton"
-            android:textColor="@color/turqoise" />
+            android:textColor="@color/turqoise"
+            app:srcCompat="@android:drawable/ic_menu_close_clear_cancel" />
     </LinearLayout>
 
 </LinearLayout>

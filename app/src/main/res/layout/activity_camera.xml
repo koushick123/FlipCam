@@ -61,16 +61,17 @@
         <ImageButton
             android:id="@+id/settings"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="35dp"
             android:layout_gravity="center"
-            android:layout_marginBottom="@dimen/settingsTopAndBottomMargin"
-            android:layout_marginEnd="@dimen/settingRightMargin"
             android:layout_marginTop="@dimen/settingsTopAndBottomMargin"
+            android:layout_marginEnd="@dimen/settingRightMargin"
+            android:layout_marginBottom="@dimen/settingsTopAndBottomMargin"
             android:layout_weight="0.5"
             android:background="@drawable/ripple"
             android:contentDescription="@string/settings"
             android:onClick="goToSettings"
-            android:src="@drawable/settings" />
+            android:scaleType="centerInside"
+            android:src="@drawable/settings_new" />
     </LinearLayout>
 
     <LinearLayout

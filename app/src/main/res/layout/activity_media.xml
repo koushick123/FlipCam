@@ -71,9 +71,10 @@
             android:layout_weight=".25"
             android:background="@drawable/ripple"
             android:contentDescription="@string/deleteMedia"
-            android:paddingTop="5dp"
-            android:paddingBottom="5dp"
-            android:src="@drawable/ic_delete" />
+            android:paddingTop="7dp"
+            android:paddingBottom="7dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/delete" />
 
         <ImageButton
             android:id="@+id/shareMedia"
@@ -82,9 +83,10 @@
             android:layout_weight=".25"
             android:background="@drawable/ripple"
             android:contentDescription="@string/shareMedia"
-            android:paddingTop="5dp"
-            android:paddingBottom="5dp"
-            android:src="@drawable/ic_share" />
+            android:paddingTop="7dp"
+            android:paddingBottom="7dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/share" />
 
         <ImageView
             android:id="@+id/folderViewOn"

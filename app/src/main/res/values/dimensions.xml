@@ -166,6 +166,7 @@
     //Dimensions for Media Info
     <dimen name="mediaInfoTopMargin">15dp</dimen>
     <dimen name="mediaInfoStartMargin">15dp</dimen>
-    <dimen name="okBtnBottomMargin">20dp</dimen>
-    <dimen name="okBtnTopMargin">20dp</dimen>
+    <dimen name="okBtnBottomMargin">5dp</dimen>
+    <dimen name="okBtnParentBottomMargin">5dp</dimen>
+    <dimen name="okBtnTopMargin">5dp</dimen>
 </resources>
