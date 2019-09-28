@@ -432,12 +432,12 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
 
     @Override
     public void setPhotoFragmentInstance(PhotoFragment photoFragment) {
-        photoFrag = photoFragment;
+        this.photoFrag = photoFragment;
     }
 
     @Override
     public void setVideoFragmentInstance(VideoFragment videoFragment) {
-        videoFrag = videoFragment;
+        this.videoFrag = videoFragment;
     }
 
     @Override
@@ -632,7 +632,6 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     }
 
     private void chooseHighestResolution() {
-
         SharedPreferences sharedPreferences = obtainSettingsPrefs();
         if(sharedPreferences.getString(Constants.VIDEO_DIMENSION_HIGH, null) == null) {
             CamcorderProfile highProfile = CamcorderProfile.get(CamcorderProfile.QUALITY_HIGH);
@@ -666,7 +665,6 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         if(VERBOSE)Log.d(TAG, "highestWidth for this camera = "+highestWidth);
         if(VERBOSE)Log.d(TAG, "highestHeight for this camera = "+highestHeight);
         if(highestWidth > resources.getInteger(R.integer.fullHDWidth)){
-
             //Choose a resolution that matches closest to 1080P, as medium resolution.
             if(CamcorderProfile.hasProfile(cameraId, CamcorderProfile.QUALITY_1080P)) {
                 if (VERBOSE) Log.d(TAG, "SET 1080P as medium");

@@ -325,8 +325,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                         setupPlayForVideo(0);
                         showPlayForVideo();
                     }
-                }
-                else{
+                } else{
                     removeVideoControls();
                     setupPlayCircleForExternalPlayer();
                     if(!externalPlayerMessageShown) {
@@ -732,6 +731,14 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         return isIntentSafe;
     }
 
+    public boolean doesAppExistForVideoIntent(Intent shareIntent){
+        PackageManager packageManager = getPackageManager();
+        List activities = packageManager.queryIntentActivities(shareIntent, PackageManager.MATCH_DEFAULT_ONLY);
+        if(VERBOSE)Log.d(TAG, "No of apps that can play video = "+activities.size());
+        boolean isIntentSafe = activities.size() > 0;
+        return isIntentSafe;
+    }
+
     public void okToClose(View view){
         noConnAlert.dismiss();
     }
@@ -787,7 +794,25 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(medias[selectedPosition].getPath()));
             intent.setDataAndType(Uri.parse(medias[selectedPosition].getPath()),
                     getResources().getString(R.string.videoType));
-            startActivity(intent);
+            if(doesAppExistForVideoIntent(intent)) {
+                startActivity(intent);
+            }
+            else{
+                //Reset Video player to FC Player.
+                Toast externalPlayerNotFound = new Toast(this);
+                externalPlayerNotFound.setView(LayoutInflater.from(this).inflate(R.layout.external_player_not_found, null));
+                externalPlayerNotFound.setDuration(Toast.LENGTH_LONG);
+                externalPlayerNotFound.setGravity(Gravity.BOTTOM, 0,0);
+                externalPlayerNotFound.show();
+                playCircle.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_circle_outline));
+                showControls();
+                setupVideo(hashMapFrags.get(selectedPosition), selectedPosition);
+                playCircle.setVisibility(View.GONE);
+                SharedPreferences.Editor editor = videoPrefs.edit();
+                editor.putString(Constants.SELECT_VIDEO_PLAYER, getApplicationContext().getResources().getString(R.string.videoFCPlayer));
+                editor.commit();
+                if(VERBOSE)Log.d(TAG,"VIDEO PLAYER CHANGED TO FC");
+            }
         });
     }
 

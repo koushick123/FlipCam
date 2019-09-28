@@ -36,8 +36,6 @@ public class Constants
     public static final long FIRST_SEC_MICRO = 1000000;
     //To update seek bar
     public static final int VIDEO_SEEK_UPDATE = 100;
-    //Constant for retry count to upload media
-    public static final int RETRY_COUNT = 30;
     //Message for upload progress
     public static final int UPLOAD_PROGRESS = 1000;
     //Settings prefs

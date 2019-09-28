@@ -3,6 +3,7 @@ package com.flipcam.view;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
@@ -35,6 +36,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.flipcam.ControlVisbilityPreference;
 import com.flipcam.GlideApp;
@@ -48,6 +50,7 @@ import com.flipcam.util.MediaUtil;
 import java.io.File;
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
+import java.util.List;
 
 import static com.flipcam.constants.Constants.VIDEO_SEEK_UPDATE;
 
@@ -270,20 +273,7 @@ MediaPlayer.OnErrorListener, Serializable{
             pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow));
             play = false;
         }
-        pause.setOnClickListener((view) -> {
-            if (!play) {
-                if (VERBOSE) Log.d(TAG, "Set PLAY post rotate");
-                startPlayingMedia();
-            } else {
-                int audioFocus = audioManager.abandonAudioFocus(onAudioFocusChangeListener);
-                if (VERBOSE) Log.d(TAG, "Set PAUSE post rotate = " + audioFocus);
-                if (audioFocus == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-                    mediaPlayer.pause();
-                    pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow));
-                    play = false;
-                }
-            }
-        });
+        pause.setOnClickListener(playListener);
         playCircle.setOnClickListener((view) -> {
             if (!play) {
                 if(VERBOSE)Log.d(TAG, "Set PLAY Circle post rotate");
@@ -336,33 +326,7 @@ MediaPlayer.OnErrorListener, Serializable{
             //Since we need to seekTo(100), we need to nullify savedVideo.
             this.savedVideo = null;
         }
-
-        videoSeek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                if (fromUser) {
-                    videoSeek.setProgress(progress);
-                    mediaPlayer.seekTo(progress);
-                    calculateAndDisplayEndTime(progress, false);
-                }
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-                if(mediaPlayer.isPlaying()){
-                    mediaPlayer.pause();
-                    wasPlaying = true;
-                }
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-                if(wasPlaying){
-                    mediaPlayer.start();
-                    wasPlaying = false;
-                }
-            }
-        });
+        videoSeek.setOnSeekBarChangeListener(seekBarChangeListener);
     }
 
     private void startPlayingMedia(){
@@ -379,6 +343,48 @@ MediaPlayer.OnErrorListener, Serializable{
             play = true;
         }
     }
+
+    View.OnClickListener playListener = (view) -> {
+        if (!play) {
+            if (VERBOSE) Log.d(TAG, "Set PLAY post rotate");
+            startPlayingMedia();
+        } else {
+            int audioFocus = audioManager.abandonAudioFocus(onAudioFocusChangeListener);
+            if (VERBOSE) Log.d(TAG, "Set PAUSE post rotate = " + audioFocus);
+            if (audioFocus == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                mediaPlayer.pause();
+                pause.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_arrow));
+                play = false;
+            }
+        }
+    };
+
+    SeekBar.OnSeekBarChangeListener seekBarChangeListener = new SeekBar.OnSeekBarChangeListener() {
+        @Override
+        public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+            if (fromUser) {
+                videoSeek.setProgress(progress);
+                mediaPlayer.seekTo(progress);
+                calculateAndDisplayEndTime(progress, false);
+            }
+        }
+
+        @Override
+        public void onStartTrackingTouch(SeekBar seekBar) {
+            if (mediaPlayer.isPlaying()) {
+                mediaPlayer.pause();
+                wasPlaying = true;
+            }
+        }
+
+        @Override
+        public void onStopTrackingTouch(SeekBar seekBar) {
+            if (wasPlaying) {
+                mediaPlayer.start();
+                wasPlaying = false;
+            }
+        }
+    };
 
     boolean wasPlaying = false;
 
@@ -486,7 +492,7 @@ MediaPlayer.OnErrorListener, Serializable{
         double screenAR = (double) screenSize.x / (double) screenSize.y;
         FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
         if (display.getRotation() == Surface.ROTATION_0) {
-            if (Math.abs(screenAR - videoAR) < 0.01) {
+            if (Math.abs(screenAR - videoAR) < 0.1) {
                 layoutParams.width = screenSize.x;
                 layoutParams.height = screenSize.y;
                 videoView.setLayoutParams(layoutParams);
@@ -621,8 +627,45 @@ MediaPlayer.OnErrorListener, Serializable{
             Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(path));
             intent.setDataAndType(Uri.parse(path),
                     getResources().getString(R.string.videoType));
-            startActivity(intent);
+            if(doesAppExistForVideoIntent(intent)) {
+                startActivity(intent);
+            }
+            else{
+                //Reset Video player to FC Player.
+                Toast externalPlayerNotFound = new Toast(getContext());
+                externalPlayerNotFound.setView(LayoutInflater.from(getContext()).inflate(R.layout.external_player_not_found, null));
+                externalPlayerNotFound.setDuration(Toast.LENGTH_LONG);
+                externalPlayerNotFound.setGravity(Gravity.BOTTOM, 0,0);
+                externalPlayerNotFound.show();
+                playCircle.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_circle_outline));
+                showAllControls();
+                showTimeElapsed();
+                calculateAndDisplayEndTime(Integer.parseInt(duration), true);
+                videoSeek.setProgressTintList(ColorStateList.valueOf(getResources().getColor(R.color.turqoise)));
+                videoSeek.setMax(Integer.parseInt(duration));
+                videoSeek.setProgress(0);
+                videoSeek.setOnSeekBarChangeListener(seekBarChangeListener);
+                pause.setOnClickListener(playListener);
+                playCircle.setOnClickListener((view2) -> {
+                    if (!play) {
+                        if(VERBOSE)Log.d(TAG, "Set PLAY Circle post rotate 2");
+                        startPlayingMedia();
+                    }
+                });
+                SharedPreferences.Editor editor = sharedPreferences.edit();
+                editor.putString(Constants.SELECT_VIDEO_PLAYER, getContext().getResources().getString(R.string.videoFCPlayer));
+                editor.commit();
+                if(VERBOSE)Log.d(TAG, "VIDEO PLAYER CHANGED TO FC");
+            }
         });
+    }
+
+    public boolean doesAppExistForVideoIntent(Intent shareIntent){
+        PackageManager packageManager = mediaActivity.getPackageManager();
+        List activities = packageManager.queryIntentActivities(shareIntent, PackageManager.MATCH_DEFAULT_ONLY);
+        if(VERBOSE)Log.d(TAG, "No of apps that can play video = "+activities.size());
+        boolean isIntentSafe = activities.size() > 0;
+        return isIntentSafe;
     }
 
     public void hideAllControls(){
