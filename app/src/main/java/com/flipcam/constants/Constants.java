@@ -32,6 +32,8 @@ public class Constants
     public static final String METRIC_MB = "MB";
     public static final String METRIC_GB = "GB";
 
+    public static final int _4K_VIDEO_RESOLUTION = 2160;
+
     //To fetch first frame to display thumbnail
     public static final long FIRST_SEC_MICRO = 1000000;
     //To update seek bar

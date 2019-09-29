@@ -240,6 +240,7 @@
     <string name="externalVideoPlayerMessage">FlipCam will use your favorite media player to play videos.\n\n
         This can be changed in Video Settings.</string>
     <string name="noExternalVideoPlayer">No External Video Players found.\nFlipCam will use internal player.</string>
+    <string name="no4KSupport">4K Video recording will be supported in a later version.</string>
     <string name="externalVideoPlayerCheckbox">Do not Show Again</string>
     <string name="externalVideoPlayerTitle">Favorite Video Player</string>
     <string name="externalPlayerOkToClose">CLOSE</string>

@@ -171,4 +171,5 @@
     <dimen name="okBtnTopMargin">5dp</dimen>
     //Dimension for video not supported text
     <dimen name="videoPlayerNotFoundPaddingAll">12dp</dimen>
+    <dimen name="_4KVideoNotSupportedPaddingAll">12dp</dimen>
 </resources>

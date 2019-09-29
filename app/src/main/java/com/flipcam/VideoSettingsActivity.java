@@ -11,9 +11,11 @@ import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import com.flipcam.constants.Constants;
 import com.flipcam.preferences.CustomListPreference;
@@ -22,12 +24,14 @@ import com.flipcam.preferences.ShutterCheckboxPreference;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.StringTokenizer;
 
 public class VideoSettingsActivity extends AppCompatActivity {
 
     public static final String TAG = "VideoSettingsActivity";
     static boolean VERBOSE = true;
     static Context mContext;
+    static boolean isHighest4K = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,10 +78,21 @@ public class VideoSettingsActivity extends AppCompatActivity {
             listPreference.setDialogTitle(getResources().getString(R.string.videoResolutionHeading));
             listPreference.setLayoutResource(R.layout.custom_list_setting);
             getPreferenceScreen().addPreference(listPreference);
-            listPreference.setOnPreferenceChangeListener((preference,newValue ) -> {
+            String highestVideoDimen = settingsPrefs.getString(Constants.VIDEO_DIMENSION_HIGH, null);
+            if(highestVideoDimen != null){
+                StringTokenizer tokenizer = new StringTokenizer(highestVideoDimen, ":");
+                tokenizer.nextToken();
+                String highestHeight = tokenizer.nextToken();
+                isHighest4K = Integer.parseInt(highestHeight) >= Constants._4K_VIDEO_RESOLUTION;
+            }
+
+            listPreference.setOnPreferenceChangeListener((preference,newValue) -> {
                 String newRes = (String) newValue;
                 Log.d(TAG, "onPreferenceChange = " + newRes);
                 Log.d(TAG, "onPreferenceChange pref = " + preference.getKey());
+                if(isVideo4K(newRes)){
+                    return false;
+                }
                 return true;
             });
             //Show Memory
@@ -117,6 +132,18 @@ public class VideoSettingsActivity extends AppCompatActivity {
                 Log.d(TAG, "onPreferenceChange pref 2222 = " + preference.getKey());
                 return true;
             });
+        }
+
+        private boolean isVideo4K(String selectedVal){
+            if(selectedVal.equalsIgnoreCase(getString(R.string.videoResHigh)) && isHighest4K){
+                Toast _4KNotSupportedMessage = new Toast(getActivity());
+                _4KNotSupportedMessage.setGravity(Gravity.CENTER, 0, 0);
+                _4KNotSupportedMessage.setDuration(Toast.LENGTH_LONG);
+                _4KNotSupportedMessage.setView(LayoutInflater.from(getActivity()).inflate(R.layout.videonotsupported, null));
+                _4KNotSupportedMessage.show();
+                return true;
+            }
+            return false;
         }
     }
 }

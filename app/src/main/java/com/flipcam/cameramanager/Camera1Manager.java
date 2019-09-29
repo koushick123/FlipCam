@@ -553,6 +553,9 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
                     StringTokenizer tokenizer = new StringTokenizer(dimension, ":");
                     targetWidth = tokenizer.nextToken();
                     targetHeight = tokenizer.nextToken();
+                    if(checkFor4K()){
+                        return;
+                    }
                     targetVideoRatio = Double.parseDouble(targetWidth) / Double.parseDouble(targetHeight);
                 } else {
                     chooseHighestResolution();
@@ -600,6 +603,9 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
                 StringTokenizer tokenizer = new StringTokenizer(dimension, ":");
                 targetWidth = tokenizer.nextToken();
                 targetHeight = tokenizer.nextToken();
+                if(checkFor4K()){
+                    return;
+                }
                 targetVideoRatio = Double.parseDouble(targetWidth) / Double.parseDouble(targetHeight);
             }
             else {
@@ -638,6 +644,9 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
             cameraView.setCamProfileForRecord(CamcorderProfile.QUALITY_HIGH);
             targetWidth = String.valueOf(highProfile.videoFrameWidth);
             targetHeight = String.valueOf(highProfile.videoFrameHeight);
+            if(checkFor4K()){
+                return;
+            }
             targetVideoRatio = (double) highProfile.videoFrameWidth / (double) highProfile.videoFrameHeight;
             SharedPreferences.Editor editor = sharedPreferences.edit();
             if (VERBOSE)
@@ -653,6 +662,9 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
             cameraView.setCamProfileForRecord(CamcorderProfile.QUALITY_HIGH);
             targetWidth = String.valueOf(highProfile.videoFrameWidth);
             targetHeight = String.valueOf(highProfile.videoFrameHeight);
+            if(checkFor4K()){
+                return;
+            }
             targetVideoRatio = (double) highProfile.videoFrameWidth / (double) highProfile.videoFrameHeight;
         }
     }
@@ -690,6 +702,20 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         editor.putString(Constants.VIDEO_DIMENSION_MEDIUM, targetWidth+":"+targetHeight);
         editor.putInt(Constants.CAMPROFILE_FOR_RECORD_MEDIUM, cameraView.getCamProfileForRecord());
         editor.commit();
+    }
+
+    private boolean checkFor4K(){
+        if(Integer.parseInt(targetHeight) >= Constants._4K_VIDEO_RESOLUTION){
+            chooseMediumResolution();
+            SharedPreferences.Editor editor = obtainSettingsPrefs().edit();
+            editor.putString(Constants.SELECT_VIDEO_RESOLUTION, resources.getString(R.string.videoResMedium));
+            editor.commit();
+            if(this.videoFrag != null){
+                this.videoFrag.setVideoResInfo(targetWidth, targetHeight);
+            }
+            return true;
+        }
+        return false;
     }
 
     private StringTokenizer checkForMediumResolutions(){
