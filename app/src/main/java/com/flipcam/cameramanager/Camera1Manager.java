@@ -644,9 +644,6 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
             cameraView.setCamProfileForRecord(CamcorderProfile.QUALITY_HIGH);
             targetWidth = String.valueOf(highProfile.videoFrameWidth);
             targetHeight = String.valueOf(highProfile.videoFrameHeight);
-            if(checkFor4K()){
-                return;
-            }
             targetVideoRatio = (double) highProfile.videoFrameWidth / (double) highProfile.videoFrameHeight;
             SharedPreferences.Editor editor = sharedPreferences.edit();
             if (VERBOSE)
@@ -655,6 +652,9 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
             editor.putInt(Constants.CAMPROFILE_FOR_RECORD_HIGH, CamcorderProfile.QUALITY_HIGH);
             editor.putString(Constants.SELECT_VIDEO_RESOLUTION, resources.getString(R.string.videoResHigh));
             editor.commit();
+            if(checkFor4K()){
+                return;
+            }
         }
         else{
             if (VERBOSE) Log.d(TAG, "ALREADY Selected HIGH RESOLUTION video width = " + targetWidth + " X " + targetHeight);
