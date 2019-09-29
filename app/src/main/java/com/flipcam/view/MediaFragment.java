@@ -85,7 +85,7 @@ MediaPlayer.OnErrorListener, Serializable{
     transient FrameLayout frameMedia;
     int framePosition;
     transient ImageView picture;
-    transient FileMedia[] images=null;
+    transient FileMedia[] fileMedia=null;
     ControlVisbilityPreference controlVisbilityPreference;
     transient Display display;
     transient MediaFragment.VideoTracker videoTracker;
@@ -397,8 +397,8 @@ MediaPlayer.OnErrorListener, Serializable{
         fromGallery = getArguments().getBoolean("fromGallery");
         if(VERBOSE)Log.d(TAG, "fromGallery = "+fromGallery);
         //if(VERBOSE)Log.d(TAG,"framePosition = "+framePosition);
-        images = MediaUtil.getMediaList(getContext(), fromGallery);
-        path = images[framePosition].getPath();
+        fileMedia = MediaUtil.getMediaList(getContext(), fromGallery);
+        path = fileMedia[framePosition].getPath();
         if(VERBOSE)Log.d(TAG,"media is == "+path+", recreate = "+recreate);
         setRetainInstance(true);
     }
@@ -482,10 +482,16 @@ MediaPlayer.OnErrorListener, Serializable{
     }
 
     public void fitVideoToScreen(){
+        MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
+        try {
+            mediaMetadataRetriever.setDataSource(path);
+        }
+        catch (IllegalArgumentException incorrectPath){
+            if(VERBOSE)Log.d(TAG, "Corrupted File or No Media exists");
+            return;
+        }
         Point screenSize=new Point();
         display.getRealSize(screenSize);
-        MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
-        mediaMetadataRetriever.setDataSource(path);
         String width = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH);
         String height = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT);
         double videoAR = Double.parseDouble(width) / Double.parseDouble(height);
@@ -499,7 +505,9 @@ MediaPlayer.OnErrorListener, Serializable{
             }
             else{
                 layoutParams.width = screenSize.x;
-                layoutParams.height = (int)(screenSize.x / videoAR);
+                //Reduce the height by 5 pixels since Samsung A50 does not display 4K portrait videos correctly.
+                //The reduction of 5 pixels is negligible for user to find out.
+                layoutParams.height = (int)(screenSize.x / videoAR) - 5;
                 layoutParams.gravity = Gravity.CENTER;
                 videoView.setLayoutParams(layoutParams);
             }
@@ -566,10 +574,9 @@ MediaPlayer.OnErrorListener, Serializable{
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        if(!isImage()) {
+        if (!isImage()) {
             fitVideoToScreen();
-        }
-        else{
+        } else {
             fitPhotoToScreen();
         }
     }
@@ -852,7 +859,7 @@ MediaPlayer.OnErrorListener, Serializable{
     public void onResume() {
         super.onResume();
         if(VERBOSE)Log.d(TAG,"onResume, visible? ="+getUserVisibleHint());
-        if(VERBOSE)Log.d(TAG,"Path = "+images[framePosition].getPath());
+        if(VERBOSE)Log.d(TAG,"Path = "+fileMedia[framePosition].getPath());
         if(!isImage()){
             previousPos = 0;
             savedVideo = getActivity().getIntent().getParcelableExtra("saveVideoForMinimize");
@@ -886,7 +893,7 @@ MediaPlayer.OnErrorListener, Serializable{
     public void onPause() {
         super.onPause();
         if(VERBOSE)Log.d(TAG,"onPause, visible? ="+getUserVisibleHint());
-        if(VERBOSE)Log.d(TAG,"Path = "+images[framePosition].getPath());
+        if(VERBOSE)Log.d(TAG,"Path = "+fileMedia[framePosition].getPath());
         if (videoView != null) {
             if(VERBOSE)Log.d(TAG, "Save media state hide = "+controlVisbilityPreference.isHideControl());
         }
