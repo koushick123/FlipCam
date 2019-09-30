@@ -126,7 +126,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     SharedPreferences videoPrefs;
     SDCardEventReceiver sdCardEventReceiver;
     AppWidgetManager appWidgetManager;
-    boolean VERBOSE = true;
+    boolean VERBOSE = false;
     AudioManager audioManager;
     ImageView folderViewOn;
     @BindView(R.id.infoMedia)
@@ -209,7 +209,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         }
         deleteMedia = (ImageButton)findViewById(R.id.deleteMedia);
         deleteMedia.setOnClickListener((view) -> {
-            Log.d(TAG, "from the Gallery = "+fromGallery);
+            if(VERBOSE)Log.d(TAG, "from the Gallery = "+fromGallery);
             medias = MediaUtil.getMediaList(getApplicationContext(), fromGallery);
             if(medias != null) {
                 deleteMediaRoot = layoutInflater.inflate(R.layout.delete_media, null);
@@ -236,7 +236,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         permissionFB = new Dialog(this);
         appNotExist = new Dialog(this);
         shareMedia.setOnClickListener((view) -> {
-            Log.d(TAG, "from Gallery? = "+fromGallery);
+            if(VERBOSE)Log.d(TAG, "from Gallery? = "+fromGallery);
             medias = MediaUtil.getMediaList(getApplicationContext(), fromGallery);
             if(medias != null) {
                 if(VERBOSE)Log.d(TAG, "Share position = " + selectedPosition);
@@ -310,7 +310,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             if(!fromGallery){
                 selectedPosition = 0;
             }
-            Log.d(TAG, "selectedPosition === "+selectedPosition);
+            if(VERBOSE)Log.d(TAG, "selectedPosition === "+selectedPosition);
 
             if(isImage(medias[selectedPosition].getPath())) {
                 if(VERBOSE)Log.d(TAG, "Hide PlayForVideo");
@@ -361,15 +361,15 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     AudioManager.OnAudioFocusChangeListener onAudioFocusChangeListener = new AudioManager.OnAudioFocusChangeListener(){
         @Override
         public void onAudioFocusChange(int focusChange) {
-            Log.d(TAG, "onAudioFocusChange = "+focusChange);
+            if(VERBOSE)Log.d(TAG, "onAudioFocusChange = "+focusChange);
             switch(focusChange){
                 case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
                     if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && Build.VERSION.SDK_INT < Build.VERSION_CODES.M){
-                        Log.d(TAG, "setStreamMute");
+                        if(VERBOSE)Log.d(TAG, "setStreamMute");
                         audioManager.setStreamMute(AudioManager.STREAM_MUSIC, true);
                     }
                     else{
-                        Log.d(TAG, "adjustStreamVolume");
+                        if(VERBOSE)Log.d(TAG, "adjustStreamVolume");
                         audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_MUTE, 0);
                     }
                     break;

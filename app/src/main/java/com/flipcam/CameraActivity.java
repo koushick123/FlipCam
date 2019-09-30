@@ -36,7 +36,6 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
 {
 
     private static final String TAG = "CameraActivity";
-    private static final String VIDEO = "1";
     VideoFragment videoFragment = null;
     PhotoFragment photoFragment = null;
     View warningMsgRoot;
@@ -44,7 +43,7 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
     Button okButton;
     LayoutInflater layoutInflater;
     SharedPreferences sharedPreferences;
-    boolean VERBOSE = true;
+    boolean VERBOSE = false;
     View settingsRootView;
     Dialog settingsDialog;
     ImageView brightness;

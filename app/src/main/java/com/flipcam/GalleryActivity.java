@@ -61,7 +61,7 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
     FloatingActionButton videoCapture;
     ControlVisbilityPreference controlVisbilityPreference;
     FileMedia[] medias;
-    boolean VERBOSE = true;
+    boolean VERBOSE = false;
     String phoneLoc;
     String sdcardLoc;
     String allLoc;
@@ -130,15 +130,15 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
             noImageText.setVisibility(View.GONE);
             mediaCount.setText(getResources().getString(R.string.galleryCount, MediaUtil.getPhotosCount(), MediaUtil.getVideosCount()));
             if(sharedPreferences.getString(Constants.MEDIA_LOCATION_VIEW_SELECT, phoneLoc).equalsIgnoreCase(phoneLoc)){
-                Log.d(TAG, "SET TO PHONE");
+                if(VERBOSE)Log.d(TAG, "SET TO PHONE");
                 mediaSourceImage.setImageDrawable(getResources().getDrawable(R.drawable.phone));
             }
             else if(sharedPreferences.getString(Constants.MEDIA_LOCATION_VIEW_SELECT, phoneLoc).equalsIgnoreCase(sdcardLoc)){
-                Log.d(TAG, "SET TO SDCARD");
+                if(VERBOSE)Log.d(TAG, "SET TO SDCARD");
                 mediaSourceImage.setImageDrawable(getResources().getDrawable(R.drawable.sdcard));
             }
             else{
-                Log.d(TAG, "SET TO ALL");
+                if(VERBOSE)Log.d(TAG, "SET TO ALL");
                 mediaSourceImage.setImageDrawable(getResources().getDrawable(R.drawable.phone_sdcard));
             }
             MediaAdapter mediaAdapter = new MediaAdapter(getApplicationContext(), medias);
@@ -181,15 +181,15 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
             //Refresh Media Grid to remove any earlier stored media previews
             mediaGrid.setVisibility(View.GONE);
             if(sharedPreferences.getString(Constants.MEDIA_LOCATION_VIEW_SELECT, phoneLoc).equalsIgnoreCase(phoneLoc)){
-                Log.d(TAG, "SET TO PHONE 222");
+                if(VERBOSE)Log.d(TAG, "SET TO PHONE 222");
                 mediaSourceImage.setImageDrawable(getResources().getDrawable(R.drawable.phone));
             }
             else if(sharedPreferences.getString(Constants.MEDIA_LOCATION_VIEW_SELECT, phoneLoc).equalsIgnoreCase(sdcardLoc)){
-                Log.d(TAG, "SET TO SDCARD 222");
+                if(VERBOSE)Log.d(TAG, "SET TO SDCARD 222");
                 mediaSourceImage.setImageDrawable(getResources().getDrawable(R.drawable.sdcard));
             }
             else{
-                Log.d(TAG, "SET TO ALL 222");
+                if(VERBOSE)Log.d(TAG, "SET TO ALL 222");
                 mediaSourceImage.setImageDrawable(getResources().getDrawable(R.drawable.phone_sdcard));
             }
         }
@@ -229,7 +229,7 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
                 }
                 else{
                     //This Gallery window was minimized and reopened. In that case SD Card contents were shown earlier.
-                    Log.d(TAG, "medias content = "+medias);
+                    if(VERBOSE)Log.d(TAG, "medias content = "+medias);
                     if(medias != null && medias.length > 0){
                         closePreviousMessages();
                         checkForSDCardAndShowGalleryMessage();

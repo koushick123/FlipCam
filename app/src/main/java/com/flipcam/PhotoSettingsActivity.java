@@ -30,7 +30,7 @@ import java.util.TreeSet;
 public class PhotoSettingsActivity extends AppCompatActivity {
 
     public static final String TAG = "PhotoSettingsActivity";
-    static boolean VERBOSE = true;
+    static boolean VERBOSE = false;
     static Context mContext;
 
     @Override

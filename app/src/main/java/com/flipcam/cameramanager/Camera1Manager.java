@@ -66,7 +66,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     String photoPath;
     private static Camera1Manager camera1Manager;
     Bitmap photo;
-    boolean VERBOSE = true;
+    boolean VERBOSE = false;
     CameraView cameraView;
     Context appContext;
     Resources resources;
@@ -120,12 +120,12 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         if(cameraView.isBackCamera()) {
             //For rear camera get all supported photo resolutions.
             supportedPics = sharedPreferences.getStringSet(Constants.SUPPORT_PHOTO_RESOLUTIONS, null);
-            Log.d(TAG, "SupportedPics = " + supportedPics);
+            if(VERBOSE)Log.d(TAG, "SupportedPics = " + supportedPics);
         }
         else {
             //For front camera get all supported photo resolutions.
             supportedPics = sharedPreferences.getStringSet(Constants.SUPPORT_PHOTO_RESOLUTIONS_FRONT, null);
-            Log.d(TAG, "SupportedPics FRONT = " + supportedPics);
+            if(VERBOSE)Log.d(TAG, "SupportedPics FRONT = " + supportedPics);
         }
         fetchSupportedPicSizesForCamera(supportedPics, sharedPreferences, cameraView.isBackCamera(), mCamera);
     }
@@ -136,7 +136,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
             supportedPics = new HashSet<>();
             List<Camera.Size> picsSizes = selectedCam.getParameters().getSupportedPictureSizes();
             for (Camera.Size size : picsSizes) {
-                Log.d(TAG, "Adding " + size.width + " , " + size.height);
+                if(VERBOSE)Log.d(TAG, "Adding " + size.width + " , " + size.height);
                 supportedPics.add(size.width + " X " + size.height);
             }
             //Sort by descending order and take the largest value as default photo resolution.

@@ -103,7 +103,7 @@ public class VideoFragment extends Fragment{
     SharedPreferences sharedPreferences;
     ImageView microThumbnail;
     AppWidgetManager appWidgetManager;
-    boolean VERBOSE = true;
+    boolean VERBOSE = false;
     boolean isPause = false;
     View settingsMsgRoot;
     Dialog settingsMsgDialog;
@@ -148,7 +148,7 @@ public class VideoFragment extends Fragment{
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        Log.d(TAG,"onActivityCreated");
+        if(VERBOSE)Log.d(TAG,"onActivityCreated");
         if(cameraView!=null) {
             cameraView.setWindowManager(getActivity().getWindowManager());
         }
@@ -237,7 +237,7 @@ public class VideoFragment extends Fragment{
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                Log.d(TAG, "onStopTrackingTouch = "+seekBar.getProgress());
+                if(VERBOSE)Log.d(TAG, "onStopTrackingTouch = "+seekBar.getProgress());
                 cameraActivity.getPinchZoomGestureListener().setProgress(seekBar.getProgress());
             }
         });
@@ -367,19 +367,19 @@ public class VideoFragment extends Fragment{
         MediaCodecInfo[] mediaCodecInfos = mediaCodecList.getCodecInfos();
         if(getAudioBitRate() == -1 || getAudioChannelInput() == -1 || getAudioSampleRate() == -1) {
             for (MediaCodecInfo info : mediaCodecInfos) {
-                Log.d(TAG, "Name = " + info.getName());
+                if(VERBOSE)Log.d(TAG, "Name = " + info.getName());
                 if (info.getName().contains("aac")) {
                     String[] medTypes = info.getSupportedTypes();
                     for (String medType : medTypes) {
-                        Log.d(TAG, "media types = " + medType);
+                        if(VERBOSE)Log.d(TAG, "media types = " + medType);
                         if (medType.contains("mp4a") || medType.contains("mp4") || medType.contains("mpeg4")) {
                             MediaCodecInfo.AudioCapabilities audioCapabilities = info.getCapabilitiesForType(medType).getAudioCapabilities();
                             Range<Integer> bitRates = audioCapabilities.getBitrateRange();
-                            Log.d(TAG, "Bit rate range = " + bitRates.getLower() + " , " + bitRates.getUpper());
+                            if(VERBOSE)Log.d(TAG, "Bit rate range = " + bitRates.getLower() + " , " + bitRates.getUpper());
                             setAudioBitRate(bitRates.getUpper());
                             int[] sampleRates = audioCapabilities.getSupportedSampleRates();
                             Arrays.sort(sampleRates);
-                            Log.d(TAG, "Sample rate = " + sampleRates[sampleRates.length - 1]);
+                            if(VERBOSE)Log.d(TAG, "Sample rate = " + sampleRates[sampleRates.length - 1]);
                             setAudioSampleRate(sampleRates[sampleRates.length - 1]);
                             setAudioChannelInput(audioCapabilities.getMaxInputChannelCount() > 1 ? 2 : 1);
                             break;
@@ -488,11 +488,11 @@ public class VideoFragment extends Fragment{
     public void prepareAndStartRecord(){
         AudioManager audioManager = cameraView.getAudioManager();
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && Build.VERSION.SDK_INT < Build.VERSION_CODES.M){
-            Log.d(TAG, "setStreamMute");
+            if(VERBOSE)Log.d(TAG, "setStreamMute");
             audioManager.setStreamMute(AudioManager.STREAM_MUSIC, true);
         }
         else{
-            Log.d(TAG, "adjustStreamVolume");
+            if(VERBOSE)Log.d(TAG, "adjustStreamVolume");
             audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_MUTE, 0);
         }
         startRecord.setClickable(true);
@@ -667,13 +667,13 @@ public class VideoFragment extends Fragment{
         boolean noSdCard = false;
         stopRecord.setClickable(false);
         switchCamera.setClickable(false);
-        Log.d(TAG, "Unmute audio stopRec");
+        if(VERBOSE)Log.d(TAG, "Unmute audio stopRec");
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && Build.VERSION.SDK_INT < Build.VERSION_CODES.M){
-            Log.d(TAG, "setStreamUnMute");
+            if(VERBOSE)Log.d(TAG, "setStreamUnMute");
             cameraView.getAudioManager().setStreamMute(AudioManager.STREAM_MUSIC, false);
         }
         else{
-            Log.d(TAG, "adjustStreamVolumeUnMute");
+            if(VERBOSE)Log.d(TAG, "adjustStreamVolumeUnMute");
             cameraView.getAudioManager().adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_UNMUTE, 0);
         }
         if(lowMemory){

@@ -100,7 +100,7 @@ public class PhotoFragment extends Fragment {
     FrameLayout photoCameraView;
     ImageView microThumbnail;
     AppWidgetManager appWidgetManager;
-    boolean VERBOSE = true;
+    boolean VERBOSE = false;
     View settingsMsgRoot;
     Dialog settingsMsgDialog;
     CameraActivity cameraActivity;
@@ -143,17 +143,15 @@ public class PhotoFragment extends Fragment {
 
     class PhotoFragmentHandler extends Handler {
         WeakReference<PhotoFragment> photoFragmentWeakReference;
-        PhotoFragment photoFragment;
         public PhotoFragmentHandler(PhotoFragment photoFragment1) {
             photoFragmentWeakReference = new WeakReference<>(photoFragment1);
         }
 
         @Override
         public void handleMessage(Message msg) {
-            photoFragment = photoFragmentWeakReference.get();
             switch(msg.what){
                 case Constants.SHOW_SELFIE_TIMER:
-                    showSelfieTimer(msg.arg1);
+                    showSelfieTimer();
                     break;
             }
         }
@@ -249,7 +247,7 @@ public class PhotoFragment extends Fragment {
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                Log.d(TAG, "onStopTrackingTouch = "+seekBar.getProgress());
+                if(VERBOSE)Log.d(TAG, "onStopTrackingTouch = "+seekBar.getProgress());
                 cameraActivity.getPinchZoomGestureListener().setProgress(seekBar.getProgress());
             }
         });
@@ -362,14 +360,19 @@ public class PhotoFragment extends Fragment {
         display.getSize(size);
     }
 
-    private void showSelfieTimer(int value){
-        if(VERBOSE)Log.d(TAG, "DISP Value == "+value);
-        if(value > 0) {
+    private void showSelfieTimer(){
+        if(VERBOSE)Log.d(TAG, "DISP Value == "+getCountDown());
+        if(getCountDown() == -1){
+            selfieCountdown.setVisibility(View.GONE);
+            return;
+        }
+        if(getCountDown() > 0) {
+            if(VERBOSE)Log.d(TAG, "timerPlayer = "+timerPlayer);
             timerPlayer.start();
             if(getCountDown() == timerPreference.getInt(Constants.SELFIE_TIMER, defaultSelfieTimer)) {
                 timerPlayer.seekTo(70);
             }
-            selfieCountdown.setText(String.valueOf(value));
+            selfieCountdown.setText(String.valueOf(getCountDown()));
             selfieCountdown.startAnimation(fadeOut);
         }
         else{
@@ -402,19 +405,13 @@ public class PhotoFragment extends Fragment {
         fadeOut = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.countdown_fade_out);
         selfieCountdown.setVisibility(View.VISIBLE);
         timerPlayer.setOnCompletionListener((listener) -> {
-            Log.d(TAG, "COMPLETED FOR = "+getCountDown());
+            if(VERBOSE)Log.d(TAG, "COMPLETED FOR = "+getCountDown());
             if(getCountDown() > 0) {
-                Message msg = new Message();
                 setCountDown(getCountDown() - 1);
-                msg.what = Constants.SHOW_SELFIE_TIMER;
-                msg.arg1 = getCountDown();
-                photoFragHandler.sendMessage(msg);
+                photoFragHandler.sendEmptyMessage(Constants.SHOW_SELFIE_TIMER);
             }
             else{
-                Message msg = new Message();
-                msg.what = Constants.SHOW_SELFIE_TIMER;
-                msg.arg1 = 0;
-                photoFragHandler.sendMessage(msg);
+                photoFragHandler.sendEmptyMessage(Constants.SHOW_SELFIE_TIMER);
             }
         });
         //Start the countdown

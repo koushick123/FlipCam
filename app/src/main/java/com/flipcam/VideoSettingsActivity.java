@@ -29,7 +29,7 @@ import java.util.StringTokenizer;
 public class VideoSettingsActivity extends AppCompatActivity {
 
     public static final String TAG = "VideoSettingsActivity";
-    static boolean VERBOSE = true;
+    static boolean VERBOSE = false;
     static Context mContext;
     static boolean isHighest4K = false;
 
@@ -88,8 +88,8 @@ public class VideoSettingsActivity extends AppCompatActivity {
 
             listPreference.setOnPreferenceChangeListener((preference,newValue) -> {
                 String newRes = (String) newValue;
-                Log.d(TAG, "onPreferenceChange = " + newRes);
-                Log.d(TAG, "onPreferenceChange pref = " + preference.getKey());
+                if(VERBOSE)Log.d(TAG, "onPreferenceChange = " + newRes);
+                if(VERBOSE)Log.d(TAG, "onPreferenceChange pref = " + preference.getKey());
                 if(isVideo4K(newRes)){
                     return false;
                 }
@@ -128,8 +128,8 @@ public class VideoSettingsActivity extends AppCompatActivity {
             getPreferenceScreen().addPreference(playerPreference);
             playerPreference.setOnPreferenceChangeListener((preference,newValue ) -> {
                 String newRes = (String) newValue;
-                Log.d(TAG, "onPreferenceChange 2222 = " + newRes);
-                Log.d(TAG, "onPreferenceChange pref 2222 = " + preference.getKey());
+                if(VERBOSE)Log.d(TAG, "onPreferenceChange 2222 = " + newRes);
+                if(VERBOSE)Log.d(TAG, "onPreferenceChange pref 2222 = " + preference.getKey());
                 return true;
             });
         }

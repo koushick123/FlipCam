@@ -95,7 +95,7 @@ MediaPlayer.OnErrorListener, Serializable{
     transient int imageHeight;
     transient int imageWidth;
     transient FrameLayout mediaPlaceholder;
-    boolean VERBOSE = true;
+    boolean VERBOSE = false;
     AudioManager audioManager;
     boolean imageScaled = false;
     boolean fromGallery = false;

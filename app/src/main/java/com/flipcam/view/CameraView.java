@@ -125,7 +125,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     MainHandler mainHandler;
     Object renderObj = new Object();
     volatile boolean isReady=false;
-    boolean VERBOSE=true;
+    boolean VERBOSE = false;
     boolean FRAME_VERBOSE=false;
     //Keep in portrait by default.
     boolean portrait=true;
@@ -297,7 +297,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                     showTimeElapsed();
                     break;
                 case Constants.HIDE_ELAPSED_TIME:
-                    Log.d(TAG, "Hide time elapsed");
+                    if(VERBOSE)Log.d(TAG, "Hide time elapsed");
                     hideTimeElapsed();
                     break;
                 case Constants.SHOW_MEMORY_CONSUMED:
@@ -996,7 +996,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             VIDEO_WIDTH = temp;
         }
         int degree;
-        Log.d(TAG, "backCamera = "+backCamera);
+        if(VERBOSE)Log.d(TAG, "backCamera = "+backCamera);
         if(backCamera) {
             degree = 180;
         }
@@ -1140,7 +1140,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 //Switch Off countdown if started for selfie timer
                 if(this.photoFragment != null){
                     if(this.photoFragment.getCountDown() >= 0 && !isBackCamera()) {
-                        Log.d(TAG, "Switch Off Timer");
+                        if(VERBOSE)Log.d(TAG, "Switch Off Timer");
                         this.photoFragment.setCountDown(-1);
                         this.photoFragment.enableButtons();
                         this.photoFragment.getSelfieCountdown().setVisibility(View.GONE);
@@ -1154,6 +1154,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         this.photoFragment.getTimerPlayer().stop();
                         this.photoFragment.getTimerPlayer().release();
                         this.photoFragment.setTimerPlayer(null);
+                        if(VERBOSE)Log.d(TAG, "Switch Off TimerPlayer");
                     }
                 }
                 //Switch off flash light if used during recording.
@@ -1178,13 +1179,13 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             releaseEGLContext();
             if(isRecord()) {
                 //If video recording was in progress, ensure recording is stopped and saved, before exiting.
-                Log.d(TAG, "Unmute audio");
+                if(VERBOSE)Log.d(TAG, "Unmute audio");
                 if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && Build.VERSION.SDK_INT < Build.VERSION_CODES.M){
-                    Log.d(TAG, "setStreamUnMute");
+                    if(VERBOSE)Log.d(TAG, "setStreamUnMute");
                     audioManager.setStreamMute(AudioManager.STREAM_MUSIC, false);
                 }
                 else{
-                    Log.d(TAG, "adjustStreamVolumeUnMute");
+                    if(VERBOSE)Log.d(TAG, "adjustStreamVolumeUnMute");
                     audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_UNMUTE, 0);
                 }
                 if(VERBOSE)Log.d(TAG,"Recording in progress.... Stop now");
@@ -1702,7 +1703,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         if(VERBOSE)Log.d(TAG,"Orig frame = "+frameCount+" , Rendered frame "+frameCnt);
                         break;
                     case Constants.RECORD_PAUSE:
-                        Log.d(TAG, "Pausing record");
+                        if(VERBOSE)Log.d(TAG, "Pausing record");
                         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N){
                             updateTimer = false;
                             isRecording = false;
@@ -1712,7 +1713,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         }
                         break;
                     case Constants.RECORD_RESUME:
-                        Log.d(TAG, "Resuming record");
+                        if(VERBOSE)Log.d(TAG, "Resuming record");
                         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N){
                             isRecording = true;
 //                            mediaRecorder.resume();
@@ -1786,7 +1787,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 if(isRecordPaused()){
                     //Add blinking text effect
                     if(Math.abs(System.currentTimeMillis() - previousTimeBlink) >= 700){
-                        Log.d(TAG,"difference of 1.5 sec");
+                        if(VERBOSE)Log.d(TAG,"difference of 1.5 sec");
                         previousTimeBlink = System.currentTimeMillis();
                         if(isTimeVisible()) {
                             mainHandler.sendEmptyMessage(HIDE_ELAPSED_TIME);

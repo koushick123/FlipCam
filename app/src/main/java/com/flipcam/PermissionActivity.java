@@ -35,7 +35,7 @@ public class PermissionActivity extends AppCompatActivity {
     DialogInterface.OnClickListener exitListener;
     AlertDialog.Builder alertDialog;
     private static SharedPreferences sharedPreferences;
-    boolean VERBOSE = true;
+    boolean VERBOSE = false;
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
