@@ -2,7 +2,7 @@
 
 An android app that records using front and back camera in the same video file.
 
-This app is available for use from Android version Lollipop to Nougat.
+This app is available for use from Android version Lollipop to Pie.
 
 It provides the following features
 <ul>
