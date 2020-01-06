@@ -51,7 +51,6 @@ import com.flipcam.service.GoogleDriveUploadService;
 import com.flipcam.util.MediaUtil;
 import com.flipcam.util.SDCardUtil;
 import com.flipcam.view.CameraView;
-import com.flipcam.view.PinchZoomGestureListener;
 
 import java.io.File;
 import java.io.IOException;
@@ -109,7 +108,6 @@ public class VideoFragment extends Fragment{
     Dialog settingsMsgDialog;
     Context mContext;
     private static VideoFragment fragment = null;
-    PinchZoomGestureListener pinchZoomGestureListener;
     int audioSampleRate = -1;
     int audioBitRate = -1;
     int audioChannelInput = -1;
@@ -179,7 +177,6 @@ public class VideoFragment extends Fragment{
         sdCardEventReceiver = new SDCardEventReceiver();
         sharedPreferences = cameraActivity.getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
         appWidgetManager = (AppWidgetManager)cameraActivity.getSystemService(Context.APPWIDGET_SERVICE);
-        pinchZoomGestureListener = cameraActivity.getPinchZoomGestureListener();
     }
 
     @Override
