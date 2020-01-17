@@ -66,7 +66,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     String photoPath;
     private static Camera1Manager camera1Manager;
     Bitmap photo;
-    boolean VERBOSE = false;
+    boolean VERBOSE = true;
     CameraView cameraView;
     Context appContext;
     Resources resources;

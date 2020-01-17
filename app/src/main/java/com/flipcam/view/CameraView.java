@@ -125,7 +125,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     MainHandler mainHandler;
     Object renderObj = new Object();
     volatile boolean isReady=false;
-    boolean VERBOSE = false;
+    boolean VERBOSE = true;
     boolean FRAME_VERBOSE=false;
     //Keep in portrait by default.
     boolean portrait=true;

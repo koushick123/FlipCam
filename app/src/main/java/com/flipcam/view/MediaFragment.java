@@ -8,7 +8,9 @@ import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.graphics.Point;
+import android.graphics.PointF;
 import android.media.AudioManager;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
@@ -95,12 +97,14 @@ MediaPlayer.OnErrorListener, Serializable{
     transient int imageHeight;
     transient int imageWidth;
     transient FrameLayout mediaPlaceholder;
-    boolean VERBOSE = false;
+    boolean VERBOSE = true;
     AudioManager audioManager;
     boolean imageScaled = false;
     boolean fromGallery = false;
     MediaActivity mediaActivity;
     SharedPreferences sharedPreferences;
+    Point screenSize = new Point();
+    int PIC_SCALE_SIZE;
 
     public static MediaFragment newInstance(int pos,boolean recreate, boolean fromGal){
         MediaFragment mediaFragment = new MediaFragment();
@@ -187,8 +191,15 @@ MediaPlayer.OnErrorListener, Serializable{
             }
 
             @Override
-            public boolean onDown(MotionEvent e) {
-                return true;
+            public boolean onDown(MotionEvent event) {
+                if(isImage()) {
+                    savedMatrix.set(matrix);
+                    start.set(event.getX(), event.getY());
+                    Log.d(TAG, "mode=DRAG");
+                    mode = DRAG;
+                    return true;
+                }
+                return false;
             }
 
             @Override
@@ -209,9 +220,7 @@ MediaPlayer.OnErrorListener, Serializable{
                     }
                     return true;
                 }
-                else{
-                    return false;
-                }
+                return false;
             }
 
             @Override
@@ -433,6 +442,7 @@ MediaPlayer.OnErrorListener, Serializable{
             if(savedInstanceState!=null){
                 imageScaled = savedInstanceState.getBoolean("imageScaled");
             }
+            PIC_SCALE_SIZE = getResources().getInteger(R.integer.pictureScaleSize);
         }
         else {
             if(VERBOSE)Log.d(TAG,"show video");
@@ -451,7 +461,7 @@ MediaPlayer.OnErrorListener, Serializable{
     }
 
     public void fitPhotoToScreen(){
-        Point screenSize=new Point();
+
         display.getRealSize(screenSize);
         double screenAR = (double)screenSize.x / (double)screenSize.y;
         if(VERBOSE)Log.d(TAG, "screenSize = "+screenSize.x+" X "+screenSize.y);
@@ -579,6 +589,165 @@ MediaPlayer.OnErrorListener, Serializable{
         } else {
             fitPhotoToScreen();
         }
+    }
+
+    // These matrices will be used to move and zoom image
+    Matrix matrix = new Matrix();
+    Matrix savedMatrix = new Matrix();
+
+    // We can be in one of these 3 states
+    static final int NONE = 0;
+    static final int DRAG = 1;
+    static final int ZOOM = 2;
+    int mode = NONE;
+
+    // Remember some things for zooming
+    PointF start = new PointF();
+    PointF mid = new PointF();
+    float oldDist = 1f;
+
+    /** Determine the space between the first two fingers */
+    private float spacing(MotionEvent event) {
+        try {
+            float x = event.getX(0) - event.getX(1);
+            float y = event.getY(0) - event.getY(1);
+            return (float) Math.sqrt(x * x + y * y);
+        }
+        catch(IllegalArgumentException arg){
+            Log.e(TAG, "POINTER INDEX ILLEGAL");
+            return 0f;
+        }
+    }
+
+    /** Calculate the mid point of the first two fingers */
+    private void midPoint(PointF point, MotionEvent event) {
+        float x = event.getX(0) + event.getX(1);
+        float y = event.getY(0) + event.getY(1);
+        point.set(x / 2, y / 2);
+    }
+
+    float pictureScale = 1.0f;
+    float actualPicScale = -1f;
+    boolean wasPicScaled = false;
+
+    public boolean isWasPicScaled() {
+        return wasPicScaled;
+    }
+
+    public void setWasPicScaled(boolean wasPicScaled) {
+        this.wasPicScaled = wasPicScaled;
+    }
+
+    public void setFingerUp(boolean fingerUp) {
+        this.fingerUp = fingerUp;
+    }
+
+    boolean fingerUp = false;
+
+    public boolean onTouch(MotionEvent event) {
+        if(isImage()) {
+            // Handle touch events here...
+            int action = event.getAction() & MotionEvent.ACTION_MASK;
+            Log.d(TAG, "getPointerCount = "+event.getPointerCount());
+            switch (action) {
+                case MotionEvent.ACTION_POINTER_DOWN:
+                    oldDist = spacing(event);
+                    Log.d(TAG, "oldDist=" + oldDist);
+                    if (oldDist > 10f) {
+                        savedMatrix.set(matrix);
+                        midPoint(mid, event);
+                        mode = ZOOM;
+                        Log.d(TAG, "mode=ZOOM");
+                    }
+                    break;
+                case MotionEvent.ACTION_UP:
+                case MotionEvent.ACTION_POINTER_UP:
+                    Log.d(TAG, "mode Before NONE = "+mode+", PIC SCALE = "+pictureScale);
+                    if(mode == ZOOM){
+                        //If image was scaled down, restore to original size.
+                        if(actualPicScale < 1.0){
+                            restoreImage();
+                            Log.d(TAG, "Image restored");
+                        }
+                    }
+                    mode = NONE;
+                    //If image is restored to original size, it should be as though user never scaled it.
+                    if(actualPicScale == 1.0f){
+                        fingerUp = false;
+                    }
+                    else {
+                        fingerUp = true;
+                    }
+                    Log.d(TAG, "mode=NONE");
+                    break;
+                case MotionEvent.ACTION_MOVE:
+                    if (mode == DRAG) {
+                        Log.d(TAG, "DRAG Start");
+                        //Allow DRAG only if picture is scaled up
+                        if(actualPicScale > 1.0) {
+                            matrix.set(savedMatrix);
+                            matrix.postTranslate(event.getX() - start.x, event.getY() - start.y);
+                        }
+                    } else if (mode == ZOOM) {
+                        float newDist = spacing(event);
+                        Log.d(TAG, "newDist=" + newDist);
+                        if (newDist > 10f) {
+                            if(fingerUp){
+                                float distTravel = (newDist / oldDist);
+                                Log.d(TAG, "distTravelled = "+distTravel);
+                                if(distTravel != 1){
+                                    pictureScale = distTravel;
+                                }
+                            }
+                            else {
+                                pictureScale = newDist / oldDist;
+                            }
+                            Log.d(TAG, "PIC SCALE = "+pictureScale);
+                            if(actualPicScale <= PIC_SCALE_SIZE) {
+                                setWasPicScaled(true);
+                                matrix.set(savedMatrix);
+                                matrix.postScale(pictureScale, pictureScale, mid.x, mid.y);
+                            }
+                        }
+                        else{
+//                            pictureScale = 1.0f;
+                        }
+                        //Calculate actual scale size
+                        Log.d(TAG, "fingerUp = "+fingerUp);
+                        Log.d(TAG, "pictureScale = "+pictureScale);
+                        if(fingerUp){
+                            if(pictureScale > 1) {
+                                //For Zoom In
+                                actualPicScale = actualPicScale + pictureScale;
+                            }
+                            else if(pictureScale < 1) {
+                                //For Zoom Out
+                                actualPicScale = actualPicScale * pictureScale;
+                            }
+                        }
+                        else {
+                            actualPicScale = pictureScale;
+                        }
+                        Log.d(TAG, "actualPicScale = "+actualPicScale);
+                        if(actualPicScale > PIC_SCALE_SIZE) {
+                            //Add 0.1 so that it is able to scale upto PIC_SCALE_SIZE times original size
+                            pictureScale = actualPicScale = PIC_SCALE_SIZE + 0.1f;
+                        }
+                        Log.d(TAG, "Picture ACTUAL scale at = "+actualPicScale);
+                    }
+                    break;
+            }
+            picture.setImageMatrix(matrix);
+            return true;
+        }
+        return false;
+    }
+
+    public void restoreImage(){
+        matrix = new Matrix();
+        matrix.postScale(1,1, (float)screenSize.x / 2, (float)screenSize.y / 2);
+        actualPicScale = 1.0f;
+        pictureScale = 1.0f;
     }
 
     int mediaPositionForMinimize;

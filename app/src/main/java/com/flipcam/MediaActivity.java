@@ -36,6 +36,7 @@ import android.util.Log;
 import android.view.Display;
 import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.View;
 import android.view.ViewGroup;
@@ -126,7 +127,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     SharedPreferences videoPrefs;
     SDCardEventReceiver sdCardEventReceiver;
     AppWidgetManager appWidgetManager;
-    boolean VERBOSE = false;
+    boolean VERBOSE = true;
     AudioManager audioManager;
     ImageView folderViewOn;
     @BindView(R.id.infoMedia)
@@ -199,6 +200,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         }
         mPager = (ViewPager) findViewById(R.id.mediaPager);
         mPager.setOffscreenPageLimit(1);
+        if(VERBOSE)Log.d(TAG, "create MediaSlidePager");
         mPagerAdapter = new MediaSlidePager(getSupportFragmentManager());
         mPager.setAdapter(mPagerAdapter);
         if(fromGallery) {
@@ -356,6 +358,11 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         phoneLoc = getResources().getString(R.string.phoneLocation);
         sdcardLoc = getResources().getString(R.string.sdcardLocation);
         allLoc = getResources().getString(R.string.allLocation);
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        return hashMapFrags.get(selectedPosition).onTouch(event);
     }
 
     AudioManager.OnAudioFocusChangeListener onAudioFocusChangeListener = new AudioManager.OnAudioFocusChangeListener(){
@@ -845,6 +852,13 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                     previousFragment.mediaPlayer.pause();
                 }
             }
+            else{
+                //If previous fragment's picture was scaled up, restore it to original size.
+                Log.d(TAG, "isWasPicScaled = "+previousFragment.isWasPicScaled());
+                if(previousFragment.isWasPicScaled()){
+                    previousFragment.restoreImage();
+                }
+            }
         }
         //Display controls based on image/video
         if(isImage(medias[position].getPath())){
@@ -1229,6 +1243,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         return false;
     }
 
+    MediaFragment mediaFragment;
     class MediaSlidePager extends FragmentStatePagerAdapter
     {
         @Override
@@ -1239,7 +1254,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         @Override
         public Fragment getItem(int position) {
             if(VERBOSE)Log.d(TAG,"getItem = "+position);
-            MediaFragment mediaFragment;
             if(isDelete) {
                 isDelete = false;
                 if(VERBOSE)Log.d(TAG, "fromGallery sent to MediaFragment = "+fromGallery);

@@ -9,4 +9,6 @@
     <integer name="selfieTimerMin">3</integer>
     <integer name="selfieTimerMax">20</integer>
     <integer name="selfieTimerDefault">3</integer>
+    <!-- Picture scale size -->
+    <integer name="pictureScaleSize">3</integer>
 </resources>
