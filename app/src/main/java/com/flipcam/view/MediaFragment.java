@@ -205,21 +205,6 @@ MediaPlayer.OnErrorListener, Serializable{
             @Override
             public boolean onDoubleTap(MotionEvent motionEvent) {
                 Log.d(TAG, "onDoubleTap");
-                if(isImage()){
-                    if(!imageScaled) {
-                        picture.setPivotX(motionEvent.getX());
-                        picture.setPivotY(motionEvent.getY());
-                        picture.setScaleX(2.0f);
-                        picture.setScaleY(2.0f);
-                        imageScaled = true;
-                    }
-                    else{
-                        picture.setScaleX(1.0f);
-                        picture.setScaleY(1.0f);
-                        imageScaled = false;
-                    }
-                    return true;
-                }
                 return false;
             }
 
@@ -628,6 +613,7 @@ MediaPlayer.OnErrorListener, Serializable{
 
     float pictureScale = 1.0f;
     float actualPicScale = -1f;
+    float prevActualPicScale = -1f;
     boolean wasPicScaled = false;
 
     public boolean isWasPicScaled() {
@@ -636,10 +622,6 @@ MediaPlayer.OnErrorListener, Serializable{
 
     public void setWasPicScaled(boolean wasPicScaled) {
         this.wasPicScaled = wasPicScaled;
-    }
-
-    public void setFingerUp(boolean fingerUp) {
-        this.fingerUp = fingerUp;
     }
 
     boolean fingerUp = false;
@@ -677,6 +659,7 @@ MediaPlayer.OnErrorListener, Serializable{
                     }
                     else {
                         fingerUp = true;
+                        prevActualPicScale = actualPicScale;
                     }
                     Log.d(TAG, "mode=NONE");
                     break;
@@ -690,50 +673,29 @@ MediaPlayer.OnErrorListener, Serializable{
                         }
                     } else if (mode == ZOOM) {
                         float newDist = spacing(event);
-                        Log.d(TAG, "newDist=" + newDist);
+                        Log.d(TAG, "fingerUp = "+fingerUp);
                         if (newDist > 10f) {
+                            pictureScale = newDist / oldDist;
+                            Log.d(TAG, "pictureScale = "+pictureScale);
+                            Log.d(TAG, "prevActualPicScale = "+prevActualPicScale);
                             if(fingerUp){
-                                float distTravel = (newDist / oldDist);
-                                Log.d(TAG, "distTravelled = "+distTravel);
-                                if(distTravel != 1){
-                                    pictureScale = distTravel;
-                                }
+                                actualPicScale = prevActualPicScale * pictureScale;
                             }
                             else {
-                                pictureScale = newDist / oldDist;
+                                actualPicScale = pictureScale;
                             }
-                            Log.d(TAG, "PIC SCALE = "+pictureScale);
-                            if(actualPicScale <= PIC_SCALE_SIZE) {
+                            Log.d(TAG, "actualPicScale = "+actualPicScale);
+                            if(actualPicScale > PIC_SCALE_SIZE) {
+                                //Add 0.1 so that it is able to scale upto PIC_SCALE_SIZE times original size
+                                pictureScale = actualPicScale = PIC_SCALE_SIZE + 0.1f;
+                                Log.d(TAG, "Picture ACTUAL scale at = "+actualPicScale);
+                            }
+                            else if(actualPicScale <= PIC_SCALE_SIZE) {
                                 setWasPicScaled(true);
                                 matrix.set(savedMatrix);
                                 matrix.postScale(pictureScale, pictureScale, mid.x, mid.y);
                             }
                         }
-                        else{
-//                            pictureScale = 1.0f;
-                        }
-                        //Calculate actual scale size
-                        Log.d(TAG, "fingerUp = "+fingerUp);
-                        Log.d(TAG, "pictureScale = "+pictureScale);
-                        if(fingerUp){
-                            if(pictureScale > 1) {
-                                //For Zoom In
-                                actualPicScale = actualPicScale + pictureScale;
-                            }
-                            else if(pictureScale < 1) {
-                                //For Zoom Out
-                                actualPicScale = actualPicScale * pictureScale;
-                            }
-                        }
-                        else {
-                            actualPicScale = pictureScale;
-                        }
-                        Log.d(TAG, "actualPicScale = "+actualPicScale);
-                        if(actualPicScale > PIC_SCALE_SIZE) {
-                            //Add 0.1 so that it is able to scale upto PIC_SCALE_SIZE times original size
-                            pictureScale = actualPicScale = PIC_SCALE_SIZE + 0.1f;
-                        }
-                        Log.d(TAG, "Picture ACTUAL scale at = "+actualPicScale);
                     }
                     break;
             }
@@ -746,8 +708,14 @@ MediaPlayer.OnErrorListener, Serializable{
     public void restoreImage(){
         matrix = new Matrix();
         matrix.postScale(1,1, (float)screenSize.x / 2, (float)screenSize.y / 2);
-        actualPicScale = 1.0f;
-        pictureScale = 1.0f;
+        prevActualPicScale = actualPicScale = pictureScale = 1.0f;
+        //This is needed since this is also called from onPageSelected in MediaActivity.
+        fingerUp = false;
+        mode = NONE;
+    }
+
+    public void updateImageMatrix(){
+        picture.setImageMatrix(matrix);
     }
 
     int mediaPositionForMinimize;
@@ -1071,6 +1039,9 @@ MediaPlayer.OnErrorListener, Serializable{
                 mediaPositionForMinimize = mediaPlayer.getCurrentPosition();
                 isMediaPlayingForMinmize = mediaPlayer.isPlaying();
             }
+        }
+        else{
+            restoreImage();
         }
     }
 

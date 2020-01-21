@@ -857,6 +857,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 Log.d(TAG, "isWasPicScaled = "+previousFragment.isWasPicScaled());
                 if(previousFragment.isWasPicScaled()){
                     previousFragment.restoreImage();
+                    previousFragment.updateImageMatrix();
                 }
             }
         }
