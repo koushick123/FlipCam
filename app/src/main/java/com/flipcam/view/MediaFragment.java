@@ -197,9 +197,8 @@ MediaPlayer.OnErrorListener, Serializable{
                     start.set(event.getX(), event.getY());
                     Log.d(TAG, "mode=DRAG");
                     mode = DRAG;
-                    return true;
                 }
-                return false;
+                return true;
             }
 
             @Override
@@ -706,7 +705,7 @@ MediaPlayer.OnErrorListener, Serializable{
     }
 
     public void restoreImage(){
-        matrix = new Matrix();
+        savedMatrix = matrix = new Matrix();
         matrix.postScale(1,1, (float)screenSize.x / 2, (float)screenSize.y / 2);
         prevActualPicScale = actualPicScale = pictureScale = 1.0f;
         //This is needed since this is also called from onPageSelected in MediaActivity.
@@ -1042,6 +1041,7 @@ MediaPlayer.OnErrorListener, Serializable{
         }
         else{
             restoreImage();
+            picture.setImageMatrix(matrix);
         }
     }
 
