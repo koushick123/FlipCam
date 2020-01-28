@@ -146,51 +146,47 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if(VERBOSE)Log.d(TAG,"onCreate");
+        if (VERBOSE) Log.d(TAG, "onCreate");
         setContentView(R.layout.activity_media);
         ButterKnife.bind(this);
         DisplayMetrics displayMetrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-        WindowManager windowManager = (WindowManager)getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
+        WindowManager windowManager = (WindowManager) getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
         display = windowManager.getDefaultDisplay();
-        screenSize=new Point();
+        screenSize = new Point();
         display.getRealSize(screenSize);
         getSupportActionBar().hide();
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        controlVisbilityPreference = (ControlVisbilityPreference)getApplicationContext();
+        controlVisbilityPreference = (ControlVisbilityPreference) getApplicationContext();
         mediaFilters = new IntentFilter();
         fcPlayer = getResources().getString(R.string.videoFCPlayer);
         externalPlayer = getResources().getString(R.string.videoExternalPlayer);
         sdCardEventReceiver = new SDCardEventReceiver();
-        layoutInflater = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        audioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
+        layoutInflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         sharedPreferences = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
         videoPrefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-        videoControls = (LinearLayout)findViewById(R.id.videoControls);
+        videoControls = (LinearLayout) findViewById(R.id.videoControls);
         externalPlayerView = layoutInflater.inflate(R.layout.external_player_message, null);
         externalPlayerDialog = new Dialog(this);
-        if(savedInstanceState == null) {
+        if (savedInstanceState == null) {
             fromGallery = controlVisbilityPreference.isFromGallery();
-        }
-        else{
+        } else {
             fromGallery = savedInstanceState.getBoolean("fromGallery");
         }
-        Log.d(TAG, "fromGallery = "+fromGallery);
-        if(!fromGallery){
-            if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
-                if(doesSDCardExist() == null){
+        Log.d(TAG, "fromGallery = " + fromGallery);
+        if (!fromGallery) {
+            if (!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)) {
+                if (doesSDCardExist() == null) {
                     exitToPreviousActivity();
                     return;
-                }
-                else {
+                } else {
                     medias = MediaUtil.getMediaList(getApplicationContext(), fromGallery);
                 }
-            }
-            else {
+            } else {
                 medias = MediaUtil.getMediaList(getApplicationContext(), fromGallery);
             }
-        }
-        else{
+        } else {
             //If the MediaActivity is opened from Gallery we should not check for SAVE_MEDIA_PHONE_MEM preferences
             //The MediaUtil will open based on selection.
             //All over the app, where ever we use SAVE_MEDIA_PHONE_MEM to check for location preferences, we need to see if
@@ -198,24 +194,24 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             //though under location preferences he may choose phone storage, and vice versa.
             medias = MediaUtil.getMediaList(getApplicationContext(), fromGallery);
         }
-        mPager = (ViewPager) findViewById(R.id.mediaPager);
+        mPager = findViewById(R.id.mediaPager);
         mPager.setOffscreenPageLimit(1);
-        if(VERBOSE)Log.d(TAG, "create MediaSlidePager");
+        if (VERBOSE) Log.d(TAG, "create MediaSlidePager");
         mPagerAdapter = new MediaSlidePager(getSupportFragmentManager());
         mPager.setAdapter(mPagerAdapter);
-        if(fromGallery) {
+        if (fromGallery) {
             int mediaPos = controlVisbilityPreference.getMediaSelectedPosition();
-            if(VERBOSE)Log.d(TAG, "Intent extra = " +mediaPos);
+            if (VERBOSE) Log.d(TAG, "Intent extra = " + mediaPos);
             mPager.setCurrentItem(mediaPos);
             selectedPosition = previousSelectedFragment = mediaPos;
         }
-        deleteMedia = (ImageButton)findViewById(R.id.deleteMedia);
+        deleteMedia = (ImageButton) findViewById(R.id.deleteMedia);
         deleteMedia.setOnClickListener((view) -> {
-            if(VERBOSE)Log.d(TAG, "from the Gallery = "+fromGallery);
+            if (VERBOSE) Log.d(TAG, "from the Gallery = " + fromGallery);
             medias = MediaUtil.getMediaList(getApplicationContext(), fromGallery);
-            if(medias != null) {
+            if (medias != null) {
                 deleteMediaRoot = layoutInflater.inflate(R.layout.delete_media, null);
-                if(VERBOSE)Log.d(TAG, "Delete position = " + selectedPosition);
+                if (VERBOSE) Log.d(TAG, "Delete position = " + selectedPosition);
                 TextView deleteMsg = (TextView) deleteMediaRoot.findViewById(R.id.deleteMsg);
                 if (isImage(medias[selectedPosition].getPath())) {
                     deleteMsg.setText(getResources().getString(R.string.deleteMessage, getResources().getString(R.string.photo)));
@@ -231,24 +227,23 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         mediaLocation = new Dialog(this);
         noConnAlert = new Dialog(this);
         pause = (ImageButton) findViewById(R.id.playButton);
-        shareMedia = (ImageButton)findViewById(R.id.shareMedia);
+        shareMedia = (ImageButton) findViewById(R.id.shareMedia);
         shareToFBAlert = new Dialog(this);
         shareAlert = new Dialog(this);
         logoutFB = new Dialog(this);
         permissionFB = new Dialog(this);
         appNotExist = new Dialog(this);
         shareMedia.setOnClickListener((view) -> {
-            if(VERBOSE)Log.d(TAG, "from Gallery? = "+fromGallery);
+            if (VERBOSE) Log.d(TAG, "from Gallery? = " + fromGallery);
             medias = MediaUtil.getMediaList(getApplicationContext(), fromGallery);
-            if(medias != null) {
-                if(VERBOSE)Log.d(TAG, "Share position = " + selectedPosition);
+            if (medias != null) {
+                if (VERBOSE) Log.d(TAG, "Share position = " + selectedPosition);
                 Uri mediaUri;
-                if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
-                    if(VERBOSE)Log.d(TAG, "For OREO and above use FileProvider");
-                    mediaUri = FileProvider.getUriForFile(MediaActivity.this, BuildConfig.APPLICATION_ID+".provider",
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    if (VERBOSE) Log.d(TAG, "For OREO and above use FileProvider");
+                    mediaUri = FileProvider.getUriForFile(MediaActivity.this, BuildConfig.APPLICATION_ID + ".provider",
                             new File(medias[selectedPosition].getPath()));
-                }
-                else {
+                } else {
                     mediaUri = Uri.fromFile(new File(medias[selectedPosition].getPath()));
                 }
                 Intent shareIntent = new Intent();
@@ -260,7 +255,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                     shareIntent.setType(getResources().getString(R.string.videoType));
                 }
                 if (doesAppExistForIntent(shareIntent)) {
-                    if(VERBOSE)Log.d(TAG, "Apps exists");
+                    if (VERBOSE) Log.d(TAG, "Apps exists");
                     Intent chooser;
                     if (isImage(medias[selectedPosition].getPath())) {
                         chooser = Intent.createChooser(shareIntent, getResources().getString(R.string.chooserTitleImage));
@@ -268,20 +263,19 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                         chooser = Intent.createChooser(shareIntent, getResources().getString(R.string.chooserTitleVideo));
                     }
                     if (shareIntent.resolveActivity(getPackageManager()) != null) {
-                        if(VERBOSE)Log.d(TAG, "Start activity to choose");
-                        if(!fromGallery) {
+                        if (VERBOSE) Log.d(TAG, "Start activity to choose");
+                        if (!fromGallery) {
                             if (!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)) {
                                 if (doesSDCardExist() == null) {
                                     exitToPreviousActivity();
                                     return;
                                 }
                             }
-                        }
-                        else{
-                            if(sharedPreferences.getString(Constants.MEDIA_LOCATION_VIEW_SELECT, phoneLoc).
+                        } else {
+                            if (sharedPreferences.getString(Constants.MEDIA_LOCATION_VIEW_SELECT, phoneLoc).
                                     equalsIgnoreCase(sdcardLoc) ||
-                                sharedPreferences.getString(Constants.MEDIA_LOCATION_VIEW_SELECT, phoneLoc).
-                                        equalsIgnoreCase(allLoc)){
+                                    sharedPreferences.getString(Constants.MEDIA_LOCATION_VIEW_SELECT, phoneLoc).
+                                            equalsIgnoreCase(allLoc)) {
                                 if (doesSDCardExist() == null) {
                                     exitToPreviousActivity();
                                     return;
@@ -293,44 +287,43 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 }
             }
         });
-        startTime = (TextView)findViewById(R.id.startTime);
-        endTime = (TextView)findViewById(R.id.endTime);
-        videoSeek = (SeekBar)findViewById(R.id.videoSeek);
-        topMediaControls = (LinearLayout)findViewById(R.id.topMediaControls);
-        timeControls = (LinearLayout)findViewById(R.id.timeControls);
-        parentMedia = (LinearLayout)findViewById(R.id.parentMedia);
-        noImage = (ImageView)findViewById(R.id.noImage);
-        noImageText = (TextView)findViewById(R.id.noImageText);
-        playCircle = (ImageView)findViewById(R.id.playVideo);
-        folderViewOn = (ImageView)findViewById(R.id.folderViewOn);
-        if(VERBOSE)Log.d(TAG, "savedInstanceState = "+savedInstanceState);
-        if(savedInstanceState == null){
+        startTime = (TextView) findViewById(R.id.startTime);
+        endTime = (TextView) findViewById(R.id.endTime);
+        videoSeek = (SeekBar) findViewById(R.id.videoSeek);
+        topMediaControls = (LinearLayout) findViewById(R.id.topMediaControls);
+        timeControls = (LinearLayout) findViewById(R.id.timeControls);
+        parentMedia = (LinearLayout) findViewById(R.id.parentMedia);
+        noImage = (ImageView) findViewById(R.id.noImage);
+        noImageText = (TextView) findViewById(R.id.noImageText);
+        playCircle = (ImageView) findViewById(R.id.playVideo);
+        folderViewOn = (ImageView) findViewById(R.id.folderViewOn);
+        if (VERBOSE) Log.d(TAG, "savedInstanceState = " + savedInstanceState);
+        if (savedInstanceState == null) {
             clearMediaPreferences();
             controlVisbilityPreference.setHideControl(true);
             reDrawPause();
             //When coming from gallery check media type based on selected position.
-            if(!fromGallery){
+            if (!fromGallery) {
                 selectedPosition = 0;
             }
-            if(VERBOSE)Log.d(TAG, "selectedPosition === "+selectedPosition);
+            if (VERBOSE) Log.d(TAG, "selectedPosition === " + selectedPosition);
 
-            if(isImage(medias[selectedPosition].getPath())) {
-                if(VERBOSE)Log.d(TAG, "Hide PlayForVideo");
+            if (isImage(medias[selectedPosition].getPath())) {
+                if (VERBOSE) Log.d(TAG, "Hide PlayForVideo");
                 removeVideoControls();
                 hidePlayForVideo();
-            }
-            else{
-                if(videoPrefs.getString(Constants.SELECT_VIDEO_PLAYER, externalPlayer).equalsIgnoreCase(fcPlayer)) {
+            } else {
+                if (videoPrefs.getString(Constants.SELECT_VIDEO_PLAYER, externalPlayer).equalsIgnoreCase(fcPlayer)) {
                     playCircle.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_circle_outline));
                     if (!controlVisbilityPreference.isHideControl()) {
                         if (VERBOSE) Log.d(TAG, "Show PlayForVideo");
                         setupPlayForVideo(0);
                         showPlayForVideo();
                     }
-                } else{
+                } else {
                     removeVideoControls();
                     setupPlayCircleForExternalPlayer();
-                    if(!externalPlayerMessageShown) {
+                    if (!externalPlayerMessageShown) {
                         externalPlayerMessageShown = true;
                         showExternalPlayerMessage();
                     }
@@ -338,23 +331,23 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             }
         }
         folderViewOn.setOnClickListener((view1) -> {
-                mediaLocationView = layoutInflater.inflate(R.layout.medialocation, null);
-                phoneFolder = mediaLocationView.findViewById(R.id.phoneFolder);
-                sdcardFolder = mediaLocationView.findViewById(R.id.sdcardFolder);
-                bothFolder = mediaLocationView.findViewById(R.id.bothFolder);
-                phoneFolder.setMediaActivity(this);
-                sdcardFolder.setMediaActivity(this);
-                bothFolder.setMediaActivity(this);
-                mediaLocation.setContentView(mediaLocationView);
-                mediaLocation.setCancelable(true);
-                mediaLocation.show();
+            mediaLocationView = layoutInflater.inflate(R.layout.medialocation, null);
+            phoneFolder = mediaLocationView.findViewById(R.id.phoneFolder);
+            sdcardFolder = mediaLocationView.findViewById(R.id.sdcardFolder);
+            bothFolder = mediaLocationView.findViewById(R.id.bothFolder);
+            phoneFolder.setMediaActivity(this);
+            sdcardFolder.setMediaActivity(this);
+            bothFolder.setMediaActivity(this);
+            mediaLocation.setContentView(mediaLocationView);
+            mediaLocation.setCancelable(true);
+            mediaLocation.show();
         });
-        notifyIcon = BitmapFactory.decodeResource(getApplicationContext().getResources(),R.drawable.ic_launcher);
+        notifyIcon = BitmapFactory.decodeResource(getApplicationContext().getResources(), R.drawable.ic_launcher);
         mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         queueNotification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
         taskInProgressRoot = layoutInflater.inflate(R.layout.task_in_progress, null);
         taskAlert = new Dialog(this);
-        appWidgetManager = (AppWidgetManager)getSystemService(Context.APPWIDGET_SERVICE);
+        appWidgetManager = (AppWidgetManager) getSystemService(Context.APPWIDGET_SERVICE);
         phoneLoc = getResources().getString(R.string.phoneLocation);
         sdcardLoc = getResources().getString(R.string.sdcardLocation);
         allLoc = getResources().getString(R.string.allLocation);
@@ -415,6 +408,10 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             externalPlayerDialog.setCancelable(true);
             externalPlayerDialog.show();
         }
+    }
+
+    public MediaActivity getMediaActivity(){
+        return this;
     }
 
     public Dialog getMediaLocation(){
@@ -777,7 +774,13 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     }
 
     @Override
+    public void onPageScrollStateChanged(int state) {
+        Log.d(TAG, "onPageScrollStateChanged = "+state);
+    }
+
+    @Override
     public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+        Log.d(TAG, "onPageScrolled = "+position+" , "+positionOffset+" , "+positionOffsetPixels);
     }
 
     private void clearMediaPreferences(){
@@ -1007,10 +1010,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         else{
             hidePlayForVideo();
         }
-    }
-
-    @Override
-    public void onPageScrollStateChanged(int state) {
     }
 
     StringBuffer timeToDisplay = new StringBuffer();

@@ -193,10 +193,7 @@ MediaPlayer.OnErrorListener, Serializable{
             @Override
             public boolean onDown(MotionEvent event) {
                 if(isImage()) {
-                    savedMatrix.set(matrix);
-                    start.set(event.getX(), event.getY());
-                    Log.d(TAG, "mode=DRAG");
-                    mode = DRAG;
+                    initializeMatrix(event);
                 }
                 return true;
             }
@@ -711,6 +708,13 @@ MediaPlayer.OnErrorListener, Serializable{
         //This is needed since this is also called from onPageSelected in MediaActivity.
         fingerUp = false;
         mode = NONE;
+    }
+
+    public void initializeMatrix(MotionEvent event){
+        savedMatrix.set(matrix);
+        start.set(event.getX(), event.getY());
+        Log.d(TAG, "mode=DRAG");
+        mode = DRAG;
     }
 
     public void updateImageMatrix(){
