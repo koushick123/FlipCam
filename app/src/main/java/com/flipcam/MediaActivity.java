@@ -127,7 +127,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     SharedPreferences videoPrefs;
     SDCardEventReceiver sdCardEventReceiver;
     AppWidgetManager appWidgetManager;
-    boolean VERBOSE = false;
+    boolean VERBOSE = true;
     AudioManager audioManager;
     ImageView folderViewOn;
     @BindView(R.id.infoMedia)
@@ -1224,6 +1224,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
 
     public void showNoImagePlaceholder(){
         //No Images
+        playCircle.setVisibility(View.GONE);
         videoControls.setVisibility(View.GONE);
         mPager.setVisibility(View.GONE);
         noImage.setVisibility(View.VISIBLE);
