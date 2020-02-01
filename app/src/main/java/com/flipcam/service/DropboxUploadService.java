@@ -13,9 +13,10 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
-import android.support.annotation.Nullable;
-import android.support.v4.app.NotificationCompat;
 import android.util.Log;
+
+import androidx.annotation.Nullable;
+import androidx.core.app.NotificationCompat;
 
 import com.dropbox.core.DbxException;
 import com.dropbox.core.DbxRequestConfig;
@@ -53,7 +54,7 @@ public class DropboxUploadService extends Service {
     String filename;
     DropboxUploadService.DropboxUploadHandler dropboxUploadHandler;
     NotificationManager mNotificationManager;
-    android.support.v4.app.NotificationCompat.Builder mBuilder;
+    androidx.core.app.NotificationCompat.Builder mBuilder;
     String uploadId;
     double uploadedSize = 0;
     Bitmap notifyIcon;

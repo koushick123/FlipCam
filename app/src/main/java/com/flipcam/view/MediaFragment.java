@@ -18,8 +18,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.preference.PreferenceManager;
-import android.support.annotation.Nullable;
-import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.Display;
 import android.view.GestureDetector;
@@ -38,8 +36,11 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+
+import com.bumptech.glide.Glide;
 import com.flipcam.ControlVisbilityPreference;
-import com.flipcam.GlideApp;
 import com.flipcam.MediaActivity;
 import com.flipcam.R;
 import com.flipcam.constants.Constants;
@@ -419,7 +420,7 @@ MediaPlayer.OnErrorListener, Serializable{
             imageWidth = image.getWidth();
             fitPhotoToScreen();
             Uri uri = Uri.fromFile(new File(path));
-            GlideApp.with(getContext()).load(uri).into(picture);
+            Glide.with(getContext()).load(uri).into(picture);
             if(savedInstanceState!=null){
                 imageScaled = savedInstanceState.getBoolean("imageScaled");
             }

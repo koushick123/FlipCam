@@ -15,9 +15,6 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.support.annotation.NonNull;
-import android.support.v4.app.ActivityCompat;
-import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -30,6 +27,10 @@ import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 
 import com.dropbox.core.DbxException;
 import com.dropbox.core.DbxRequestConfig;
@@ -371,28 +372,6 @@ public class SettingsActivity extends AppCompatActivity{
             switchOnDropbox.setChecked(false);
         }
     }
-
-    /*public String doesSDCardExist(){
-        File[] mediaDirs = getExternalMediaDirs();
-        if(mediaDirs != null) {
-            if(VERBOSE)Log.d(TAG, "mediaDirs = " + mediaDirs.length);
-        }
-        for(int i=0;i<mediaDirs.length;i++){
-            if(VERBOSE)Log.d(TAG, "external media dir = "+mediaDirs[i]);
-            if(mediaDirs[i] != null) {
-                try {
-                    if (Environment.isExternalStorageRemovable(mediaDirs[i])) {
-                        if(VERBOSE)Log.d(TAG, "Removable storage = " + mediaDirs[i]);
-                        //Check if write operation is allowed in Removable storage.
-                        return mediaDirs[i].getPath();
-                    }
-                } catch (IllegalArgumentException illegal) {
-                    if(VERBOSE)Log.d(TAG, "Not a valid storage device");
-                }
-            }
-        }
-        return null;
-    }*/
 
     public void selectSaveMedia(View view){
         switch (view.getId()){

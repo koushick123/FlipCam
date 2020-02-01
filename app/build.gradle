@@ -12,14 +12,14 @@ android {
             storePassword keystoreProperties['storePassword']
         }
     }*/
-    compileSdkVersion 28
+    compileSdkVersion 29
     defaultConfig {
         applicationId "com.flipcam"
         minSdkVersion 21
-        targetSdkVersion 28
+        targetSdkVersion 29
         versionCode 3
         versionName "1.01"
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         // Enabling multidex support.
         multiDexEnabled true
     }
@@ -52,23 +52,23 @@ repositories {
 
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
-    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
+    androidTestCompile('androidx.test.espresso:espresso-core:3.1.0', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
     compile('com.jakewharton:butterknife:10.1.0'){
         exclude module: 'core'
     }
-    implementation 'com.android.support:appcompat-v7:28.0.0'
-    implementation 'com.android.support:support-media-compat:28.0.0'
-    implementation 'com.android.support:support-v4:28.0.0'
-    implementation 'com.android.support:design:28.0.0'
+    implementation 'androidx.appcompat:appcompat:1.1.0'
+    implementation 'androidx.media:media:1.1.0'
+    implementation 'androidx.legacy:legacy-support-v4:1.0.0'
+    implementation 'com.google.android.material:material:1.0.0'
     annotationProcessor 'com.jakewharton:butterknife-compiler:10.1.0'
-    compile 'com.google.android.gms:play-services-auth:11.6.0'
-    compile 'com.google.android.gms:play-services-drive:11.6.0'
-    compile 'com.github.bumptech.glide:glide:4.3.1'
+    compile 'com.google.android.gms:play-services-auth:17.0.0'
+    compile 'com.google.android.gms:play-services-drive:17.0.0'
+    implementation 'com.github.bumptech.glide:glide:4.10.0'
+    annotationProcessor 'com.github.bumptech.glide:compiler:4.10.0'
     compile 'com.dropbox.core:dropbox-core-sdk:3.0.6'
     testCompile 'junit:junit:4.12'
-    annotationProcessor 'com.github.bumptech.glide:compiler:4.3.1'
     compile files('libs/mail.jar')
     compile files('libs/activation.jar')
     compile files('libs/additionnal.jar')

@@ -30,7 +30,6 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.StatFs;
 import android.preference.PreferenceManager;
-import android.support.v4.content.ContextCompat;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.Gravity;
@@ -47,6 +46,8 @@ import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.core.content.ContextCompat;
 
 import com.flipcam.PhotoFragment;
 import com.flipcam.R;

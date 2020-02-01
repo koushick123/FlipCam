@@ -11,8 +11,6 @@ import android.content.Loader;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -22,7 +20,10 @@ import android.widget.Button;
 import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
+
+import androidx.appcompat.app.AppCompatActivity;
 
 import com.flipcam.adapter.MediaAdapter;
 import com.flipcam.adapter.MediaLoader;
@@ -30,6 +31,7 @@ import com.flipcam.constants.Constants;
 import com.flipcam.media.FileMedia;
 import com.flipcam.util.MediaUtil;
 import com.flipcam.util.SDCardUtil;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -59,6 +61,8 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
     LinearLayout gridHeader;
     @BindView(R.id.videoCapture)
     FloatingActionButton videoCapture;
+    @BindView(R.id.openMediaProgress)
+    ProgressBar openMediaProgress;
     ControlVisbilityPreference controlVisbilityPreference;
     FileMedia[] medias;
     boolean VERBOSE = false;
@@ -157,16 +161,18 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
                 }
             });
             mediaGrid.setOnItemClickListener((adapterView, view, position, l) -> {
+                mediaGrid.setClickable(false);
+                openMediaProgress.setVisibility(View.VISIBLE);
                 if(VERBOSE)Log.d(TAG, "onItemSelected = "+position);
                 Intent mediaAct = new Intent(getApplicationContext(), MediaActivity.class);
+                mediaAct.putExtra("fromGallery",true);
+                mediaAct.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_NEW_TASK);
+                controlVisbilityPreference.setFromGallery(true);
+                controlVisbilityPreference.setMediaSelectedPosition(position);
                 SharedPreferences.Editor mediaLocEdit = sharedPreferences.edit();
                 mediaLocEdit.putString(Constants.MEDIA_LOCATION_VIEW_SELECT, selectedFolder);
                 mediaLocEdit.commit();
                 if(VERBOSE) Log.d(TAG, "SAVE selectedFolder = "+selectedFolder);
-                controlVisbilityPreference.setFromGallery(true);
-                controlVisbilityPreference.setMediaSelectedPosition(position);
-                mediaAct.putExtra("fromGallery",true);
-                mediaAct.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(mediaAct);
             });
             if(VERBOSE)Log.d(TAG, "selectedMedia Pos = "+controlVisbilityPreference.getMediaSelectedPosition());
