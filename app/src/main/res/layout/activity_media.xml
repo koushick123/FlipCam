@@ -163,6 +163,16 @@
                 android:contentDescription="@string/playVideo"
                 android:scaleType="centerCrop"
                 android:src="@drawable/ic_play_arrow" />
+
+            <ImageButton
+                android:id="@+id/imageRotate"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/playButtonHeight"
+                android:layout_gravity="center"
+                android:background="@color/mediaControlColor"
+                android:contentDescription="@string/playVideo"
+                android:scaleType="centerCrop"
+                android:src="@drawable/rotate" />
         </LinearLayout>
     </LinearLayout>
 </FrameLayout>

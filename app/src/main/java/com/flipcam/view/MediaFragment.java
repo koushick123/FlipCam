@@ -95,12 +95,13 @@ MediaPlayer.OnErrorListener, Serializable{
     transient int imageHeight;
     transient int imageWidth;
     transient FrameLayout mediaPlaceholder;
-    boolean VERBOSE = false;
+    boolean VERBOSE = true;
     AudioManager audioManager;
     boolean imageScaled = false;
     boolean fromGallery = false;
     MediaActivity mediaActivity;
     SharedPreferences sharedPreferences;
+    ImageButton pictureRotate;
 
     public static MediaFragment newInstance(int pos,boolean recreate, boolean fromGal){
         MediaFragment mediaFragment = new MediaFragment();
@@ -130,6 +131,7 @@ MediaPlayer.OnErrorListener, Serializable{
         frameMedia = (FrameLayout)getActivity().findViewById(R.id.frameMedia);
         controlVisbilityPreference = (ControlVisbilityPreference) getActivity().getApplicationContext();
         playCircle = (ImageView)getActivity().findViewById(R.id.playVideo);
+        pictureRotate = getActivity().findViewById(R.id.imageRotate);
         mediaActivity = (MediaActivity)getActivity();
 
         if(getUserVisibleHint()) {
@@ -177,6 +179,11 @@ MediaPlayer.OnErrorListener, Serializable{
                     setupPlayCircleForExternalPlayer();
                 }
             }
+            else{
+                pictureRotate.setOnClickListener((view) -> {
+                    rotatePicture();
+                });
+            }
         }
         final GestureDetector detector = new GestureDetector(getActivity().getApplicationContext(), new GestureDetector.SimpleOnGestureListener(){
             @Override
@@ -194,24 +201,7 @@ MediaPlayer.OnErrorListener, Serializable{
             @Override
             public boolean onDoubleTap(MotionEvent motionEvent) {
                 Log.d(TAG, "onDoubleTap");
-                if(isImage()){
-                    if(!imageScaled) {
-                        picture.setPivotX(motionEvent.getX());
-                        picture.setPivotY(motionEvent.getY());
-                        picture.setScaleX(2.0f);
-                        picture.setScaleY(2.0f);
-                        imageScaled = true;
-                    }
-                    else{
-                        picture.setScaleX(1.0f);
-                        picture.setScaleY(1.0f);
-                        imageScaled = false;
-                    }
-                    return true;
-                }
-                else{
-                    return false;
-                }
+                return false;
             }
 
             @Override
@@ -450,8 +440,22 @@ MediaPlayer.OnErrorListener, Serializable{
         return view;
     }
 
+    float rotateAngle = 0;
+    Point screenSize=new Point();
+    public void rotatePicture(){
+        if(rotateAngle == 360){
+            rotateAngle = 0;
+        }
+        rotateAngle += 90;
+        picture.setRotation(rotateAngle);
+    }
+
+    public void resetPicture(){
+        rotateAngle = 0;
+        picture.setRotation(rotateAngle);
+    }
+
     public void fitPhotoToScreen(){
-        Point screenSize=new Point();
         display.getRealSize(screenSize);
         double screenAR = (double)screenSize.x / (double)screenSize.y;
         if(VERBOSE)Log.d(TAG, "screenSize = "+screenSize.x+" X "+screenSize.y);
@@ -882,6 +886,7 @@ MediaPlayer.OnErrorListener, Serializable{
                     topBar.setVisibility(View.GONE);
                     videoControls.setVisibility(View.GONE);
                 }
+                pause.setVisibility(View.GONE);
             }
             else{
                 videoView.setVisibility(View.VISIBLE);
