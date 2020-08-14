@@ -1,22 +1,22 @@
-![logotype a-06](https://user-images.githubusercontent.com/36028424/39978128-50b7e3ca-5771-11e8-9b03-b699b5eb6bf8.png)
+<img src="https://user-images.githubusercontent.com/36028424/39978128-50b7e3ca-5771-11e8-9b03-b699b5eb6bf8.png" width="300px" height="150px"></img>
 
 An android app that records using front and back camera in the same video file.
 
 This app is available for use from Android version Lollipop to Pie.
 
-It provides the following features
-<ul>
-  <li>Record videos using both cameras in a single video.</li>
-  <li>Share your Photos/Videos via WhatsApp, Facebook, Google Drive, etc.</li>
-  <li>Automatically upload to your Google Drive or Dropbox cloud service.</li>  
-  <li>Choose a resolution with Photo/Video</li>
-  <li>Get warned about memory thresholds before hand.</li>
-  <li>Store in SD Card, if you run out of memory.</li>
-  <li>Improved UI</li>
-  <li>Bug fixes</li>
-  </ul>
+Latest version is 1.3 which provides below features and fixes:
+
+Includes a fix for issue where recorded video freezes on playback on some devices.
+Includes below new features:
+1. Users can switch between viewing media content from SD Card and Phone.
+2. Users can choose between external video player and internal (FlipCam) video player.
+3. A front facing camera timer for selfies.
+4. Pinch zoom ability for optical zoom.
+New icons for settings, share and delete.
+Additional bug fixes.
+Includes support up to Android Pie.
  
- FlipCam is now available on the Google Play Store.
+ FlipCam is available on the Google Play Store.
  <br>
  https://play.google.com/store/apps/details?id=com.flipcam
  
