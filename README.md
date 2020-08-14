@@ -19,3 +19,7 @@ It provides the following features
  FlipCam is now available on the Google Play Store.
  <br>
  https://play.google.com/store/apps/details?id=com.flipcam
+ 
+ Please check below website for a review of FlipCam.
+ 
+ <a href="https://taimienphi.vn" title="download"><img src="https://taimienphi.vn/Images/bn/reviewed/tmp2.png" title="awarded 5 Stars at Taimienphi" alt="download" /></a>
