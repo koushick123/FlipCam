@@ -68,6 +68,9 @@ import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Queue;
 
 import static android.content.Context.SENSOR_SERVICE;
 import static android.os.Environment.getExternalStoragePublicDirectory;
@@ -121,7 +124,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         RECORD_IDENTITY_MATRIX = new float[16];
         Matrix.setIdentityM(RECORD_IDENTITY_MATRIX, 0);
     }
-
     CameraRenderer.CameraHandler cameraHandler;
     MainHandler mainHandler;
     Object renderObj = new Object();
@@ -182,6 +184,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     boolean recordPauseOffset = false;
     long recordedTimeStamp = -1;
     SharedPreferences sharedPreferences;
+    boolean pauseUsedOnce = false;
+    Queue recordTimeStamps = new LinkedList();
 
     public CameraView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -577,6 +581,14 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
 
     public void setRecordPauseOffset(boolean recordPauseOffset) {
         this.recordPauseOffset = recordPauseOffset;
+    }
+
+    public boolean isPauseUsedOnce() {
+        return pauseUsedOnce;
+    }
+
+    public void setPauseUsedOnce(boolean pauseUsedOnce) {
+        this.pauseUsedOnce = pauseUsedOnce;
     }
 
     public void showTimeElapsed()
@@ -1544,6 +1556,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 //Calls eglSwapBuffers.  Use this to "publish" the current frame.
                 EGL14.eglSwapBuffers(mEGLDisplay, eglSurface);
 
+                long tempTime;
                 if(isRecording) {
                     makeCurrent(encoderSurface);
                     if (FRAME_VERBOSE) Log.d(TAG, "Made encoder surface current");
@@ -1577,24 +1590,28 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         recordStop = 1;
                     }
                     updateTimer = true;
-                    /*if(recordedTimeStamp != -1 && isRecordPauseOffset()){
-                        pauseDuration = Math.abs(recordedTimeStamp - surfaceTexture.getTimestamp());
-                        Log.d(TAG, "pause duration = "+ pauseDuration);
-                        long pauseOffset = surfaceTexture.getTimestamp() - pauseDuration;
-                        Log.d(TAG, "pauseOffset = "+pauseOffset);
-                        EGLExt.eglPresentationTimeANDROID(mEGLDisplay, encoderSurface, pauseOffset);
-                        recordedTimeStamp = -1;
-                        setRecordPauseOffset(false);
+                    if(isPauseUsedOnce()){
+                        //Since we have paused once we need to read only from recordTimeStamps queue. This is to ensure we maintain sequence of
+                        //timestamps for each frame.
+                        tempTime = (Long)recordTimeStamps.poll();
+                        EGLExt.eglPresentationTimeANDROID(mEGLDisplay, encoderSurface, tempTime);
+                        Log.d(TAG, "Time to code ==== "+tempTime+" Length ===> "+recordTimeStamps.size());
+                        recordTimeStamps.offer(System.nanoTime());
                     }
-                    else{
-                        if(recordedTimeStamp != -1){
-                            Log.d(TAG, "surfaceTexture.getTimestamp DIFF = "+Math.abs(surfaceTexture.getTimestamp() - recordedTimeStamp));
-                        }
-                        EGLExt.eglPresentationTimeANDROID(mEGLDisplay, encoderSurface, surfaceTexture.getTimestamp());
-                        recordedTimeStamp = surfaceTexture.getTimestamp();
-                    }*/
-                    EGLExt.eglPresentationTimeANDROID(mEGLDisplay, encoderSurface, System.nanoTime());
+                    else {
+                        tempTime = System.nanoTime() - 2000000000L;
+                        Log.d(TAG, "Time to code NO PAUSE ==== "+tempTime);
+                        EGLExt.eglPresentationTimeANDROID(mEGLDisplay, encoderSurface, tempTime);
+                    }
                     EGL14.eglSwapBuffers(mEGLDisplay, encoderSurface);
+                }
+                else if (isPauseUsedOnce()){
+                    if(isRecordPaused()){
+                        tempTime = System.nanoTime();
+                        recordTimeStamps.offer(tempTime);
+                        Log.d(TAG, "Time to QUEUE == "+tempTime);
+                        Log.d(TAG, "Timestamp LENGTH = "+recordTimeStamps.size());
+                    }
                 }
             }
             frameCount++;
@@ -1684,6 +1701,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         isRecording = false;
                         recordStop = -1;
                         recordIncomplete = false;
+                        setPauseUsedOnce(false);
                         try {
                             mediaRecorder.stop();
                         }
@@ -1705,23 +1723,16 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         break;
                     case Constants.RECORD_PAUSE:
                         if(VERBOSE)Log.d(TAG, "Pausing record");
-                        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N){
-                            updateTimer = false;
-                            isRecording = false;
-//                            mediaRecorder.pause();
-                            setRecordPaused(true);
-                            setRecordPauseOffset(false);
-                        }
+                        updateTimer = false;
+                        isRecording = false;
+                        setRecordPaused(true);
+                        setPauseUsedOnce(true);
                         break;
                     case Constants.RECORD_RESUME:
                         if(VERBOSE)Log.d(TAG, "Resuming record");
-                        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N){
-                            isRecording = true;
-//                            mediaRecorder.resume();
-                            setRecordPaused(false);
-                            setRecordPauseOffset(true);
-                            updateTimer = true;
-                        }
+                        isRecording = true;
+                        setRecordPaused(false);
+                        updateTimer = true;
                         break;
                     case Constants.RECORD_STOP_NO_SD_CARD:
                         isRecording = false;
