@@ -25,6 +25,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.FragmentTransaction;
 
 import com.flipcam.constants.Constants;
+import com.flipcam.util.GLUtil;
 import com.flipcam.view.PinchZoomGestureListener;
 
 import java.io.File;
@@ -192,15 +193,15 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
             @Override
             public void onClick(View view) {
                 if(isVideo()) {
-                    if(videoFragment.cameraView.colorVal < 0.25f) {
-                        videoFragment.cameraView.colorVal += 0.05f;
+                    if(GLUtil.colorVal < 0.25f) {
+                        GLUtil.colorVal += 0.05f;
                         brightnessBar.incrementProgressBy(1);
                         controlVisbilityPreference.setBrightnessLevel(brightnessBar.getProgress());
                     }
                     else{
-                        videoFragment.cameraView.colorVal = 0.25f;
+                        GLUtil.colorVal = 0.25f;
                     }
-                    controlVisbilityPreference.setBrightnessProgress(videoFragment.cameraView.colorVal);
+                    controlVisbilityPreference.setBrightnessProgress(GLUtil.colorVal);
                 }
             }
         });
@@ -209,15 +210,15 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
             @Override
             public void onClick(View view) {
                 if(isVideo()){
-                    if(videoFragment.cameraView.colorVal > -0.25f) {
-                        videoFragment.cameraView.colorVal -= 0.05f;
+                    if(GLUtil.colorVal > -0.25f) {
+                        GLUtil.colorVal -= 0.05f;
                         brightnessBar.incrementProgressBy(-1);
                         controlVisbilityPreference.setBrightnessLevel(brightnessBar.getProgress());
                     }
                     else{
-                        videoFragment.cameraView.colorVal = -0.25f;
+                        GLUtil.colorVal = -0.25f;
                     }
-                    controlVisbilityPreference.setBrightnessProgress(videoFragment.cameraView.colorVal);
+                    controlVisbilityPreference.setBrightnessProgress(GLUtil.colorVal);
                 }
             }
         });

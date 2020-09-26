@@ -510,9 +510,7 @@ MediaPlayer.OnErrorListener, Serializable{
             }
             else{
                 layoutParams.width = screenSize.x;
-                //Reduce the height by 5 pixels since Samsung A50 does not display 4K portrait videos correctly.
-                //The reduction of 5 pixels is negligible for user to find out.
-                layoutParams.height = (int)(screenSize.x / videoAR) - 5;
+                layoutParams.height = (int)(screenSize.x / videoAR);
                 layoutParams.gravity = Gravity.CENTER;
                 videoView.setLayoutParams(layoutParams);
             }
