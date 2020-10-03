@@ -1,6 +1,7 @@
 package com.flipcam.view;
 
 import android.Manifest;
+import android.annotation.TargetApi;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -17,6 +18,7 @@ import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaCodecList;
 import android.media.MediaFormat;
+import android.media.MediaMuxer;
 import android.media.MediaRecorder;
 import android.opengl.EGL14;
 import android.opengl.EGLExt;
@@ -56,12 +58,12 @@ import com.flipcam.cameramanager.Camera1Manager;
 import com.flipcam.cameramanager.Camera2Manager;
 import com.flipcam.constants.Constants;
 import com.flipcam.util.GLUtil;
-import com.flipcam.util.MediaUtil;
 import com.flipcam.util.SDCardUtil;
 
 import java.io.File;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.LinkedList;
@@ -284,9 +286,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                     if(VERBOSE)Log.d(TAG, "Hide time elapsed");
                     hideTimeElapsed();
                     break;
-                case Constants.SHOW_MEMORY_CONSUMED:
+                /*case Constants.SHOW_MEMORY_CONSUMED:
                     showMemoryConsumed();
-                    break;
+                    break;*/
                 case Constants.RECORD_COMPLETE:
                     mediaContent = null;
                     if(VERBOSE)Log.d(TAG,"Update thumbnail now");
@@ -541,10 +543,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         return timeElapsed.getVisibility() == View.VISIBLE;
     }
 
-    public void showMemoryConsumed()
+    /*public void showMemoryConsumed()
     {
         memoryConsumed.setText(MediaUtil.convertMemoryForDisplay(videoFile.length()));
-    }
+    }*/
 
     public void setFlashButton(ImageButton flashButton)
     {
@@ -1154,7 +1156,44 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     class CameraRenderer extends Thread
     {
         int recordStop = -1;
+        private final String MIME_TYPE = "video/avc";
+        // parameters for recording
+        private final int FRAME_RATE = 25;
+        private final float BPP = 0.25f;
+        private final int TIMEOUT_USEC = 10000;
         boolean isRecording = false;
+        int viewWidth = 0;
+        int viewHeight = 0;
+        Object muxerObj = new Object();
+        /**
+         * Flag that indicate encoder received EOS(End Of Stream)
+         */
+        boolean mIsEOS;
+        /**
+         * Flag the indicate the muxer is running
+         */
+        boolean mMuxerStarted;
+        /**
+         * Track Number
+         */
+        int mTrackIndex;
+        /**
+         * MediaCodec instance for encoding
+         */
+        MediaCodec mMediaCodec;				// API >= 16(Android4.1.2)
+        /**
+         * Weak refarence of MediaMuxerWarapper instance
+         */
+        MediaMuxer muxer;
+        /**
+         * BufferInfo instance for dequeuing
+         */
+        private MediaCodec.BufferInfo mBufferInfo;
+
+        /**
+         * previous presentationTimeUs for writing
+         */
+        private long prevOutputPTSUs = 0;
         public CameraRenderer()
         {
             //Empty constructor
@@ -1175,12 +1214,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             if(VERBOSE)Log.d(TAG,"Camera Renderer STOPPED");
         }
 
-        private final String MIME_TYPE = "video/avc";
-        // parameters for recording
-        private final int FRAME_RATE = 25;
-        private final float BPP = 0.25f;
-        private MediaCodec mMediaCodec;
-
         private int calcBitRate() {
             final int bitrate = (int)(BPP * FRAME_RATE * getRecordVideoWidth() * getRecordVideoHeight());
             Log.i(TAG, String.format("bitrate=%5.2f[Mbps]", bitrate / 1024f / 1024f));
@@ -1188,7 +1221,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         }
 
         public void setupMediaEncoder() throws IOException {
-            if (VERBOSE) Log.i(TAG, "prepare: ");
+            if (VERBOSE) Log.i(TAG, "prepare Media Encoder : ");
             final MediaCodecInfo videoCodecInfo = selectVideoCodec(MIME_TYPE);
             if (videoCodecInfo == null) {
                 Log.e(TAG, "Unable to find an appropriate codec for " + MIME_TYPE);
@@ -1217,12 +1250,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             if (VERBOSE) Log.i(TAG, "selectColorFormat: ");
             int result = 0;
             final MediaCodecInfo.CodecCapabilities caps;
-            try {
-                Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
-                caps = codecInfo.getCapabilitiesForType(mimeType);
-            } finally {
-                Thread.currentThread().setPriority(Thread.NORM_PRIORITY);
-            }
+            caps = codecInfo.getCapabilitiesForType(mimeType);
             int colorFormat;
             for (int i = 0; i < caps.colorFormats.length; i++) {
                 colorFormat = caps.colorFormats[i];
@@ -1300,7 +1328,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
             mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
             mNextVideoAbsolutePath = getFilePath(true);
-            videoFile = new File(mNextVideoAbsolutePath);
+//            videoFile = new File(mNextVideoAbsolutePath);
             mediaRecorder.setOutputFile(mNextVideoAbsolutePath);
             mediaRecorder.setVideoEncodingBitRate(camcorderProfile.videoBitRate);
             mediaRecorder.setVideoFrameRate(camcorderProfile.videoFrameRate);
@@ -1333,39 +1361,29 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         }
 
         public String getFilePath(boolean video) {
-            String path;
+            StringBuilder path = new StringBuilder(Constants.EMPTY);
             SharedPreferences sharedPreferences;
-            if(video)
-            {
-                sharedPreferences = videoFragment.getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
-            }
-            else
-            {
-                sharedPreferences = photoFragment.getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
-            }
+            sharedPreferences = (video ? videoFragment.getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE) :
+                    photoFragment.getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE));
             if(sharedPreferences.contains(Constants.SAVE_MEDIA_PHONE_MEM))
             {
                 if(sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
-                    path = fetchPhoneMemoryPath(video);
+                    path.append(fetchPhoneMemoryPath(video));
                 }
                 else{
-                    path = sharedPreferences.getString(Constants.SD_CARD_PATH, "");
+                    path.append(sharedPreferences.getString(Constants.SD_CARD_PATH, ""));
                     SimpleDateFormat sdf = new SimpleDateFormat(getResources().getString(R.string.DATE_FORMAT_FOR_FILE));
                     String filename = sdf.format(new Date());
                     if(VERBOSE)Log.d(TAG, "sd card filename = " + filename);
-                    if(video){
-                        path += getResources().getString(R.string.FC_VID_PREFIX) + filename + getResources().getString(R.string.VID_EXT);
-                    }
-                    else{
-                        path += getResources().getString(R.string.FC_IMG_PREFIX) + filename + getResources().getString(R.string.IMG_EXT);
-                    }
+                    path.append(video ? getResources().getString(R.string.FC_VID_PREFIX) + filename + getResources().getString(R.string.VID_EXT) :
+                            getResources().getString(R.string.FC_IMG_PREFIX) + filename + getResources().getString(R.string.IMG_EXT));
                     if(VERBOSE)Log.d(TAG, "SD Card Path = "+path);
                 }
             }
             else {
-                path = fetchPhoneMemoryPath(video);
+                path.append(fetchPhoneMemoryPath(video));
             }
-            return path;
+            return path.toString();
         }
 
         public String fetchPhoneMemoryPath(boolean video){
@@ -1378,18 +1396,145 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             SimpleDateFormat sdf = new SimpleDateFormat(getResources().getString(R.string.DATE_FORMAT_FOR_FILE));
             String filename = sdf.format(new Date());
             if(VERBOSE)Log.d(TAG, "filename = " + filename);
-            if (video) {
-                phonePath = dcim.getPath() + getResources().getString(R.string.FC_VID_PREFIX) + filename + getResources().getString(R.string.VID_EXT);
-            } else {
-                phonePath = dcim.getPath() + getResources().getString(R.string.FC_IMG_PREFIX) + filename + getResources().getString(R.string.IMG_EXT);
-            }
+            phonePath = (video ? dcim.getPath() + getResources().getString(R.string.FC_VID_PREFIX) + filename + getResources().getString(R.string.VID_EXT) :
+                    dcim.getPath() + getResources().getString(R.string.FC_IMG_PREFIX) + filename + getResources().getString(R.string.IMG_EXT));
             if(VERBOSE)Log.d(TAG, "Saving media file at = " + phonePath);
             return phonePath;
         }
 
+        void signalEndOfInputStream() {
+            if (VERBOSE) Log.d(TAG, "sending EOS to encoder");
+            // signalEndOfInputStream is only avairable for video encoding with surface
+            // and equivalent sending a empty buffer with BUFFER_FLAG_END_OF_STREAM flag.
+            encode(null, 0, getPTSUs());
+        }
+
+        /**
+         * Method to set byte array to the MediaCodec encoder
+         * @param buffer
+         * @param length　length of byte array, zero means EOS.
+         * @param presentationTimeUs
+         */
+        void encode(final ByteBuffer buffer, final int length, final long presentationTimeUs) {
+            final ByteBuffer[] inputBuffers = mMediaCodec.getInputBuffers();
+            while (isRecording) {
+                final int inputBufferIndex = mMediaCodec.dequeueInputBuffer(TIMEOUT_USEC);
+                if (inputBufferIndex >= 0) {
+                    final ByteBuffer inputBuffer = inputBuffers[inputBufferIndex];
+                    inputBuffer.clear();
+                    if (buffer != null) {
+                        inputBuffer.put(buffer);
+                    }
+//	            if (DEBUG) Log.v(TAG, "encode:queueInputBuffer");
+                    if (length <= 0) {
+                        // send EOS
+                        mIsEOS = true;
+                        if (VERBOSE) Log.i(TAG, "send BUFFER_FLAG_END_OF_STREAM");
+                        mMediaCodec.queueInputBuffer(inputBufferIndex, 0, 0,
+                                presentationTimeUs, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
+                        break;
+                    } else {
+                        mMediaCodec.queueInputBuffer(inputBufferIndex, 0, length,
+                                presentationTimeUs, 0);
+                    }
+                    break;
+                } else if (inputBufferIndex == MediaCodec.INFO_TRY_AGAIN_LATER) {
+                    // wait for MediaCodec encoder is ready to encode
+                    // nothing to do here because MediaCodec#dequeueInputBuffer(TIMEOUT_USEC)
+                    // will wait for maximum TIMEOUT_USEC(10msec) on each call
+                }
+            }
+        }
+
+        void drain() {
+            if (mMediaCodec == null) return;
+            ByteBuffer[] encoderOutputBuffers = mMediaCodec.getOutputBuffers();
+            int encoderStatus, count = 0;
+            if (muxer == null) {
+//        	throw new NullPointerException("muxer is unexpectedly null");
+                Log.w(TAG, "muxer is unexpectedly null");
+                return;
+            }
+            LOOP:	while (isRecording) {
+                // get encoded data with maximum timeout duration of TIMEOUT_USEC(=10[msec])
+                encoderStatus = mMediaCodec.dequeueOutputBuffer(mBufferInfo, TIMEOUT_USEC);
+                if (encoderStatus == MediaCodec.INFO_TRY_AGAIN_LATER) {
+                    // wait 5 counts(=TIMEOUT_USEC x 5 = 50msec) until data/EOS come
+                    if (!mIsEOS) {
+                        if (++count > 5)
+                            break LOOP;		// out of while
+                    }
+                } else if (encoderStatus == MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED) {
+                    if (VERBOSE) Log.v(TAG, "INFO_OUTPUT_BUFFERS_CHANGED");
+                    // this shoud not come when encoding
+                    encoderOutputBuffers = mMediaCodec.getOutputBuffers();
+                } else if (encoderStatus == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
+                    if (VERBOSE) Log.v(TAG, "INFO_OUTPUT_FORMAT_CHANGED");
+                    // this status indicate the output format of codec is changed
+                    // this should come only once before actual encoded data
+                    // but this status never come on Android4.3 or less
+                    // and in that case, you should treat when MediaCodec.BUFFER_FLAG_CODEC_CONFIG come.
+                    if (mMuxerStarted) {	// second time request is error
+                        throw new RuntimeException("format changed twice");
+                    }
+                    // get output format from codec and pass them to muxer
+                    // getOutputFormat should be called after INFO_OUTPUT_FORMAT_CHANGED otherwise crash.
+                    final MediaFormat format = mMediaCodec.getOutputFormat(); // API >= 16
+                    mTrackIndex = muxer.addTrack(format);
+                    muxer.start();
+                    mMuxerStarted = true;
+                    /*if (!muxer.start()) {
+                        // we should wait until muxer is ready
+                        synchronized (muxer) {
+                            while (!muxer.isStarted())
+                                try {
+                                    muxer.wait(100);
+                                } catch (final InterruptedException e) {
+                                    break LOOP;
+                                }
+                        }
+                    }*/
+                } else if (encoderStatus < 0) {
+                    // unexpected status
+                    if (VERBOSE) Log.w(TAG, "drain:unexpected result from encoder#dequeueOutputBuffer: " + encoderStatus);
+                } else {
+                    final ByteBuffer encodedData = encoderOutputBuffers[encoderStatus];
+                    if (encodedData == null) {
+                        // this never should come...may be a MediaCodec internal error
+                        throw new RuntimeException("encoderOutputBuffer " + encoderStatus + " was null");
+                    }
+                    if ((mBufferInfo.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) {
+                        // You shoud set output format to muxer here when you target Android4.3 or less
+                        // but MediaCodec#getOutputFormat can not call here(because INFO_OUTPUT_FORMAT_CHANGED don't come yet)
+                        // therefor we should expand and prepare output format from buffer data.
+                        // This sample is for API>=18(>=Android 4.3), just ignore this flag here
+                        if (VERBOSE) Log.d(TAG, "drain:BUFFER_FLAG_CODEC_CONFIG");
+                        mBufferInfo.size = 0;
+                    }
+
+                    if (mBufferInfo.size != 0) {
+                        // encoded data is ready, clear waiting counter
+                        count = 0;
+                        if (!mMuxerStarted) {
+                            // muxer is not ready...this will prrograming failure.
+                            throw new RuntimeException("drain:muxer hasn't started");
+                        }
+                        // write encoded data to muxer(need to adjust presentationTimeUs.
+                        mBufferInfo.presentationTimeUs = getPTSUs();
+                        muxer.writeSampleData(mTrackIndex, encodedData, mBufferInfo);
+                        prevOutputPTSUs = mBufferInfo.presentationTimeUs;
+                    }
+                    // return buffer to encoder
+                    mMediaCodec.releaseOutputBuffer(encoderStatus, false);
+                    if ((mBufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
+                        // when EOS come.
+                        break;      // out of while
+                    }
+                }
+            }
+        }
+
         long pauseDuration = 0;
-        int viewWidth = 0;
-        int viewHeight = 0;
         void drawFrame()
         {
             if(GLUtil.getmEGLConfig()!=null && camera1.isCameraReady()) {
@@ -1440,13 +1585,17 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                     else if(previousTime == 0){
                         previousTime = System.currentTimeMillis();
                     }
+
                     if(sharedPreferences.getBoolean(Constants.SHOW_MEMORY_CONSUMED_MSG, false)) {
                         mainHandler.sendEmptyMessage(Constants.SHOW_MEMORY_CONSUMED);
                     }
+
                     if (recordStop == -1) {
                         mediaRecorder.start();
+//                        mMediaCodec.start();
                         recordStop = 1;
                     }
+//                    drain();
                     updateTimer = true;
                     EGLExt.eglPresentationTimeANDROID(GLUtil.getmEGLDisplay(), encoderSurface, getPTSUs());
                     EGL14.eglSwapBuffers(GLUtil.getmEGLDisplay(), encoderSurface);
@@ -1488,16 +1637,20 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         private volatile long pauseDelayTime=0;
         private volatile long oncePauseTime;
 
+        @TargetApi(Build.VERSION_CODES.N)
         private void pause(){
             isRecording = false;
             updateTimer = false;
-            oncePauseTime = System.nanoTime();
+            oncePauseTime = System.nanoTime() / 1000;
+            mediaRecorder.pause();
         }
 
+        @TargetApi(Build.VERSION_CODES.N)
         private void resumeRecord(){
             isRecording = true;
-            oncePauseTime = System.nanoTime() - oncePauseTime;
+            oncePauseTime = System.nanoTime() / 1000 - oncePauseTime;
             pauseDelayTime += oncePauseTime;
+            mediaRecorder.resume();
         }
 
         protected long getPTSUs() {
@@ -1549,10 +1702,27 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         break;
                     case Constants.RECORD_START:
                         cameraRenderer.setupMediaRecorder(getRecordVideoWidth(), getRecordVideoHeight(), getCamProfileForRecord());
+                        /*mNextVideoAbsolutePath = getFilePath(true);
+                        try {
+                            muxer = new MediaMuxer(mNextVideoAbsolutePath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        mBufferInfo = new MediaCodec.BufferInfo();
+                        mTrackIndex = -1;
+                        mIsEOS = false;
+                        try {
+                            cameraRenderer.setupMediaEncoder();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }*/
                         hour = 0; minute = 0; second = 0;
                         isRecording = true;
                         break;
                     case Constants.RECORD_STOP:
+                        /*drain();
+                        signalEndOfInputStream();
+                        drain();*/
                         isRecording = false;
                         recordStop = -1;
                         recordIncomplete = false;
@@ -1569,6 +1739,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         }
                         mediaRecorder.release();
                         mediaRecorder = null;
+                        /*mMediaCodec.stop();
+                        mMediaCodec.release();
+                        mMediaCodec = null;*/
                         if(VERBOSE)Log.d(TAG,"stop isRecording == "+isRecording);
                         if(!recordIncomplete){
                             mainHandler.sendEmptyMessage(Constants.RECORD_COMPLETE);
