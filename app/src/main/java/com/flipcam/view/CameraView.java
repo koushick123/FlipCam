@@ -14,11 +14,6 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.media.AudioManager;
 import android.media.CamcorderProfile;
-import android.media.MediaCodec;
-import android.media.MediaCodecInfo;
-import android.media.MediaCodecList;
-import android.media.MediaFormat;
-import android.media.MediaMuxer;
 import android.media.MediaRecorder;
 import android.opengl.EGL14;
 import android.opengl.EGLExt;
@@ -58,21 +53,18 @@ import com.flipcam.cameramanager.Camera1Manager;
 import com.flipcam.cameramanager.Camera2Manager;
 import com.flipcam.constants.Constants;
 import com.flipcam.util.GLUtil;
+import com.flipcam.util.MediaUtil;
 import com.flipcam.util.SDCardUtil;
 
 import java.io.File;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
-import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.Queue;
 
-import static android.content.Context.SENSOR_SERVICE;
 import static android.os.Environment.getExternalStoragePublicDirectory;
-import static com.flipcam.constants.Constants.HIDE_ELAPSED_TIME;
-import static com.flipcam.constants.Constants.SHOW_ELAPSED_TIME;
 
 /**
  * Created by Koushick on 15-08-2017.
@@ -110,7 +102,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     MainHandler mainHandler;
     Object renderObj = new Object();
     volatile boolean isReady=false;
-    boolean VERBOSE = false;
+    boolean VERBOSE = true;
     boolean FRAME_VERBOSE=false;
     //Keep in portrait by default.
     boolean portrait=true;
@@ -181,7 +173,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         }
         focusMode = camera1.getFocusModeAuto();
         flashMode = camera1.getFlashModeOff();
-        mSensorManager = (SensorManager)getContext().getSystemService(SENSOR_SERVICE);
+        mSensorManager = (SensorManager)getContext().getSystemService(Context.SENSOR_SERVICE);
         mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         audioManager = (AudioManager)getContext().getSystemService(Context.AUDIO_SERVICE);
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getContext());
@@ -286,9 +278,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                     if(VERBOSE)Log.d(TAG, "Hide time elapsed");
                     hideTimeElapsed();
                     break;
-                /*case Constants.SHOW_MEMORY_CONSUMED:
+                case Constants.SHOW_MEMORY_CONSUMED:
                     showMemoryConsumed();
-                    break;*/
+                    break;
                 case Constants.RECORD_COMPLETE:
                     mediaContent = null;
                     if(VERBOSE)Log.d(TAG,"Update thumbnail now");
@@ -507,28 +499,31 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     public void showTimeElapsed()
     {
         if(FRAME_VERBOSE)Log.d(TAG,"displaying time = "+second);
-        String showSec = "0";
-        String showMin = "0";
-        String showHr = "0";
+        StringBuilder showSec = new StringBuilder("0");
+        StringBuilder showMin = new StringBuilder("0");
+        StringBuilder showHr = new StringBuilder("0");
         if(second < 10){
-            showSec += second;
+            showSec.append(second);
         }
         else{
-            showSec = second+"";
+            showSec.delete(0, showSec.length());
+            showSec.append(second);
         }
 
         if(minute < 10){
-            showMin += minute;
+            showMin.append(minute);
         }
         else{
-            showMin = minute+"";
+            showMin.delete(0, showMin.length());
+            showMin.append(minute);
         }
 
         if(hour < 10){
-            showHr += hour;
+            showHr.append(hour);
         }
         else{
-            showHr = hour+"";
+            showHr.delete(0, showHr.length());
+            showHr.append(hour);
         }
         timeElapsed.setText(showHr + " : " + showMin + " : " + showSec);
         //This is added for blinking the timer if recording is paused.
@@ -543,10 +538,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         return timeElapsed.getVisibility() == View.VISIBLE;
     }
 
-    /*public void showMemoryConsumed()
+    public void showMemoryConsumed()
     {
         memoryConsumed.setText(MediaUtil.convertMemoryForDisplay(videoFile.length()));
-    }*/
+    }
 
     public void setFlashButton(ImageButton flashButton)
     {
@@ -939,28 +934,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         }
     }
 
-    private void releaseEGLSurface(){
-        EGL14.eglDestroySurface(GLUtil.getmEGLDisplay(),GLUtil.getEglSurface());
-    }
-
-    private void releaseProgram(){
-        GLES20.glDeleteProgram(GLUtil.getmProgramHandle());
-    }
-
-    private void releaseEGLContext()
-    {
-        if (GLUtil.getmEGLDisplay() != EGL14.EGL_NO_DISPLAY) {
-            EGL14.eglMakeCurrent(GLUtil.getmEGLDisplay(), EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE,
-                    EGL14.EGL_NO_CONTEXT);
-            EGL14.eglDestroyContext(GLUtil.getmEGLDisplay(), GLUtil.getmEGLContext());
-            EGL14.eglReleaseThread();
-            EGL14.eglTerminate(GLUtil.getmEGLDisplay());
-        }
-        GLUtil.setmEGLDisplay(EGL14.EGL_NO_DISPLAY);
-        GLUtil.setmEGLContext(EGL14.EGL_NO_CONTEXT);
-        GLUtil.setmEGLConfig(null);
-    }
-
     public void capturePhoto()
     {
         determineOrientation();
@@ -1100,9 +1073,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 GLUtil.setSurfaceTexture(null);
             }
             frameCount=0;
-            releaseEGLSurface();
-            releaseProgram();
-            releaseEGLContext();
+            GLUtil.releaseEGLSurface();
+            GLUtil.releaseProgram();
+            GLUtil.releaseEGLContext();
             if(isRecord()) {
                 //If video recording was in progress, ensure recording is stopped and saved, before exiting.
                 if(VERBOSE)Log.d(TAG, "Unmute audio");
@@ -1164,36 +1137,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         boolean isRecording = false;
         int viewWidth = 0;
         int viewHeight = 0;
-        Object muxerObj = new Object();
-        /**
-         * Flag that indicate encoder received EOS(End Of Stream)
-         */
-        boolean mIsEOS;
-        /**
-         * Flag the indicate the muxer is running
-         */
-        boolean mMuxerStarted;
-        /**
-         * Track Number
-         */
-        int mTrackIndex;
-        /**
-         * MediaCodec instance for encoding
-         */
-        MediaCodec mMediaCodec;				// API >= 16(Android4.1.2)
-        /**
-         * Weak refarence of MediaMuxerWarapper instance
-         */
-        MediaMuxer muxer;
-        /**
-         * BufferInfo instance for dequeuing
-         */
-        private MediaCodec.BufferInfo mBufferInfo;
-
-        /**
-         * previous presentationTimeUs for writing
-         */
-        private long prevOutputPTSUs = 0;
         public CameraRenderer()
         {
             //Empty constructor
@@ -1214,106 +1157,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             if(VERBOSE)Log.d(TAG,"Camera Renderer STOPPED");
         }
 
-        private int calcBitRate() {
-            final int bitrate = (int)(BPP * FRAME_RATE * getRecordVideoWidth() * getRecordVideoHeight());
-            Log.i(TAG, String.format("bitrate=%5.2f[Mbps]", bitrate / 1024f / 1024f));
-            return bitrate;
-        }
-
-        public void setupMediaEncoder() throws IOException {
-            if (VERBOSE) Log.i(TAG, "prepare Media Encoder : ");
-            final MediaCodecInfo videoCodecInfo = selectVideoCodec(MIME_TYPE);
-            if (videoCodecInfo == null) {
-                Log.e(TAG, "Unable to find an appropriate codec for " + MIME_TYPE);
-                return;
-            }
-            if (VERBOSE) Log.i(TAG, "selected codec: " + videoCodecInfo.getName());
-
-            final MediaFormat format = MediaFormat.createVideoFormat(MIME_TYPE, getRecordVideoWidth(), getRecordVideoHeight());
-            format.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);	// API >= 18
-            format.setInteger(MediaFormat.KEY_BIT_RATE, calcBitRate());
-            format.setInteger(MediaFormat.KEY_FRAME_RATE, FRAME_RATE);
-            format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 10);
-            if (VERBOSE) Log.i(TAG, "format: " + format);
-
-            mMediaCodec = MediaCodec.createEncoderByType(MIME_TYPE);
-            mMediaCodec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
-            // get Surface for encoder input
-            encoderSurface = GLUtil.prepareWindowSurface( mMediaCodec.createInputSurface(), GLUtil.getmEGLDisplay(), GLUtil.getmEGLConfig());
-        }
-
-        /**
-         * select color format available on specific codec and we can use.
-         * @return 0 if no colorFormat is matched
-         */
-        public final int selectColorFormat(final MediaCodecInfo codecInfo, final String mimeType) {
-            if (VERBOSE) Log.i(TAG, "selectColorFormat: ");
-            int result = 0;
-            final MediaCodecInfo.CodecCapabilities caps;
-            caps = codecInfo.getCapabilitiesForType(mimeType);
-            int colorFormat;
-            for (int i = 0; i < caps.colorFormats.length; i++) {
-                colorFormat = caps.colorFormats[i];
-                if (isRecognizedViewoFormat(colorFormat)) {
-                    if (result == 0)
-                        result = colorFormat;
-                    break;
-                }
-            }
-            if (result == 0)
-                Log.e(TAG, "couldn't find a good color format for " + codecInfo.getName() + " / " + mimeType);
-            return result;
-        }
-
-        /**
-         * color formats that we can use in this class
-         */
-        private int[] recognizedFormats = new int[] {
-            MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface,
-        };
-
-        public final boolean isRecognizedViewoFormat(final int colorFormat) {
-            if (VERBOSE) Log.i(TAG, "isRecognizedViewoFormat:colorFormat=" + colorFormat);
-            final int n = recognizedFormats != null ? recognizedFormats.length : 0;
-            for (int i = 0; i < n; i++) {
-                if (recognizedFormats[i] == colorFormat) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        /**
-         * select the first codec that match a specific MIME type
-         * @param mimeType
-         * @return null if no codec matched
-         */
-        public final MediaCodecInfo selectVideoCodec(final String mimeType) {
-            if (VERBOSE) Log.v(TAG, "selectVideoCodec:");
-
-            // get the list of available codecs
-            final int numCodecs = MediaCodecList.getCodecCount();
-            for (int i = 0; i < numCodecs; i++) {
-                final MediaCodecInfo codecInfo = MediaCodecList.getCodecInfoAt(i);
-
-                if (!codecInfo.isEncoder()) {	// skipp decoder
-                    continue;
-                }
-                // select first codec that match a specific MIME type and color format
-                final String[] types = codecInfo.getSupportedTypes();
-                for (int j = 0; j < types.length; j++) {
-                    if (types[j].equalsIgnoreCase(mimeType)) {
-                        if (VERBOSE) Log.i(TAG, "codec:" + codecInfo.getName() + ",MIME=" + types[j]);
-                        final int format = selectColorFormat(codecInfo, mimeType);
-                        if (format > 0) {
-                            return codecInfo;
-                        }
-                    }
-                }
-            }
-            return null;
-        }
-
         public void setupMediaRecorder(int width, int height, int camcorderProf)
         {
             camcorderProfile = CamcorderProfile.get(camera1.getCameraId(),camcorderProf);
@@ -1328,7 +1171,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
             mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
             mNextVideoAbsolutePath = getFilePath(true);
-//            videoFile = new File(mNextVideoAbsolutePath);
+            if(VERBOSE)Log.d(TAG, "mNextVideoAbsolutePath ===== "+mNextVideoAbsolutePath);
+            videoFile = new File(mNextVideoAbsolutePath);
+            if(VERBOSE)Log.d(TAG, "Video file ===== "+videoFile);
             mediaRecorder.setOutputFile(mNextVideoAbsolutePath);
             mediaRecorder.setVideoEncodingBitRate(camcorderProfile.videoBitRate);
             mediaRecorder.setVideoFrameRate(camcorderProfile.videoFrameRate);
@@ -1402,138 +1247,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             return phonePath;
         }
 
-        void signalEndOfInputStream() {
-            if (VERBOSE) Log.d(TAG, "sending EOS to encoder");
-            // signalEndOfInputStream is only avairable for video encoding with surface
-            // and equivalent sending a empty buffer with BUFFER_FLAG_END_OF_STREAM flag.
-            encode(null, 0, getPTSUs());
-        }
-
-        /**
-         * Method to set byte array to the MediaCodec encoder
-         * @param buffer
-         * @param length　length of byte array, zero means EOS.
-         * @param presentationTimeUs
-         */
-        void encode(final ByteBuffer buffer, final int length, final long presentationTimeUs) {
-            final ByteBuffer[] inputBuffers = mMediaCodec.getInputBuffers();
-            while (isRecording) {
-                final int inputBufferIndex = mMediaCodec.dequeueInputBuffer(TIMEOUT_USEC);
-                if (inputBufferIndex >= 0) {
-                    final ByteBuffer inputBuffer = inputBuffers[inputBufferIndex];
-                    inputBuffer.clear();
-                    if (buffer != null) {
-                        inputBuffer.put(buffer);
-                    }
-//	            if (DEBUG) Log.v(TAG, "encode:queueInputBuffer");
-                    if (length <= 0) {
-                        // send EOS
-                        mIsEOS = true;
-                        if (VERBOSE) Log.i(TAG, "send BUFFER_FLAG_END_OF_STREAM");
-                        mMediaCodec.queueInputBuffer(inputBufferIndex, 0, 0,
-                                presentationTimeUs, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
-                        break;
-                    } else {
-                        mMediaCodec.queueInputBuffer(inputBufferIndex, 0, length,
-                                presentationTimeUs, 0);
-                    }
-                    break;
-                } else if (inputBufferIndex == MediaCodec.INFO_TRY_AGAIN_LATER) {
-                    // wait for MediaCodec encoder is ready to encode
-                    // nothing to do here because MediaCodec#dequeueInputBuffer(TIMEOUT_USEC)
-                    // will wait for maximum TIMEOUT_USEC(10msec) on each call
-                }
-            }
-        }
-
-        void drain() {
-            if (mMediaCodec == null) return;
-            ByteBuffer[] encoderOutputBuffers = mMediaCodec.getOutputBuffers();
-            int encoderStatus, count = 0;
-            if (muxer == null) {
-//        	throw new NullPointerException("muxer is unexpectedly null");
-                Log.w(TAG, "muxer is unexpectedly null");
-                return;
-            }
-            LOOP:	while (isRecording) {
-                // get encoded data with maximum timeout duration of TIMEOUT_USEC(=10[msec])
-                encoderStatus = mMediaCodec.dequeueOutputBuffer(mBufferInfo, TIMEOUT_USEC);
-                if (encoderStatus == MediaCodec.INFO_TRY_AGAIN_LATER) {
-                    // wait 5 counts(=TIMEOUT_USEC x 5 = 50msec) until data/EOS come
-                    if (!mIsEOS) {
-                        if (++count > 5)
-                            break LOOP;		// out of while
-                    }
-                } else if (encoderStatus == MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED) {
-                    if (VERBOSE) Log.v(TAG, "INFO_OUTPUT_BUFFERS_CHANGED");
-                    // this shoud not come when encoding
-                    encoderOutputBuffers = mMediaCodec.getOutputBuffers();
-                } else if (encoderStatus == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
-                    if (VERBOSE) Log.v(TAG, "INFO_OUTPUT_FORMAT_CHANGED");
-                    // this status indicate the output format of codec is changed
-                    // this should come only once before actual encoded data
-                    // but this status never come on Android4.3 or less
-                    // and in that case, you should treat when MediaCodec.BUFFER_FLAG_CODEC_CONFIG come.
-                    if (mMuxerStarted) {	// second time request is error
-                        throw new RuntimeException("format changed twice");
-                    }
-                    // get output format from codec and pass them to muxer
-                    // getOutputFormat should be called after INFO_OUTPUT_FORMAT_CHANGED otherwise crash.
-                    final MediaFormat format = mMediaCodec.getOutputFormat(); // API >= 16
-                    mTrackIndex = muxer.addTrack(format);
-                    muxer.start();
-                    mMuxerStarted = true;
-                    /*if (!muxer.start()) {
-                        // we should wait until muxer is ready
-                        synchronized (muxer) {
-                            while (!muxer.isStarted())
-                                try {
-                                    muxer.wait(100);
-                                } catch (final InterruptedException e) {
-                                    break LOOP;
-                                }
-                        }
-                    }*/
-                } else if (encoderStatus < 0) {
-                    // unexpected status
-                    if (VERBOSE) Log.w(TAG, "drain:unexpected result from encoder#dequeueOutputBuffer: " + encoderStatus);
-                } else {
-                    final ByteBuffer encodedData = encoderOutputBuffers[encoderStatus];
-                    if (encodedData == null) {
-                        // this never should come...may be a MediaCodec internal error
-                        throw new RuntimeException("encoderOutputBuffer " + encoderStatus + " was null");
-                    }
-                    if ((mBufferInfo.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) {
-                        // You shoud set output format to muxer here when you target Android4.3 or less
-                        // but MediaCodec#getOutputFormat can not call here(because INFO_OUTPUT_FORMAT_CHANGED don't come yet)
-                        // therefor we should expand and prepare output format from buffer data.
-                        // This sample is for API>=18(>=Android 4.3), just ignore this flag here
-                        if (VERBOSE) Log.d(TAG, "drain:BUFFER_FLAG_CODEC_CONFIG");
-                        mBufferInfo.size = 0;
-                    }
-
-                    if (mBufferInfo.size != 0) {
-                        // encoded data is ready, clear waiting counter
-                        count = 0;
-                        if (!mMuxerStarted) {
-                            // muxer is not ready...this will prrograming failure.
-                            throw new RuntimeException("drain:muxer hasn't started");
-                        }
-                        // write encoded data to muxer(need to adjust presentationTimeUs.
-                        mBufferInfo.presentationTimeUs = getPTSUs();
-                        muxer.writeSampleData(mTrackIndex, encodedData, mBufferInfo);
-                        prevOutputPTSUs = mBufferInfo.presentationTimeUs;
-                    }
-                    // return buffer to encoder
-                    mMediaCodec.releaseOutputBuffer(encoderStatus, false);
-                    if ((mBufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
-                        // when EOS come.
-                        break;      // out of while
-                    }
-                }
-            }
-        }
-
         long pauseDuration = 0;
         void drawFrame()
         {
@@ -1592,11 +1305,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
 
                     if (recordStop == -1) {
                         mediaRecorder.start();
-//                        mMediaCodec.start();
                         recordStop = 1;
                     }
-//                    drain();
-                    updateTimer = true;
                     EGLExt.eglPresentationTimeANDROID(GLUtil.getmEGLDisplay(), encoderSurface, getPTSUs());
                     EGL14.eglSwapBuffers(GLUtil.getmEGLDisplay(), encoderSurface);
                 }
@@ -1615,7 +1325,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                     mediaRecorder.stop();
                 }
                 catch(RuntimeException runtime){
-                    if(FRAME_VERBOSE)Log.d(TAG,"Video data not received... delete file = "+videoFile.getPath());
+                    Log.d(TAG,"Video data not received drawFrame... delete file = "+videoFile.getPath());
                     if(videoFile.delete()){
                         if(FRAME_VERBOSE)Log.d(TAG,"File deleted");
                     }
@@ -1639,23 +1349,21 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
 
         @TargetApi(Build.VERSION_CODES.N)
         private void pause(){
-            isRecording = false;
-            updateTimer = false;
-            oncePauseTime = System.nanoTime() / 1000;
             mediaRecorder.pause();
+            oncePauseTime = System.nanoTime() / 1000;
+            isRecording = false;
         }
 
         @TargetApi(Build.VERSION_CODES.N)
         private void resumeRecord(){
-            isRecording = true;
+            mediaRecorder.resume();
             oncePauseTime = System.nanoTime() / 1000 - oncePauseTime;
             pauseDelayTime += oncePauseTime;
-            mediaRecorder.resume();
+            isRecording = true;
         }
 
         protected long getPTSUs() {
-            long result = System.nanoTime() - pauseDelayTime;
-            return result;
+            return System.nanoTime() - pauseDelayTime;
         }
 
         void shutdown()
@@ -1702,31 +1410,14 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         break;
                     case Constants.RECORD_START:
                         cameraRenderer.setupMediaRecorder(getRecordVideoWidth(), getRecordVideoHeight(), getCamProfileForRecord());
-                        /*mNextVideoAbsolutePath = getFilePath(true);
-                        try {
-                            muxer = new MediaMuxer(mNextVideoAbsolutePath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                        mBufferInfo = new MediaCodec.BufferInfo();
-                        mTrackIndex = -1;
-                        mIsEOS = false;
-                        try {
-                            cameraRenderer.setupMediaEncoder();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }*/
+                        updateTimer = true;
                         hour = 0; minute = 0; second = 0;
                         isRecording = true;
                         break;
                     case Constants.RECORD_STOP:
-                        /*drain();
-                        signalEndOfInputStream();
-                        drain();*/
                         isRecording = false;
                         recordStop = -1;
                         recordIncomplete = false;
-                        setPauseUsedOnce(false);
                         try {
                             mediaRecorder.stop();
                         }
@@ -1739,9 +1430,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         }
                         mediaRecorder.release();
                         mediaRecorder = null;
-                        /*mMediaCodec.stop();
-                        mMediaCodec.release();
-                        mMediaCodec = null;*/
                         if(VERBOSE)Log.d(TAG,"stop isRecording == "+isRecording);
                         if(!recordIncomplete){
                             mainHandler.sendEmptyMessage(Constants.RECORD_COMPLETE);
@@ -1752,10 +1440,14 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                     case Constants.RECORD_PAUSE:
                         if(VERBOSE)Log.d(TAG, "Pausing record");
                         pause();
+                        updateTimer = false;
+                        setRecordPaused(true);
                         break;
                     case Constants.RECORD_RESUME:
                         if(VERBOSE)Log.d(TAG, "Resuming record");
                         resumeRecord();
+                        updateTimer = true;
+                        setRecordPaused(false);
                         break;
                     case Constants.RECORD_STOP_NO_SD_CARD:
                         isRecording = false;
@@ -1799,6 +1491,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 while(updateTimer){
                     try {
                         Thread.sleep(1000);
+                        if(isRecordPaused() && !updateTimer){
+                            break;
+                        }
                         if(second < 59){
                             second++;
                         }
@@ -1811,7 +1506,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                             second = 0;
                             hour++;
                         }
-                        mainHandler.sendEmptyMessage(SHOW_ELAPSED_TIME);
+                        mainHandler.sendEmptyMessage(Constants.SHOW_ELAPSED_TIME);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -1825,10 +1520,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         if(VERBOSE)Log.d(TAG,"difference of 1.5 sec");
                         previousTimeBlink = System.currentTimeMillis();
                         if(isTimeVisible()) {
-                            mainHandler.sendEmptyMessage(HIDE_ELAPSED_TIME);
+                            mainHandler.sendEmptyMessage(Constants.HIDE_ELAPSED_TIME);
                         }
                         else{
-                            mainHandler.sendEmptyMessage(SHOW_ELAPSED_TIME);
+                            mainHandler.sendEmptyMessage(Constants.SHOW_ELAPSED_TIME);
                         }
                     }
                     else if(previousTimeBlink == 0){

@@ -449,4 +449,26 @@ public class GLUtil {
     {
         EGL14.eglMakeCurrent(mEGLDisplay, surface, surface, mEGLContext);
     }
+
+    public static void releaseEGLSurface(){
+        EGL14.eglDestroySurface(getmEGLDisplay(),getEglSurface());
+    }
+
+    public static void releaseProgram(){
+        GLES20.glDeleteProgram(getmProgramHandle());
+    }
+
+    public static void releaseEGLContext()
+    {
+        if (getmEGLDisplay() != EGL14.EGL_NO_DISPLAY) {
+            EGL14.eglMakeCurrent(getmEGLDisplay(), EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE,
+                    EGL14.EGL_NO_CONTEXT);
+            EGL14.eglDestroyContext(getmEGLDisplay(), getmEGLContext());
+            EGL14.eglReleaseThread();
+            EGL14.eglTerminate(getmEGLDisplay());
+        }
+        setmEGLDisplay(EGL14.EGL_NO_DISPLAY);
+        setmEGLContext(EGL14.EGL_NO_CONTEXT);
+        setmEGLConfig(null);
+    }
 }
