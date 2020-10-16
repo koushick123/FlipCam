@@ -395,6 +395,10 @@ public class VideoFragment extends Fragment{
         return view;
     }
 
+    public TextView getPauseText() {
+        return pauseText;
+    }
+
     public int getAudioSampleRate() {
         return audioSampleRate;
     }
@@ -585,14 +589,6 @@ public class VideoFragment extends Fragment{
         thumbnail.setRotation(rotationAngle);
     }
 
-    public void showPauseText(){
-        pauseText.setVisibility(View.VISIBLE);
-    }
-
-    public void hidePauseText(){
-        pauseText.setVisibility(View.INVISIBLE);
-    }
-
     public SeekBar getZoomBar()
     {
         return zoombar;
@@ -636,13 +632,13 @@ public class VideoFragment extends Fragment{
                         cameraView.recordPause();
                         pauseRecord.setImageDrawable(getResources().getDrawable(R.drawable.camera_record_resume));
                         isPause = true;
-                        showPauseText();
+//                        showPauseText();
                     }
                     else{
                         cameraView.recordResume();
                         pauseRecord.setImageDrawable(getResources().getDrawable(R.drawable.camera_record_pause));
                         isPause = false;
-                        hidePauseText();
+//                        hidePauseText();
                     }
                     pauseRecord.setEnabled(true);
                 }

@@ -61,8 +61,6 @@ import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.LinkedList;
-import java.util.Queue;
 
 import static android.os.Environment.getExternalStoragePublicDirectory;
 
@@ -84,7 +82,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     private int recordVideoWidth = 640;
     private int recordVideoHeight = 480;
     CamcorderProfile camcorderProfile;
-    SurfaceTexture surfaceTexture;
     private static final int SIZEOF_FLOAT = 4;
     //Surface to which camera frames are sent for encoding to mp4 format
     EGLSurface encoderSurface=null;
@@ -154,11 +151,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     int camProfileForRecord;
     int totalRotation;
     boolean recordPaused = false;
-    boolean recordPauseOffset = false;
-    long recordedTimeStamp = -1;
     SharedPreferences sharedPreferences;
-    boolean pauseUsedOnce = false;
-    Queue recordTimeStamps = new LinkedList();
 
     public CameraView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -274,9 +267,12 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                     if(FRAME_VERBOSE)Log.d(TAG,"show time now");
                     showTimeElapsed();
                     break;
-                case Constants.HIDE_ELAPSED_TIME:
-                    if(VERBOSE)Log.d(TAG, "Hide time elapsed");
-                    hideTimeElapsed();
+                case Constants.SHOW_PAUSE_TEXT:
+                    showPauseText();
+                    break;
+                case Constants.HIDE_PAUSE_TEXT:
+                    if(VERBOSE)Log.d(TAG, "Hide Pause text");
+                    hidePauseText();
                     break;
                 case Constants.SHOW_MEMORY_CONSUMED:
                     showMemoryConsumed();
@@ -480,22 +476,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         this.recordPaused = recordPaused;
     }
 
-    public boolean isRecordPauseOffset() {
-        return recordPauseOffset;
-    }
-
-    public void setRecordPauseOffset(boolean recordPauseOffset) {
-        this.recordPauseOffset = recordPauseOffset;
-    }
-
-    public boolean isPauseUsedOnce() {
-        return pauseUsedOnce;
-    }
-
-    public void setPauseUsedOnce(boolean pauseUsedOnce) {
-        this.pauseUsedOnce = pauseUsedOnce;
-    }
-
     public void showTimeElapsed()
     {
         if(FRAME_VERBOSE)Log.d(TAG,"displaying time = "+second);
@@ -530,12 +510,16 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         timeElapsed.setVisibility(View.VISIBLE);
     }
 
-    public void hideTimeElapsed(){
-        timeElapsed.setVisibility(View.INVISIBLE);
+    public void showPauseText(){
+        this.videoFragment.getPauseText().setVisibility(View.VISIBLE);
     }
 
-    public boolean isTimeVisible(){
-        return timeElapsed.getVisibility() == View.VISIBLE;
+    public void hidePauseText(){
+        this.videoFragment.getPauseText().setVisibility(View.INVISIBLE);
+    }
+
+    public boolean isPauseTextVisible(){
+        return this.videoFragment.getPauseText().getVisibility() == View.VISIBLE;
     }
 
     public void showMemoryConsumed()
@@ -816,6 +800,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             setRecord(false);
             setKeepScreenOn(false);
             stopTimerThread();
+            hidePauseText();
             if(noSDCard) {
                 cameraHandler.sendEmptyMessage(Constants.RECORD_STOP_NO_SD_CARD);
             }
@@ -1415,9 +1400,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         isRecording = true;
                         break;
                     case Constants.RECORD_STOP:
-                        isRecording = false;
-                        recordStop = -1;
-                        recordIncomplete = false;
                         try {
                             mediaRecorder.stop();
                         }
@@ -1428,8 +1410,12 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                             }
                             recordIncomplete = true;
                         }
+                        isRecording = false;
+                        recordStop = -1;
+                        recordIncomplete = false;
                         mediaRecorder.release();
                         mediaRecorder = null;
+                        setRecordPaused(false);
                         if(VERBOSE)Log.d(TAG,"stop isRecording == "+isRecording);
                         if(!recordIncomplete){
                             mainHandler.sendEmptyMessage(Constants.RECORD_COMPLETE);
@@ -1441,12 +1427,14 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         if(VERBOSE)Log.d(TAG, "Pausing record");
                         pause();
                         updateTimer = false;
+                        mainHandler.sendEmptyMessage(Constants.SHOW_PAUSE_TEXT);
                         setRecordPaused(true);
                         break;
                     case Constants.RECORD_RESUME:
                         if(VERBOSE)Log.d(TAG, "Resuming record");
                         resumeRecord();
                         updateTimer = true;
+                        mainHandler.sendEmptyMessage(Constants.HIDE_PAUSE_TEXT);
                         setRecordPaused(false);
                         break;
                     case Constants.RECORD_STOP_NO_SD_CARD:
@@ -1455,6 +1443,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         recordIncomplete = false;
                         mediaRecorder.release();
                         mediaRecorder = null;
+                        mainHandler.sendEmptyMessage(Constants.HIDE_PAUSE_TEXT);
                         if(VERBOSE)Log.d(TAG,"stop no SD Card isRecording == "+isRecording);
                         break;
                     case Constants.GET_CAMERA_RENDERER_INSTANCE:
@@ -1514,16 +1503,16 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         break;
                     }
                 }
+                //Add blinking text effect
                 if(isRecordPaused()){
-                    //Add blinking text effect
                     if(Math.abs(System.currentTimeMillis() - previousTimeBlink) >= 700){
                         if(VERBOSE)Log.d(TAG,"difference of 1.5 sec");
                         previousTimeBlink = System.currentTimeMillis();
-                        if(isTimeVisible()) {
-                            mainHandler.sendEmptyMessage(Constants.HIDE_ELAPSED_TIME);
+                        if(isPauseTextVisible()) {
+                            mainHandler.sendEmptyMessage(Constants.HIDE_PAUSE_TEXT);
                         }
                         else{
-                            mainHandler.sendEmptyMessage(Constants.SHOW_ELAPSED_TIME);
+                            mainHandler.sendEmptyMessage(Constants.SHOW_PAUSE_TEXT);
                         }
                     }
                     else if(previousTimeBlink == 0){
