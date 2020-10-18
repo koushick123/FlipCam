@@ -22,7 +22,7 @@
         android:layout_gravity="center"
         android:gravity="center"
         android:text="@string/pausedText"
-        android:textColor="@color/turqoise"
+        android:textColor="@color/memoryConsumed"
         android:textStyle="bold"
         android:visibility="invisible" />
 

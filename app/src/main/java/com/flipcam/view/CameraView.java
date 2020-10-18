@@ -99,7 +99,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     MainHandler mainHandler;
     Object renderObj = new Object();
     volatile boolean isReady=false;
-    boolean VERBOSE = true;
+    boolean VERBOSE = false;
     boolean FRAME_VERBOSE=false;
     //Keep in portrait by default.
     boolean portrait=true;
@@ -152,6 +152,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     int totalRotation;
     boolean recordPaused = false;
     SharedPreferences sharedPreferences;
+    CameraView.VideoTimer videoTimer;
 
     public CameraView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -791,7 +792,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             setLayoutAspectRatio();
             setRecord(true);
             setKeepScreenOn(true);
-            startTimerThread();
+            videoTimer = startTimerThread();
             cameraHandler.sendEmptyMessage(Constants.RECORD_START);
             orientationEventListener.disable();
             camera1.setRecordingHint();
@@ -1271,17 +1272,15 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                             GLUtil.createFloatBuffer(GLUtil.FULL_RECTANGLE_TEX_COORDS), 2 * SIZEOF_FLOAT);
                     if (FRAME_VERBOSE) Log.d(TAG, "Populated to encoder");
 
-                    if(Math.abs(System.currentTimeMillis() - previousTime) >= 1000){
+                    if(previousTime == 0){
+                        previousTime = System.currentTimeMillis();
+                    }
+                    else if(!stopButton.isEnabled() && Math.abs(System.currentTimeMillis() - previousTime) >= 1000){
                         if(FRAME_VERBOSE)Log.d(TAG,"difference of 1 sec");
                         previousTime = System.currentTimeMillis();
                         if(recordStop == 1) {
-                            if(!stopButton.isEnabled()) {
-                                mainHandler.sendEmptyMessage(Constants.RECORD_STOP_ENABLE);
-                            }
+                            mainHandler.sendEmptyMessage(Constants.RECORD_STOP_ENABLE);
                         }
-                    }
-                    else if(previousTime == 0){
-                        previousTime = System.currentTimeMillis();
                     }
 
                     if(sharedPreferences.getBoolean(Constants.SHOW_MEMORY_CONSUMED_MSG, false)) {
@@ -1290,6 +1289,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
 
                     if (recordStop == -1) {
                         mediaRecorder.start();
+                        updateTimer = true;
                         recordStop = 1;
                     }
                     EGLExt.eglPresentationTimeANDROID(GLUtil.getmEGLDisplay(), encoderSurface, getPTSUs());
@@ -1395,7 +1395,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         break;
                     case Constants.RECORD_START:
                         cameraRenderer.setupMediaRecorder(getRecordVideoWidth(), getRecordVideoHeight(), getCamProfileForRecord());
-                        updateTimer = true;
                         hour = 0; minute = 0; second = 0;
                         isRecording = true;
                         break;
@@ -1425,16 +1424,15 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         break;
                     case Constants.RECORD_PAUSE:
                         if(VERBOSE)Log.d(TAG, "Pausing record");
+                        videoTimer.interrupt();
                         pause();
-                        updateTimer = false;
                         mainHandler.sendEmptyMessage(Constants.SHOW_PAUSE_TEXT);
-                        setRecordPaused(true);
                         break;
                     case Constants.RECORD_RESUME:
                         if(VERBOSE)Log.d(TAG, "Resuming record");
+                        mainHandler.sendEmptyMessage(Constants.HIDE_PAUSE_TEXT);
                         resumeRecord();
                         updateTimer = true;
-                        mainHandler.sendEmptyMessage(Constants.HIDE_PAUSE_TEXT);
                         setRecordPaused(false);
                         break;
                     case Constants.RECORD_STOP_NO_SD_CARD:
@@ -1454,11 +1452,12 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         }
     }
 
-    public void startTimerThread()
+    public CameraView.VideoTimer startTimerThread()
     {
         startTimer = true;
         CameraView.VideoTimer videoTimer = new CameraView.VideoTimer();
         videoTimer.start();
+        return videoTimer;
     }
 
     public void stopTimerThread()
@@ -1472,34 +1471,47 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     //and recording each frame, the timer value was incorrect during recording.
     class VideoTimer extends Thread
     {
+        long startSleep = 0;
+        long endSleep = 0;
         long previousTimeBlink = 0;
+        long sleepTime = 0;
+
+        private void updateTime(){
+            if (second < 59) {
+                second++;
+            } else if (minute < 59) {
+                minute++;
+                second = 0;
+            } else {
+                minute = 0;
+                second = 0;
+                hour++;
+            }
+        }
+
         @Override
         public void run() {
             if(VERBOSE)Log.d(TAG,"VideoTimer STARTED");
+            sleepTime = 1000;
             while(startTimer){
-                while(updateTimer){
+                while (updateTimer) {
                     try {
-                        Thread.sleep(1000);
-                        if(isRecordPaused() && !updateTimer){
-                            break;
+                        startSleep = System.currentTimeMillis();
+                        Thread.sleep(sleepTime);
+                        if(sleepTime < 1000){
+                            sleepTime = 1000;
                         }
-                        if(second < 59){
-                            second++;
-                        }
-                        else if(minute < 59){
-                            minute++;
-                            second = 0;
-                        }
-                        else{
-                            minute = 0;
-                            second = 0;
-                            hour++;
-                        }
+                        updateTime();
                         mainHandler.sendEmptyMessage(Constants.SHOW_ELAPSED_TIME);
                     } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        endSleep = System.currentTimeMillis();
+                        updateTimer = false;
+                        setRecordPaused(true);
+                        //Recalculate sleep time since user has paused recording.
+                        sleepTime = 1000 - (endSleep - startSleep);
+                        Log.d(TAG, "PAUSED VIDEO... Sleep incomplete at === "+(endSleep - startSleep) + " milliseconds");
                     }
-                    if(!startTimer){
+                    if (!startTimer) {
                         break;
                     }
                 }
