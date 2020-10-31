@@ -745,10 +745,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         switch(Integer.parseInt(flashMode)) {
                             case 2:
                                 Toast.makeText(getContext(), getResources().getString(R.string.flashModeNotSupported, getResources().getString(R.string.torchMode)), Toast.LENGTH_SHORT).show();
-                            break;
+                                break;
                             case 1:
                                 Toast.makeText(getContext(), getResources().getString(R.string.flashModeNotSupported, getResources().getString(R.string.singleMode)), Toast.LENGTH_SHORT).show();
-                            break;
+                                break;
                         }
                     }
                     else{
@@ -1079,6 +1079,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 System.arraycopy(IDENTITY_MATRIX,0,RECORD_IDENTITY_MATRIX,0,IDENTITY_MATRIX.length);
                 //Reset Rotation angle
                 rotationAngle = 0f;
+                hidePauseText();
                 Message recordStop = new Message();
                 if(!memoryPrefs.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
                     if(SDCardUtil.doesSDCardExist(getContext()) != null){
@@ -1115,11 +1116,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     class CameraRenderer extends Thread
     {
         int recordStop = -1;
-        private final String MIME_TYPE = "video/avc";
-        // parameters for recording
-        private final int FRAME_RATE = 25;
-        private final float BPP = 0.25f;
-        private final int TIMEOUT_USEC = 10000;
         boolean isRecording = false;
         int viewWidth = 0;
         int viewHeight = 0;
@@ -1258,7 +1254,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 //Calls eglSwapBuffers.  Use this to "publish" the current frame.
                 EGL14.eglSwapBuffers(GLUtil.getmEGLDisplay(), GLUtil.getEglSurface());
 
-                long tempTime;
                 if(isRecording) {
                     GLUtil.makeCurrent(encoderSurface);
                     if (FRAME_VERBOSE) Log.d(TAG, "Made encoder surface current");
@@ -1329,13 +1324,15 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             }
         }
 
-        private volatile long pauseDelayTime=0;
+        private volatile long pauseDelayTime = 0;
         private volatile long oncePauseTime;
 
         @TargetApi(Build.VERSION_CODES.N)
         private void pause(){
+            Log.d(TAG, "pauseDelayTime in PAUSE === "+pauseDelayTime);
             mediaRecorder.pause();
             oncePauseTime = System.nanoTime() / 1000;
+            Log.d(TAG, "oncePauseTime in PAUSE ==== "+oncePauseTime);
             isRecording = false;
         }
 
@@ -1343,7 +1340,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         private void resumeRecord(){
             mediaRecorder.resume();
             oncePauseTime = System.nanoTime() / 1000 - oncePauseTime;
+            Log.d(TAG, "oncePauseTime in RESUME ===== "+oncePauseTime);
             pauseDelayTime += oncePauseTime;
+            Log.d(TAG, "pauseDelayTime ===== "+pauseDelayTime);
             isRecording = true;
         }
 
@@ -1409,11 +1408,14 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                             }
                             recordIncomplete = true;
                         }
+                        mediaRecorder.release();
+                        mediaRecorder = null;
+                        Log.d(TAG, "RESET PAUSE");
+                        pauseDelayTime = 0;
+                        videoFragment.setPause(false);
                         isRecording = false;
                         recordStop = -1;
                         recordIncomplete = false;
-                        mediaRecorder.release();
-                        mediaRecorder = null;
                         setRecordPaused(false);
                         if(VERBOSE)Log.d(TAG,"stop isRecording == "+isRecording);
                         if(!recordIncomplete){
@@ -1437,6 +1439,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         break;
                     case Constants.RECORD_STOP_NO_SD_CARD:
                         isRecording = false;
+                        pauseDelayTime = 0;
+                        videoFragment.setPause(false);
                         recordStop = -1;
                         recordIncomplete = false;
                         mediaRecorder.release();
@@ -1518,7 +1522,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 //Add blinking text effect
                 if(isRecordPaused()){
                     if(Math.abs(System.currentTimeMillis() - previousTimeBlink) >= 700){
-                        if(VERBOSE)Log.d(TAG,"difference of 1.5 sec");
+                        if(VERBOSE)Log.d(TAG,"difference of 700 msec");
                         previousTimeBlink = System.currentTimeMillis();
                         if(isPauseTextVisible()) {
                             mainHandler.sendEmptyMessage(Constants.HIDE_PAUSE_TEXT);

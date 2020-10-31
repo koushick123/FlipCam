@@ -1,5 +1,6 @@
 package com.flipcam;
 
+import android.annotation.TargetApi;
 import android.app.Dialog;
 import android.appwidget.AppWidgetManager;
 import android.content.BroadcastReceiver;
@@ -575,6 +576,10 @@ public class VideoFragment extends Fragment{
         photoMode.setRotation(rotationAngle);
         flash.setRotation(rotationAngle);
         microThumbnail.setRotation(rotationAngle);
+        if(pauseRecord!=null) {
+            pauseRecord.setRotation(rotationAngle);
+            pauseText.setRotation(rotationAngle);
+        }
         if(exifInterface!=null && !filePath.equalsIgnoreCase(""))
         {
             if(isImage(filePath)) {
@@ -619,46 +624,47 @@ public class VideoFragment extends Fragment{
         switchCamera.setRotation(rotationAngle);
         videoBar.addView(switchCamera);
         videoBar.addView(stopRecord);
-        /*if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N){ */
-            pauseRecord = new ImageButton(getActivity().getApplicationContext());
-            pauseRecord.setScaleType(ImageView.ScaleType.CENTER_CROP);
-            pauseRecord.setBackgroundColor(getResources().getColor(R.color.transparentBar));
-            pauseRecord.setImageDrawable(getResources().getDrawable(R.drawable.camera_record_pause));
-            pauseRecord.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    pauseRecord.setEnabled(false);
-                    if(!isPause) {
-                        cameraView.recordPause();
-                        pauseRecord.setImageDrawable(getResources().getDrawable(R.drawable.camera_record_resume));
-                        isPause = true;
-//                        showPauseText();
-                    }
-                    else{
-                        cameraView.recordResume();
-                        pauseRecord.setImageDrawable(getResources().getDrawable(R.drawable.camera_record_pause));
-                        isPause = false;
-//                        hidePauseText();
-                    }
-                    pauseRecord.setEnabled(true);
+        addPauseButton();
+    }
+
+    @TargetApi(Build.VERSION_CODES.N)
+    public void addPauseButton(){
+        pauseRecord = new ImageButton(getActivity().getApplicationContext());
+        pauseRecord.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        pauseRecord.setBackgroundColor(getResources().getColor(R.color.transparentBar));
+        pauseRecord.setImageDrawable(getResources().getDrawable(R.drawable.camera_record_pause));
+        pauseRecord.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                pauseRecord.setEnabled(false);
+                Log.d(TAG, "isPause ==== "+isPause());
+                if(!isPause()) {
+                    cameraView.recordPause();
+                    pauseRecord.setImageDrawable(getResources().getDrawable(R.drawable.camera_record_resume));
+                    setPause(true);
                 }
-            });
-            layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-            layoutParams.setMargins(0, 0, (int) getResources().getDimension(R.dimen.recordSubsBtnRightMargin), 0);
-            layoutParams.width = (int)getResources().getDimension(R.dimen.pauseButtonWidth);
-            layoutParams.height = (int)getResources().getDimension(R.dimen.pauseButtonHeight);
-            pauseRecord.setLayoutParams(layoutParams);
-            videoBar.addView(pauseRecord);
-//        }
-        /*else {
-            ImageView recordSubstitute = new ImageView(getActivity());
-            recordSubstitute.setImageDrawable(getResources().getDrawable(R.drawable.placeholder));
-            layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-            layoutParams.setMargins(0, 0, (int) getResources().getDimension(R.dimen.recordSubsBtnRightMargin), 0);
-            recordSubstitute.setLayoutParams(layoutParams);
-            recordSubstitute.setVisibility(View.INVISIBLE);
-            videoBar.addView(recordSubstitute);
-        }*/
+                else{
+                    cameraView.recordResume();
+                    pauseRecord.setImageDrawable(getResources().getDrawable(R.drawable.camera_record_pause));
+                    setPause(false);
+                }
+                pauseRecord.setEnabled(true);
+            }
+        });
+        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,LinearLayout.LayoutParams.WRAP_CONTENT);
+        layoutParams.setMargins(0, 0, (int) getResources().getDimension(R.dimen.recordSubsBtnRightMargin), 0);
+        layoutParams.width = (int)getResources().getDimension(R.dimen.pauseButtonWidth);
+        layoutParams.height = (int)getResources().getDimension(R.dimen.pauseButtonHeight);
+        pauseRecord.setLayoutParams(layoutParams);
+        videoBar.addView(pauseRecord);
+    }
+
+    public boolean isPause() {
+        return isPause;
+    }
+
+    public void setPause(boolean pause) {
+        isPause = pause;
     }
 
     public void stopRecordAndSaveFile(boolean lowMemory){
