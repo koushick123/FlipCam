@@ -144,6 +144,7 @@ public class PermissionActivity extends AppCompatActivity {
                 if(VERBOSE)Log.d(TAG, "videoResPref = "+videoResPref);
                 SharedPreferences.Editor editor = videoPref.edit();
                 editor.remove(Constants.SELECT_VIDEO_RESOLUTION);
+                editor.remove(Constants.SUPPORT_VIDEO_RESOLUTIONS);
                 editor.remove(Constants.VIDEO_DIMENSION_HIGH);
                 editor.remove(Constants.VIDEO_DIMENSION_MEDIUM);
                 editor.remove(Constants.VIDEO_DIMENSION_LOW);

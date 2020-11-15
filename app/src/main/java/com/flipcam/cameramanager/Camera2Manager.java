@@ -81,6 +81,10 @@ public class Camera2Manager implements CameraOperations {
 
     }
 
+    public void getSupportedVideoSizes(){
+
+    }
+
     @Override
     public void openCamera(boolean backCamera, Context context) {
         CameraManager cameraManager = (CameraManager)context.getSystemService(Context.CAMERA_SERVICE);

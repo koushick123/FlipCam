@@ -81,9 +81,6 @@ public class Constants
     public static final String VIDEO_DIMENSION_HIGH = "videoDimensionHigh";
     public static final String VIDEO_DIMENSION_MEDIUM = "videoDimensionMedium";
     public static final String VIDEO_DIMENSION_LOW = "videoDimensionLow";
-    public static final String CAMPROFILE_FOR_RECORD_HIGH = "CamcorderProfileForRecordHigh";
-    public static final String CAMPROFILE_FOR_RECORD_MEDIUM = "CamcorderProfileForRecordMedium";
-    public static final String CAMPROFILE_FOR_RECORD_LOW = "CamcorderProfileForRecordLow";
     //Video Player
     public static final String SELECT_VIDEO_PLAYER = "SelectVideoPlayer";
     public static final String SHOW_EXTERNAL_PLAYER_MESSAGE = "ShowExternalPlayerMessage";
@@ -95,6 +92,7 @@ public class Constants
     public static final String SELECT_PHOTO_RESOLUTION_FRONT = "SelectPhotoResolutionFront";
     public static final String SUPPORT_PHOTO_RESOLUTIONS = "SupportedPhotoResolutions";
     public static final String SUPPORT_PHOTO_RESOLUTIONS_FRONT = "SupportedPhotoResolutionsFront";
+    public static final String SUPPORT_VIDEO_RESOLUTIONS = "SupportVideoResolutions";
     //Unmounted/Mounted Intent
     public static final String MEDIA_UNMOUNTED = "android.intent.action.MEDIA_UNMOUNTED";
     public static final String MEDIA_MOUNTED = "android.intent.action.MEDIA_MOUNTED";

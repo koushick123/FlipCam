@@ -646,8 +646,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             //Set the photo resolution as per selection in settings.
             camera1.getSupportedPictureSizes();
             camera1.setPictureSize();
+            if(VERBOSE)Log.d(TAG, "call getSupportedVideoSizes");
+            camera1.getSupportedVideoSizes();
             //Set the video resolution as per selection in settings.
-            if(VERBOSE)Log.d(TAG, "call setResolution");
             camera1.setResolution();
             if(!Build.MODEL.contains(getResources().getString(R.string.nokia71))) {
                 camera1.setFPS();
@@ -1141,7 +1142,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
 
         public void setupMediaRecorder(int width, int height, int camcorderProf)
         {
-            camcorderProfile = CamcorderProfile.get(camera1.getCameraId(),camcorderProf);
+            camcorderProfile = CamcorderProfile.get(camera1.getCameraId(), camcorderProf);
             mediaRecorder = new MediaRecorder();
             try {
                 mediaRecorder.setAudioSource(MediaRecorder.AudioSource.CAMCORDER);
@@ -1229,7 +1230,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             return phonePath;
         }
 
-        long pauseDuration = 0;
         void drawFrame()
         {
             if(GLUtil.getmEGLConfig()!=null && camera1.isCameraReady()) {

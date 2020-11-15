@@ -230,7 +230,7 @@
     <string name="flashOffMode">Off</string>
     <string name="singleMode">Auto</string>
     <string name="videoResolutionHeading">Video Resolutions</string>
-    <string name="videoResolutionSummary">Set the video resolution for rear and front cameras.</string>
+    <string name="videoResolutionSummary">Set the video recording resolution for the camera.</string>
     <string name="videoResHigh">HIGH</string>
     <string name="videoResMedium">MEDIUM</string>
     <string name="videoResLow">LOW</string>
