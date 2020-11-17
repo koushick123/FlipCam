@@ -204,7 +204,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
                 resolSize.append(size.width);
                 resolSize.append("x");
                 resolSize.append(size.height);
-                Log.d(TAG, "resolSize ==== "+resolSize);
+                if(VERBOSE)Log.d(TAG, "resolSize ==== "+resolSize);
                 if(!cameraView.isBackCamera()) {
                     if (isResolutionPresentInCamcorder(resolSize.toString()) && CamcorderProfile.hasProfile(camId, camcorderVideoRes.get(resolSize.toString()))) {
                         supportedVideoResolutions.add(size.width + " X " + size.height);
@@ -218,7 +218,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
                         String resolution = iter.next();
                         String[] tempRes = resolution.split(" X ");
                         if(!CamcorderProfile.hasProfile(camId, camcorderVideoRes.get(tempRes[0]+"x"+tempRes[1]))){
-                            Log.d(TAG, "Removing "+tempRes[0]+" X "+tempRes[1]+" for rear camera");
+                            if(VERBOSE)Log.d(TAG, "Removing "+tempRes[0]+" X "+tempRes[1]+" for rear camera");
                             removeResolutions.add(resolution);
                         }
                     }
@@ -233,13 +233,13 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
             if(cameraView.isBackCamera()) {
                 //Sort by descending order and take the largest value as default video resolution.
                 TreeSet<Dimension> sortedVidSizes = new TreeSet<>();
-                Log.d(TAG, "videoRES SIZE = " + supportedVideoResolutions.size());
+                if(VERBOSE)Log.d(TAG, "videoRES SIZE = " + supportedVideoResolutions.size());
                 int width = 0, height = 0;
                 for (String resol : supportedVideoResolutions) {
                     width = Integer.parseInt(resol.split(" X ")[0]);
-                    Log.d(TAG, "WIDTH ==== " + width);
+                    if(VERBOSE)Log.d(TAG, "WIDTH ==== " + width);
                     height = Integer.parseInt(resol.split(" X ")[1]);
-                    Log.d(TAG, "HEIGHT ==== " + height);
+                    if(VERBOSE)Log.d(TAG, "HEIGHT ==== " + height);
                     sortedVidSizes.add(new Dimension(width, height));
                 }
                 Dimension firstEle = sortedVidSizes.first();

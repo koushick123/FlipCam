@@ -637,7 +637,7 @@ public class VideoFragment extends Fragment{
             @Override
             public void onClick(View v) {
                 pauseRecord.setEnabled(false);
-                Log.d(TAG, "isPause ==== "+isPause());
+                if(VERBOSE)Log.d(TAG, "isPause ==== "+isPause());
                 if(!isPause()) {
                     cameraView.recordPause();
                     pauseRecord.setImageDrawable(getResources().getDrawable(R.drawable.camera_record_resume));

@@ -1410,7 +1410,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         }
                         mediaRecorder.release();
                         mediaRecorder = null;
-                        Log.d(TAG, "RESET PAUSE");
+                        if(VERBOSE)Log.d(TAG, "RESET PAUSE");
                         pauseDelayTime = 0;
                         videoFragment.setPause(false);
                         isRecording = false;
@@ -1513,7 +1513,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         setRecordPaused(true);
                         //Recalculate sleep time since user has paused recording.
                         sleepTime = 1000 - (endSleep - startSleep);
-                        Log.d(TAG, "PAUSED VIDEO... Sleep incomplete at === "+(endSleep - startSleep) + " milliseconds");
+                        if(VERBOSE)Log.d(TAG, "PAUSED VIDEO... Sleep incomplete at === "+(endSleep - startSleep) + " milliseconds");
                     }
                     if (!startTimer) {
                         break;
