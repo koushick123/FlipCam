@@ -2,8 +2,9 @@ package com.flipcam.adapter;
 
 import android.content.Context;
 import android.os.AsyncTask;
-import android.support.v7.app.AppCompatActivity;
 import android.widget.Toast;
+
+import androidx.appcompat.app.AppCompatActivity;
 
 import com.flipcam.R;
 import com.flipcam.SettingsActivity;
@@ -34,7 +35,10 @@ public class FeedbackMailTask extends AsyncTask<String, Void, Void> {
     protected void onPreExecute() {
         super.onPreExecute();
         settingsActivity.showFeedbackMessage();
+        feedbackText = settingsActivity.getFeedback_information().getText().toString();
     }
+
+    public String feedbackText;
 
     @Override
     protected void onPostExecute(Void aVoid) {
@@ -63,7 +67,7 @@ public class FeedbackMailTask extends AsyncTask<String, Void, Void> {
         String m_to = "ksprojectsfeedback@gmail.com";
         String m_subject = "FlipCam Feedback";
         StringBuffer m_text = new StringBuffer("Hi,\n");
-        m_text.append(settingsActivity.getFeedback_information().getText().toString());
+        m_text.append(feedbackText);
         Properties props = new Properties();
         props.put("mail.smtp.user", d_email);
         props.put("mail.smtp.host", d_host);

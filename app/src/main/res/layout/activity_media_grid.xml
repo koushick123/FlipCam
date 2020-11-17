@@ -85,7 +85,7 @@
             android:verticalSpacing="4px" />
     </LinearLayout>
 
-    <android.support.design.widget.FloatingActionButton
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/videoCapture"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -102,4 +102,15 @@
         app:borderWidth="0dp"
         app:fabCustomSize="@dimen/fabCustomDimension"
         app:maxImageSize="@dimen/fabVideoDimension" />
+
+    <ProgressBar
+        android:id="@+id/openMediaProgress"
+        style="?android:attr/progressBarStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:indeterminate="true"
+        android:indeterminateTint="@color/turqoise"
+        android:progressTint="@color/turqoise"
+        android:visibility="gone" />
 </FrameLayout>

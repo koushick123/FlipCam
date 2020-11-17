@@ -1,6 +1,7 @@
 package com.flipcam.view;
 
 import android.Manifest;
+import android.annotation.TargetApi;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -15,12 +16,8 @@ import android.media.AudioManager;
 import android.media.CamcorderProfile;
 import android.media.MediaRecorder;
 import android.opengl.EGL14;
-import android.opengl.EGLConfig;
-import android.opengl.EGLContext;
-import android.opengl.EGLDisplay;
 import android.opengl.EGLExt;
 import android.opengl.EGLSurface;
-import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import android.opengl.Matrix;
 import android.os.Build;
@@ -30,12 +27,10 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.StatFs;
 import android.preference.PreferenceManager;
-import android.support.v4.content.ContextCompat;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.OrientationEventListener;
-import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
@@ -47,6 +42,8 @@ import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.core.content.ContextCompat;
 
 import com.flipcam.PhotoFragment;
 import com.flipcam.R;
@@ -62,16 +59,10 @@ import com.flipcam.util.SDCardUtil;
 import java.io.File;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.FloatBuffer;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import static android.content.Context.SENSOR_SERVICE;
 import static android.os.Environment.getExternalStoragePublicDirectory;
-import static com.flipcam.constants.Constants.HIDE_ELAPSED_TIME;
-import static com.flipcam.constants.Constants.SHOW_ELAPSED_TIME;
 
 /**
  * Created by Koushick on 15-08-2017.
@@ -91,23 +82,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     private int recordVideoWidth = 640;
     private int recordVideoHeight = 480;
     CamcorderProfile camcorderProfile;
-    SurfaceTexture surfaceTexture;
-    private EGLDisplay mEGLDisplay = EGL14.EGL_NO_DISPLAY;
-    private EGLContext mEGLContext = EGL14.EGL_NO_CONTEXT;
-    private EGLConfig mEGLConfig = null;
-    // Android-specific extension.
-    private static final int EGL_RECORDABLE_ANDROID = 0x3142;
-    public static final int FLAG_RECORDABLE = 0x01;
-    private int mProgramHandle;
-    private int mTextureTarget;
-    private int mTextureId;
-    private int muMVPMatrixLoc;
     private static final int SIZEOF_FLOAT = 4;
-    private int muTexMatrixLoc;
-    private int maPositionLoc;
-    private int maTextureCoordLoc;
-    //Surface onto which camera frames are drawn
-    EGLSurface eglSurface;
     //Surface to which camera frames are sent for encoding to mp4 format
     EGLSurface encoderSurface=null;
     SurfaceHolder camSurfHolder=null;
@@ -120,7 +95,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         RECORD_IDENTITY_MATRIX = new float[16];
         Matrix.setIdentityM(RECORD_IDENTITY_MATRIX, 0);
     }
-
     CameraRenderer.CameraHandler cameraHandler;
     MainHandler mainHandler;
     Object renderObj = new Object();
@@ -175,12 +149,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     ContentValues mediaContent = new ContentValues();
     boolean stopCamera = false;
     int camProfileForRecord;
-    public float colorVal = 0.0f;
     int totalRotation;
     boolean recordPaused = false;
-    boolean recordPauseOffset = false;
-    long recordedTimeStamp = -1;
     SharedPreferences sharedPreferences;
+    CameraView.VideoTimer videoTimer;
 
     public CameraView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -195,7 +167,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         }
         focusMode = camera1.getFocusModeAuto();
         flashMode = camera1.getFlashModeOff();
-        mSensorManager = (SensorManager)getContext().getSystemService(SENSOR_SERVICE);
+        mSensorManager = (SensorManager)getContext().getSystemService(Context.SENSOR_SERVICE);
         mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         audioManager = (AudioManager)getContext().getSystemService(Context.AUDIO_SERVICE);
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getContext());
@@ -296,9 +268,12 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                     if(FRAME_VERBOSE)Log.d(TAG,"show time now");
                     showTimeElapsed();
                     break;
-                case Constants.HIDE_ELAPSED_TIME:
-                    if(VERBOSE)Log.d(TAG, "Hide time elapsed");
-                    hideTimeElapsed();
+                case Constants.SHOW_PAUSE_TEXT:
+                    showPauseText();
+                    break;
+                case Constants.HIDE_PAUSE_TEXT:
+                    if(VERBOSE)Log.d(TAG, "Hide Pause text");
+                    hidePauseText();
                     break;
                 case Constants.SHOW_MEMORY_CONSUMED:
                     showMemoryConsumed();
@@ -348,75 +323,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     public void onFrameAvailable(SurfaceTexture surfaceTexture) {
         if(FRAME_VERBOSE)Log.d(TAG,"FRAME Available now");
         if(FRAME_VERBOSE)Log.d(TAG,"is Record = "+isRecord());
-        if(isRecord()){
-            if(FRAME_VERBOSE)Log.d(TAG,"Frame avail cnt = "+(++cameraFrameCnt));
-        }
         cameraHandler.sendEmptyMessage(Constants.FRAME_AVAILABLE);
-    }
-
-    private void prepareEGLDisplayandContext()
-    {
-        mEGLDisplay = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY);
-        if (mEGLDisplay == EGL14.EGL_NO_DISPLAY) {
-            throw new RuntimeException("unable to get EGL14 display");
-        }
-        int[] version = new int[2];
-        if (!EGL14.eglInitialize(mEGLDisplay, version, 0, version, 1)) {
-            mEGLDisplay = null;
-            throw new RuntimeException("unable to initialize EGL14");
-        }
-        EGLConfig config = getConfig(FLAG_RECORDABLE, 2);
-        if (config == null) {
-            throw new RuntimeException("Unable to find a suitable EGLConfig");
-        }
-        int[] attrib2_list = {
-                EGL14.EGL_CONTEXT_CLIENT_VERSION, 2,
-                EGL14.EGL_NONE
-        };
-        EGLContext context = EGL14.eglCreateContext(mEGLDisplay, config, EGL14.EGL_NO_CONTEXT,
-                attrib2_list, 0);
-        checkEglError("eglCreateContext");
-        mEGLConfig = config;
-        mEGLContext = context;
-
-        // Confirm with query.
-        int[] values = new int[1];
-        EGL14.eglQueryContext(mEGLDisplay, mEGLContext, EGL14.EGL_CONTEXT_CLIENT_VERSION,
-                values, 0);
-        if(VERBOSE)Log.d(TAG, "EGLContext created, client version " + values[0]);
-    }
-
-    private void checkEglError(String msg) {
-        int error;
-        if ((error = EGL14.eglGetError()) != EGL14.EGL_SUCCESS) {
-            throw new RuntimeException(msg + ": EGL error: 0x" + Integer.toHexString(error));
-        }
-    }
-
-    private EGLConfig getConfig(int flags, int version) {
-        int renderableType = EGL14.EGL_OPENGL_ES2_BIT;
-
-        int[] attribList = {
-                EGL14.EGL_RED_SIZE, 8,
-                EGL14.EGL_GREEN_SIZE, 8,
-                EGL14.EGL_BLUE_SIZE, 8,
-                EGL14.EGL_ALPHA_SIZE, 8,
-                EGL14.EGL_RENDERABLE_TYPE, renderableType,
-                EGL14.EGL_NONE, 0,      // placeholder for recordable [@-3]
-                EGL14.EGL_NONE
-        };
-        if ((flags & FLAG_RECORDABLE) != 0) {
-            attribList[attribList.length - 3] = EGL_RECORDABLE_ANDROID;
-            attribList[attribList.length - 2] = 1;
-        }
-        EGLConfig[] configs = new EGLConfig[1];
-        int[] numConfigs = new int[1];
-        if (!EGL14.eglChooseConfig(mEGLDisplay, attribList, 0, configs, 0, configs.length,
-                numConfigs, 0)) {
-            Log.w(TAG, "unable to find RGB8888 / " + version + " EGLConfig");
-            return null;
-        }
-        return configs[0];
     }
 
     public String getMediaPath(){
@@ -570,51 +477,50 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         this.recordPaused = recordPaused;
     }
 
-    public boolean isRecordPauseOffset() {
-        return recordPauseOffset;
-    }
-
-    public void setRecordPauseOffset(boolean recordPauseOffset) {
-        this.recordPauseOffset = recordPauseOffset;
-    }
-
     public void showTimeElapsed()
     {
         if(FRAME_VERBOSE)Log.d(TAG,"displaying time = "+second);
-        String showSec = "0";
-        String showMin = "0";
-        String showHr = "0";
+        StringBuilder showSec = new StringBuilder("0");
+        StringBuilder showMin = new StringBuilder("0");
+        StringBuilder showHr = new StringBuilder("0");
         if(second < 10){
-            showSec += second;
+            showSec.append(second);
         }
         else{
-            showSec = second+"";
+            showSec.delete(0, showSec.length());
+            showSec.append(second);
         }
 
         if(minute < 10){
-            showMin += minute;
+            showMin.append(minute);
         }
         else{
-            showMin = minute+"";
+            showMin.delete(0, showMin.length());
+            showMin.append(minute);
         }
 
         if(hour < 10){
-            showHr += hour;
+            showHr.append(hour);
         }
         else{
-            showHr = hour+"";
+            showHr.delete(0, showHr.length());
+            showHr.append(hour);
         }
         timeElapsed.setText(showHr + " : " + showMin + " : " + showSec);
         //This is added for blinking the timer if recording is paused.
         timeElapsed.setVisibility(View.VISIBLE);
     }
 
-    public void hideTimeElapsed(){
-        timeElapsed.setVisibility(View.INVISIBLE);
+    public void showPauseText(){
+        this.videoFragment.getPauseText().setVisibility(View.VISIBLE);
     }
 
-    public boolean isTimeVisible(){
-        return timeElapsed.getVisibility() == View.VISIBLE;
+    public void hidePauseText(){
+        this.videoFragment.getPauseText().setVisibility(View.INVISIBLE);
+    }
+
+    public boolean isPauseTextVisible(){
+        return this.videoFragment.getPauseText().getVisibility() == View.VISIBLE;
     }
 
     public void showMemoryConsumed()
@@ -740,8 +646,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             //Set the photo resolution as per selection in settings.
             camera1.getSupportedPictureSizes();
             camera1.setPictureSize();
+            if(VERBOSE)Log.d(TAG, "call getSupportedVideoSizes");
+            camera1.getSupportedVideoSizes();
             //Set the video resolution as per selection in settings.
-            if(VERBOSE)Log.d(TAG, "call setResolution");
             camera1.setResolution();
             if(!Build.MODEL.contains(getResources().getString(R.string.nokia71))) {
                 camera1.setFPS();
@@ -761,7 +668,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             //Resize the preview to match the aspect ratio of selected video resolution.
             if(VERBOSE)Log.d(TAG, "call setLayoutAspectRatio");
             setLayoutAspectRatio();
-            camera1.startPreview(surfaceTexture);
+            camera1.startPreview(GLUtil.getSurfaceTexture());
         }
         this.seekBar.setProgress(0);
         this.seekBar.setMax(camera1.getMaxZoom());
@@ -798,10 +705,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             switchFlashOnOff();
         }
         camera1.setAutoExposureAndLock();
-    }
-
-    public SurfaceTexture getSurfaceTexture(){
-        return surfaceTexture;
     }
 
     //Return 'true' if this method will create a camera capture session while setting a flash, or 'false' if not.
@@ -843,10 +746,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         switch(Integer.parseInt(flashMode)) {
                             case 2:
                                 Toast.makeText(getContext(), getResources().getString(R.string.flashModeNotSupported, getResources().getString(R.string.torchMode)), Toast.LENGTH_SHORT).show();
-                            break;
+                                break;
                             case 1:
                                 Toast.makeText(getContext(), getResources().getString(R.string.flashModeNotSupported, getResources().getString(R.string.singleMode)), Toast.LENGTH_SHORT).show();
-                            break;
+                                break;
                         }
                     }
                     else{
@@ -890,7 +793,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             setLayoutAspectRatio();
             setRecord(true);
             setKeepScreenOn(true);
-            startTimerThread();
+            videoTimer = startTimerThread();
             cameraHandler.sendEmptyMessage(Constants.RECORD_START);
             orientationEventListener.disable();
             camera1.setRecordingHint();
@@ -899,6 +802,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             setRecord(false);
             setKeepScreenOn(false);
             stopTimerThread();
+            hidePauseText();
             if(noSDCard) {
                 cameraHandler.sendEmptyMessage(Constants.RECORD_STOP_NO_SD_CARD);
             }
@@ -1017,28 +921,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         }
     }
 
-    private void releaseEGLSurface(){
-        EGL14.eglDestroySurface(mEGLDisplay,eglSurface);
-    }
-
-    private void releaseProgram(){
-        GLES20.glDeleteProgram(mProgramHandle);
-    }
-
-    private void releaseEGLContext()
-    {
-        if (mEGLDisplay != EGL14.EGL_NO_DISPLAY) {
-            EGL14.eglMakeCurrent(mEGLDisplay, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE,
-                    EGL14.EGL_NO_CONTEXT);
-            EGL14.eglDestroyContext(mEGLDisplay, mEGLContext);
-            EGL14.eglReleaseThread();
-            EGL14.eglTerminate(mEGLDisplay);
-        }
-        mEGLDisplay = EGL14.EGL_NO_DISPLAY;
-        mEGLContext = EGL14.EGL_NO_CONTEXT;
-        mEGLConfig = null;
-    }
-
     public void capturePhoto()
     {
         determineOrientation();
@@ -1067,7 +949,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         if(VERBOSE)Log.d(TAG, "surfCreated holder = " + surfaceHolder);
         camSurfHolder = surfaceHolder;
         mainHandler = new MainHandler(this);
-        prepareEGLDisplayandContext();
+        GLUtil.prepareEGLDisplayandContext();
         CameraRenderer cameraRenderer = new CameraRenderer();
         cameraRenderer.start();
         waitUntilReady();
@@ -1119,9 +1001,13 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 registerAccelSensor();
             }
         }
-        if(surfaceTexture!=null) {
-            surfaceTexture.setOnFrameAvailableListener(this);
+        if(GLUtil.getSurfaceTexture()!=null) {
+            GLUtil.getSurfaceTexture().setOnFrameAvailableListener(this);
         }
+    }
+
+    public SurfaceTexture getSurfaceTexture() {
+        return GLUtil.getSurfaceTexture();
     }
 
     @Override
@@ -1169,14 +1055,14 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             }
             if(VERBOSE)Log.d(TAG, "stopped and released Camera");
             cameraHandler.removeMessages(Constants.FRAME_AVAILABLE);
-            if(surfaceTexture!=null){
-                surfaceTexture.release();
-                surfaceTexture=null;
+            if(GLUtil.getSurfaceTexture()!=null){
+                GLUtil.getSurfaceTexture().release();
+                GLUtil.setSurfaceTexture(null);
             }
             frameCount=0;
-            releaseEGLSurface();
-            releaseProgram();
-            releaseEGLContext();
+            GLUtil.releaseEGLSurface();
+            GLUtil.releaseProgram();
+            GLUtil.releaseEGLContext();
             if(isRecord()) {
                 //If video recording was in progress, ensure recording is stopped and saved, before exiting.
                 if(VERBOSE)Log.d(TAG, "Unmute audio");
@@ -1190,10 +1076,11 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 }
                 if(VERBOSE)Log.d(TAG,"Recording in progress.... Stop now");
                 setRecord(false);
-                //Reset the RECORD Matrix to be portrait.
+                //Reset the RECORD Matrix GLUtil.getSurfaceTexture()to be portrait.
                 System.arraycopy(IDENTITY_MATRIX,0,RECORD_IDENTITY_MATRIX,0,IDENTITY_MATRIX.length);
                 //Reset Rotation angle
                 rotationAngle = 0f;
+                hidePauseText();
                 Message recordStop = new Message();
                 if(!memoryPrefs.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
                     if(SDCardUtil.doesSDCardExist(getContext()) != null){
@@ -1231,6 +1118,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     {
         int recordStop = -1;
         boolean isRecording = false;
+        int viewWidth = 0;
+        int viewHeight = 0;
         public CameraRenderer()
         {
             //Empty constructor
@@ -1241,7 +1130,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         {
             Looper.prepare();
             cameraHandler = new CameraHandler(this);
-            createSurfaceTexture();
+            GLUtil.createSurfaceTexture(camSurfHolder, GLUtil.getmEGLDisplay(), GLUtil.getmEGLConfig());
             synchronized (renderObj){
                 isReady=true;
                 renderObj.notify();
@@ -1251,175 +1140,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             if(VERBOSE)Log.d(TAG,"Camera Renderer STOPPED");
         }
 
-        private void makeCurrent(EGLSurface surface)
-        {
-            EGL14.eglMakeCurrent(mEGLDisplay, surface, surface, mEGLContext);
-        }
-        /**
-         * Copyright 2014 Google Inc. All rights reserved.
-         Borrowed from Grafika project. This is NOT an official Google Project,
-         and has an Open Source license.
-         https://github.com/google/grafika
-         * Creates a texture object suitable for use with this program.
-         * <p>
-         * On exit, the texture will be bound.
-         */
-        public int createGLTextureObject() {
-            int[] textures = new int[1];
-            GLES20.glGenTextures(1, textures, 0);
-            GLUtil.checkGlError("glGenTextures");
-
-            int texId = textures[0];
-            GLES20.glBindTexture(mTextureTarget, texId);
-            GLUtil.checkGlError("glBindTexture " + texId);
-
-            GLES20.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MIN_FILTER,
-                    GLES20.GL_NEAREST);
-            GLES20.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MAG_FILTER,
-                    GLES20.GL_LINEAR);
-            GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_S,
-                    GLES20.GL_CLAMP_TO_EDGE);
-            GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_T,
-                    GLES20.GL_CLAMP_TO_EDGE);
-            GLUtil.checkGlError("glTexParameter");
-
-            return texId;
-        }
-
-        private EGLSurface prepareWindowSurface(Surface surface)
-        {
-            // Create a window surface, and attach it to the Surface we received.
-            int[] surfaceAttribs = {
-                    EGL14.EGL_NONE
-            };
-            EGLSurface surface1;
-            surface1 = EGL14.eglCreateWindowSurface(mEGLDisplay, mEGLConfig,surface ,
-                    surfaceAttribs, 0);
-            checkEglError("eglCreateWindowSurface");
-            if (surface1 == null) {
-                throw new RuntimeException("surface was null");
-            }
-            return surface1;
-        }
-
-        int changer;
-        int tex;
-        /*
-        Copyright 2014 Google Inc. All rights reserved.
-         Borrowed from Grafika project. This is NOT an official Google Project,
-         and has an Open Source license.
-         https://github.com/google/grafika
-         */
-        void createSurfaceTexture()
-        {
-            eglSurface = prepareWindowSurface(camSurfHolder.getSurface());
-            makeCurrent(eglSurface);
-            mProgramHandle = GLUtil.createProgram(GLUtil.VERTEX_SHADER, GLUtil.FRAGMENT_SHADER_EXT);
-            maPositionLoc = GLES20.glGetAttribLocation(mProgramHandle, "aPosition");
-            GLUtil.checkLocation(maPositionLoc, "aPosition");
-            maTextureCoordLoc = GLES20.glGetAttribLocation(mProgramHandle, "aTextureCoord");
-            GLUtil.checkLocation(maTextureCoordLoc, "aTextureCoord");
-            muMVPMatrixLoc = GLES20.glGetUniformLocation(mProgramHandle, "uMVPMatrix");
-            GLUtil.checkLocation(muMVPMatrixLoc, "uMVPMatrix");
-            muTexMatrixLoc = GLES20.glGetUniformLocation(mProgramHandle, "uTexMatrix");
-            GLUtil.checkLocation(muTexMatrixLoc, "uTexMatrix");
-            changer = GLES20.glGetUniformLocation(mProgramHandle, "changer");
-            GLUtil.checkLocation(changer, "changer");
-            tex = GLES20.glGetUniformLocation(mProgramHandle, "sTexture");
-            GLUtil.checkLocation(tex, "sTexture");
-            mTextureTarget = GLES11Ext.GL_TEXTURE_EXTERNAL_OES;
-            mTextureId = createGLTextureObject();
-            surfaceTexture = new SurfaceTexture(mTextureId);
-        }
-        /**
-         * Copyright 2014 Google Inc. All rights reserved.
-         Borrowed from Grafika project. This is NOT an official Google Project,
-         and has an Open Source license.
-         https://github.com/google/grafika
-
-         * Issues the draw call.  Does the full setup on every call.
-         *
-         * @param mvpMatrix The 4x4 projection matrix.
-         * @param vertexBuffer Buffer with vertex position data.
-         * @param firstVertex Index of first vertex to use in vertexBuffer.
-         * @param vertexCount Number of vertices in vertexBuffer.
-         * @param coordsPerVertex The number of coordinates per vertex (e.g. x,y is 2).
-         * @param vertexStride Width, in bytes, of the position data for each vertex (often
-         *        vertexCount * sizeof(float)).
-         * @param texMatrix A 4x4 transformation matrix for texture coords.  (Primarily intended
-         *        for use with SurfaceTexture.)
-         * @param texBuffer Buffer with vertex texture data.
-         * @param texStride Width, in bytes, of the texture data for each vertex.
-         */
-        private void draw(float[] mvpMatrix, FloatBuffer vertexBuffer, int firstVertex,
-                          int vertexCount, int coordsPerVertex, int vertexStride,
-                          float[] texMatrix, FloatBuffer texBuffer, int textureId, int texStride) {
-            GLUtil.checkGlError("draw start");
-
-            tex = GLES20.glGetUniformLocation(mProgramHandle, "sTexture");
-            changer = GLES20.glGetUniformLocation(mProgramHandle, "changer");
-            // Select the program.
-            GLES20.glUseProgram(mProgramHandle);
-            GLUtil.checkGlError("glUseProgram");
-
-            // Set the texture.
-            GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-            GLES20.glBindTexture(mTextureTarget, textureId);
-
-            // Copy the model / view / projection matrix over.
-            GLES20.glUniformMatrix4fv(muMVPMatrixLoc, 1, false, mvpMatrix, 0);
-            GLUtil.checkGlError("glUniformMatrix4fv");
-
-            // Copy the texture transformation matrix over.
-            GLES20.glUniformMatrix4fv(muTexMatrixLoc, 1, false, texMatrix, 0);
-            GLUtil.checkGlError("glUniformMatrix4fv");
-            GLES20.glUniform1i(tex, 0);
-            GLES20.glUniform1f(changer, colorVal);
-            // Enable the "aPosition" vertex attribute.
-            GLES20.glEnableVertexAttribArray(maPositionLoc);
-            GLUtil.checkGlError("glEnableVertexAttribArray");
-
-            // Connect vertexBuffer to "aPosition".
-            GLES20.glVertexAttribPointer(maPositionLoc, coordsPerVertex,
-                    GLES20.GL_FLOAT, false, vertexStride, vertexBuffer);
-            GLUtil.checkGlError("glVertexAttribPointer");
-
-            // Enable the "aTextureCoord" vertex attribute.
-            GLES20.glEnableVertexAttribArray(maTextureCoordLoc);
-            GLUtil.checkGlError("glEnableVertexAttribArray");
-
-            // Connect texBuffer to "aTextureCoord".
-            GLES20.glVertexAttribPointer(maTextureCoordLoc, 2,
-                    GLES20.GL_FLOAT, false, texStride, texBuffer);
-            GLUtil.checkGlError("glVertexAttribPointer");
-
-            // Draw the rect.
-            GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, firstVertex, vertexCount);
-            GLUtil.checkGlError("glDrawArrays");
-
-            // Done -- disable vertex array, texture, and program.
-            GLES20.glDisableVertexAttribArray(maPositionLoc);
-            GLES20.glDisableVertexAttribArray(maTextureCoordLoc);
-            GLES20.glBindTexture(mTextureTarget, 0);
-            GLES20.glUseProgram(0);
-        }
-
-        /**
-         * Allocates a direct float buffer, and populates it with the float array data.
-         */
-        private FloatBuffer createFloatBuffer(float[] coords) {
-            // Allocate a direct ByteBuffer, using 4 bytes per float, and copy coords into it.
-            ByteBuffer bb = ByteBuffer.allocateDirect(coords.length * SIZEOF_FLOAT);
-            bb.order(ByteOrder.nativeOrder());
-            FloatBuffer fb = bb.asFloatBuffer();
-            fb.put(coords);
-            fb.position(0);
-            return fb;
-        }
-
         public void setupMediaRecorder(int width, int height, int camcorderProf)
         {
-            camcorderProfile = CamcorderProfile.get(camera1.getCameraId(),camcorderProf);
+            camcorderProfile = CamcorderProfile.get(camera1.getCameraId(), camcorderProf);
             mediaRecorder = new MediaRecorder();
             try {
                 mediaRecorder.setAudioSource(MediaRecorder.AudioSource.CAMCORDER);
@@ -1431,7 +1154,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
             mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
             mNextVideoAbsolutePath = getFilePath(true);
+            if(VERBOSE)Log.d(TAG, "mNextVideoAbsolutePath ===== "+mNextVideoAbsolutePath);
             videoFile = new File(mNextVideoAbsolutePath);
+            if(VERBOSE)Log.d(TAG, "Video file ===== "+videoFile);
             mediaRecorder.setOutputFile(mNextVideoAbsolutePath);
             mediaRecorder.setVideoEncodingBitRate(camcorderProfile.videoBitRate);
             mediaRecorder.setVideoFrameRate(camcorderProfile.videoFrameRate);
@@ -1457,46 +1182,36 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            encoderSurface = prepareWindowSurface(mediaRecorder.getSurface());
+            encoderSurface = GLUtil.prepareWindowSurface(mediaRecorder.getSurface(), GLUtil.getmEGLDisplay(), GLUtil.getmEGLConfig());
             mediaContent = new ContentValues();
             mediaContent.put("filename", mNextVideoAbsolutePath);
             mediaContent.put("memoryStorage", (memoryPrefs.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true) ? "1" : "0"));
         }
 
         public String getFilePath(boolean video) {
-            String path;
+            StringBuilder path = new StringBuilder(Constants.EMPTY);
             SharedPreferences sharedPreferences;
-            if(video)
-            {
-                sharedPreferences = videoFragment.getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
-            }
-            else
-            {
-                sharedPreferences = photoFragment.getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
-            }
+            sharedPreferences = (video ? videoFragment.getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE) :
+                    photoFragment.getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE));
             if(sharedPreferences.contains(Constants.SAVE_MEDIA_PHONE_MEM))
             {
                 if(sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
-                    path = fetchPhoneMemoryPath(video);
+                    path.append(fetchPhoneMemoryPath(video));
                 }
                 else{
-                    path = sharedPreferences.getString(Constants.SD_CARD_PATH, "");
+                    path.append(sharedPreferences.getString(Constants.SD_CARD_PATH, ""));
                     SimpleDateFormat sdf = new SimpleDateFormat(getResources().getString(R.string.DATE_FORMAT_FOR_FILE));
                     String filename = sdf.format(new Date());
                     if(VERBOSE)Log.d(TAG, "sd card filename = " + filename);
-                    if(video){
-                        path += getResources().getString(R.string.FC_VID_PREFIX) + filename + getResources().getString(R.string.VID_EXT);
-                    }
-                    else{
-                        path += getResources().getString(R.string.FC_IMG_PREFIX) + filename + getResources().getString(R.string.IMG_EXT);
-                    }
+                    path.append(video ? getResources().getString(R.string.FC_VID_PREFIX) + filename + getResources().getString(R.string.VID_EXT) :
+                            getResources().getString(R.string.FC_IMG_PREFIX) + filename + getResources().getString(R.string.IMG_EXT));
                     if(VERBOSE)Log.d(TAG, "SD Card Path = "+path);
                 }
             }
             else {
-                path = fetchPhoneMemoryPath(video);
+                path.append(fetchPhoneMemoryPath(video));
             }
-            return path;
+            return path.toString();
         }
 
         public String fetchPhoneMemoryPath(boolean video){
@@ -1509,42 +1224,38 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             SimpleDateFormat sdf = new SimpleDateFormat(getResources().getString(R.string.DATE_FORMAT_FOR_FILE));
             String filename = sdf.format(new Date());
             if(VERBOSE)Log.d(TAG, "filename = " + filename);
-            if (video) {
-                phonePath = dcim.getPath() + getResources().getString(R.string.FC_VID_PREFIX) + filename + getResources().getString(R.string.VID_EXT);
-            } else {
-                phonePath = dcim.getPath() + getResources().getString(R.string.FC_IMG_PREFIX) + filename + getResources().getString(R.string.IMG_EXT);
-            }
+            phonePath = (video ? dcim.getPath() + getResources().getString(R.string.FC_VID_PREFIX) + filename + getResources().getString(R.string.VID_EXT) :
+                    dcim.getPath() + getResources().getString(R.string.FC_IMG_PREFIX) + filename + getResources().getString(R.string.IMG_EXT));
             if(VERBOSE)Log.d(TAG, "Saving media file at = " + phonePath);
             return phonePath;
         }
 
-        long pauseDuration = 0;
         void drawFrame()
         {
-            if(mEGLConfig!=null && camera1.isCameraReady()) {
-                makeCurrent(eglSurface);
+            if(GLUtil.getmEGLConfig()!=null && camera1.isCameraReady()) {
+                GLUtil.makeCurrent(GLUtil.getEglSurface());
                 if(FRAME_VERBOSE) Log.d(TAG,"made current");
                 //Get next frame from camera
-                surfaceTexture.updateTexImage();
-                surfaceTexture.getTransformMatrix(mTmpMatrix);
+                GLUtil.getSurfaceTexture().updateTexImage();
+                GLUtil.getSurfaceTexture().getTransformMatrix(mTmpMatrix);
 
                 //Fill the surfaceview with Camera frame
-                int viewWidth = getWidth();
-                int viewHeight = getHeight();
+                viewWidth = getWidth();
+                viewHeight = getHeight();
                 if (frameCount == 0) {
                     if(FRAME_VERBOSE)Log.d(TAG, "FRAME Count = "+frameCount);
                     if(FRAME_VERBOSE)Log.d(TAG,"SV Width == "+viewWidth+", SV Height == "+viewHeight);
                 }
                 GLES20.glViewport(0, 0, viewWidth, viewHeight);
-                draw(IDENTITY_MATRIX, createFloatBuffer(GLUtil.FULL_RECTANGLE_COORDS), 0, (GLUtil.FULL_RECTANGLE_COORDS.length / 2), 2, 2 * SIZEOF_FLOAT, mTmpMatrix,
-                        createFloatBuffer(GLUtil.FULL_RECTANGLE_TEX_COORDS), mTextureId, 2 * SIZEOF_FLOAT);
+                GLUtil.draw(IDENTITY_MATRIX, GLUtil.createFloatBuffer(GLUtil.FULL_RECTANGLE_COORDS), 0, (GLUtil.FULL_RECTANGLE_COORDS.length / 2), 2, 2 * SIZEOF_FLOAT, mTmpMatrix,
+                        GLUtil.createFloatBuffer(GLUtil.FULL_RECTANGLE_TEX_COORDS), 2 * SIZEOF_FLOAT);
 
                 if(FRAME_VERBOSE)Log.d(TAG, "Draw on screen...."+isRecording);
                 //Calls eglSwapBuffers.  Use this to "publish" the current frame.
-                EGL14.eglSwapBuffers(mEGLDisplay, eglSurface);
+                EGL14.eglSwapBuffers(GLUtil.getmEGLDisplay(), GLUtil.getEglSurface());
 
                 if(isRecording) {
-                    makeCurrent(encoderSurface);
+                    GLUtil.makeCurrent(encoderSurface);
                     if (FRAME_VERBOSE) Log.d(TAG, "Made encoder surface current");
                     if(!portrait) {
                         GLES20.glViewport(0, 0, getRecordVideoWidth(), getRecordVideoHeight());
@@ -1552,48 +1263,32 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                     else{
                         GLES20.glViewport(0, 0, getRecordVideoHeight(), getRecordVideoWidth());
                     }
-                    draw(RECORD_IDENTITY_MATRIX, createFloatBuffer(GLUtil.FULL_RECTANGLE_COORDS), 0, (GLUtil.FULL_RECTANGLE_COORDS.length / 2), 2, 2 * SIZEOF_FLOAT, mTmpMatrix,
-                            createFloatBuffer(GLUtil.FULL_RECTANGLE_TEX_COORDS), mTextureId, 2 * SIZEOF_FLOAT);
+                    GLUtil.draw(RECORD_IDENTITY_MATRIX, GLUtil.createFloatBuffer(GLUtil.FULL_RECTANGLE_COORDS), 0, (GLUtil.FULL_RECTANGLE_COORDS.length / 2), 2, 2 * SIZEOF_FLOAT, mTmpMatrix,
+                            GLUtil.createFloatBuffer(GLUtil.FULL_RECTANGLE_TEX_COORDS), 2 * SIZEOF_FLOAT);
                     if (FRAME_VERBOSE) Log.d(TAG, "Populated to encoder");
 
-                    if(Math.abs(System.currentTimeMillis() - previousTime) >= 1000){
+                    if(previousTime == 0){
+                        previousTime = System.currentTimeMillis();
+                    }
+                    else if(!stopButton.isEnabled() && Math.abs(System.currentTimeMillis() - previousTime) >= 1000){
                         if(FRAME_VERBOSE)Log.d(TAG,"difference of 1 sec");
                         previousTime = System.currentTimeMillis();
                         if(recordStop == 1) {
-                            if(!stopButton.isEnabled()) {
-                                mainHandler.sendEmptyMessage(Constants.RECORD_STOP_ENABLE);
-                            }
+                            mainHandler.sendEmptyMessage(Constants.RECORD_STOP_ENABLE);
                         }
                     }
-                    else if(previousTime == 0){
-                        previousTime = System.currentTimeMillis();
-                    }
+
                     if(sharedPreferences.getBoolean(Constants.SHOW_MEMORY_CONSUMED_MSG, false)) {
                         mainHandler.sendEmptyMessage(Constants.SHOW_MEMORY_CONSUMED);
                     }
+
                     if (recordStop == -1) {
                         mediaRecorder.start();
+                        updateTimer = true;
                         recordStop = 1;
                     }
-                    updateTimer = true;
-                    /*if(recordedTimeStamp != -1 && isRecordPauseOffset()){
-                        pauseDuration = Math.abs(recordedTimeStamp - surfaceTexture.getTimestamp());
-                        Log.d(TAG, "pause duration = "+ pauseDuration);
-                        long pauseOffset = surfaceTexture.getTimestamp() - pauseDuration;
-                        Log.d(TAG, "pauseOffset = "+pauseOffset);
-                        EGLExt.eglPresentationTimeANDROID(mEGLDisplay, encoderSurface, pauseOffset);
-                        recordedTimeStamp = -1;
-                        setRecordPauseOffset(false);
-                    }
-                    else{
-                        if(recordedTimeStamp != -1){
-                            Log.d(TAG, "surfaceTexture.getTimestamp DIFF = "+Math.abs(surfaceTexture.getTimestamp() - recordedTimeStamp));
-                        }
-                        EGLExt.eglPresentationTimeANDROID(mEGLDisplay, encoderSurface, surfaceTexture.getTimestamp());
-                        recordedTimeStamp = surfaceTexture.getTimestamp();
-                    }*/
-                    EGLExt.eglPresentationTimeANDROID(mEGLDisplay, encoderSurface, System.nanoTime());
-                    EGL14.eglSwapBuffers(mEGLDisplay, encoderSurface);
+                    EGLExt.eglPresentationTimeANDROID(GLUtil.getmEGLDisplay(), encoderSurface, getPTSUs());
+                    EGL14.eglSwapBuffers(GLUtil.getmEGLDisplay(), encoderSurface);
                 }
             }
             frameCount++;
@@ -1610,7 +1305,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                     mediaRecorder.stop();
                 }
                 catch(RuntimeException runtime){
-                    if(FRAME_VERBOSE)Log.d(TAG,"Video data not received... delete file = "+videoFile.getPath());
+                    Log.d(TAG,"Video data not received drawFrame... delete file = "+videoFile.getPath());
                     if(videoFile.delete()){
                         if(FRAME_VERBOSE)Log.d(TAG,"File deleted");
                     }
@@ -1627,6 +1322,32 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 }
                 mainHandler.sendEmptyMessage(Constants.RECORD_STOP_LOW_MEMORY);
             }
+        }
+
+        private volatile long pauseDelayTime = 0;
+        private volatile long oncePauseTime;
+
+        @TargetApi(Build.VERSION_CODES.N)
+        private void pause(){
+            Log.d(TAG, "pauseDelayTime in PAUSE === "+pauseDelayTime);
+            mediaRecorder.pause();
+            oncePauseTime = System.nanoTime() / 1000;
+            Log.d(TAG, "oncePauseTime in PAUSE ==== "+oncePauseTime);
+            isRecording = false;
+        }
+
+        @TargetApi(Build.VERSION_CODES.N)
+        private void resumeRecord(){
+            mediaRecorder.resume();
+            oncePauseTime = System.nanoTime() / 1000 - oncePauseTime;
+            Log.d(TAG, "oncePauseTime in RESUME ===== "+oncePauseTime);
+            pauseDelayTime += oncePauseTime;
+            Log.d(TAG, "pauseDelayTime ===== "+pauseDelayTime);
+            isRecording = true;
+        }
+
+        protected long getPTSUs() {
+            return System.nanoTime() - pauseDelayTime;
         }
 
         void shutdown()
@@ -1670,9 +1391,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         if(FRAME_VERBOSE)Log.d(TAG,"send to FRAME_AVAILABLE");
                         cameraRenderer.drawFrame();
                         if(FRAME_VERBOSE)Log.d(TAG,"Record = "+isRecord());
-                        if(isRecord()){
-                            if(FRAME_VERBOSE)Log.d(TAG,"render frame = "+(++frameCnt));
-                        }
                         break;
                     case Constants.RECORD_START:
                         cameraRenderer.setupMediaRecorder(getRecordVideoWidth(), getRecordVideoHeight(), getCamProfileForRecord());
@@ -1680,9 +1398,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         isRecording = true;
                         break;
                     case Constants.RECORD_STOP:
-                        isRecording = false;
-                        recordStop = -1;
-                        recordIncomplete = false;
                         try {
                             mediaRecorder.stop();
                         }
@@ -1695,6 +1410,13 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         }
                         mediaRecorder.release();
                         mediaRecorder = null;
+                        if(VERBOSE)Log.d(TAG, "RESET PAUSE");
+                        pauseDelayTime = 0;
+                        videoFragment.setPause(false);
+                        isRecording = false;
+                        recordStop = -1;
+                        recordIncomplete = false;
+                        setRecordPaused(false);
                         if(VERBOSE)Log.d(TAG,"stop isRecording == "+isRecording);
                         if(!recordIncomplete){
                             mainHandler.sendEmptyMessage(Constants.RECORD_COMPLETE);
@@ -1704,30 +1426,26 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         break;
                     case Constants.RECORD_PAUSE:
                         if(VERBOSE)Log.d(TAG, "Pausing record");
-                        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N){
-                            updateTimer = false;
-                            isRecording = false;
-//                            mediaRecorder.pause();
-                            setRecordPaused(true);
-                            setRecordPauseOffset(false);
-                        }
+                        videoTimer.interrupt();
+                        pause();
+                        mainHandler.sendEmptyMessage(Constants.SHOW_PAUSE_TEXT);
                         break;
                     case Constants.RECORD_RESUME:
                         if(VERBOSE)Log.d(TAG, "Resuming record");
-                        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N){
-                            isRecording = true;
-//                            mediaRecorder.resume();
-                            setRecordPaused(false);
-                            setRecordPauseOffset(true);
-                            updateTimer = true;
-                        }
+                        mainHandler.sendEmptyMessage(Constants.HIDE_PAUSE_TEXT);
+                        resumeRecord();
+                        updateTimer = true;
+                        setRecordPaused(false);
                         break;
                     case Constants.RECORD_STOP_NO_SD_CARD:
                         isRecording = false;
+                        pauseDelayTime = 0;
+                        videoFragment.setPause(false);
                         recordStop = -1;
                         recordIncomplete = false;
                         mediaRecorder.release();
                         mediaRecorder = null;
+                        mainHandler.sendEmptyMessage(Constants.HIDE_PAUSE_TEXT);
                         if(VERBOSE)Log.d(TAG,"stop no SD Card isRecording == "+isRecording);
                         break;
                     case Constants.GET_CAMERA_RENDERER_INSTANCE:
@@ -1738,11 +1456,12 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         }
     }
 
-    public void startTimerThread()
+    public CameraView.VideoTimer startTimerThread()
     {
         startTimer = true;
         CameraView.VideoTimer videoTimer = new CameraView.VideoTimer();
         videoTimer.start();
+        return videoTimer;
     }
 
     public void stopTimerThread()
@@ -1756,44 +1475,60 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     //and recording each frame, the timer value was incorrect during recording.
     class VideoTimer extends Thread
     {
+        long startSleep = 0;
+        long endSleep = 0;
         long previousTimeBlink = 0;
+        long sleepTime = 0;
+
+        private void updateTime(){
+            if (second < 59) {
+                second++;
+            } else if (minute < 59) {
+                minute++;
+                second = 0;
+            } else {
+                minute = 0;
+                second = 0;
+                hour++;
+            }
+        }
+
         @Override
         public void run() {
             if(VERBOSE)Log.d(TAG,"VideoTimer STARTED");
+            sleepTime = 1000;
             while(startTimer){
-                while(updateTimer){
+                while (updateTimer) {
                     try {
-                        Thread.sleep(1000);
-                        if(second < 59){
-                            second++;
+                        startSleep = System.currentTimeMillis();
+                        Thread.sleep(sleepTime);
+                        if(sleepTime < 1000){
+                            sleepTime = 1000;
                         }
-                        else if(minute < 59){
-                            minute++;
-                            second = 0;
-                        }
-                        else{
-                            minute = 0;
-                            second = 0;
-                            hour++;
-                        }
-                        mainHandler.sendEmptyMessage(SHOW_ELAPSED_TIME);
+                        updateTime();
+                        mainHandler.sendEmptyMessage(Constants.SHOW_ELAPSED_TIME);
                     } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        endSleep = System.currentTimeMillis();
+                        updateTimer = false;
+                        setRecordPaused(true);
+                        //Recalculate sleep time since user has paused recording.
+                        sleepTime = 1000 - (endSleep - startSleep);
+                        if(VERBOSE)Log.d(TAG, "PAUSED VIDEO... Sleep incomplete at === "+(endSleep - startSleep) + " milliseconds");
                     }
-                    if(!startTimer){
+                    if (!startTimer) {
                         break;
                     }
                 }
+                //Add blinking text effect
                 if(isRecordPaused()){
-                    //Add blinking text effect
                     if(Math.abs(System.currentTimeMillis() - previousTimeBlink) >= 700){
-                        if(VERBOSE)Log.d(TAG,"difference of 1.5 sec");
+                        if(VERBOSE)Log.d(TAG,"difference of 700 msec");
                         previousTimeBlink = System.currentTimeMillis();
-                        if(isTimeVisible()) {
-                            mainHandler.sendEmptyMessage(HIDE_ELAPSED_TIME);
+                        if(isPauseTextVisible()) {
+                            mainHandler.sendEmptyMessage(Constants.HIDE_PAUSE_TEXT);
                         }
                         else{
-                            mainHandler.sendEmptyMessage(SHOW_ELAPSED_TIME);
+                            mainHandler.sendEmptyMessage(Constants.SHOW_PAUSE_TEXT);
                         }
                     }
                     else if(previousTimeBlink == 0){

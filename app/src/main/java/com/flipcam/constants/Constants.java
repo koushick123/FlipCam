@@ -17,7 +17,8 @@ public class Constants
     public final static int GET_CAMERA_RENDERER_INSTANCE = 8000;
     public final static int SHOW_MEMORY_CONSUMED = 5000;
     public final static int SHOW_ELAPSED_TIME = 7000;
-    public final static int HIDE_ELAPSED_TIME = 16000;
+    public final static int HIDE_PAUSE_TEXT = 16000;
+    public final static int SHOW_PAUSE_TEXT = 17000;
     public final static int RECORD_STOP_ENABLE = 9000;
     public final static int RECORD_STOP_LOW_MEMORY = 10000;
     public final static int RECORD_STOP_NO_SD_CARD = 11000;
@@ -80,9 +81,6 @@ public class Constants
     public static final String VIDEO_DIMENSION_HIGH = "videoDimensionHigh";
     public static final String VIDEO_DIMENSION_MEDIUM = "videoDimensionMedium";
     public static final String VIDEO_DIMENSION_LOW = "videoDimensionLow";
-    public static final String CAMPROFILE_FOR_RECORD_HIGH = "CamcorderProfileForRecordHigh";
-    public static final String CAMPROFILE_FOR_RECORD_MEDIUM = "CamcorderProfileForRecordMedium";
-    public static final String CAMPROFILE_FOR_RECORD_LOW = "CamcorderProfileForRecordLow";
     //Video Player
     public static final String SELECT_VIDEO_PLAYER = "SelectVideoPlayer";
     public static final String SHOW_EXTERNAL_PLAYER_MESSAGE = "ShowExternalPlayerMessage";
@@ -94,6 +92,7 @@ public class Constants
     public static final String SELECT_PHOTO_RESOLUTION_FRONT = "SelectPhotoResolutionFront";
     public static final String SUPPORT_PHOTO_RESOLUTIONS = "SupportedPhotoResolutions";
     public static final String SUPPORT_PHOTO_RESOLUTIONS_FRONT = "SupportedPhotoResolutionsFront";
+    public static final String SUPPORT_VIDEO_RESOLUTIONS = "SupportVideoResolutions";
     //Unmounted/Mounted Intent
     public static final String MEDIA_UNMOUNTED = "android.intent.action.MEDIA_UNMOUNTED";
     public static final String MEDIA_MOUNTED = "android.intent.action.MEDIA_MOUNTED";

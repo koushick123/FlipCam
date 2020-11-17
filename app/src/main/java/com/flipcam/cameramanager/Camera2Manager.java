@@ -15,12 +15,13 @@ import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.params.StreamConfigurationMap;
-import android.support.annotation.NonNull;
-import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.util.Size;
 import android.view.Surface;
 import android.view.WindowManager;
+
+import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 
 import com.flipcam.PermissionActivity;
 import com.flipcam.PhotoFragment;
@@ -77,6 +78,10 @@ public class Camera2Manager implements CameraOperations {
 
     @Override
     public void getSupportedPictureSizes() {
+
+    }
+
+    public void getSupportedVideoSizes(){
 
     }
 

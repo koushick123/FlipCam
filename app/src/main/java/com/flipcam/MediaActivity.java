@@ -24,13 +24,6 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentStatePagerAdapter;
-import android.support.v4.content.FileProvider;
-import android.support.v4.view.PagerAdapter;
-import android.support.v4.view.ViewPager;
-import android.support.v7.app.AppCompatActivity;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Display;
@@ -47,6 +40,14 @@ import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.FileProvider;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentStatePagerAdapter;
+import androidx.viewpager.widget.PagerAdapter;
+import androidx.viewpager.widget.ViewPager;
 
 import com.flipcam.constants.Constants;
 import com.flipcam.data.MediaTableConstants;
@@ -126,7 +127,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     SharedPreferences videoPrefs;
     SDCardEventReceiver sdCardEventReceiver;
     AppWidgetManager appWidgetManager;
-    boolean VERBOSE = false;
+    boolean VERBOSE = true;
     AudioManager audioManager;
     ImageView folderViewOn;
     @BindView(R.id.infoMedia)
@@ -141,6 +142,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     CheckBox donotShowBox;
     ImageView externalPlayerClose;
     boolean externalPlayerMessageShown = false;
+    ImageButton imageRotate;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -235,6 +237,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         logoutFB = new Dialog(this);
         permissionFB = new Dialog(this);
         appNotExist = new Dialog(this);
+        imageRotate = findViewById(R.id.imageRotate);
         shareMedia.setOnClickListener((view) -> {
             if(VERBOSE)Log.d(TAG, "from Gallery? = "+fromGallery);
             medias = MediaUtil.getMediaList(getApplicationContext(), fromGallery);
@@ -316,6 +319,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 if(VERBOSE)Log.d(TAG, "Hide PlayForVideo");
                 removeVideoControls();
                 hidePlayForVideo();
+                showRotateForImage();
             }
             else{
                 if(videoPrefs.getString(Constants.SELECT_VIDEO_PLAYER, externalPlayer).equalsIgnoreCase(fcPlayer)) {
@@ -333,6 +337,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                         showExternalPlayerMessage();
                     }
                 }
+                hideRotateForImage();
             }
         }
         folderViewOn.setOnClickListener((view1) -> {
@@ -723,6 +728,18 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         playCircle.setVisibility(View.GONE);
     }
 
+    public void showRotateForImage(){
+        pause.setVisibility(View.GONE);
+        imageRotate.setVisibility(View.VISIBLE);
+        imageRotate.setOnClickListener((view) -> {
+            hashMapFrags.get(selectedPosition).rotatePicture();
+        });
+    }
+
+    public void hideRotateForImage(){
+        imageRotate.setVisibility(View.GONE);
+    }
+
     public boolean doesAppExistForIntent(Intent shareIntent){
         PackageManager packageManager = getPackageManager();
         List activities = packageManager.queryIntentActivities(shareIntent, PackageManager.MATCH_DEFAULT_ONLY);
@@ -851,6 +868,8 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             if(VERBOSE)Log.d(TAG,"HIDE VIDEO");
             hidePlayForVideo();
             removeVideoControls();
+            showRotateForImage();
+            currentFrag.resetPicture();
         }
         else{
             if(videoPrefs.getString(Constants.SELECT_VIDEO_PLAYER, externalPlayer).equalsIgnoreCase(fcPlayer)) {
@@ -878,6 +897,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                     showExternalPlayerMessage();
                 }
             }
+            hideRotateForImage();
         }
         previousSelectedFragment = position;
     }
@@ -1204,6 +1224,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
 
     public void showNoImagePlaceholder(){
         //No Images
+        playCircle.setVisibility(View.GONE);
         videoControls.setVisibility(View.GONE);
         mPager.setVisibility(View.GONE);
         noImage.setVisibility(View.VISIBLE);
@@ -1248,6 +1269,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                     if (isImage(medias[position].getPath())) {
                         if(VERBOSE)Log.d(TAG, "IS image");
                         removeVideoControls();
+                        showRotateForImage();
                         if(videoPrefs.getString(Constants.SELECT_VIDEO_PLAYER, externalPlayer).equalsIgnoreCase(externalPlayer)){
                             //Playcircle icon will always be visible. Need to hide it for image
                             Log.d(TAG, "HIDE PLAYCIRCLE");
@@ -1256,6 +1278,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                     } else {
                         if(VERBOSE)Log.d(TAG, "IS video");
                         showControls();
+                        hideRotateForImage();
                         setupVideoControls(position);
                     }
                 }

@@ -110,4 +110,5 @@ import com.flipcam.view.CameraView;
     void setSurfaceView(CameraView surfaceView);
     //For video fragment instance
     void setVideoFragmentInstance(VideoFragment videoFragment);
+    void getSupportedVideoSizes();
 }

@@ -1,5 +1,6 @@
 package com.flipcam;
 
+import android.annotation.TargetApi;
 import android.app.Dialog;
 import android.appwidget.AppWidgetManager;
 import android.content.BroadcastReceiver;
@@ -24,8 +25,6 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.StatFs;
 import android.preference.PreferenceManager;
-import android.support.annotation.Nullable;
-import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.util.Range;
 import android.view.Gravity;
@@ -43,11 +42,15 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+
 import com.flipcam.constants.Constants;
 import com.flipcam.data.MediaTableConstants;
 import com.flipcam.media.FileMedia;
 import com.flipcam.service.DropboxUploadService;
 import com.flipcam.service.GoogleDriveUploadService;
+import com.flipcam.util.GLUtil;
 import com.flipcam.util.MediaUtil;
 import com.flipcam.util.SDCardUtil;
 import com.flipcam.view.CameraView;
@@ -183,7 +186,7 @@ public class VideoFragment extends Fragment{
     }
 
     @Override
-    public void onCreate(@androidx.annotation.Nullable @Nullable Bundle savedInstanceState) {
+    public void onCreate(@androidx.annotation.Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setRetainInstance(true);
     }
@@ -208,7 +211,7 @@ public class VideoFragment extends Fragment{
         substitute = (ImageView)view.findViewById(R.id.substitute);
         substitute.setVisibility(View.INVISIBLE);
         cameraView = (CameraView)view.findViewById(R.id.cameraSurfaceView);
-        cameraView.colorVal = Constants.NORMAL_BRIGHTNESS_PROGRESS;
+        GLUtil.colorVal = Constants.NORMAL_BRIGHTNESS_PROGRESS;
         if(VERBOSE)Log.d(TAG,"cameraview onresume visibility= "+cameraView.getWindowVisibility());
         pauseText = view.findViewById(R.id.pauseText);
         zoombar = (SeekBar)view.findViewById(R.id.zoomBar);
@@ -393,6 +396,10 @@ public class VideoFragment extends Fragment{
         return view;
     }
 
+    public TextView getPauseText() {
+        return pauseText;
+    }
+
     public int getAudioSampleRate() {
         return audioSampleRate;
     }
@@ -569,6 +576,10 @@ public class VideoFragment extends Fragment{
         photoMode.setRotation(rotationAngle);
         flash.setRotation(rotationAngle);
         microThumbnail.setRotation(rotationAngle);
+        if(pauseRecord!=null) {
+            pauseRecord.setRotation(rotationAngle);
+            pauseText.setRotation(rotationAngle);
+        }
         if(exifInterface!=null && !filePath.equalsIgnoreCase(""))
         {
             if(isImage(filePath)) {
@@ -581,14 +592,6 @@ public class VideoFragment extends Fragment{
             }
         }
         thumbnail.setRotation(rotationAngle);
-    }
-
-    public void showPauseText(){
-        pauseText.setVisibility(View.VISIBLE);
-    }
-
-    public void hidePauseText(){
-        pauseText.setVisibility(View.INVISIBLE);
     }
 
     public SeekBar getZoomBar()
@@ -621,46 +624,47 @@ public class VideoFragment extends Fragment{
         switchCamera.setRotation(rotationAngle);
         videoBar.addView(switchCamera);
         videoBar.addView(stopRecord);
-        /*if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N){
-            pauseRecord = new ImageButton(getActivity().getApplicationContext());
-            pauseRecord.setScaleType(ImageView.ScaleType.CENTER_CROP);
-            pauseRecord.setBackgroundColor(getResources().getColor(R.color.transparentBar));
-            pauseRecord.setImageDrawable(getResources().getDrawable(R.drawable.camera_record_pause));
-            pauseRecord.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    pauseRecord.setEnabled(false);
-                    if(!isPause) {
-                        cameraView.recordPause();
-                        pauseRecord.setImageDrawable(getResources().getDrawable(R.drawable.camera_record_resume));
-                        isPause = true;
-                        showPauseText();
-                    }
-                    else{
-                        cameraView.recordResume();
-                        pauseRecord.setImageDrawable(getResources().getDrawable(R.drawable.camera_record_pause));
-                        isPause = false;
-                        hidePauseText();
-                    }
-                    pauseRecord.setEnabled(true);
+        addPauseButton();
+    }
+
+    @TargetApi(Build.VERSION_CODES.N)
+    public void addPauseButton(){
+        pauseRecord = new ImageButton(getActivity().getApplicationContext());
+        pauseRecord.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        pauseRecord.setBackgroundColor(getResources().getColor(R.color.transparentBar));
+        pauseRecord.setImageDrawable(getResources().getDrawable(R.drawable.camera_record_pause));
+        pauseRecord.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                pauseRecord.setEnabled(false);
+                if(VERBOSE)Log.d(TAG, "isPause ==== "+isPause());
+                if(!isPause()) {
+                    cameraView.recordPause();
+                    pauseRecord.setImageDrawable(getResources().getDrawable(R.drawable.camera_record_resume));
+                    setPause(true);
                 }
-            });
-            layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-            layoutParams.setMargins(0, 0, (int) getResources().getDimension(R.dimen.recordSubsBtnRightMargin), 0);
-            layoutParams.width = (int)getResources().getDimension(R.dimen.pauseButtonWidth);
-            layoutParams.height = (int)getResources().getDimension(R.dimen.pauseButtonHeight);
-            pauseRecord.setLayoutParams(layoutParams);
-            videoBar.addView(pauseRecord);
-        }
-        else {*/
-            ImageView recordSubstitute = new ImageView(getActivity());
-            recordSubstitute.setImageDrawable(getResources().getDrawable(R.drawable.placeholder));
-            layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-            layoutParams.setMargins(0, 0, (int) getResources().getDimension(R.dimen.recordSubsBtnRightMargin), 0);
-            recordSubstitute.setLayoutParams(layoutParams);
-            recordSubstitute.setVisibility(View.INVISIBLE);
-            videoBar.addView(recordSubstitute);
-//        }
+                else{
+                    cameraView.recordResume();
+                    pauseRecord.setImageDrawable(getResources().getDrawable(R.drawable.camera_record_pause));
+                    setPause(false);
+                }
+                pauseRecord.setEnabled(true);
+            }
+        });
+        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,LinearLayout.LayoutParams.WRAP_CONTENT);
+        layoutParams.setMargins(0, 0, (int) getResources().getDimension(R.dimen.recordSubsBtnRightMargin), 0);
+        layoutParams.width = (int)getResources().getDimension(R.dimen.pauseButtonWidth);
+        layoutParams.height = (int)getResources().getDimension(R.dimen.pauseButtonHeight);
+        pauseRecord.setLayoutParams(layoutParams);
+        videoBar.addView(pauseRecord);
+    }
+
+    public boolean isPause() {
+        return isPause;
+    }
+
+    public void setPause(boolean pause) {
+        isPause = pause;
     }
 
     public void stopRecordAndSaveFile(boolean lowMemory){
@@ -1183,6 +1187,9 @@ public class VideoFragment extends Fragment{
                 getResources().getString(R.string.phoneLocation) : getResources().getString(R.string.sdcardLocation);
         mediaLocEdit.putString(Constants.MEDIA_LOCATION_VIEW_SELECT, mediaLocValue);
         mediaLocEdit.commit();
+        if(controlVisbilityPreference == null){
+            controlVisbilityPreference = (ControlVisbilityPreference)getApplicationContext();
+        }
         controlVisbilityPreference.setFromGallery(false);
         startActivity(mediaIntent);
     }

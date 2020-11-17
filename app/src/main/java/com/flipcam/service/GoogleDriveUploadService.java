@@ -16,10 +16,11 @@ import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.v4.app.NotificationCompat;
 import android.util.Log;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.core.app.NotificationCompat;
 
 import com.flipcam.R;
 import com.flipcam.constants.Constants;
@@ -72,7 +73,7 @@ public class GoogleDriveUploadService extends Service {
     String filename;
     GoogleDriveUploadService.GoogleUploadHandler googleUploadHandler;
     NotificationManager mNotificationManager;
-    android.support.v4.app.NotificationCompat.Builder mBuilder;
+    androidx.core.app.NotificationCompat.Builder mBuilder;
     String uploadId;
     double uploadedSize = 0;
     Bitmap notifyIcon;

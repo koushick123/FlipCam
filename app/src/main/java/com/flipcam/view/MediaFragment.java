@@ -18,8 +18,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.preference.PreferenceManager;
-import android.support.annotation.Nullable;
-import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.Display;
 import android.view.GestureDetector;
@@ -38,8 +36,11 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+
+import com.bumptech.glide.Glide;
 import com.flipcam.ControlVisbilityPreference;
-import com.flipcam.GlideApp;
 import com.flipcam.MediaActivity;
 import com.flipcam.R;
 import com.flipcam.constants.Constants;
@@ -95,12 +96,13 @@ MediaPlayer.OnErrorListener, Serializable{
     transient int imageHeight;
     transient int imageWidth;
     transient FrameLayout mediaPlaceholder;
-    boolean VERBOSE = false;
+    boolean VERBOSE = true;
     AudioManager audioManager;
     boolean imageScaled = false;
     boolean fromGallery = false;
     MediaActivity mediaActivity;
     SharedPreferences sharedPreferences;
+    ImageButton pictureRotate;
 
     public static MediaFragment newInstance(int pos,boolean recreate, boolean fromGal){
         MediaFragment mediaFragment = new MediaFragment();
@@ -130,6 +132,7 @@ MediaPlayer.OnErrorListener, Serializable{
         frameMedia = (FrameLayout)getActivity().findViewById(R.id.frameMedia);
         controlVisbilityPreference = (ControlVisbilityPreference) getActivity().getApplicationContext();
         playCircle = (ImageView)getActivity().findViewById(R.id.playVideo);
+        pictureRotate = getActivity().findViewById(R.id.imageRotate);
         mediaActivity = (MediaActivity)getActivity();
 
         if(getUserVisibleHint()) {
@@ -177,6 +180,11 @@ MediaPlayer.OnErrorListener, Serializable{
                     setupPlayCircleForExternalPlayer();
                 }
             }
+            else{
+                pictureRotate.setOnClickListener((view) -> {
+                    rotatePicture();
+                });
+            }
         }
         final GestureDetector detector = new GestureDetector(getActivity().getApplicationContext(), new GestureDetector.SimpleOnGestureListener(){
             @Override
@@ -194,24 +202,7 @@ MediaPlayer.OnErrorListener, Serializable{
             @Override
             public boolean onDoubleTap(MotionEvent motionEvent) {
                 Log.d(TAG, "onDoubleTap");
-                if(isImage()){
-                    if(!imageScaled) {
-                        picture.setPivotX(motionEvent.getX());
-                        picture.setPivotY(motionEvent.getY());
-                        picture.setScaleX(2.0f);
-                        picture.setScaleY(2.0f);
-                        imageScaled = true;
-                    }
-                    else{
-                        picture.setScaleX(1.0f);
-                        picture.setScaleY(1.0f);
-                        imageScaled = false;
-                    }
-                    return true;
-                }
-                else{
-                    return false;
-                }
+                return false;
             }
 
             @Override
@@ -429,7 +420,7 @@ MediaPlayer.OnErrorListener, Serializable{
             imageWidth = image.getWidth();
             fitPhotoToScreen();
             Uri uri = Uri.fromFile(new File(path));
-            GlideApp.with(getContext()).load(uri).into(picture);
+            Glide.with(getContext()).load(uri).into(picture);
             if(savedInstanceState!=null){
                 imageScaled = savedInstanceState.getBoolean("imageScaled");
             }
@@ -450,8 +441,22 @@ MediaPlayer.OnErrorListener, Serializable{
         return view;
     }
 
+    float rotateAngle = 0;
+    Point screenSize=new Point();
+    public void rotatePicture(){
+        if(rotateAngle == 360){
+            rotateAngle = 0;
+        }
+        rotateAngle += 90;
+        picture.setRotation(rotateAngle);
+    }
+
+    public void resetPicture(){
+        rotateAngle = 0;
+        picture.setRotation(rotateAngle);
+    }
+
     public void fitPhotoToScreen(){
-        Point screenSize=new Point();
         display.getRealSize(screenSize);
         double screenAR = (double)screenSize.x / (double)screenSize.y;
         if(VERBOSE)Log.d(TAG, "screenSize = "+screenSize.x+" X "+screenSize.y);
@@ -505,9 +510,7 @@ MediaPlayer.OnErrorListener, Serializable{
             }
             else{
                 layoutParams.width = screenSize.x;
-                //Reduce the height by 5 pixels since Samsung A50 does not display 4K portrait videos correctly.
-                //The reduction of 5 pixels is negligible for user to find out.
-                layoutParams.height = (int)(screenSize.x / videoAR) - 5;
+                layoutParams.height = (int)(screenSize.x / videoAR);
                 layoutParams.gravity = Gravity.CENTER;
                 videoView.setLayoutParams(layoutParams);
             }
@@ -882,6 +885,7 @@ MediaPlayer.OnErrorListener, Serializable{
                     topBar.setVisibility(View.GONE);
                     videoControls.setVisibility(View.GONE);
                 }
+                pause.setVisibility(View.GONE);
             }
             else{
                 videoView.setVisibility(View.VISIBLE);

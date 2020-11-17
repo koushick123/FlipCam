@@ -5,10 +5,7 @@ import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Point;
-import android.net.Uri;
 import android.preference.PreferenceManager;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.view.Display;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -18,6 +15,9 @@ import android.widget.ArrayAdapter;
 import android.widget.FrameLayout;
 import android.widget.GridView;
 import android.widget.ImageView;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.bumptech.glide.Glide;
 import com.flipcam.R;
@@ -99,9 +99,9 @@ public class MediaAdapter extends ArrayAdapter {
         viewHolderImage.recordedMedia.setLayoutParams(thumbnailParams);
         FileMedia media = mediaList[position];
         if(!isImage(media.getPath())){
-            Uri uri = Uri.fromFile(new File(media.getPath()));
+            File thumbnailVideo = new File(media.getPath());
             Glide.with(getContext())
-                    .load(uri)
+                    .load(thumbnailVideo)
                     .thumbnail(0.1f)
                     .into(viewHolderImage.recordedMedia);
             viewHolderImage.playVideo.setVisibility(View.VISIBLE);
@@ -113,8 +113,8 @@ public class MediaAdapter extends ArrayAdapter {
             }
         }
         else{
-            Uri uri = Uri.fromFile(new File(media.getPath()));
-            Glide.with(getContext()).load(uri).into(viewHolderImage.recordedMedia);
+            File thumbnailImage = new File(media.getPath());
+            Glide.with(getContext()).load(thumbnailImage).into(viewHolderImage.recordedMedia);
             viewHolderImage.playVideo.setVisibility(View.INVISIBLE);
         }
         return listItem;

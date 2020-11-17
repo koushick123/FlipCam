@@ -155,8 +155,8 @@ public class MediaUtil {
     }
 
     private static File[] getFilesList(File media){
-        File[] mediaFiles = null;
-        if(media.exists() && media.isDirectory() && media.listFiles().length > 0){
+        File[] mediaFiles = media.listFiles();
+        if(media.exists() && media.isDirectory() && mediaFiles != null && mediaFiles.length > 0){
             mediaFiles = media.listFiles((file) -> {
                 if (!file.isDirectory() && (file.getPath().endsWith(appContext.getResources().getString(R.string.IMG_EXT)) ||
                         file.getPath().endsWith(appContext.getResources().getString(R.string.ANOTHER_IMG_EXT)) ||
@@ -166,7 +166,7 @@ public class MediaUtil {
                 return false;
             });
         }
-        return mediaFiles;
+        return ((mediaFiles != null && mediaFiles.length > 0) ? mediaFiles : null);
     }
 
     public static boolean deleteFile(FileMedia media) {
