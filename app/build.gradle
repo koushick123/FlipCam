@@ -17,8 +17,8 @@ android {
         applicationId "com.flipcam"
         minSdkVersion 21
         targetSdkVersion 29
-        versionCode 3
-        versionName "1.01"
+        versionCode 7
+        versionName "1.4"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         // Enabling multidex support.
         multiDexEnabled true
@@ -27,7 +27,7 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-//            signingConfig signingConfigs.FC_Release
+            //signingConfig signingConfigs.FC_Release
         }
     }
     flavorDimensions "1.2"
@@ -64,12 +64,11 @@ dependencies {
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
     implementation 'com.google.android.material:material:1.0.0'
     annotationProcessor 'com.jakewharton:butterknife-compiler:10.1.0'
-    compile 'com.google.android.gms:play-services-auth:17.0.0'
-    compile 'com.google.android.gms:play-services-drive:17.0.0'
+    implementation 'com.google.android.gms:play-services-auth:17.0.0'
+    implementation 'com.google.android.gms:play-services-drive:17.0.0'
     implementation 'com.github.bumptech.glide:glide:4.10.0'
     annotationProcessor 'com.github.bumptech.glide:compiler:4.10.0'
-    compile 'com.dropbox.core:dropbox-core-sdk:3.0.6'
-    testCompile 'junit:junit:4.12'
+    implementation 'com.dropbox.core:dropbox-core-sdk:3.0.6'
     compile files('libs/mail.jar')
     compile files('libs/activation.jar')
     compile files('libs/additionnal.jar')
