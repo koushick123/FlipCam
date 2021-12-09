@@ -13,6 +13,7 @@ import com.flipcam.media.FileMediaLastModifiedComparator;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.TreeSet;
 
 /**
  * Created by koushick on 23-Nov-17.
@@ -145,13 +146,25 @@ public class MediaUtil {
             dcimFc = new File(sharedPreferences.getString(Constants.SD_CARD_PATH, ""));
             if(VERBOSE) Log.d(TAG, "SD card path = "+sharedPreferences.getString(Constants.SD_CARD_PATH, ""));
         }
-        File[] mediaFiles = getFilesList(dcimFc);
-        if(mediaFiles != null) {
-            mediaList = getSortedList(mediaFiles);
+        mediaList = getFilesListSorted(dcimFc);
+    }
+
+    private static FileMedia[] getFilesListSorted(File media){
+        TreeSet<FileMedia> sortedMedia = new TreeSet<>();
+        File[] mediaFiles = media.listFiles();
+        if(media.exists() && media.isDirectory() && mediaFiles != null && mediaFiles.length > 0){
+            media.listFiles((file) -> {
+                if (!file.isDirectory()) {
+                    FileMedia fileMedia = new FileMedia();
+                    fileMedia.setPath(file.getPath());
+                    fileMedia.setLastModified(file.lastModified());
+                    sortedMedia.add(fileMedia);
+                    return true;
+                }
+                return false;
+            });
         }
-        else{
-            mediaList = null;
-        }
+        return ((sortedMedia!=null && sortedMedia.size() > 0) ? sortedMedia.toArray(new FileMedia[sortedMedia.size()]) : null);
     }
 
     private static File[] getFilesList(File media){
@@ -160,7 +173,8 @@ public class MediaUtil {
             mediaFiles = media.listFiles((file) -> {
                 if (!file.isDirectory() && (file.getPath().endsWith(appContext.getResources().getString(R.string.IMG_EXT)) ||
                         file.getPath().endsWith(appContext.getResources().getString(R.string.ANOTHER_IMG_EXT)) ||
-                        file.getPath().endsWith(appContext.getResources().getString(R.string.VID_EXT)))) {
+                        file.getPath().endsWith(appContext.getResources().getString(R.string.VID_EXT)) && (file.getName().startsWith(appContext.getResources().getString(R.string.FC_VID_PREFIX)) ||
+                                file.getName().startsWith(appContext.getResources().getString(R.string.FC_IMG_PREFIX))))) {
                     return true;
                 }
                 return false;

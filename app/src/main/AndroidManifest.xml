@@ -39,7 +39,8 @@
             android:name="com.google.android.apps.drive.APP_ID"
             android:value="790824425492" />
 
-        <activity android:name=".PermissionActivity">
+        <activity android:name=".PermissionActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

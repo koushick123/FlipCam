@@ -1,4 +1,6 @@
-apply plugin: 'com.android.application'
+plugins {
+    id 'com.android.application'
+}
 // Load keystore
 /*def keystorePropertiesFile = rootProject.file("app/src/main/keystore.properties");
 def keystoreProperties = new Properties()
@@ -12,11 +14,11 @@ android {
             storePassword keystoreProperties['storePassword']
         }
     }*/
-    compileSdkVersion 29
+    compileSdk 31
     defaultConfig {
         applicationId "com.flipcam"
-        minSdkVersion 21
-        targetSdkVersion 29
+        minSdk 21
+        targetSdk 31
         versionCode 7
         versionName "1.4"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -37,8 +39,8 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
     }
     packagingOptions {
         exclude 'META-INF/proguard/androidx-annotations.pro'
@@ -51,25 +53,25 @@ repositories {
 }
 
 dependencies {
-    implementation 'androidx.core:core:1.1.0'
-    compile fileTree(include: ['*.jar'], dir: 'libs')
-    androidTestCompile('androidx.test.espresso:espresso-core:3.1.0', {
-        exclude group: 'com.android.support', module: 'support-annotations'
-    })
-    compile('com.jakewharton:butterknife:10.1.0'){
+    implementation 'androidx.core:core:1.7.0'
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    //androidTestCompile('androidx.test.espresso:espresso-core:3.4.0', {
+    //    exclude group: 'com.android.support', module: 'support-annotations'
+    //})
+    implementation('com.jakewharton:butterknife:10.1.0'){
         exclude module: 'core'
     }
-    implementation 'androidx.appcompat:appcompat:1.1.0'
-    implementation 'androidx.media:media:1.1.0'
+    implementation 'androidx.appcompat:appcompat:1.4.0'
+    implementation 'androidx.media:media:1.4.3'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
-    implementation 'com.google.android.material:material:1.0.0'
+    implementation 'com.google.android.material:material:1.4.0'
     annotationProcessor 'com.jakewharton:butterknife-compiler:10.1.0'
-    implementation 'com.google.android.gms:play-services-auth:17.0.0'
+    implementation 'com.google.android.gms:play-services-auth:19.2.0'
     implementation 'com.google.android.gms:play-services-drive:17.0.0'
     implementation 'com.github.bumptech.glide:glide:4.10.0'
     annotationProcessor 'com.github.bumptech.glide:compiler:4.10.0'
     implementation 'com.dropbox.core:dropbox-core-sdk:3.0.6'
-    compile files('libs/mail.jar')
-    compile files('libs/activation.jar')
-    compile files('libs/additionnal.jar')
+    implementation files('libs/mail.jar')
+    implementation files('libs/activation.jar')
+    implementation files('libs/additionnal.jar')
 }

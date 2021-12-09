@@ -1203,6 +1203,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                     SimpleDateFormat sdf = new SimpleDateFormat(getResources().getString(R.string.DATE_FORMAT_FOR_FILE));
                     String filename = sdf.format(new Date());
                     if(VERBOSE)Log.d(TAG, "sd card filename = " + filename);
+                    path.append(getResources().getString(R.string.PATH_SLASH));
                     path.append(video ? getResources().getString(R.string.FC_VID_PREFIX) + filename + getResources().getString(R.string.VID_EXT) :
                             getResources().getString(R.string.FC_IMG_PREFIX) + filename + getResources().getString(R.string.IMG_EXT));
                     if(VERBOSE)Log.d(TAG, "SD Card Path = "+path);
@@ -1218,14 +1219,16 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             String phonePath;
             File dcim;
             dcim = getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + getResources().getString(R.string.FC_ROOT));
+            //Since its Camera folder this is strictly not necessary (as Camera folder inside DCIM folder is standard in Android), but its included just in case.
             if (!dcim.exists()) {
                 dcim.mkdirs();
             }
             SimpleDateFormat sdf = new SimpleDateFormat(getResources().getString(R.string.DATE_FORMAT_FOR_FILE));
             String filename = sdf.format(new Date());
             if(VERBOSE)Log.d(TAG, "filename = " + filename);
-            phonePath = (video ? dcim.getPath() + getResources().getString(R.string.FC_VID_PREFIX) + filename + getResources().getString(R.string.VID_EXT) :
-                    dcim.getPath() + getResources().getString(R.string.FC_IMG_PREFIX) + filename + getResources().getString(R.string.IMG_EXT));
+            phonePath = dcim.getPath() + getResources().getString(R.string.PATH_SLASH);
+            phonePath += (video ? getResources().getString(R.string.FC_VID_PREFIX) + filename + getResources().getString(R.string.VID_EXT) :
+                    getResources().getString(R.string.FC_IMG_PREFIX) + filename + getResources().getString(R.string.IMG_EXT));
             if(VERBOSE)Log.d(TAG, "Saving media file at = " + phonePath);
             return phonePath;
         }
