@@ -8,11 +8,8 @@ import android.util.Log;
 import com.flipcam.R;
 import com.flipcam.constants.Constants;
 import com.flipcam.media.FileMedia;
-import com.flipcam.media.FileMediaLastModifiedComparator;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.TreeSet;
 
 /**
@@ -189,16 +186,14 @@ public class MediaUtil {
     }
 
     private static FileMedia[] getSortedList(File[] mediaFiles){
-        ArrayList<FileMedia> mediaArrayList = new ArrayList<>();
+        TreeSet<FileMedia> sortedMedia = new TreeSet<>();
         for (int i = 0; i < mediaFiles.length; i++) {
             FileMedia fileMedia = new FileMedia();
             fileMedia.setPath(mediaFiles[i].getPath());
             fileMedia.setLastModified(mediaFiles[i].lastModified());
-            mediaArrayList.add(fileMedia);
+            sortedMedia.add(fileMedia);
         }
-        Collections.sort(mediaArrayList, new FileMediaLastModifiedComparator());
-        mediaList = mediaArrayList.toArray(new FileMedia[mediaArrayList.size()]);
-        return mediaList;
+        return ((sortedMedia!=null && sortedMedia.size() > 0) ? sortedMedia.toArray(new FileMedia[sortedMedia.size()]) : null);
     }
 
     public static boolean doesPathExist(String path){
