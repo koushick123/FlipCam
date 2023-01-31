@@ -1066,7 +1066,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             if(isRecord()) {
                 //If video recording was in progress, ensure recording is stopped and saved, before exiting.
                 if(VERBOSE)Log.d(TAG, "Unmute audio");
-                if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && Build.VERSION.SDK_INT < Build.VERSION_CODES.M){
+                if(Build.VERSION.SDK_INT < Build.VERSION_CODES.M){
                     if(VERBOSE)Log.d(TAG, "setStreamUnMute");
                     audioManager.setStreamMute(AudioManager.STREAM_MUSIC, false);
                 }
@@ -1143,13 +1143,17 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         public void setupMediaRecorder(int width, int height, int camcorderProf)
         {
             camcorderProfile = CamcorderProfile.get(camera1.getCameraId(), camcorderProf);
+            boolean noAudio = sharedPreferences.getBoolean(Constants.NO_AUDIO_MSG, false);
+            if(VERBOSE)Log.d(TAG, "No Audio Pref = "+noAudio);
             mediaRecorder = new MediaRecorder();
-            try {
-                mediaRecorder.setAudioSource(MediaRecorder.AudioSource.CAMCORDER);
-            } catch (Exception e) {
-                if (VERBOSE)
-                    Log.e(TAG, "Camera not having a mic oriented in the same way. Use the default microphone");
-                mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+            if(!noAudio) {
+                try {
+                    mediaRecorder.setAudioSource(MediaRecorder.AudioSource.CAMCORDER);
+                } catch (Exception e) {
+                    if (VERBOSE)
+                        Log.e(TAG, "Camera not having a mic oriented in the same way. Use the default microphone");
+                    mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+                }
             }
             mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
             mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
@@ -1173,14 +1177,17 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             }
             mediaRecorder.setVideoSize(width, height);
             mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
-            mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
-            mediaRecorder.setAudioEncodingBitRate(videoFragment.getAudioBitRate());
-            mediaRecorder.setAudioSamplingRate(videoFragment.getAudioSampleRate());
-            mediaRecorder.setAudioChannels(videoFragment.getAudioChannelInput());
+            if(!noAudio) {
+                mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+                mediaRecorder.setAudioEncodingBitRate(videoFragment.getAudioBitRate());
+                mediaRecorder.setAudioSamplingRate(videoFragment.getAudioSampleRate());
+                mediaRecorder.setAudioChannels(videoFragment.getAudioChannelInput());
+            }
             try {
                 mediaRecorder.prepare();
             } catch (IOException e) {
                 e.printStackTrace();
+                Log.e(TAG, e.getMessage());
             }
             encoderSurface = GLUtil.prepareWindowSurface(mediaRecorder.getSurface(), GLUtil.getmEGLDisplay(), GLUtil.getmEGLConfig());
             mediaContent = new ContentValues();

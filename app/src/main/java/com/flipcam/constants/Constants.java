@@ -55,17 +55,9 @@ public class Constants
     public static final String PHONE_MEMORY_LIMIT = "PhoneMemoryLimit";
     public static final String PHONE_MEMORY_METRIC = "PhoneMemoryMetric";
     public static final String PHONE_MEMORY_DISABLE = "PhoneMemoryDisable";
-    //Save to cloud
-    public static final String SAVE_TO_GOOGLE_DRIVE = "SaveToDrive";
-    public static final String GOOGLE_DRIVE_FOLDER = "GoogleDriveFolder";
-    public static final String GOOGLE_DRIVE_ACC_NAME = "AccName";
-    public static final String SAVE_TO_DROPBOX = "SaveToDropBox";
-    public static final String DROPBOX_FOLDER = "DropboxFolder";
-    public static final int GOOGLE_DRIVE_CLOUD = 0;
-    public static final int DROPBOX_CLOUD = 1;
-    public static final String DROPBOX_ACCESS_TOKEN = "DropBoxAccessToken";
     //Show memory consumed msg
     public static final String SHOW_MEMORY_CONSUMED_MSG = "ShowMemoryConsumedText";
+    public static final String NO_AUDIO_MSG = "NoAudioMessageText";
     public static final String MEDIA_COUNT_MEM = "mediaCountMem";
     public static final String MEDIA_COUNT_SD_CARD = "mediaCountSdCard";
     public static final String MEDIA_COUNT_ALL = "mediaCountAll";

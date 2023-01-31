@@ -8,7 +8,9 @@ import android.graphics.Point;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.StatFs;
+import android.preference.PreferenceManager;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
@@ -17,6 +19,7 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -49,6 +52,8 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
     View settingsRootView;
     Dialog settingsDialog;
     ImageView brightness;
+    ImageView toggleAudio;
+    LinearLayout instantSettingsParent;
     ControlVisbilityPreference controlVisbilityPreference;
     boolean fromGallery = false;
     PinchZoomGestureListener pinchZoomGestureListener;
@@ -66,6 +71,8 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
         if(VERBOSE)Log.d(TAG,"onCreate");
         setContentView(R.layout.activity_camera);
         brightness = (ImageView)findViewById(R.id.brightness);
+        toggleAudio = findViewById(R.id.toggleAudio);
+        instantSettingsParent = findViewById(R.id.instantSettingsParent);
         controlVisbilityPreference = (ControlVisbilityPreference)getApplicationContext();
         getSupportActionBar().hide();
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
@@ -159,6 +166,57 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
         overridePendingTransition(R.anim.slide_from_right,R.anim.slide_to_left);
     }
 
+    public void toggleMicrophone(View view){
+        SharedPreferences micPrefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        SharedPreferences.Editor prefsEditor = micPrefs.edit();
+        boolean noAudio;
+        if(!micPrefs.getBoolean(Constants.NO_AUDIO_MSG, false)){
+            //Disable audio
+            toggleAudio.setImageDrawable(getResources().getDrawable(R.drawable.microphone_mute_sound_icon));
+            prefsEditor.putBoolean(Constants.NO_AUDIO_MSG, true);
+            noAudio = true;
+        }
+        else{
+            //Enable audio
+            toggleAudio.setImageDrawable(getResources().getDrawable(R.drawable.microphone_music_sound_icon));
+            prefsEditor.putBoolean(Constants.NO_AUDIO_MSG, false);
+            noAudio = false;
+        }
+        prefsEditor.commit();
+        showToggleAudioMessage(noAudio);
+    }
+
+    public void showToggleAudioMessage(boolean noAudio)
+    {
+        LinearLayout noAudioLayout = new LinearLayout(this);
+        noAudioLayout.setPadding(30,50,30,50);
+        noAudioLayout.setGravity(Gravity.CENTER);
+        noAudioLayout.setOrientation(LinearLayout.VERTICAL);
+        noAudioLayout.setBackgroundColor(getResources().getColor(R.color.savedMsg));
+        TextView noAudioText = new TextView(this);
+        if(noAudio) {
+            noAudioText.setTextColor(getResources().getColor(R.color.audioDisable));
+            noAudioText.setText(getResources().getString(R.string.audioDisableMessage));
+        }
+        else{
+            noAudioText.setTextColor(getResources().getColor(R.color.audioEnable));
+            noAudioText.setText(getResources().getString(R.string.audioEnableMessage));
+        }
+        noAudioLayout.addView(noAudioText);
+        final Toast showCompleted = Toast.makeText(this.getApplicationContext(),"",Toast.LENGTH_SHORT);
+        showCompleted.setGravity(Gravity.CENTER,0,0);
+        showCompleted.setView(noAudioLayout);
+        showCompleted.show();
+        new Thread(() -> {
+        try {
+                Thread.sleep(1500);
+                showCompleted.cancel();
+            }
+            catch (InterruptedException ie){
+                ie.printStackTrace();
+            }
+        }).start();
+    }
     public void openBrightnessPopup(View view){
         TextView header = (TextView)settingsRootView.findViewById(R.id.timerText);
         header.setText(getResources().getString(R.string.brightnessHeading));
@@ -250,13 +308,13 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
         FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
         fragmentTransaction.replace(R.id.cameraPreview, videoFragment).commit();
         if(VERBOSE)Log.d(TAG, "brightnessLevel SET to = "+controlVisbilityPreference.getBrightnessLevel());
-        brightness.setVisibility(View.VISIBLE);
+        instantSettingsParent.setVisibility(View.VISIBLE);
         setPinchZoomScaleListener(videoFragment, null);
     }
 
     public void showPhotoFragment()
     {
-        brightness.setVisibility(View.GONE);
+        instantSettingsParent.setVisibility(View.GONE);
         FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
         if(photoFragment == null) {
             if(VERBOSE)Log.d(TAG,"creating photofragment");
@@ -385,7 +443,11 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if(VERBOSE)Log.d(TAG,"onDestroy");
+        //Reset No Audio switch to enable audio by default when user exits the app.
+        SharedPreferences.Editor defaultSharedPrefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).edit();
+        defaultSharedPrefs.remove(Constants.NO_AUDIO_MSG);
+        defaultSharedPrefs.commit();
+        Log.d(TAG,"onDestroy");
     }
 
     @Override

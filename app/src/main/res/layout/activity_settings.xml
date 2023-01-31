@@ -241,95 +241,22 @@
         android:id="@+id/saveToCloudParent"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
-
-        <TextView
-            android:id="@+id/textView12"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="@dimen/headTextTopMargin"
-            android:layout_marginStart="@dimen/headTextLeftMargin"
-            android:layout_marginTop="@dimen/headTextTopMargin"
-            android:layout_weight="1"
-            android:text="@string/saveToCloud"
-            android:textColor="@color/turqoise"
-            android:textSize="@dimen/settingsMainText" />
-
-    </LinearLayout>
-
-        <TextView
-            android:id="@+id/textView17"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="@dimen/headTextTopMargin"
-            android:layout_marginStart="@dimen/headTextLeftMargin"
-            android:layout_marginEnd="@dimen/headTextLeftMargin"
-            android:layout_marginTop="@dimen/headTextTopMargin"
-            android:text="@string/uploadmsg"
-            android:textColor="@color/turqoise" />
+        android:orientation="horizontal"/>
 
         <LinearLayout
             android:id="@+id/googleDrive"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:weightSum="1">
-
-            <CheckBox
-                android:id="@+id/switchOnDrive"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="@dimen/headTextTopMargin"
-                android:layout_marginStart="@dimen/headTextLeftMargin"
-                android:layout_marginTop="10dp"
-                android:layout_weight=".5"
-                android:autoText="false"
-                android:background="@drawable/ripple"
-                android:buttonTint="@color/turqoise"
-                android:checked="false"
-                android:onClick="saveToCloudDrive"
-                android:paddingStart="@dimen/headTextLeftMargin"
-                android:singleLine="true"
-                android:text="@string/googleDrive"
-                android:textColor="@color/turqoise"
-                android:textColorLink="@color/turqoise"
-                android:thumbTint="@color/turqoise" />
-
-        </LinearLayout>
+            android:weightSum="1"/>
 
         <LinearLayout
             android:id="@+id/dropBox"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_marginTop="@dimen/dropboxCheckboxTopMargin"
             android:orientation="horizontal"
-            android:weightSum="1">
+            android:weightSum="1"/>
 
-            <CheckBox
-                android:id="@+id/switchOnDropbox"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="@dimen/headTextTopMargin"
-                android:layout_marginStart="@dimen/headTextLeftMargin"
-                android:layout_weight=".5"
-                android:background="@drawable/ripple"
-                android:buttonTint="@color/turqoise"
-                android:checked="false"
-                android:onClick="saveToDropBox"
-                android:paddingStart="@dimen/headTextLeftMargin"
-                android:text="@string/dropbox"
-                android:textColor="@color/turqoise"
-                android:thumbTint="@color/turqoise" />
-
-        </LinearLayout>
-        <LinearLayout
-            android:id="@+id/separator4"
-            android:layout_width="match_parent"
-            android:layout_height="@dimen/separatorHeight"
-            android:background="@color/turqoise"
-            android:orientation="horizontal">
-
-        </LinearLayout>
         <LinearLayout
             android:id="@+id/feedbackParent"
             android:layout_width="match_parent"

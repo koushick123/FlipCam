@@ -49,8 +49,6 @@ import androidx.fragment.app.Fragment;
 import com.flipcam.constants.Constants;
 import com.flipcam.data.MediaTableConstants;
 import com.flipcam.media.FileMedia;
-import com.flipcam.service.DropboxUploadService;
-import com.flipcam.service.GoogleDriveUploadService;
 import com.flipcam.util.MediaUtil;
 import com.flipcam.util.SDCardUtil;
 import com.flipcam.view.CameraView;
@@ -613,22 +611,6 @@ public class PhotoFragment extends Fragment {
         mediaContent.put("memoryStorage", (sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true) ? "1" : "0"));
         if(VERBOSE)Log.d(TAG, "Adding to Media DB");
         getActivity().getContentResolver().insert(Uri.parse(MediaTableConstants.BASE_CONTENT_URI+"/addMedia"),mediaContent);
-        if(sharedPreferences.getBoolean(Constants.SAVE_TO_GOOGLE_DRIVE, false)) {
-            if(VERBOSE)Log.d(TAG, "Auto uploading to Google Drive");
-            //Auto upload to Google Drive enabled
-            Intent googleDriveUploadIntent = new Intent(getApplicationContext(), GoogleDriveUploadService.class);
-            googleDriveUploadIntent.putExtra("uploadFile", cameraView.getPhotoMediaPath());
-            if(VERBOSE)Log.d(TAG, "Uploading file = "+cameraView.getPhotoMediaPath());
-            getActivity().startService(googleDriveUploadIntent);
-        }
-        if(sharedPreferences.getBoolean(Constants.SAVE_TO_DROPBOX, false)){
-            if(VERBOSE)Log.d(TAG, "Auto upload to Dropbox");
-            //Auto upload to Dropbox enabled
-            Intent dropboxUploadIntent = new Intent(getApplicationContext(), DropboxUploadService.class);
-            dropboxUploadIntent.putExtra("uploadFile", cameraView.getPhotoMediaPath());
-            if(VERBOSE)Log.d(TAG, "Uploading file = "+cameraView.getPhotoMediaPath());
-            getActivity().startService(dropboxUploadIntent);
-        }
     }
 
     public void checkForSDCard(){

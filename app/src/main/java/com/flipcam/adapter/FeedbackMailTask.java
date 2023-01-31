@@ -34,7 +34,6 @@ public class FeedbackMailTask extends AsyncTask<String, Void, Void> {
     @Override
     protected void onPreExecute() {
         super.onPreExecute();
-        settingsActivity.showFeedbackMessage();
         feedbackText = settingsActivity.getFeedback_information().getText().toString();
     }
 
@@ -44,7 +43,6 @@ public class FeedbackMailTask extends AsyncTask<String, Void, Void> {
     protected void onPostExecute(Void aVoid) {
         super.onPostExecute(aVoid);
         settingsActivity.getFeedback_information().setText("");
-        settingsActivity.hideFeedbackMessage();
         Toast.makeText(mContext,settingsActivity.getResources().getString(R.string.thanksFeedbackMsg), Toast.LENGTH_SHORT).show();
     }
 

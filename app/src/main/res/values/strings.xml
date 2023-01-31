@@ -93,6 +93,9 @@
     <string name="showMemConsumedMsg">Show how much memory is being consumed by the current video recording, in the recording window.</string>
     <string name="enableShutterSound">Enable Shutter Sound</string>
     <string name="enableShutterSoundMsg">Enable shutter sound of camera when clicking photos.\n\nMay not be supported on some devices.</string>
+    <string name="noAudioSubHeading">No Audio for Video</string>
+    <string name="audioEnableMessage">AUDIO ENABLED FOR VIDEO.</string>
+    <string name="audioDisableMessage">AUDIO DISABLED FOR VIDEO.</string>
     <string name="okBtn">OK</string>
     <string name="cancelBtn">CANCEL</string>
     <string name="phoneMemoryLimitHeading">Phone Memory Limit Warning</string>

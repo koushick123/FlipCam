@@ -48,8 +48,6 @@ import androidx.fragment.app.Fragment;
 import com.flipcam.constants.Constants;
 import com.flipcam.data.MediaTableConstants;
 import com.flipcam.media.FileMedia;
-import com.flipcam.service.DropboxUploadService;
-import com.flipcam.service.GoogleDriveUploadService;
 import com.flipcam.util.GLUtil;
 import com.flipcam.util.MediaUtil;
 import com.flipcam.util.SDCardUtil;
@@ -82,7 +80,6 @@ public class VideoFragment extends Fragment{
     SwitchInterface switchInterface;
     LowestThresholdCheckForVideoInterface lowestThresholdCheckForVideoInterface;
     ImageButton stopRecord;
-    ImageView imagePreview;
     ImageButton pauseRecord;
     TextView modeText;
     TextView resInfo;
@@ -147,6 +144,7 @@ public class VideoFragment extends Fragment{
     }
 
     CameraActivity cameraActivity;
+    ImageView toggleAudio;
 
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
@@ -156,6 +154,7 @@ public class VideoFragment extends Fragment{
             cameraView.setWindowManager(getActivity().getWindowManager());
         }
         cameraActivity = (CameraActivity)getActivity();
+        toggleAudio = cameraActivity.findViewById(R.id.toggleAudio);
         settingsBar = (LinearLayout)cameraActivity.findViewById(R.id.settingsBar);
         settings = (ImageButton)cameraActivity.findViewById(R.id.settings);
         flash = (ImageButton)cameraActivity.findViewById(R.id.flashOn);
@@ -350,7 +349,6 @@ public class VideoFragment extends Fragment{
         if(VERBOSE)Log.d(TAG,"passing videofragment to cameraview");
         cameraView.setFragmentInstance(this);
         cameraView.setPhotoFragmentInstance(null);
-        imagePreview = (ImageView)view.findViewById(R.id.imagePreview);
         orientationEventListener = new OrientationEventListener(getActivity().getApplicationContext(), SensorManager.SENSOR_DELAY_UI){
             @Override
             public void onOrientationChanged(int i) {
@@ -506,7 +504,6 @@ public class VideoFragment extends Fragment{
         photoMode.setClickable(true);
         thumbnail.setClickable(true);
         switchCamera.setClickable(true);
-        videoBar.removeAllViews();
         addStopAndPauseIcons();
         hideSettingsBarAndIcon();
         SharedPreferences.Editor editor = sharedPreferences.edit();
@@ -601,9 +598,9 @@ public class VideoFragment extends Fragment{
 
     public void addStopAndPauseIcons()
     {
+        videoBar.removeAllViews();
         videoBar.setBackgroundColor(getResources().getColor(R.color.transparentBar));
         LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,LinearLayout.LayoutParams.WRAP_CONTENT);
-
         stopRecord = new ImageButton(getActivity().getApplicationContext());
         stopRecord.setScaleType(ImageView.ScaleType.CENTER_CROP);
         stopRecord.setBackgroundColor(getResources().getColor(R.color.transparentBar));
@@ -625,6 +622,7 @@ public class VideoFragment extends Fragment{
         videoBar.addView(switchCamera);
         videoBar.addView(stopRecord);
         addPauseButton();
+        toggleAudio.setClickable(false);
     }
 
     @TargetApi(Build.VERSION_CODES.N)
@@ -735,22 +733,7 @@ public class VideoFragment extends Fragment{
         showRecordAndThumbnail();
         stopRecord.setClickable(true);
         switchCamera.setClickable(true);
-        if(sharedPreferences.getBoolean(Constants.SAVE_TO_GOOGLE_DRIVE, false) && !noSdCard) {
-            if(VERBOSE)Log.d(TAG, "Auto uploading to Google Drive");
-            //Auto upload to Google Drive enabled.
-            Intent googleDriveUploadIntent = new Intent(getApplicationContext(), GoogleDriveUploadService.class);
-            googleDriveUploadIntent.putExtra("uploadFile", cameraView.getMediaPath());
-            if(VERBOSE)Log.d(TAG, "Uploading file = "+cameraView.getMediaPath());
-            getActivity().startService(googleDriveUploadIntent);
-        }
-        if(sharedPreferences.getBoolean(Constants.SAVE_TO_DROPBOX, false) && !noSdCard){
-            if(VERBOSE)Log.d(TAG, "Auto upload to Dropbox");
-            //Auto upload to Dropbox enabled
-            Intent dropboxUploadIntent = new Intent(getApplicationContext(), DropboxUploadService.class);
-            dropboxUploadIntent.putExtra("uploadFile", cameraView.getMediaPath());
-            if(VERBOSE)Log.d(TAG, "Uploading file = "+cameraView.getMediaPath());
-            getActivity().startService(dropboxUploadIntent);
-        }
+        toggleAudio.setClickable(true);
     }
 
     float rotationAngle = 0f;
@@ -863,12 +846,12 @@ public class VideoFragment extends Fragment{
 
     public void hideSettingsBarAndIcon()
     {
-        settingsBar.setBackgroundColor(getResources().getColor(R.color.transparentBar));
         settingsBar.removeAllViews();
         flashParentLayout.removeAllViews();
         timeElapsedParentLayout.removeAllViews();
         memoryConsumedParentLayout.removeAllViews();
         settingsBar.setWeightSum(3);
+        settingsBar.setBackgroundColor(getResources().getColor(R.color.transparentBar));
         flashParentLayout.setLayoutParams(parentLayoutParams);
         if(cameraView.isFlashOn()) {
             flash.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_off));
@@ -876,13 +859,7 @@ public class VideoFragment extends Fragment{
         else{
             flash.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_on));
         }
-        flash.setOnClickListener(new View.OnClickListener(){
-            @Override
-            public void onClick(View view)
-            {
-                setFlash();
-            }
-        });
+        flash.setOnClickListener((view) -> setFlash());
         LinearLayout.LayoutParams flashParam = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         flashParam.weight=1f;
         flashParam.setMargins(0,(int)getResources().getDimension(R.dimen.flashOnTopMargin),0,0);

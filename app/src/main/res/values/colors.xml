@@ -51,4 +51,8 @@
     <color name="rippleColor">#387171</color>
     //Transparent color for floating button
     <color name="fabBackground">#90000000</color>
+    //Audio Enable
+    <color name="audioEnable">#4dc2a5</color>
+    //Audio Disable
+    <color name="audioDisable">#ff0000</color>
 </resources>
