@@ -20,7 +20,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.flipcam.constants.Constants;
 import com.flipcam.model.Dimension;
 import com.flipcam.preferences.CustomListPreference;
-import com.flipcam.preferences.NoAudioCheckboxPreference;
 import com.flipcam.preferences.ShutterCheckboxPreference;
 
 import java.util.ArrayList;
@@ -97,13 +96,6 @@ public class VideoSettingsActivity extends AppCompatActivity {
                 if(VERBOSE)Log.d(TAG, "onPreferenceChange pref 2222 = " + preference.getKey());
                 return true;
             });
-            //No Audio
-            final NoAudioCheckboxPreference noAudioCheckboxPreference = new NoAudioCheckboxPreference(getActivity(), true, Constants.NO_AUDIO_MSG);
-            noAudioCheckboxPreference.setTitle(resources.getString(R.string.noAudioSubHeading));
-            noAudioCheckboxPreference.setSummary(resources.getString(R.string.noAudioSubHeading));
-            noAudioCheckboxPreference.setKey(Constants.NO_AUDIO_MSG);
-            noAudioCheckboxPreference.setLayoutResource(R.layout.no_audio_checkbox_setting);
-            getPreferenceScreen().addPreference(noAudioCheckboxPreference);
         }
 
         private void addResolutionList(){
