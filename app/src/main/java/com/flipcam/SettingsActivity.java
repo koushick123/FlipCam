@@ -1,6 +1,7 @@
 package com.flipcam;
 
 import android.accounts.AccountManager;
+import android.app.Activity;
 import android.app.Dialog;
 import android.appwidget.AppWidgetManager;
 import android.content.BroadcastReceiver;
@@ -8,8 +9,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.preference.PreferenceManager;
+import android.provider.DocumentsContract;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -21,11 +25,14 @@ import android.widget.RadioButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.flipcam.adapter.FeedbackMailTask;
 import com.flipcam.constants.Constants;
 import com.flipcam.util.SDCardUtil;
+
+import static android.os.Environment.getExternalStoragePublicDirectory;
 
 public class SettingsActivity extends AppCompatActivity{
 
@@ -40,6 +47,7 @@ public class SettingsActivity extends AppCompatActivity{
     RadioButton sdCardBtn;
     Dialog sdCardDialog;
     LinearLayout sdcardlayout;
+    LinearLayout phoneMemLayout;
     TextView sdCardPathMsg;
     LayoutInflater layoutInflater;
     Dialog saveToCloud;
@@ -68,6 +76,10 @@ public class SettingsActivity extends AppCompatActivity{
     LinearLayout photoResolutionParent;
     LinearLayout videoSettingParent;
     EditText feedback_information;
+    TextView phoneMempathmsg;
+    String mediaPath;
+    ImageView editPhoneMemPath;
+    String defaultMediaPath;
 
     public EditText getFeedback_information() {
         return feedback_information;
@@ -88,19 +100,27 @@ public class SettingsActivity extends AppCompatActivity{
         sdCardBtn = (RadioButton)findViewById(R.id.sdCardbutton);
         sdCardPathMsg = (TextView)findViewById(R.id.sdcardpathmsg);
         sdcardlayout = (LinearLayout)findViewById(R.id.sdcardlayout);
+        phoneMemLayout = findViewById(R.id.phoneMemLayout);
+        phoneMempathmsg = findViewById(R.id.phoneMempathmsg);
+        editPhoneMemPath = findViewById(R.id.editPhoneMemPath);
         photoResolutionParent = (LinearLayout)findViewById(R.id.photoResolutionParent);
         videoSettingParent = (LinearLayout)findViewById(R.id.videoSettingParent);
         thresholdText.setText(getString(R.string.memoryThresholdLimit, getResources().getInteger(R.integer.minimumMemoryWarning) + "MB"));
         getSupportActionBar().setTitle(getString(R.string.settingTitle));
+        defaultMediaPath = getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + getResources().getString(R.string.FC_ROOT)).getPath();
+        mediaPath = PreferenceManager.getDefaultSharedPreferences(this).getString("mediaFilePath", defaultMediaPath);
         settingsPref = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
         settingsEditor = settingsPref.edit();
-        if(VERBOSE)if(VERBOSE)Log.d(TAG,"SD Card Path onCreate = "+settingsPref.getString(Constants.SD_CARD_PATH,""));
+        if(VERBOSE)Log.d(TAG,"SD Card Path onCreate = "+settingsPref.getString(Constants.SD_CARD_PATH,""));
         if(settingsPref.contains(Constants.SD_CARD_PATH) && !settingsPref.getString(Constants.SD_CARD_PATH,"").equals("")) {
             String sdcardpath = settingsPref.getString(Constants.SD_CARD_PATH, "");
             showSDCardPath(sdcardpath);
+            phoneMemLayout.setVisibility(View.GONE);
         }
         else{
             hideSDCardPath();
+            phoneMemLayout.setVisibility(View.VISIBLE);
+            phoneMempathmsg.setText(mediaPath);
         }
         layoutInflater = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         accessGrantedDropboxRoot = layoutInflater.inflate(R.layout.access_granted_dropbox, null);
@@ -227,12 +247,15 @@ public class SettingsActivity extends AppCompatActivity{
                 if(VERBOSE)Log.d(TAG,"Phone memory is true");
                 phoneMemBtn.setChecked(true);
                 sdCardBtn.setChecked(false);
+                phoneMemLayout.setVisibility(View.VISIBLE);
+                phoneMempathmsg.setText(mediaPath);
                 hideSDCardPath();
             }
             else{
                 if(VERBOSE)Log.d(TAG,"Phone memory is false");
                 if(SDCardUtil.doesSDCardExist(getApplicationContext()) != null) {
                     phoneMemBtn.setChecked(false);
+                    phoneMemLayout.setVisibility(View.GONE);
                     sdCardBtn.setChecked(true);
                     if(SDCardUtil.isPathWritable(settingsPref.getString(Constants.SD_CARD_PATH, ""))) {
                         showSDCardPath(settingsPref.getString(Constants.SD_CARD_PATH, ""));
@@ -276,6 +299,29 @@ public class SettingsActivity extends AppCompatActivity{
         }
     }
 
+    public void openDirectory(View view) {
+        Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+        i.addCategory(Intent.CATEGORY_DEFAULT);
+        startActivityForResult(Intent.createChooser(i, "Choose directory"), 1000);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent resultData) {
+        if (requestCode == 1000 && resultCode == Activity.RESULT_OK) {
+            if (resultData != null) {
+                Uri mediaUri = resultData.getData();
+                Uri docUri = DocumentsContract.buildDocumentUriUsingTree(mediaUri, DocumentsContract.getTreeDocumentId(mediaUri));
+                phoneMempathmsg.setText(mediaUri.getPath());
+                Log.d(TAG, "New Uri = "+mediaUri);
+                Log.d(TAG, "New Path = "+mediaUri.getPath());
+            }
+            else{
+                phoneMempathmsg.setText(defaultMediaPath);
+            }
+        }
+        super.onActivityResult(requestCode,resultCode,resultData);
+    }
+
     public void selectSaveMedia(View view){
         switch (view.getId()){
             case R.id.phoneMemButton:
@@ -285,12 +331,15 @@ public class SettingsActivity extends AppCompatActivity{
                 phoneMemBtn.setChecked(true);
                 sdCardBtn.setChecked(false);
                 hideSDCardPath();
+                phoneMemLayout.setVisibility(View.VISIBLE);
+                phoneMempathmsg.setText(mediaPath);
                 controlVisbilityPreference.setMediaSelectedPosition(0);
                 break;
             case R.id.sdCardbutton:
                 if(VERBOSE)Log.d(TAG,"Save in sd card");
                 phoneMemBtn.setChecked(false);
                 sdCardBtn.setChecked(true);
+                phoneMemLayout.setVisibility(View.GONE);
                 String sdCardPath = SDCardUtil.doesSDCardExist(getApplicationContext());
                 if(sdCardPath == null){
                     if(VERBOSE)Log.d(TAG, "No SD Card");
@@ -298,6 +347,8 @@ public class SettingsActivity extends AppCompatActivity{
                     sdCardBtn.setChecked(false);
                     settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
                     settingsEditor.commit();
+                    phoneMemLayout.setVisibility(View.VISIBLE);
+                    phoneMempathmsg.setText(mediaPath);
                     hideSDCardPath();
                     LinearLayout warningParent = (LinearLayout)warningMsgRoot.findViewById(R.id.warningParent);
                     warningParent.setBackgroundColor(getResources().getColor(R.color.backColorSettingMsg));
@@ -329,6 +380,8 @@ public class SettingsActivity extends AppCompatActivity{
                         sdCardBtn.setChecked(false);
                         settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
                         settingsEditor.commit();
+                        phoneMemLayout.setVisibility(View.VISIBLE);
+                        phoneMempathmsg.setText(mediaPath);
                         hideSDCardPath();
                         showSDCardWriteErrorMessage();
                         break;

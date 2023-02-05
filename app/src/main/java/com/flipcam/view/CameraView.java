@@ -1223,21 +1223,25 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         }
 
         public String fetchPhoneMemoryPath(boolean video){
-            String phonePath;
+            StringBuffer phonePath = new StringBuffer("");
             File dcim;
             dcim = getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + getResources().getString(R.string.FC_ROOT));
             //Since its Camera folder this is strictly not necessary (as Camera folder inside DCIM folder is standard in Android), but its included just in case.
             if (!dcim.exists()) {
                 dcim.mkdirs();
             }
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putString("mediaFilePath",dcim.getPath());
+            editor.apply();
             SimpleDateFormat sdf = new SimpleDateFormat(getResources().getString(R.string.DATE_FORMAT_FOR_FILE));
             String filename = sdf.format(new Date());
             if(VERBOSE)Log.d(TAG, "filename = " + filename);
-            phonePath = dcim.getPath() + getResources().getString(R.string.PATH_SLASH);
-            phonePath += (video ? getResources().getString(R.string.FC_VID_PREFIX) + filename + getResources().getString(R.string.VID_EXT) :
+            phonePath.append(dcim.getPath());
+            phonePath.append(getResources().getString(R.string.PATH_SLASH));
+            phonePath.append(video ? getResources().getString(R.string.FC_VID_PREFIX) + filename + getResources().getString(R.string.VID_EXT) :
                     getResources().getString(R.string.FC_IMG_PREFIX) + filename + getResources().getString(R.string.IMG_EXT));
-            if(VERBOSE)Log.d(TAG, "Saving media file at = " + phonePath);
-            return phonePath;
+            if(VERBOSE)Log.d(TAG, "Saving media file at = " + phonePath.toString());
+            return phonePath.toString();
         }
 
         void drawFrame()
