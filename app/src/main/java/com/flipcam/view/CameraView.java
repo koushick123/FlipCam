@@ -1222,17 +1222,17 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             return path.toString();
         }
 
+        String defaultMediaPath = getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + getResources().getString(R.string.FC_ROOT)).getPath();
         public String fetchPhoneMemoryPath(boolean video){
-            StringBuffer phonePath = new StringBuffer("");
+            StringBuilder phonePath = new StringBuilder("");
             File dcim;
-            dcim = getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + getResources().getString(R.string.FC_ROOT));
-            //Since its Camera folder this is strictly not necessary (as Camera folder inside DCIM folder is standard in Android), but its included just in case.
+            dcim = new File(PreferenceManager.getDefaultSharedPreferences(videoFragment!=null ? videoFragment.getApplicationContext() : photoFragment.getApplicationContext())
+                    .getString("mediaFilePath", defaultMediaPath));
+//            dcim = getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + getResources().getString(R.string.FC_ROOT));
+            //Included check for default path only.
             if (!dcim.exists()) {
                 dcim.mkdirs();
             }
-            SharedPreferences.Editor editor = sharedPreferences.edit();
-            editor.putString("mediaFilePath",dcim.getPath());
-            editor.apply();
             SimpleDateFormat sdf = new SimpleDateFormat(getResources().getString(R.string.DATE_FORMAT_FOR_FILE));
             String filename = sdf.format(new Date());
             if(VERBOSE)Log.d(TAG, "filename = " + filename);
@@ -1240,7 +1240,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             phonePath.append(getResources().getString(R.string.PATH_SLASH));
             phonePath.append(video ? getResources().getString(R.string.FC_VID_PREFIX) + filename + getResources().getString(R.string.VID_EXT) :
                     getResources().getString(R.string.FC_IMG_PREFIX) + filename + getResources().getString(R.string.IMG_EXT));
-            if(VERBOSE)Log.d(TAG, "Saving media file at = " + phonePath.toString());
+            if(VERBOSE)Log.d(TAG, "Saving media file at = " + phonePath);
             return phonePath.toString();
         }
 

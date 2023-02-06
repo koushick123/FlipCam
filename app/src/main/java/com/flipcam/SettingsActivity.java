@@ -30,6 +30,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.flipcam.adapter.FeedbackMailTask;
 import com.flipcam.constants.Constants;
+import com.flipcam.util.MediaUtil;
 import com.flipcam.util.SDCardUtil;
 
 import static android.os.Environment.getExternalStoragePublicDirectory;
@@ -311,12 +312,14 @@ public class SettingsActivity extends AppCompatActivity{
             if (resultData != null) {
                 Uri mediaUri = resultData.getData();
                 Uri docUri = DocumentsContract.buildDocumentUriUsingTree(mediaUri, DocumentsContract.getTreeDocumentId(mediaUri));
-                phoneMempathmsg.setText(mediaUri.getPath());
-                Log.d(TAG, "New Uri = "+mediaUri);
-                Log.d(TAG, "New Path = "+mediaUri.getPath());
+                mediaPath = MediaUtil.getPathFromUri(this, docUri);
+                SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
+                editor.putString("mediaFilePath",mediaPath);
+                editor.apply();
+                Log.d(TAG, "File path = "+mediaPath);
             }
             else{
-                phoneMempathmsg.setText(defaultMediaPath);
+                mediaPath = defaultMediaPath;
             }
         }
         super.onActivityResult(requestCode,resultCode,resultData);
