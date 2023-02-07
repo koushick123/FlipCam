@@ -798,6 +798,14 @@ public class VideoFragment extends Fragment{
     public void showRecordAndThumbnail()
     {
         videoBar.setBackgroundColor(getResources().getColor(R.color.settingsBarColor));
+        //Enable Audio if disabled, after recording is completed.
+        SharedPreferences micPrefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        SharedPreferences.Editor prefsEditor = micPrefs.edit();
+        if(micPrefs.getBoolean(Constants.NO_AUDIO_MSG, false)) {
+            cameraActivity.toggleAudio.setImageDrawable(getResources().getDrawable(R.drawable.microphone_music_sound_icon));
+            prefsEditor.putBoolean(Constants.NO_AUDIO_MSG, false);
+            prefsEditor.apply();
+        }
         videoBar.removeAllViews();
         videoBar.addView(substitute);
         videoBar.addView(switchCamera);

@@ -1,7 +1,6 @@
 package com.flipcam;
 
 import android.accounts.AccountManager;
-import android.app.Activity;
 import android.app.Dialog;
 import android.appwidget.AppWidgetManager;
 import android.content.BroadcastReceiver;
@@ -9,11 +8,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.preference.PreferenceManager;
-import android.provider.DocumentsContract;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -25,12 +22,10 @@ import android.widget.RadioButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.flipcam.adapter.FeedbackMailTask;
 import com.flipcam.constants.Constants;
-import com.flipcam.util.MediaUtil;
 import com.flipcam.util.SDCardUtil;
 
 import static android.os.Environment.getExternalStoragePublicDirectory;
@@ -103,13 +98,12 @@ public class SettingsActivity extends AppCompatActivity{
         sdcardlayout = (LinearLayout)findViewById(R.id.sdcardlayout);
         phoneMemLayout = findViewById(R.id.phoneMemLayout);
         phoneMempathmsg = findViewById(R.id.phoneMempathmsg);
-        editPhoneMemPath = findViewById(R.id.editPhoneMemPath);
         photoResolutionParent = (LinearLayout)findViewById(R.id.photoResolutionParent);
         videoSettingParent = (LinearLayout)findViewById(R.id.videoSettingParent);
         thresholdText.setText(getString(R.string.memoryThresholdLimit, getResources().getInteger(R.integer.minimumMemoryWarning) + "MB"));
         getSupportActionBar().setTitle(getString(R.string.settingTitle));
         defaultMediaPath = getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + getResources().getString(R.string.FC_ROOT)).getPath();
-        mediaPath = PreferenceManager.getDefaultSharedPreferences(this).getString("mediaFilePath", defaultMediaPath);
+        mediaPath = PreferenceManager.getDefaultSharedPreferences(this).getString(Constants.MEDIA_FILE_PATH, defaultMediaPath);
         settingsPref = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
         settingsEditor = settingsPref.edit();
         if(VERBOSE)Log.d(TAG,"SD Card Path onCreate = "+settingsPref.getString(Constants.SD_CARD_PATH,""));
@@ -298,31 +292,6 @@ public class SettingsActivity extends AppCompatActivity{
         else{
             thresholdText.setText(getString(R.string.memoryThresholdLimit, getString(R.string.phoneMemoryLimitDisabled)));
         }
-    }
-
-    public void openDirectory(View view) {
-        Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
-        i.addCategory(Intent.CATEGORY_DEFAULT);
-        startActivityForResult(Intent.createChooser(i, "Choose directory"), 1000);
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent resultData) {
-        if (requestCode == 1000 && resultCode == Activity.RESULT_OK) {
-            if (resultData != null) {
-                Uri mediaUri = resultData.getData();
-                Uri docUri = DocumentsContract.buildDocumentUriUsingTree(mediaUri, DocumentsContract.getTreeDocumentId(mediaUri));
-                mediaPath = MediaUtil.getPathFromUri(this, docUri);
-                SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
-                editor.putString("mediaFilePath",mediaPath);
-                editor.apply();
-                Log.d(TAG, "File path = "+mediaPath);
-            }
-            else{
-                mediaPath = defaultMediaPath;
-            }
-        }
-        super.onActivityResult(requestCode,resultCode,resultData);
     }
 
     public void selectSaveMedia(View view){

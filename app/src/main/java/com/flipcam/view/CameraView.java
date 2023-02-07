@@ -1221,14 +1221,12 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             }
             return path.toString();
         }
-
         String defaultMediaPath = getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + getResources().getString(R.string.FC_ROOT)).getPath();
         public String fetchPhoneMemoryPath(boolean video){
             StringBuilder phonePath = new StringBuilder("");
             File dcim;
             dcim = new File(PreferenceManager.getDefaultSharedPreferences(videoFragment!=null ? videoFragment.getApplicationContext() : photoFragment.getApplicationContext())
-                    .getString("mediaFilePath", defaultMediaPath));
-//            dcim = getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + getResources().getString(R.string.FC_ROOT));
+                    .getString(Constants.MEDIA_FILE_PATH, defaultMediaPath));
             //Included check for default path only.
             if (!dcim.exists()) {
                 dcim.mkdirs();

@@ -68,17 +68,8 @@
                     android:layout_width="wrap_content"
                     android:layout_height="match_parent"
                     android:layout_marginTop="5dp"
-                    android:layout_weight="0.9"
+                    android:layout_weight="1"
                     android:textColor="@color/turqoise" />
-
-                <ImageView
-                    android:id="@+id/editPhoneMemPath"
-                    android:layout_width="20dp"
-                    android:layout_height="25dp"
-                    android:src="@drawable/edit_mode"
-                    android:layout_weight="0.1"
-                    android:onClick="openDirectory"
-                    />
 
             </LinearLayout>
 

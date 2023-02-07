@@ -88,4 +88,5 @@ public class Constants
     //Unmounted/Mounted Intent
     public static final String MEDIA_UNMOUNTED = "android.intent.action.MEDIA_UNMOUNTED";
     public static final String MEDIA_MOUNTED = "android.intent.action.MEDIA_MOUNTED";
+    public static final String MEDIA_FILE_PATH = "mediaFilePath";
 }

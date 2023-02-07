@@ -155,6 +155,7 @@ public class PermissionActivity extends AppCompatActivity {
                 editor.remove(Constants.SELECT_VIDEO_PLAYER);
                 editor.putBoolean(Constants.SHOW_EXTERNAL_PLAYER_MESSAGE, true);
                 editor.remove(Constants.NO_AUDIO_MSG);
+                editor.remove(Constants.MEDIA_FILE_PATH);
                 editor.commit();
                 String phoneLoc = getResources().getString(R.string.phoneLocation);
                 SharedPreferences.Editor mediaLocEditor = sharedPreferences.edit();
