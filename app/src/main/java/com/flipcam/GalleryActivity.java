@@ -11,6 +11,8 @@ import android.content.Loader;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.os.Bundle;
+import android.os.Environment;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -36,6 +38,8 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
+import static android.os.Environment.getExternalStoragePublicDirectory;
+
 public class GalleryActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<FileMedia[]>{
 
     public static final String TAG = "GalleryActivity";
@@ -55,8 +59,8 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
     TextView mediaCount;
     @BindView(R.id.mediaGrid)
     GridView mediaGrid;
-    @BindView(R.id.mediaSourceImage)
-    ImageView mediaSourceImage;
+    @BindView(R.id.mediaSource)
+    TextView mediaSource;
     @BindView(R.id.gridHeader)
     LinearLayout gridHeader;
     @BindView(R.id.videoCapture)
@@ -133,18 +137,6 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
             noImage.setVisibility(View.GONE);
             noImageText.setVisibility(View.GONE);
             mediaCount.setText(getResources().getString(R.string.galleryCount, MediaUtil.getPhotosCount(), MediaUtil.getVideosCount()));
-            if(sharedPreferences.getString(Constants.MEDIA_LOCATION_VIEW_SELECT, phoneLoc).equalsIgnoreCase(phoneLoc)){
-                if(VERBOSE)Log.d(TAG, "SET TO PHONE");
-                mediaSourceImage.setImageDrawable(getResources().getDrawable(R.drawable.phone));
-            }
-            else if(sharedPreferences.getString(Constants.MEDIA_LOCATION_VIEW_SELECT, phoneLoc).equalsIgnoreCase(sdcardLoc)){
-                if(VERBOSE)Log.d(TAG, "SET TO SDCARD");
-                mediaSourceImage.setImageDrawable(getResources().getDrawable(R.drawable.sdcard));
-            }
-            else{
-                if(VERBOSE)Log.d(TAG, "SET TO ALL");
-                mediaSourceImage.setImageDrawable(getResources().getDrawable(R.drawable.phone_sdcard));
-            }
             MediaAdapter mediaAdapter = new MediaAdapter(getApplicationContext(), medias);
             mediaGrid.setAdapter(mediaAdapter);
             mediaGrid.invalidate();
@@ -186,19 +178,18 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
             noImageText.setVisibility(View.VISIBLE);
             //Refresh Media Grid to remove any earlier stored media previews
             mediaGrid.setVisibility(View.GONE);
-            if(sharedPreferences.getString(Constants.MEDIA_LOCATION_VIEW_SELECT, phoneLoc).equalsIgnoreCase(phoneLoc)){
-                if(VERBOSE)Log.d(TAG, "SET TO PHONE 222");
-                mediaSourceImage.setImageDrawable(getResources().getDrawable(R.drawable.phone));
-            }
-            else if(sharedPreferences.getString(Constants.MEDIA_LOCATION_VIEW_SELECT, phoneLoc).equalsIgnoreCase(sdcardLoc)){
-                if(VERBOSE)Log.d(TAG, "SET TO SDCARD 222");
-                mediaSourceImage.setImageDrawable(getResources().getDrawable(R.drawable.sdcard));
-            }
-            else{
-                if(VERBOSE)Log.d(TAG, "SET TO ALL 222");
-                mediaSourceImage.setImageDrawable(getResources().getDrawable(R.drawable.phone_sdcard));
-            }
         }
+        //Set Location Info
+        if(sharedPreferences.getString(Constants.MEDIA_LOCATION_VIEW_SELECT, phoneLoc).equalsIgnoreCase(phoneLoc)) {
+            String defaultMediaPath = getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + getResources().getString(R.string.FC_ROOT)).getPath();
+            String mediaPath = PreferenceManager.getDefaultSharedPreferences(this).getString(Constants.MEDIA_FILE_PATH, defaultMediaPath);
+            mediaSource.setText(mediaPath);
+        }
+        else{
+            String sdCardPath = sharedPreferences.getString(Constants.SD_CARD_PATH, "");
+            mediaSource.setText(sdCardPath);
+        }
+
     }
 
     @Override

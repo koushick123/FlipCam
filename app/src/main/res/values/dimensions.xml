@@ -172,4 +172,9 @@
     //Dimension for video not supported text
     <dimen name="videoPlayerNotFoundPaddingAll">12dp</dimen>
     <dimen name="_4KVideoNotSupportedPaddingAll">12dp</dimen>
+    //Margin for Gallery media
+    <dimen name="galleryMediaBottomMargin">25dp</dimen>
+    <dimen name="galleryMediaTopMargin">25dp</dimen>
+    <dimen name="galleryMediaLeftMargin">25dp</dimen>
+    <dimen name="galleryMediaRightMargin">25dp</dimen>
 </resources>

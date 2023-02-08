@@ -4,7 +4,7 @@
     android:id="@+id/frameMedia"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/settingsBarColor">
+    android:background="@color/cardview_light_background">
 
     <ImageView
         android:id="@+id/noImage"
@@ -59,18 +59,9 @@
                 android:layout_marginEnd="@dimen/fcGalleryTextEndMargin"
                 android:layout_marginBottom="@dimen/fcGalleryTextTopAndBottomMargin"
                 android:layout_weight=".3"
-                android:gravity="end"
-                android:text="@string/mediaSource"
+                android:gravity="center"
                 android:textColor="@color/turqoise" />
 
-            <ImageView
-                android:id="@+id/mediaSourceImage"
-                android:layout_width="@dimen/mediaSourceImageWidth"
-                android:layout_height="@dimen/mediaSourceImageHeight"
-                android:layout_marginEnd="10dp"
-                android:layout_weight=".7"
-                android:contentDescription="@string/mediaSourceContentDescription"
-                app:srcCompat="@drawable/phone" />
         </LinearLayout>
 
         <GridView
@@ -78,11 +69,10 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_gravity="center"
+            android:verticalSpacing="5dp"
+            android:horizontalSpacing="5dp"
             android:gravity="center|fill"
-            android:horizontalSpacing="4px"
-            android:numColumns="3"
-            android:stretchMode="columnWidth"
-            android:verticalSpacing="4px" />
+            />
     </LinearLayout>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton

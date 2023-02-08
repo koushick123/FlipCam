@@ -141,11 +141,10 @@ public class MediaAdapter extends ArrayAdapter {
 
     void calculateThumbnailSizeAndCols(){
         display.getRealSize(screenSize);
-        numOfCols = screenSize.x / thumbnailResolution;
-//        Log.d(TAG, "numofCols = "+numOfCols);
+        //numOfCols = screenSize.x / thumbnailResolution;
+        numOfCols = 3;
         int verticalSpace = (int)getContext().getResources().getDimension(R.dimen.verticalSpace);
         int totalVerticalSpace = numOfCols * verticalSpace;
         thumbnailWidthAndHeight = (screenSize.x - totalVerticalSpace) / numOfCols;
-//        Log.d(TAG, "thumbnailWidthAndHeight = "+thumbnailWidthAndHeight);
     }
 }

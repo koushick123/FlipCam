@@ -2,9 +2,9 @@ plugins {
     id 'com.android.application'
 }
 // Load keystore
-/*def keystorePropertiesFile = rootProject.file("app/src/main/keystore.properties");
-def keystoreProperties = new Properties()
-keystoreProperties.load(new FileInputStream(keystorePropertiesFile))*/
+//def keystorePropertiesFile = rootProject.file("app/src/main/keystore.properties");
+//def keystoreProperties = new Properties()
+//keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 android {
 //    signingConfigs {
 //        FC_Release {

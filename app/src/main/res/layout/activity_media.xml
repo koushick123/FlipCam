@@ -85,8 +85,10 @@
             android:contentDescription="@string/shareMedia"
             android:paddingTop="7dp"
             android:paddingBottom="7dp"
+            android:scaleX="0.85"
+            android:scaleY="0.85"
             android:scaleType="centerInside"
-            android:src="@drawable/share" />
+            android:src="@drawable/share_icon" />
 
         <ImageView
             android:id="@+id/folderViewOn"
@@ -97,9 +99,7 @@
             android:contentDescription="@string/folderView"
             android:paddingTop="5dp"
             android:paddingBottom="5dp"
-            android:scaleX="1.5"
-            android:scaleY="1.5"
-            app:srcCompat="@drawable/folder" />
+            app:srcCompat="@drawable/gallery_icon" />
 
     </LinearLayout>
 
