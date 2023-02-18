@@ -2,30 +2,58 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.flipcam">
 
-    <uses-permission android:name="android.permission.CAMERA" />
-    <uses-permission android:name="android.permission.RECORD_AUDIO" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.GET_ACCOUNTS" />
-
-    <uses-feature
-        android:name="android.hardware.camera"
-        android:required="true" />
-    <uses-feature
-        android:name="android.hardware.camera2"
-        android:required="false" />
-
     <application
-        android:requestLegacyExternalStorage="true"
         android:name=".ControlVisbilityPreference"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
+        android:requestLegacyExternalStorage="true"
         android:roundIcon="@mipmap/ic_launcher"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+        <activity
+            android:name=".UserManualActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"/>
+
+        <activity
+            android:name=".PermissionActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".CameraActivity"
+            android:screenOrientation="nosensor" />
+
+        <activity
+            android:name=".MediaActivity"
+            android:configChanges="orientation|screenSize" />
+        <activity
+            android:name=".SettingsActivity"
+            android:configChanges="orientation|screenSize"></activity>
+        <activity
+            android:name=".MemoryLimitActivity"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".GalleryActivity"
+            android:configChanges="orientation|screenSize" />
+        <activity
+            android:name=".PhotoSettingsActivity"
+            android:configChanges="orientation|screenSize"
+            android:label="@string/photoSettingsTitle" />
+
+        <activity
+            android:name=".VideoSettingsActivity"
+            android:label="@string/videoSettingsTitle" />
+        <meta-data
+            android:name="com.google.android.apps.drive.APP_ID"
+            android:value="790824425492" />
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.provider"
@@ -35,55 +63,26 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/provider_paths" />
         </provider>
-        <meta-data
-            android:name="com.google.android.apps.drive.APP_ID"
-            android:value="790824425492" />
-
-        <activity android:name=".PermissionActivity"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-        <activity
-            android:name=".CameraActivity"
-            android:screenOrientation="nosensor" />
-        <activity
-            android:name=".MediaActivity"
-            android:configChanges="orientation|screenSize" />
-        <service
-            android:name=".service.GoogleDriveUploadService"
-            android:description="@string/googleDriveService"
-            android:exported="false" />
-        <service
-            android:name=".service.DropboxUploadService"
-            android:description="@string/dropboxService"
-            android:exported="false" />
-
-        <activity
-            android:name=".SettingsActivity"
-            android:configChanges="orientation|screenSize">
-        </activity>
-        <activity
-            android:name=".MemoryLimitActivity"
-            android:windowSoftInputMode="adjustResize" />
-        <activity
-            android:name=".GalleryActivity"
-            android:configChanges="orientation|screenSize" />
 
         <provider
             android:name=".data.MediaProvider"
             android:authorities="@string/content_authority" />
 
-        <activity
-            android:name=".PhotoSettingsActivity"
-            android:configChanges="orientation|screenSize"
-            android:label="@string/photoSettingsTitle" />
-        <activity
-            android:name=".VideoSettingsActivity"
-            android:label="@string/videoSettingsTitle" />
     </application>
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="true" />
+    <uses-feature
+        android:name="android.hardware.camera2"
+        android:required="false" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <uses-permission android:name="android.permission.GET_ACCOUNTS" />
 
 </manifest>

@@ -186,6 +186,12 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
         showToggleAudioMessage(noAudio);
     }
 
+    public void openUserManual(View view){
+        Intent userManualIntent = new Intent(this, UserManualActivity.class);
+        startActivity(userManualIntent);
+        overridePendingTransition(R.anim.slide_from_right,R.anim.slide_to_left);
+    }
+
     public void showToggleAudioMessage(boolean noAudio)
     {
         LinearLayout noAudioLayout = new LinearLayout(this);

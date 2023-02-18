@@ -286,7 +286,7 @@
     <string name="memoryContentDescription">SD Card Folder</string>
     <string name="bothContentDescription">Both Folder</string>
     <string name="mediaSourceContentDescription">Media Source</string>
-    <string name="closeBtnContentDescription">Clsose Button</string>
+    <string name="closeBtnContentDescription">Close Button</string>
     <string name="phoneLocation">PHONE</string>
     <string name="sdcardLocation">SD CARD</string>
     <string name="allLocation">ALL</string>
@@ -303,5 +303,20 @@
     <string name="mediaInfoDateFormat">dd MMMM yyyy HH:mm:ss</string>
     //Nokia 7.1 model
     <string name="nokia71">Nokia 7.1</string>
+    //Labels for User Manual
+    <string name="fcUserManualHeading">FlipCam User Manual</string>
+    <string name="fcUserManualScreen1Heading">FlipCam Video Screen</string>
+    //Use same for screen 2 and 3
+    <string name="fcUserManualScreen2Heading">FlipCam Video Recording Screen</string>
+    <string name="fcUserManualScreen4Heading">FlipCam Video Recording Pause Screen</string>
+    <string name="fcUserManualScreen5Heading">FlipCam Photo Screen</string>
+    <string name="fcUserManualScreen6Heading">FlipCam Settings Screen</string>
+    <string name="fcUserManualScreen7Heading">FlipCam Settings Screen</string>
+    //Use same for screen 8 and 9
+    <string name="fcUserManualScreen8Heading">FlipCam Media Screen</string>
+    //Use for screen 10
+    <string name="fcUserManualScreen10Heading">FlipCam Media Choose Screen</string>
+    <string name="fcUserManualScreen11Heading">FlipCam GridView Screen</string>
+    <string name="fcUserManual">USER MANUAL</string>
 </resources>
 
