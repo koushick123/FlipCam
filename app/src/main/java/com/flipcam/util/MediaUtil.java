@@ -21,7 +21,7 @@ public class MediaUtil {
     public static final String TAG = "MediaUtil";
     private static FileMedia[] mediaList;
     private static Context appContext;
-    static boolean VERBOSE = true;
+    static boolean VERBOSE = false;
     static boolean fromGallery = false;
     static double kBDelimiter = Constants.KILO_BYTE;
     static double mBDelimiter = Constants.MEGA_BYTE;

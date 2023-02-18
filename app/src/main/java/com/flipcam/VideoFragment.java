@@ -262,6 +262,7 @@ public class VideoFragment extends Fragment{
                 photoMode.setClickable(false);
                 thumbnail.setClickable(false);
                 settings.setClickable(false);
+                toggleAudio.setClickable(false);
 
                 cameraView.switchCamera();
                 getZoomBar().setProgress(0);
@@ -273,6 +274,7 @@ public class VideoFragment extends Fragment{
                 photoMode.setClickable(true);
                 thumbnail.setClickable(true);
                 settings.setClickable(true);
+                toggleAudio.setClickable(true);
             }
         });
         startRecord = (ImageButton)view.findViewById(R.id.cameraRecord);
@@ -284,6 +286,7 @@ public class VideoFragment extends Fragment{
                 switchCamera.setClickable(false);
                 photoMode.setClickable(false);
                 thumbnail.setClickable(false);
+                toggleAudio.setClickable(false);
                 if(lowestThresholdCheckForVideoInterface.checkIfPhoneMemoryIsBelowLowestThresholdForVideo()){
                     LayoutInflater layoutInflater = (LayoutInflater)getActivity().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
                     View thresholdExceededRoot = layoutInflater.inflate(R.layout.threshold_exceeded, null);
@@ -306,6 +309,7 @@ public class VideoFragment extends Fragment{
                             photoMode.setClickable(true);
                             thumbnail.setClickable(true);
                             switchCamera.setClickable(true);
+                            toggleAudio.setClickable(true);
                         }
                     });
                     thresholdDialog.setContentView(thresholdExceededRoot);
@@ -504,6 +508,7 @@ public class VideoFragment extends Fragment{
         photoMode.setClickable(true);
         thumbnail.setClickable(true);
         switchCamera.setClickable(true);
+        toggleAudio.setClickable(true);
         addStopAndPauseIcons();
         hideSettingsBarAndIcon();
         SharedPreferences.Editor editor = sharedPreferences.edit();
