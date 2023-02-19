@@ -18,6 +18,15 @@ public class ControlVisbilityPreference extends Application implements Serializa
     private float brightnessProgress = Constants.NORMAL_BRIGHTNESS_PROGRESS;
     private boolean fromGallery = false;
 
+    private boolean showUserManual = true;
+    public boolean isShowUserManual() {
+        return showUserManual;
+    }
+
+    public void setShowUserManual(boolean showUserManual) {
+        this.showUserManual = showUserManual;
+    }
+
     public boolean isFromGallery() {
         return fromGallery;
     }

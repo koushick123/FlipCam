@@ -71,6 +71,7 @@ public class SettingsActivity extends AppCompatActivity{
     boolean VERBOSE = false;
     LinearLayout photoResolutionParent;
     LinearLayout videoSettingParent;
+    LinearLayout userManualParent;
     EditText feedback_information;
     TextView phoneMempathmsg;
     String mediaPath;
@@ -100,6 +101,7 @@ public class SettingsActivity extends AppCompatActivity{
         phoneMempathmsg = findViewById(R.id.phoneMempathmsg);
         photoResolutionParent = (LinearLayout)findViewById(R.id.photoResolutionParent);
         videoSettingParent = (LinearLayout)findViewById(R.id.videoSettingParent);
+        userManualParent = findViewById(R.id.userManualParent);
         thresholdText.setText(getString(R.string.memoryThresholdLimit, getResources().getInteger(R.integer.minimumMemoryWarning) + "MB"));
         getSupportActionBar().setTitle(getString(R.string.settingTitle));
         defaultMediaPath = getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + getResources().getString(R.string.FC_ROOT)).getPath();
@@ -139,8 +141,14 @@ public class SettingsActivity extends AppCompatActivity{
         controlVisbilityPreference = (ControlVisbilityPreference)getApplicationContext();
         photoResolutionParent.setOnClickListener(photoResolutionParentListener);
         videoSettingParent.setOnClickListener(videoResolutionParentListener);
+        userManualParent.setOnClickListener(userManualParentListener);
     }
 
+    View.OnClickListener userManualParentListener = (view) -> {
+        Intent userManualIntent = new Intent(this, UserManualActivity.class);
+        startActivity(userManualIntent);
+        overridePendingTransition(R.anim.slide_from_right,R.anim.slide_to_left);
+    };
     View.OnClickListener photoResolutionParentListener = new View.OnClickListener(){
         @Override
         public void onClick(View view) {

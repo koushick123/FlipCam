@@ -256,7 +256,34 @@
         android:layout_height="@dimen/separatorHeight"
         android:background="@color/turqoise"
         android:orientation="horizontal">
+    </LinearLayout>
 
+        <LinearLayout
+            android:id="@+id/userManualParent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/ripple"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/userManualHeading"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="@dimen/headTextLeftMargin"
+                android:paddingBottom="@dimen/photoResTopBottomMargin"
+                android:paddingTop="@dimen/photoResTopBottomMargin"
+                android:text="@string/fcUserManual"
+                android:textColor="@color/turqoise"
+                android:textSize="@dimen/settingsMainText" />
+
+        </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/separator4"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/separatorHeight"
+        android:background="@color/turqoise"
+        android:orientation="horizontal">
     </LinearLayout>
 
     <LinearLayout
@@ -264,20 +291,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"/>
-
-        <LinearLayout
-            android:id="@+id/googleDrive"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:weightSum="1"/>
-
-        <LinearLayout
-            android:id="@+id/dropBox"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="horizontal"
-            android:weightSum="1"/>
 
         <LinearLayout
             android:id="@+id/feedbackParent"

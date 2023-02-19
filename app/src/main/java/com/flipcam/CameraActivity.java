@@ -186,12 +186,6 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
         showToggleAudioMessage(noAudio);
     }
 
-    public void openUserManual(View view){
-        Intent userManualIntent = new Intent(this, UserManualActivity.class);
-        startActivity(userManualIntent);
-        overridePendingTransition(R.anim.slide_from_right,R.anim.slide_to_left);
-    }
-
     public void showToggleAudioMessage(boolean noAudio)
     {
         LinearLayout noAudioLayout = new LinearLayout(this);
@@ -313,6 +307,11 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
         }
         FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
         fragmentTransaction.replace(R.id.cameraPreview, videoFragment).commit();
+        if(controlVisbilityPreference.isShowUserManual()){
+            controlVisbilityPreference.setShowUserManual(false);
+            Intent userManualIntent = new Intent(this, UserManualActivity.class);
+            startActivity(userManualIntent);
+        }
         if(VERBOSE)Log.d(TAG, "brightnessLevel SET to = "+controlVisbilityPreference.getBrightnessLevel());
         instantSettingsParent.setVisibility(View.VISIBLE);
         setPinchZoomScaleListener(videoFragment, null);
