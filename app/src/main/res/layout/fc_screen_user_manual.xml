@@ -17,12 +17,10 @@
         android:id="@+id/fcUserManualScreen1"
         android:gravity="center"
         android:layout_marginTop="40dp"
-        android:layout_marginBottom="20dp"
-        android:layout_marginEnd="20dp"
-        android:layout_marginStart="20dp"
+        android:layout_gravity="center"
         android:textColor="@color/colorPrimaryDark"
         android:textStyle="bold"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/fcUserManualFirstScreen"
         />
@@ -38,7 +36,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:layout_marginEnd="10dp"
+            android:layout_marginEnd="140dp"
             android:layout_gravity="center"
             android:gravity="center">
 
@@ -53,7 +51,6 @@
                 android:id="@+id/swipeLeftText"
                 android:layout_width="match_parent"
                 android:layout_height="60dp"
-                android:layout_marginTop="40dp"
                 android:layout_marginBottom="20dp"
                 android:gravity="center"
                 android:text="@string/fcUserManualLeftSwipeText"
@@ -80,7 +77,6 @@
                 android:id="@+id/swipeRightText"
                 android:layout_width="match_parent"
                 android:layout_height="60dp"
-                android:layout_marginTop="40dp"
                 android:layout_marginBottom="20dp"
                 android:gravity="center"
                 android:text="@string/fcUserManualRightSwipeText"
@@ -90,11 +86,15 @@
 
     </LinearLayout>
 
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:id="@+id/fcUserManualExitMsg2"
-        android:text="@string/fcUserManualFirstScreenMsg"
+        android:id="@+id/fcUserManualExitMsg1"
+        android:text="@string/fcUserManualFirstScreenMsg1"
         android:textColor="@color/colorPrimaryDark"
         android:textStyle="bold"
         android:layout_marginStart="20dp"
@@ -102,6 +102,27 @@
         android:textAlignment="center"
         android:layout_gravity="center"
         />
+
+    <ImageView
+        android:layout_gravity="center"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:src="@drawable/settings_new"
+        />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/fcUserManualExitMsg2"
+        android:text="@string/fcUserManualFirstScreenMsg2"
+        android:textColor="@color/colorPrimaryDark"
+        android:textStyle="bold"
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp"
+        android:textAlignment="center"
+        android:layout_gravity="center"
+        />
+    </LinearLayout>
 
     <TextView
         android:layout_width="wrap_content"
@@ -111,7 +132,7 @@
         android:textColor="@color/colorPrimaryDark"
         android:textStyle="bold"
         android:textAlignment="center"
-        android:layout_marginTop="40dp"
+        android:layout_marginTop="20dp"
         android:layout_gravity="center"
         />
 </LinearLayout>

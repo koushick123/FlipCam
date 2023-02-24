@@ -305,31 +305,33 @@
     <string name="nokia71">Nokia 7.1</string>
     //Labels for User Manual
     <string name="fcUserManualHeading">FlipCam User Manual</string>
-    <string name="fcUserManualScreen1Heading">FlipCam Video Screen</string>
+    <string name="fcUserManualScreen1Heading">Video Screen</string>
     //Use same for screen 2 and 3
-    <string name="fcUserManualScreen2Heading">FlipCam Video Recording Screen</string>
-    <string name="fcUserManualScreen4Heading">FlipCam Video Recording Pause Screen</string>
-    <string name="fcUserManualScreen5Heading">FlipCam Photo Screen</string>
-    <string name="fcUserManualScreen6Heading">FlipCam Settings Screen</string>
-    <string name="fcUserManualScreen7Heading">FlipCam Settings Screen</string>
+    <string name="fcUserManualScreen2Heading">Video Recording Screen</string>
+    <string name="fcUserManualScreen4Heading">Video Recording Pause Screen</string>
+    <string name="fcUserManualScreen5Heading">Photo Screen</string>
+    <string name="fcUserManualScreen6Heading">Settings Screen</string>
+    <string name="fcUserManualScreen7Heading">Settings Screen</string>
     //Use same for screen 8 and 9
-    <string name="fcUserManualScreen8Heading">FlipCam Media Screen</string>
+    <string name="fcUserManualScreen8Heading">Media Screen</string>
     //Use for screen 10
-    <string name="fcUserManualScreen10Heading">FlipCam Media Choose Screen</string>
-    <string name="fcUserManualScreen11Heading">FlipCam GridView Screen</string>
+    <string name="fcUserManualScreen10Heading">Media Location Screen</string>
+    <string name="fcUserManualScreen11Heading">GridView Screen</string>
     <string name="fcUserManualWelcome">Welcome to FlipCam</string>
     <string name="fcUserManual">User Manual</string>
     <string name="fcUserManualFirstScreen">WELCOME TO FLIPCAM!\n\n
-        THIS IS A VISUAL MANUAL TO HELP YOU\n NAVIGATE AND USE THE APP.\n\n
+        THIS IS A USER MANUAL TO HELP YOU\n NAVIGATE AND USE THE APP.\n\n
         SWIPE LEFT FOR MORE DETAILS.
     </string>
     <string name="fcUserManualExitHeading">Enjoy FlipCam!!</string>
-    <string name="fcUserManualExit">Please click on back button if you would like to exit the Manual.</string>
-    <string name="fcUserManualExitMsg">Click on back button to exit the Wizard.</string>
+    <string name="fcUserManualExit">Please click on back button if you would like to exit the User Manual.</string>
+    <string name="fcUserManualExitMsg">Click on back button to exit the User Manual.</string>
     <string name="fcUserManualExitScreen">ENJOY THE APP. KEEP FLIPPING TO CREATE MORE EXCITING VIDEOS!!\n\n
-        YOU CAN OPEN THIS WIZARD BY CLICKING ON SETTINGS ICON IN THE PHOTO OR VIDEO RECORDING SCREEN AND CHOOSING USER MANUAL OPTION.
+        YOU CAN OPEN THIS USER MANUAL BY CLICKING ON SETTINGS ICON
     </string>
-    <string name="fcUserManualFirstScreenMsg">TO REVISIT THE USER MANUAL, CLICK ON SETTINGS ICON IN THE PHOTO OR VIDEO RECORDING SCREEN AND CHOOSE USER MANUAL OPTION.</string>
+    <string name="fcUserManualExitScreen2">IN THE PHOTO OR VIDEO RECORDING SCREEN AND CHOOSING USER MANUAL OPTION.</string>
+    <string name="fcUserManualFirstScreenMsg1">TO REVISIT THE USER MANUAL, CLICK ON SETTINGS ICON</string>
+    <string name="fcUserManualFirstScreenMsg2">IN THE PHOTO OR VIDEO RECORDING SCREEN AND CHOOSE USER MANUAL OPTION.</string>
     <string name="fcUserManualLeftSwipeText">Swipe Left to go to next screen.</string>
     <string name="fcUserManualRightSwipeText">Swipe Right to go to previous screen.</string>
 </resources>
