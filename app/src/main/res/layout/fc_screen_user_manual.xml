@@ -45,7 +45,7 @@
                 android:layout_width="100dp"
                 android:layout_height="100dp"
                 android:layout_gravity="center"
-                android:src="@drawable/finger_left_swipe_icon" />
+                android:src="@drawable/finger_right_swipe_icon" />
 
             <TextView
                 android:id="@+id/swipeLeftText"
@@ -53,7 +53,7 @@
                 android:layout_height="60dp"
                 android:layout_marginBottom="20dp"
                 android:gravity="center"
-                android:text="@string/fcUserManualLeftSwipeText"
+                android:text="@string/fcUserManualRightSwipeText"
                 android:textColor="@color/colorPrimaryDark"
                 android:textStyle="bold" />
         </LinearLayout>
@@ -71,7 +71,7 @@
                 android:layout_width="100dp"
                 android:layout_height="100dp"
                 android:layout_gravity="center"
-                android:src="@drawable/finger_right_swipe_icon" />
+                android:src="@drawable/finger_left_swipe_icon" />
 
             <TextView
                 android:id="@+id/swipeRightText"
@@ -79,7 +79,7 @@
                 android:layout_height="60dp"
                 android:layout_marginBottom="20dp"
                 android:gravity="center"
-                android:text="@string/fcUserManualRightSwipeText"
+                android:text="@string/fcUserManualLeftSwipeText"
                 android:textColor="@color/colorPrimaryDark"
                 android:textStyle="bold" />
         </LinearLayout>
