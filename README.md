@@ -4,17 +4,12 @@ An android app that records using front and back camera in the same video file.
 
 This app is available for use from Android version Lollipop to Pie.
 
-Latest version is 1.3 which provides below features and fixes:
+Latest version is 1.6 which provides below features and fixes:
 
-Includes a fix for issue where recorded video freezes on playback on some devices.
-Includes below new features:
-1. Users can switch between viewing media content from SD Card and Phone.
-2. Users can choose between external video player and internal (FlipCam) video player.
-3. A front facing camera timer for selfies.
-4. Pinch zoom ability for optical zoom.
-New icons for settings, share and delete.
-Additional bug fixes.
-Includes support up to Android Pie.
+Provides the capability to record video without audio
+Includes details on the location of media storage in settings
+Includes User manual
+Provides support for Android 13
  
  FlipCam is available on the Google Play Store.
  <br>
