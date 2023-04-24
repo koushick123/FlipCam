@@ -6,9 +6,9 @@ This app is available for use from Android version Lollipop to Pie.
 
 Latest version is 1.6 which provides below features and fixes:
 
-Provides the capability to record video without audio
-Includes details on the location of media storage in settings
-Includes User manual
+Provides the capability to record video without audio<br>
+Includes details on the location of media storage in settings<br>
+Includes User manual<br>
 Provides support for Android 13
  
  FlipCam is available on the Google Play Store.
