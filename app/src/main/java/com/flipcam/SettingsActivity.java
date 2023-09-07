@@ -1,8 +1,8 @@
 package com.flipcam;
 
-import android.accounts.AccountManager;
+import static android.os.Environment.getExternalStoragePublicDirectory;
+
 import android.app.Dialog;
-import android.appwidget.AppWidgetManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -28,8 +28,6 @@ import com.flipcam.adapter.FeedbackMailTask;
 import com.flipcam.constants.Constants;
 import com.flipcam.util.SDCardUtil;
 
-import static android.os.Environment.getExternalStoragePublicDirectory;
-
 public class SettingsActivity extends AppCompatActivity{
 
     public static final String TAG = "SettingsActivity";
@@ -41,32 +39,17 @@ public class SettingsActivity extends AppCompatActivity{
     SharedPreferences.Editor settingsEditor;
     RadioButton phoneMemBtn;
     RadioButton sdCardBtn;
-    Dialog sdCardDialog;
     LinearLayout sdcardlayout;
     LinearLayout phoneMemLayout;
     TextView sdCardPathMsg;
     LayoutInflater layoutInflater;
-    Dialog saveToCloud;
-    Dialog cloudUpload;
-    View accessGrantedDropboxRoot;
-    View shareMediaRoot;
-    AccountManager accountManager;
-    final int GET_ACCOUNTS_PERM = 100;
     boolean signInProgress = false;
-    Dialog permissionAccount;
     Dialog signInProgressDialog;
-    Dialog autoUploadEnabledWithFolder;
-    Dialog autoUploadEnabled;
-    Dialog autoUploadDisabled;
-    Dialog uploadFolderCheck;
-    Dialog accesGrantedDropbox;
-    Dialog shareMedia;
     View warningMsgRoot;
     Dialog warningMsg;
     Button okButton;
     SDCardEventReceiver sdCardEventReceiver;
     IntentFilter mediaFilters;
-    AppWidgetManager appWidgetManager;
     ControlVisbilityPreference controlVisbilityPreference;
     boolean VERBOSE = false;
     LinearLayout photoResolutionParent;
@@ -75,7 +58,6 @@ public class SettingsActivity extends AppCompatActivity{
     EditText feedback_information;
     TextView phoneMempathmsg;
     String mediaPath;
-    ImageView editPhoneMemPath;
     String defaultMediaPath;
 
     public EditText getFeedback_information() {
@@ -120,24 +102,6 @@ public class SettingsActivity extends AppCompatActivity{
             phoneMempathmsg.setText(mediaPath);
         }
         layoutInflater = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        accessGrantedDropboxRoot = layoutInflater.inflate(R.layout.access_granted_dropbox, null);
-        warningMsgRoot = layoutInflater.inflate(R.layout.warning_message,null);
-        shareMediaRoot = layoutInflater.inflate(R.layout.share_media, null);
-        warningMsg = new Dialog(this);
-        sdCardDialog = new Dialog(this);
-        saveToCloud = new Dialog(this);
-        cloudUpload = new Dialog(this);
-        permissionAccount = new Dialog(this);
-        signInProgressDialog = new Dialog(this);
-        autoUploadEnabledWithFolder = new Dialog(this);
-        autoUploadEnabled = new Dialog(this);
-        autoUploadDisabled = new Dialog(this);
-        uploadFolderCheck = new Dialog(this);
-        accesGrantedDropbox = new Dialog(this);
-        shareMedia = new Dialog(this);
-        feedback_information = (EditText) findViewById(R.id.feedback_information);
-        accountManager = (AccountManager)getSystemService(Context.ACCOUNT_SERVICE);
-        appWidgetManager = (AppWidgetManager)getSystemService(Context.APPWIDGET_SERVICE);
         controlVisbilityPreference = (ControlVisbilityPreference)getApplicationContext();
         photoResolutionParent.setOnClickListener(photoResolutionParentListener);
         videoSettingParent.setOnClickListener(videoResolutionParentListener);

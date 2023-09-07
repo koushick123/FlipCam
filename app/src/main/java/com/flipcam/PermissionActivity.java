@@ -6,8 +6,12 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.preference.PreferenceManager;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.WindowManager;
 
@@ -23,6 +27,8 @@ public class PermissionActivity extends AppCompatActivity {
 
     final String TAG = "PermissionActivity";
     private final int ALL_PERMISSIONS = 0;
+    //This permission code is needed for Android versions greater than R
+    private final int ACCESS_STORAGE_PERMISSION_CODE = 500;
     static final String AUDIO_PERMISSION = "android.permission.RECORD_AUDIO";
     static final String CAMERA_PERMISSION = "android.permission.CAMERA";
     static final String STORAGE_PERMISSIONS = "android.permission.WRITE_EXTERNAL_STORAGE";
@@ -38,21 +44,57 @@ public class PermissionActivity extends AppCompatActivity {
     private static SharedPreferences sharedPreferences;
     boolean VERBOSE = false;
 
+    //This callback method is invoked only in case of Android T and above.
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data)
+    {
+        Log.d(TAG, "Request code is = "+requestCode);
+        if(requestCode == ACCESS_STORAGE_PERMISSION_CODE) {
+            if(Environment.isExternalStorageManager()){
+                storagePermission = true;
+                openCameraFragment();
+            }
+            else{
+                quitFlipCam();
+            }
+        }
+        else{
+            super.onActivityResult(requestCode, resultCode, data);
+        }
+    }
+
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         if (requestCode == ALL_PERMISSIONS) {
             if (permissions != null && permissions.length > 0) {
                 if(VERBOSE)Log.d(TAG, "For camera == "+permissions[0]);
-                if (permissions[0].equalsIgnoreCase(CAMERA_PERMISSION) && permissions[1].equalsIgnoreCase(AUDIO_PERMISSION) &&
-                        permissions[2].equalsIgnoreCase(STORAGE_PERMISSIONS)) {
-                    if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED && grantResults[1] == PackageManager.PERMISSION_GRANTED
-                            && grantResults[2] == PackageManager.PERMISSION_GRANTED) {
+                if(isAndroidVersionTAndAbove()){
+                    if (permissions[0].equalsIgnoreCase(CAMERA_PERMISSION) && permissions[1].equalsIgnoreCase(AUDIO_PERMISSION)) {
+                        //Assign camera and audio permission here since without those permissions ,
+                        //user will not be asked for storage permissions.
                         cameraPermission = true;
                         audioPermission = true;
-                        storagePermission = true;
-                        openCameraFragment();
-                    } else {
+                        //Use ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION Intent for Android versions greater than R
+                        Uri uri = Uri.parse("package:" + BuildConfig.APPLICATION_ID);
+                        Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION, uri);
+                        startActivityForResult(intent, ACCESS_STORAGE_PERMISSION_CODE);
+                    }
+                    else{
                         quitFlipCam();
+                    }
+                }
+                else {
+                    if (permissions[0].equalsIgnoreCase(CAMERA_PERMISSION) && permissions[1].equalsIgnoreCase(AUDIO_PERMISSION) &&
+                            permissions[2].equalsIgnoreCase(STORAGE_PERMISSIONS)) {
+                        if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED && grantResults[1] == PackageManager.PERMISSION_GRANTED
+                                && grantResults[2] == PackageManager.PERMISSION_GRANTED) {
+                            cameraPermission = true;
+                            audioPermission = true;
+                            storagePermission = true;
+                            openCameraFragment();
+                        } else {
+                            quitFlipCam();
+                        }
                     }
                 }
             } else {
@@ -127,7 +169,14 @@ public class PermissionActivity extends AppCompatActivity {
             if(VERBOSE)Log.d(TAG,"Check permissions and Start camera = "+showPermission);
             int camerapermission = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.CAMERA);
             int audiopermission = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.RECORD_AUDIO);
-            int storagepermission = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE);
+            int storagepermission = -1;
+            if(isAndroidVersionTAndAbove()){
+                //For Android T and above, use Environment.isExternalStorageManager()
+                storagepermission = Environment.isExternalStorageManager() ? 0 : -1;
+            }
+            else{
+                storagepermission = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE);
+            }
             if (camerapermission == PackageManager.PERMISSION_GRANTED && audiopermission == PackageManager.PERMISSION_GRANTED &&
                     storagepermission == PackageManager.PERMISSION_GRANTED) {
                 if(VERBOSE)Log.d(TAG, "ALL permissions obtained.");
@@ -164,12 +213,24 @@ public class PermissionActivity extends AppCompatActivity {
                 mediaLocEditor.putString(Constants.MEDIA_LOCATION_VIEW_SELECT_PREV, phoneLoc);
                 mediaLocEditor.commit();
                 if(VERBOSE)Log.d(TAG, "REMOVED SHAREDPREFS");
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.CAMERA,Manifest.permission.RECORD_AUDIO,Manifest.permission.WRITE_EXTERNAL_STORAGE},
-                        ALL_PERMISSIONS);
+                if(isAndroidVersionTAndAbove()){
+                    ActivityCompat.requestPermissions(this,
+                            new String[]{Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO},
+                            ALL_PERMISSIONS);
+                }
+                else {
+                    ActivityCompat.requestPermissions(this,
+                            new String[]{Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO, Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                            ALL_PERMISSIONS);
+                }
                 showPermission = true;
             }
         }
+    }
+
+    private boolean isAndroidVersionTAndAbove() {
+        Log.d(TAG, "Version in use = "+Build.VERSION.SDK_INT);
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU;
     }
 
     void openCameraFragment()
