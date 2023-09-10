@@ -44,18 +44,19 @@ public class PermissionActivity extends AppCompatActivity {
     private static SharedPreferences sharedPreferences;
     boolean VERBOSE = false;
 
-    //This callback method is invoked only in case of Android T and above.
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data)
     {
         Log.d(TAG, "Request code is = "+requestCode);
+        //This callback method is invoked only in case of Android T and above.
         if(requestCode == ACCESS_STORAGE_PERMISSION_CODE) {
-            if(Environment.isExternalStorageManager()){
-                storagePermission = true;
-                openCameraFragment();
-            }
-            else{
-                quitFlipCam();
+            if (Constants.isAndroidVersionTAndAbove()) {
+                if (Environment.isExternalStorageManager()) {
+                    storagePermission = true;
+                    openCameraFragment();
+                } else {
+                    quitFlipCam();
+                }
             }
         }
         else{
@@ -68,7 +69,7 @@ public class PermissionActivity extends AppCompatActivity {
         if (requestCode == ALL_PERMISSIONS) {
             if (permissions != null && permissions.length > 0) {
                 if(VERBOSE)Log.d(TAG, "For camera == "+permissions[0]);
-                if(isAndroidVersionTAndAbove()){
+                if(Constants.isAndroidVersionTAndAbove()){
                     if (permissions[0].equalsIgnoreCase(CAMERA_PERMISSION) && permissions[1].equalsIgnoreCase(AUDIO_PERMISSION)) {
                         //Assign camera and audio permission here since without those permissions ,
                         //user will not be asked for storage permissions.
@@ -166,11 +167,11 @@ public class PermissionActivity extends AppCompatActivity {
             finish();
         }
         else if(!showMessage){
-            if(VERBOSE)Log.d(TAG,"Check permissions and Start camera = "+showPermission);
+            Log.d(TAG,"Check permissions and Start camera = "+showPermission);
             int camerapermission = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.CAMERA);
             int audiopermission = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.RECORD_AUDIO);
             int storagepermission = -1;
-            if(isAndroidVersionTAndAbove()){
+            if(Constants.isAndroidVersionTAndAbove()){
                 //For Android T and above, use Environment.isExternalStorageManager()
                 storagepermission = Environment.isExternalStorageManager() ? 0 : -1;
             }
@@ -213,7 +214,7 @@ public class PermissionActivity extends AppCompatActivity {
                 mediaLocEditor.putString(Constants.MEDIA_LOCATION_VIEW_SELECT_PREV, phoneLoc);
                 mediaLocEditor.commit();
                 if(VERBOSE)Log.d(TAG, "REMOVED SHAREDPREFS");
-                if(isAndroidVersionTAndAbove()){
+                if(Constants.isAndroidVersionTAndAbove()){
                     ActivityCompat.requestPermissions(this,
                             new String[]{Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO},
                             ALL_PERMISSIONS);
@@ -226,11 +227,6 @@ public class PermissionActivity extends AppCompatActivity {
                 showPermission = true;
             }
         }
-    }
-
-    private boolean isAndroidVersionTAndAbove() {
-        Log.d(TAG, "Version in use = "+Build.VERSION.SDK_INT);
-        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU;
     }
 
     void openCameraFragment()

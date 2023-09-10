@@ -4,10 +4,12 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.ColorStateList;
 import android.graphics.Point;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.StatFs;
+import android.preference.Preference;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.Gravity;
@@ -15,6 +17,7 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -76,15 +79,15 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
         controlVisbilityPreference = (ControlVisbilityPreference)getApplicationContext();
         getSupportActionBar().hide();
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        layoutInflater = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        warningMsgRoot = layoutInflater.inflate(R.layout.warning_message,null);
+        warningMsg = new Dialog(this);
         if(savedInstanceState == null) {
             //Start with video fragment
             showVideoFragment();
             controlVisbilityPreference.setBrightnessLevel(Constants.NORMAL_BRIGHTNESS);
             controlVisbilityPreference.setBrightnessProgress(0.0f);
         }
-        layoutInflater = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        warningMsgRoot = layoutInflater.inflate(R.layout.warning_message,null);
-        warningMsg = new Dialog(this);
         settingsRootView = layoutInflater.inflate(R.layout.brightness_settings, null);
         settingsDialog = new Dialog(this);
         sharedPreferences = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
@@ -301,16 +304,95 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
     public void showVideoFragment()
     {
         if(videoFragment == null) {
-            if(VERBOSE)Log.d(TAG,"creating videofragment");
+            Log.d(TAG,"creating videofragment");
             videoFragment = VideoFragment.newInstance();
             videoFragment.setApplicationContext(getApplicationContext());
         }
         FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
         fragmentTransaction.replace(R.id.cameraPreview, videoFragment).commit();
-        if(controlVisbilityPreference.isShowUserManual()){
-            controlVisbilityPreference.setShowUserManual(false);
-            Intent userManualIntent = new Intent(this, UserManualActivity.class);
-            startActivity(userManualIntent);
+        if(Constants.isAndroidVersionTAndAbove()) {
+            if(controlVisbilityPreference.isShowUserManual()) {
+                //Show User Manual Dialog
+                TextView warningTitle = (TextView) warningMsgRoot.findViewById(R.id.warningTitle);
+                warningTitle.setText(getResources().getString(R.string.welcomeTitle));
+                TextView warningText = (TextView) warningMsgRoot.findViewById(R.id.warningText);
+                warningText.setText(getResources().getString(R.string.welcomeToFlipCam));
+                warningText.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+                //Remove warning sign
+                ImageView warningSign = (ImageView) warningMsgRoot.findViewById(R.id.warningSign);
+                warningSign.setVisibility(View.GONE);
+                LinearLayout buttonLayout = (LinearLayout) warningMsgRoot.findViewById(R.id.buttonLayout);
+                buttonLayout.removeAllViews();
+                //Add User Manual button
+                Button userManualBtn = new Button(this);
+                userManualBtn.setText(R.string.openUMButton);
+                userManualBtn.setOnClickListener((view) -> {
+                    //Go to User Manual activity
+                    Intent userManualIntent = new Intent(this, UserManualActivity.class);
+                    startActivity(userManualIntent);
+                });
+                LinearLayout.LayoutParams buttonParams = new LinearLayout.LayoutParams
+                        (ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                buttonParams.setMargins(50, 0, 10, 0);
+                buttonParams.weight = 0.5f;
+                userManualBtn.setBackgroundColor(getResources().getColor(R.color.thumbnailPlaceholder));
+                userManualBtn.setTextColor(getResources().getColor(R.color.turqoise));
+                userManualBtn.setPadding(5,0,5,0);
+                userManualBtn.setLayoutParams(buttonParams);
+                buttonLayout.addView(userManualBtn);
+
+                //Add Close button
+                Button closeBtn = new Button(this);
+                closeBtn.setText(R.string.closeButton);
+                closeBtn.setOnClickListener((view -> {
+                    warningMsg.dismiss();
+                }));
+                buttonParams = new LinearLayout.LayoutParams
+                        (ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                buttonParams.setMargins(10, 0, 50, 0);
+                buttonParams.weight = 0.5f;
+                closeBtn.setLayoutParams(buttonParams);
+                closeBtn.setBackgroundColor(getResources().getColor(R.color.thumbnailPlaceholder));
+                closeBtn.setTextColor(getResources().getColor(R.color.turqoise));
+                closeBtn.setPadding(5,0,5,0);
+                buttonLayout.addView(closeBtn);
+
+                //Add text for Do not show again
+                CheckBox doNotShowAgain = new CheckBox(this);
+                doNotShowAgain.setText(R.string.donotshowUserManualMessage);
+                doNotShowAgain.setButtonTintList(ColorStateList.valueOf(getResources().getColor(R.color.turqoise)));
+                doNotShowAgain.setTextColor(getResources().getColor(R.color.turqoise));
+                doNotShowAgain.setOnClickListener((view) -> {
+                    if (controlVisbilityPreference.isShowUserManual()) {
+                        controlVisbilityPreference.setShowUserManual(false);
+                    } else {
+                        controlVisbilityPreference.setShowUserManual(true);
+                    }
+                });
+                //Add new Linear Layout for textview
+                LinearLayout checkboxLayout = new LinearLayout(this);
+                checkboxLayout.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
+                LinearLayout.LayoutParams checkboxParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT);
+                checkboxParams.setMargins(20, 10, 20, 25);
+                doNotShowAgain.setLayoutParams(checkboxParams);
+                checkboxLayout.addView(doNotShowAgain);
+
+                //Get reference to Parent Layout
+                LinearLayout warningParent = (LinearLayout) warningMsgRoot.findViewById(R.id.warningParent);
+                warningParent.addView(checkboxLayout);
+
+                warningMsg.setContentView(warningMsgRoot);
+                warningMsg.setCancelable(false);
+                warningMsg.show();
+            }
+        }
+        else {
+            if(controlVisbilityPreference.isShowUserManual()){
+                controlVisbilityPreference.setShowUserManual(false);
+                Intent userManualIntent = new Intent(this, UserManualActivity.class);
+                startActivity(userManualIntent);
+            }
         }
         if(VERBOSE)Log.d(TAG, "brightnessLevel SET to = "+controlVisbilityPreference.getBrightnessLevel());
         instantSettingsParent.setVisibility(View.VISIBLE);
