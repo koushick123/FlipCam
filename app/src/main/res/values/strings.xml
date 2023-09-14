@@ -9,9 +9,10 @@
         and not something that FlipCam has any control over.\n\n
         Please Note that FlipCam will store media in the DCIM folder only.</string>
     <string name="welcomeToFlipCam">Welcome to FlipCam!\n\n
-        To see the user manual, click below.</string>
+        The user manual can be found in\n Settings -> User Manual\n\n
+        To see the user manual now,\n click below.</string>
     <string name="welcomeTitle">FlipCam - User Manual</string>
-    <string name="donotshowUserManualMessage">Do not show the message again.</string>
+    <string name="donotshowUserManualMessage">Do not show again.</string>
     <string name="openUMButton">USER MANUAL</string>
     <string name="exit">EXIT</string>
     <string name="FC_ROOT">/Camera/</string>

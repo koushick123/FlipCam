@@ -9,7 +9,6 @@ import android.graphics.Point;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.StatFs;
-import android.preference.Preference;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.Gravity;
@@ -61,6 +60,7 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
     boolean fromGallery = false;
     PinchZoomGestureListener pinchZoomGestureListener;
     ScaleGestureDetector scaleGestureDetector;
+    boolean fromPermissionActivity = false;
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
@@ -311,80 +311,87 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
         FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
         fragmentTransaction.replace(R.id.cameraPreview, videoFragment).commit();
         if(Constants.isAndroidVersionTAndAbove()) {
-            if(controlVisbilityPreference.isShowUserManual()) {
-                //Show User Manual Dialog
-                TextView warningTitle = (TextView) warningMsgRoot.findViewById(R.id.warningTitle);
-                warningTitle.setText(getResources().getString(R.string.welcomeTitle));
-                TextView warningText = (TextView) warningMsgRoot.findViewById(R.id.warningText);
-                warningText.setText(getResources().getString(R.string.welcomeToFlipCam));
-                warningText.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
-                //Remove warning sign
-                ImageView warningSign = (ImageView) warningMsgRoot.findViewById(R.id.warningSign);
-                warningSign.setVisibility(View.GONE);
-                LinearLayout buttonLayout = (LinearLayout) warningMsgRoot.findViewById(R.id.buttonLayout);
-                buttonLayout.removeAllViews();
-                //Add User Manual button
-                Button userManualBtn = new Button(this);
-                userManualBtn.setText(R.string.openUMButton);
-                userManualBtn.setOnClickListener((view) -> {
-                    //Go to User Manual activity
-                    Intent userManualIntent = new Intent(this, UserManualActivity.class);
-                    startActivity(userManualIntent);
-                });
-                LinearLayout.LayoutParams buttonParams = new LinearLayout.LayoutParams
-                        (ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-                buttonParams.setMargins(50, 0, 10, 0);
-                buttonParams.weight = 0.5f;
-                userManualBtn.setBackgroundColor(getResources().getColor(R.color.thumbnailPlaceholder));
-                userManualBtn.setTextColor(getResources().getColor(R.color.turqoise));
-                userManualBtn.setPadding(5,0,5,0);
-                userManualBtn.setLayoutParams(buttonParams);
-                buttonLayout.addView(userManualBtn);
+            //This is to check if the call came as soon as the App was opened.
+            //If the screen was opened from any other screen, no dialog should be shown.
+            fromPermissionActivity = getIntent().getBooleanExtra("fromPermission", false);
+            if(fromPermissionActivity) {
+                if (controlVisbilityPreference.isShowUserManual()) {
+                    //Show User Manual Dialog
+                    TextView warningTitle = (TextView) warningMsgRoot.findViewById(R.id.warningTitle);
+                    warningTitle.setText(getResources().getString(R.string.welcomeTitle));
+                    TextView warningText = (TextView) warningMsgRoot.findViewById(R.id.warningText);
+                    warningText.setText(getResources().getString(R.string.welcomeToFlipCam));
+                    warningText.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+                    //Remove warning sign
+                    ImageView warningSign = (ImageView) warningMsgRoot.findViewById(R.id.warningSign);
+                    warningSign.setVisibility(View.GONE);
+                    LinearLayout buttonLayout = (LinearLayout) warningMsgRoot.findViewById(R.id.buttonLayout);
+                    buttonLayout.removeAllViews();
+                    //Add User Manual button
+                    Button userManualBtn = new Button(this);
+                    userManualBtn.setText(R.string.openUMButton);
+                    userManualBtn.setOnClickListener((view) -> {
+                        warningMsg.dismiss();
+                        //Go to User Manual activity
+                        Intent userManualIntent = new Intent(this, UserManualActivity.class);
+                        startActivity(userManualIntent);
+                    });
+                    LinearLayout.LayoutParams buttonParams = new LinearLayout.LayoutParams
+                            (ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                    buttonParams.setMargins(50, 0, 10, 0);
+                    buttonParams.weight = 0.5f;
+                    userManualBtn.setBackgroundColor(getResources().getColor(R.color.thumbnailPlaceholder));
+                    userManualBtn.setTextColor(getResources().getColor(R.color.turqoise));
+                    userManualBtn.setPadding(5, 0, 5, 0);
+                    userManualBtn.setLayoutParams(buttonParams);
+                    buttonLayout.addView(userManualBtn);
 
-                //Add Close button
-                Button closeBtn = new Button(this);
-                closeBtn.setText(R.string.closeButton);
-                closeBtn.setOnClickListener((view -> {
-                    warningMsg.dismiss();
-                }));
-                buttonParams = new LinearLayout.LayoutParams
-                        (ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-                buttonParams.setMargins(10, 0, 50, 0);
-                buttonParams.weight = 0.5f;
-                closeBtn.setLayoutParams(buttonParams);
-                closeBtn.setBackgroundColor(getResources().getColor(R.color.thumbnailPlaceholder));
-                closeBtn.setTextColor(getResources().getColor(R.color.turqoise));
-                closeBtn.setPadding(5,0,5,0);
-                buttonLayout.addView(closeBtn);
+                    //Add Close button
+                    Button closeBtn = new Button(this);
+                    closeBtn.setText(R.string.closeButton);
+                    closeBtn.setOnClickListener((view -> {
+                        warningMsg.dismiss();
+                    }));
+                    buttonParams = new LinearLayout.LayoutParams
+                            (ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                    buttonParams.setMargins(10, 0, 50, 0);
+                    buttonParams.weight = 0.5f;
+                    closeBtn.setLayoutParams(buttonParams);
+                    closeBtn.setBackgroundColor(getResources().getColor(R.color.thumbnailPlaceholder));
+                    closeBtn.setTextColor(getResources().getColor(R.color.turqoise));
+                    closeBtn.setPadding(5, 0, 5, 0);
+                    buttonLayout.addView(closeBtn);
 
-                //Add text for Do not show again
-                CheckBox doNotShowAgain = new CheckBox(this);
-                doNotShowAgain.setText(R.string.donotshowUserManualMessage);
-                doNotShowAgain.setButtonTintList(ColorStateList.valueOf(getResources().getColor(R.color.turqoise)));
-                doNotShowAgain.setTextColor(getResources().getColor(R.color.turqoise));
-                doNotShowAgain.setOnClickListener((view) -> {
-                    if (controlVisbilityPreference.isShowUserManual()) {
-                        controlVisbilityPreference.setShowUserManual(false);
-                    } else {
-                        controlVisbilityPreference.setShowUserManual(true);
-                    }
-                });
-                //Add new Linear Layout for textview
-                LinearLayout checkboxLayout = new LinearLayout(this);
-                checkboxLayout.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
-                LinearLayout.LayoutParams checkboxParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
-                        ViewGroup.LayoutParams.WRAP_CONTENT);
-                checkboxParams.setMargins(20, 10, 20, 25);
-                doNotShowAgain.setLayoutParams(checkboxParams);
-                checkboxLayout.addView(doNotShowAgain);
+                    //Add text for Do not show again
+                    CheckBox doNotShowAgain = new CheckBox(this);
+                    doNotShowAgain.setText(R.string.donotshowUserManualMessage);
+                    doNotShowAgain.setButtonTintList(ColorStateList.valueOf(getResources().getColor(R.color.turqoise)));
+                    doNotShowAgain.setTextColor(getResources().getColor(R.color.turqoise));
+                    doNotShowAgain.setOnClickListener((view) -> {
+                        if (controlVisbilityPreference.isShowUserManual()) {
+                            controlVisbilityPreference.setShowUserManual(false);
+                        } else {
+                            controlVisbilityPreference.setShowUserManual(true);
+                        }
+                    });
+                    //Add new Linear Layout for textview
+                    LinearLayout checkboxLayout = new LinearLayout(this);
+                    checkboxLayout.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
+                    LinearLayout.LayoutParams checkboxParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT);
+                    checkboxParams.setMargins(0, 20, 0, 25);
+                    checkboxLayout.setGravity(Gravity.CENTER);
+                    doNotShowAgain.setLayoutParams(checkboxParams);
+                    checkboxLayout.addView(doNotShowAgain);
 
-                //Get reference to Parent Layout
-                LinearLayout warningParent = (LinearLayout) warningMsgRoot.findViewById(R.id.warningParent);
-                warningParent.addView(checkboxLayout);
+                    //Get reference to Parent Layout
+                    LinearLayout warningParent = (LinearLayout) warningMsgRoot.findViewById(R.id.warningParent);
+                    warningParent.addView(checkboxLayout);
 
-                warningMsg.setContentView(warningMsgRoot);
-                warningMsg.setCancelable(false);
-                warningMsg.show();
+                    warningMsg.setContentView(warningMsgRoot);
+                    warningMsg.setCancelable(false);
+                    warningMsg.show();
+                }
             }
         }
         else {
