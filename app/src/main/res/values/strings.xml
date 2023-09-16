@@ -2,18 +2,17 @@
     <string name="app_name">FlipCam</string>
     //For Permission
     <string name="title">No Permission</string>
-    <string name="message">Unavailability of permissions will render FlipCam not to function correctly.\n\n
-        Please relaunch the application and grant necessary permissions to FlipCam.</string>
-    <string name="storagePermission">You will now be asked for permission for FlipCam to have access to your storage.\n\n
-        For Android versions Tiramisu and above, you will be asked to provide access to all files. This is a setting by Android
-        and not something that FlipCam has any control over.\n\n
-        Please Note that FlipCam will store media in the DCIM folder only.</string>
+    <string name="message">Unavailability of permissions will render FlipCam unable to function correctly.\n\nPlease relaunch the application and grant necessary permissions to FlipCam.</string>
+    <string name="storagePermissionTitle">Storage Permission</string>
+    <string name="storagePermission">You will now be asked for permission for FlipCam to have access to your storage.\n\nFor Android versions Tiramisu and above, you will be asked to provide access to all files. This is a setting by Android
+        and not something that FlipCam has any control over.\n\nPlease note that FlipCam will store and access media in the DCIM folder only.</string>
     <string name="welcomeToFlipCam">Welcome to FlipCam!\n\n
         The user manual can be found in\n Settings -> User Manual\n\n
         To see the user manual now,\n click below.</string>
     <string name="welcomeTitle">FlipCam - User Manual</string>
     <string name="donotshowUserManualMessage">Do not show again.</string>
     <string name="openUMButton">USER MANUAL</string>
+    <string name="continueToStoragePermission">CONTINUE</string>
     <string name="exit">EXIT</string>
     <string name="FC_ROOT">/Camera/</string>
     <string name="PATH_SLASH">/</string>

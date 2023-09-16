@@ -1,6 +1,7 @@
 package com.flipcam;
 
 import android.Manifest;
+import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -12,7 +13,13 @@ import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
@@ -42,6 +49,9 @@ public class PermissionActivity extends AppCompatActivity {
     AlertDialog.Builder alertDialog;
     private static SharedPreferences sharedPreferences;
     boolean VERBOSE = false;
+    LayoutInflater layoutInflater;
+    View warningMsgRoot;
+    Dialog warningMsg;
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data)
@@ -77,7 +87,60 @@ public class PermissionActivity extends AppCompatActivity {
                         //Use ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION Intent for Android versions greater than R
                         Uri uri = Uri.parse("package:" + BuildConfig.APPLICATION_ID);
                         Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION, uri);
-                        startActivityForResult(intent, ACCESS_STORAGE_PERMISSION_CODE);
+                        //Show message to user explaining FlipCam does not need access to all files.
+                        layoutInflater = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+                        warningMsgRoot = layoutInflater.inflate(R.layout.warning_message,null);
+                        warningMsg = new Dialog(this);
+                        TextView warningTitle = (TextView) warningMsgRoot.findViewById(R.id.warningTitle);
+                        warningTitle.setText(getResources().getString(R.string.storagePermissionTitle));
+                        TextView warningText = (TextView) warningMsgRoot.findViewById(R.id.warningText);
+                        warningText.setText(getResources().getString(R.string.storagePermission));
+                        warningText.setTextAlignment(View.TEXT_ALIGNMENT_TEXT_START);
+
+                        LinearLayout buttonLayout = (LinearLayout) warningMsgRoot.findViewById(R.id.buttonLayout);
+                        buttonLayout.removeAllViews();
+                        //Add Continue button
+                        Button continueBtn = new Button(this);
+                        continueBtn.setText(R.string.continueToStoragePermission);
+                        continueBtn.setOnClickListener((view) -> {
+                            warningMsg.dismiss();
+                            //Continue to ask for Permission
+                            startActivityForResult(intent, ACCESS_STORAGE_PERMISSION_CODE);
+                        });
+                        LinearLayout.LayoutParams buttonParams = new LinearLayout.LayoutParams
+                                (ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                        buttonParams.setMargins(50, 0, 15, 20);
+                        buttonParams.weight = 0.5f;
+                        continueBtn.setBackgroundColor(getResources().getColor(R.color.thumbnailPlaceholder));
+                        continueBtn.setTextColor(getResources().getColor(R.color.turqoise));
+                        continueBtn.setPadding(5, 0, 5, 0);
+                        continueBtn.setBackgroundColor(getResources().getColor(R.color.turqoise));
+                        continueBtn.setTextColor(getResources().getColor(R.color.permissionBackground));
+                        continueBtn.setLayoutParams(buttonParams);
+                        buttonLayout.addView(continueBtn);
+
+                        //Add Close button
+                        Button closeBtn = new Button(this);
+                        closeBtn.setText(R.string.closeButton);
+                        closeBtn.setOnClickListener((view -> {
+                            warningMsg.dismiss();
+                            //Show quit FlipCam message since storage permission is not given.
+                            quitFlipCam();
+                        }));
+                        buttonParams = new LinearLayout.LayoutParams
+                                (ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                        buttonParams.setMargins(15, 0, 50, 20);
+                        buttonParams.weight = 0.5f;
+                        closeBtn.setLayoutParams(buttonParams);
+                        closeBtn.setBackgroundColor(getResources().getColor(R.color.turqoise));
+                        closeBtn.setTextColor(getResources().getColor(R.color.permissionBackground));
+                        closeBtn.setPadding(5, 0, 5, 0);
+                        buttonLayout.addView(closeBtn);
+
+                        warningMsgRoot.setBackgroundColor(getResources().getColor(R.color.uploadColor));
+                        warningMsg.setContentView(warningMsgRoot);
+                        warningMsg.setCancelable(false);
+                        warningMsg.show();
                     }
                     else{
                         quitFlipCam();
