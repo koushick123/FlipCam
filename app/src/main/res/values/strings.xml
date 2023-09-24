@@ -4,6 +4,8 @@
     <string name="title">No Permission</string>
     <string name="message">Unavailability of permissions will render FlipCam not to function correctly.\n\n
         Please reopen the application or go to Settings, if you wish to grant permission.</string>
+    <string name="incompatibleMessageTitle">Issue with Android 13</string>
+    <string name="incompatibleMessage">FlipCam cannot function on Android version 13 due to a known issue in Android.\n\nWe apologize for the inconvenience.\n\nWe are aiming to fix the issue in future version of Android 14 soon.</string>
     <string name="exit">EXIT</string>
     <string name="FC_ROOT">/Camera/</string>
     <string name="PATH_SLASH">/</string>

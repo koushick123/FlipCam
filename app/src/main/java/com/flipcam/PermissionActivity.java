@@ -118,6 +118,9 @@ public class PermissionActivity extends AppCompatActivity {
     protected void onResume() {
         if(VERBOSE)Log.d(TAG,"onResume");
         super.onResume();
+        if(Constants.isAndroidVersionT()){
+            showIncomptaibleAndQuitFlipCam();
+        }
         SharedPreferences sharedPreferences = getSharedPreferences();
         if(sharedPreferences.getBoolean("startCamera",false)){
             if(VERBOSE)Log.d(TAG,"Quit the app");
@@ -218,6 +221,18 @@ public class PermissionActivity extends AppCompatActivity {
         super.onSaveInstanceState(outState);
     }
 
+    //Due to Android known issue with respect to activity being created twice, we need to show a message this will
+    //not work
+    void showIncomptaibleAndQuitFlipCam(){
+        exitListener = (dialogInterface, which) -> android.os.Process.killProcess(android.os.Process.myPid());
+        alertDialog = new AlertDialog.Builder(this);
+        alertDialog.setTitle(getString(R.string.incompatibleMessageTitle));
+        alertDialog.setMessage(getString(R.string.incompatibleMessage));
+        alertDialog.setNeutralButton(R.string.exit, exitListener);
+        alertDialog.setCancelable(false);
+        alertDialog.show();
+        showMessage = true;
+    }
     void quitFlipCam()
     {
         exitListener = new DialogInterface.OnClickListener(){
