@@ -93,6 +93,6 @@ public class Constants
     public static final String MEDIA_FILE_PATH = "mediaFilePath";
 
     public static final boolean isAndroidVersionT(){
-        return Build.VERSION.SDK_INT == Build.VERSION_CODES.TIRAMISU;
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU;
     }
 }

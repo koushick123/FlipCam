@@ -222,7 +222,7 @@ public class PermissionActivity extends AppCompatActivity {
     }
 
     //Due to Android known issue with respect to activity being created twice, we need to show a message this will
-    //not work
+    //not work. Need to check if this issue will persis with Android 14 and above.
     void showIncomptaibleAndQuitFlipCam(){
         exitListener = (dialogInterface, which) -> android.os.Process.killProcess(android.os.Process.myPid());
         alertDialog = new AlertDialog.Builder(this);
