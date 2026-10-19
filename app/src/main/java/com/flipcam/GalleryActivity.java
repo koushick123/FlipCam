@@ -3,6 +3,7 @@ package com.flipcam;
 import android.app.Dialog;
 import android.app.LoaderManager;
 import android.appwidget.AppWidgetManager;
+import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -10,6 +11,7 @@ import android.content.IntentFilter;
 import android.content.Loader;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
+import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.util.Log;
@@ -23,8 +25,10 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.FileProvider;
 
 import com.flipcam.adapter.MediaAdapter;
 import com.flipcam.adapter.MediaLoader;
@@ -147,19 +151,20 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
                 }
             });
             mediaGrid.setOnItemClickListener((adapterView, view, position, l) -> {
-                mediaGrid.setClickable(false);
-                openMediaProgress.setVisibility(View.VISIBLE);
-                if(VERBOSE)Log.d(TAG, "onItemSelected = "+position);
-                Intent mediaAct = new Intent(getApplicationContext(), MediaActivity.class);
-                mediaAct.putExtra("fromGallery",true);
-                mediaAct.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_NEW_TASK);
-                controlVisbilityPreference.setFromGallery(true);
-                controlVisbilityPreference.setMediaSelectedPosition(position);
-                SharedPreferences.Editor mediaLocEdit = sharedPreferences.edit();
-                mediaLocEdit.putString(Constants.MEDIA_LOCATION_VIEW_SELECT, selectedFolder);
-                mediaLocEdit.commit();
-                if(VERBOSE) Log.d(TAG, "SAVE selectedFolder = "+selectedFolder);
-                startActivity(mediaAct);
+                openMediaProgress.setVisibility(View.GONE);
+                if (medias == null || position < 0 || position >= medias.length) return;
+                try {
+                    Uri videoUri = FileProvider.getUriForFile(
+                            this,
+                            BuildConfig.APPLICATION_ID + ".provider",
+                            new java.io.File(medias[position].getPath()));
+                    Intent viewIntent = new Intent(Intent.ACTION_VIEW);
+                    viewIntent.setDataAndType(videoUri, "video/mp4");
+                    viewIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    startActivity(Intent.createChooser(viewIntent, null));
+                } catch (ActivityNotFoundException noVideoApp) {
+                    Toast.makeText(this, "No installed app can open this video", Toast.LENGTH_SHORT).show();
+                }
             });
             if(VERBOSE)Log.d(TAG, "selectedMedia Pos = "+controlVisbilityPreference.getMediaSelectedPosition());
             if(controlVisbilityPreference.getMediaSelectedPosition() != -1 && controlVisbilityPreference.getMediaSelectedPosition() < medias.length){

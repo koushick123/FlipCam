@@ -6,6 +6,7 @@ import android.appwidget.AppWidgetManager;
 import android.content.BroadcastReceiver;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
@@ -46,6 +47,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
+import androidx.core.content.FileProvider;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.fragment.app.Fragment;
@@ -1048,6 +1050,7 @@ public class VideoFragment extends Fragment{
             Log.e(TAG, "Cannot show recording thumbnail: media path is empty");
             return;
         }
+        filePath = mediaPath;
         //Storing in public folder. This will ensure that the files are visible in other apps as well.
         //Use this for sharing files between apps
         final File video = new File(mediaPath);
@@ -1228,17 +1231,28 @@ public class VideoFragment extends Fragment{
     private void openMedia()
     {
         setCameraClose();
-        Intent mediaIntent = new Intent(getActivity().getApplicationContext(), MediaActivity.class);
-        SharedPreferences.Editor mediaLocEdit = sharedPreferences.edit();
-        String mediaLocValue = sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true) ?
-                getResources().getString(R.string.phoneLocation) : getResources().getString(R.string.sdcardLocation);
-        mediaLocEdit.putString(Constants.MEDIA_LOCATION_VIEW_SELECT, mediaLocValue);
-        mediaLocEdit.commit();
-        if(controlVisbilityPreference == null){
-            controlVisbilityPreference = (ControlVisbilityPreference)getApplicationContext();
+        Context context = getContext();
+        String mediaPath = filePath;
+        if (context == null) return;
+        if (mediaPath == null || mediaPath.isEmpty() || !new File(mediaPath).isFile()) {
+            Toast.makeText(context, "The recorded video is unavailable", Toast.LENGTH_SHORT).show();
+            return;
         }
-        controlVisbilityPreference.setFromGallery(false);
-        startActivity(mediaIntent);
+        try {
+            Uri videoUri = FileProvider.getUriForFile(
+                    context,
+                    BuildConfig.APPLICATION_ID + ".provider",
+                    new File(mediaPath));
+            Intent viewIntent = new Intent(Intent.ACTION_VIEW);
+            viewIntent.setDataAndType(videoUri, "video/mp4");
+            viewIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            startActivity(Intent.createChooser(viewIntent, null));
+        } catch (ActivityNotFoundException noVideoApp) {
+            Toast.makeText(context, "No installed app can open this video", Toast.LENGTH_SHORT).show();
+        } catch (IllegalArgumentException | SecurityException invalidVideoUri) {
+            Log.e(TAG, "Unable to share recorded video with an installed video app", invalidVideoUri);
+            Toast.makeText(context, "Unable to open this video", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void setCameraClose()
