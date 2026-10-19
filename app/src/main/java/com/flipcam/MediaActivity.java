@@ -68,8 +68,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
-import butterknife.BindView;
-import butterknife.ButterKnife;
 
 import static com.flipcam.PermissionActivity.FC_MEDIA_PREFERENCE;
 
@@ -130,7 +128,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     boolean VERBOSE = true;
     AudioManager audioManager;
     ImageView folderViewOn;
-    @BindView(R.id.infoMedia)
     ImageView infoMedia;
     FolderLayout phoneFolder;
     FolderLayout sdcardFolder;
@@ -149,7 +146,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         super.onCreate(savedInstanceState);
         if(VERBOSE)Log.d(TAG,"onCreate");
         setContentView(R.layout.activity_media);
-        ButterKnife.bind(this);
+        infoMedia = findViewById(R.id.infoMedia);
         DisplayMetrics displayMetrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
         WindowManager windowManager = (WindowManager)getApplicationContext().getSystemService(Context.WINDOW_SERVICE);

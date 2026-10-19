@@ -6,6 +6,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.util.Log;
@@ -25,7 +26,6 @@ public class PermissionActivity extends AppCompatActivity {
     private final int ALL_PERMISSIONS = 0;
     static final String AUDIO_PERMISSION = "android.permission.RECORD_AUDIO";
     static final String CAMERA_PERMISSION = "android.permission.CAMERA";
-    static final String STORAGE_PERMISSIONS = "android.permission.WRITE_EXTERNAL_STORAGE";
     public static final String FC_SHARED_PREFERENCE = "FC_Settings";
     public static final String FC_MEDIA_PREFERENCE = "FC_Media";
     boolean cameraPermission = false;
@@ -41,24 +41,37 @@ public class PermissionActivity extends AppCompatActivity {
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         if (requestCode == ALL_PERMISSIONS) {
-            if (permissions != null && permissions.length > 0) {
-                if(VERBOSE)Log.d(TAG, "For camera == "+permissions[0]);
-                if (permissions[0].equalsIgnoreCase(CAMERA_PERMISSION) && permissions[1].equalsIgnoreCase(AUDIO_PERMISSION) &&
-                        permissions[2].equalsIgnoreCase(STORAGE_PERMISSIONS)) {
-                    if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED && grantResults[1] == PackageManager.PERMISSION_GRANTED
-                            && grantResults[2] == PackageManager.PERMISSION_GRANTED) {
-                        cameraPermission = true;
-                        audioPermission = true;
-                        storagePermission = true;
-                        openCameraFragment();
-                    } else {
-                        quitFlipCam();
-                    }
-                }
-            } else {
-                super.onRequestPermissionsResult(requestCode,permissions,grantResults);
-            }
+            cameraPermission = hasPermission(Manifest.permission.CAMERA);
+            audioPermission = hasPermission(Manifest.permission.RECORD_AUDIO);
+            storagePermission = !needsLegacyStoragePermission()
+                    || hasPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE);
+            Log.e(TAG, "Permission callback: permissions=" + java.util.Arrays.toString(permissions)
+                    + ", results=" + java.util.Arrays.toString(grantResults)
+                    + ", missing=" + getMissingRequiredPermissions());
+            if (cameraPermission && audioPermission && storagePermission) openCameraFragment();
+            else quitFlipCam();
+            return;
         }
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    }
+
+    private boolean hasPermission(String permission) {
+        return ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private boolean needsLegacyStoragePermission() {
+        return Build.VERSION.SDK_INT <= Build.VERSION_CODES.P;
+    }
+
+    private String getMissingRequiredPermissions() {
+        StringBuilder missing = new StringBuilder();
+        if (!hasPermission(Manifest.permission.CAMERA)) missing.append("Camera, ");
+        if (!hasPermission(Manifest.permission.RECORD_AUDIO)) missing.append("Microphone, ");
+        if (needsLegacyStoragePermission() && !hasPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+            missing.append("Storage, ");
+        }
+        if (missing.length() == 0) return "none";
+        return missing.substring(0, missing.length() - 2);
     }
 
     @Override
@@ -118,9 +131,6 @@ public class PermissionActivity extends AppCompatActivity {
     protected void onResume() {
         if(VERBOSE)Log.d(TAG,"onResume");
         super.onResume();
-        if(Constants.isAndroidVersionT()){
-            showIncomptaibleAndQuitFlipCam();
-        }
         SharedPreferences sharedPreferences = getSharedPreferences();
         if(sharedPreferences.getBoolean("startCamera",false)){
             if(VERBOSE)Log.d(TAG,"Quit the app");
@@ -128,11 +138,13 @@ public class PermissionActivity extends AppCompatActivity {
         }
         else if(!showMessage){
             if(VERBOSE)Log.d(TAG,"Check permissions and Start camera = "+showPermission);
-            int camerapermission = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.CAMERA);
-            int audiopermission = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.RECORD_AUDIO);
-            int storagepermission = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE);
-            if (camerapermission == PackageManager.PERMISSION_GRANTED && audiopermission == PackageManager.PERMISSION_GRANTED &&
-                    storagepermission == PackageManager.PERMISSION_GRANTED) {
+            cameraPermission = hasPermission(Manifest.permission.CAMERA);
+            audioPermission = hasPermission(Manifest.permission.RECORD_AUDIO);
+            storagePermission = !needsLegacyStoragePermission()
+                    || hasPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE);
+            Log.e(TAG, "Startup permission check: missing=" + getMissingRequiredPermissions()
+                    + ", api=" + Build.VERSION.SDK_INT);
+            if (cameraPermission && audioPermission && storagePermission) {
                 if(VERBOSE)Log.d(TAG, "ALL permissions obtained.");
                 cameraPermission = true;
                 audioPermission = true;
@@ -167,9 +179,11 @@ public class PermissionActivity extends AppCompatActivity {
                 mediaLocEditor.putString(Constants.MEDIA_LOCATION_VIEW_SELECT_PREV, phoneLoc);
                 mediaLocEditor.commit();
                 if(VERBOSE)Log.d(TAG, "REMOVED SHAREDPREFS");
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.CAMERA,Manifest.permission.RECORD_AUDIO,Manifest.permission.WRITE_EXTERNAL_STORAGE},
-                        ALL_PERMISSIONS);
+                String[] permissions = needsLegacyStoragePermission()
+                        ? new String[]{Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO,
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE}
+                        : new String[]{Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO};
+                ActivityCompat.requestPermissions(this, permissions, ALL_PERMISSIONS);
                 showPermission = true;
             }
         }
@@ -221,18 +235,6 @@ public class PermissionActivity extends AppCompatActivity {
         super.onSaveInstanceState(outState);
     }
 
-    //Due to Android known issue with respect to activity being created twice, we need to show a message this will
-    //not work. Need to check if this issue will persis with Android 14 and above.
-    void showIncomptaibleAndQuitFlipCam(){
-        exitListener = (dialogInterface, which) -> android.os.Process.killProcess(android.os.Process.myPid());
-        alertDialog = new AlertDialog.Builder(this);
-        alertDialog.setTitle(getString(R.string.incompatibleMessageTitle));
-        alertDialog.setMessage(getString(R.string.incompatibleMessage));
-        alertDialog.setNeutralButton(R.string.exit, exitListener);
-        alertDialog.setCancelable(false);
-        alertDialog.show();
-        showMessage = true;
-    }
     void quitFlipCam()
     {
         exitListener = new DialogInterface.OnClickListener(){
@@ -244,7 +246,10 @@ public class PermissionActivity extends AppCompatActivity {
         };
         alertDialog = new AlertDialog.Builder(this);
         alertDialog.setTitle(getString(R.string.title));
-        alertDialog.setMessage(getString(R.string.message));
+        String missing = getMissingRequiredPermissions();
+        Log.e(TAG, "Showing No Permission dialog: missing=" + missing + ", api=" + Build.VERSION.SDK_INT);
+        alertDialog.setMessage(getString(R.string.message)
+                + ("none".equals(missing) ? "" : "\n\nMissing permission: " + missing));
         alertDialog.setNeutralButton(R.string.exit, exitListener);
         alertDialog.setCancelable(false);
         alertDialog.show();

@@ -53,6 +53,7 @@ import com.flipcam.cameramanager.Camera1Manager;
 import com.flipcam.cameramanager.Camera2Manager;
 import com.flipcam.constants.Constants;
 import com.flipcam.util.GLUtil;
+import com.flipcam.util.MediaStorage;
 import com.flipcam.util.MediaUtil;
 import com.flipcam.util.SDCardUtil;
 
@@ -62,7 +63,6 @@ import java.lang.ref.WeakReference;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import static android.os.Environment.getExternalStoragePublicDirectory;
 
 /**
  * Created by Koushick on 15-08-2017.
@@ -612,9 +612,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     public boolean isCameraPermissionAvailable(){
         int camerapermission = ContextCompat.checkSelfPermission(getContext(), Manifest.permission.CAMERA);
         int audiopermission = ContextCompat.checkSelfPermission(getContext(), Manifest.permission.RECORD_AUDIO);
-        int storagepermission = ContextCompat.checkSelfPermission(getContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE);
         if (camerapermission != PackageManager.PERMISSION_GRANTED || audiopermission != PackageManager.PERMISSION_GRANTED ||
-                storagepermission != PackageManager.PERMISSION_GRANTED) {
+                (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P && ContextCompat.checkSelfPermission(
+                        getContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)) {
             return false;
         }
         else{
@@ -1221,12 +1221,17 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             }
             return path.toString();
         }
-        String defaultMediaPath = getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + getResources().getString(R.string.FC_ROOT)).getPath();
+        String defaultMediaPath = MediaStorage.getPhoneMediaDirectory(
+                videoFragment != null ? videoFragment.getApplicationContext() : photoFragment.getApplicationContext()).getPath();
         public String fetchPhoneMemoryPath(boolean video){
             StringBuilder phonePath = new StringBuilder("");
             File dcim;
-            dcim = new File(PreferenceManager.getDefaultSharedPreferences(videoFragment!=null ? videoFragment.getApplicationContext() : photoFragment.getApplicationContext())
-                    .getString(Constants.MEDIA_FILE_PATH, defaultMediaPath));
+            Context context = videoFragment != null ? videoFragment.getApplicationContext() : photoFragment.getApplicationContext();
+            String phoneDirectory = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+                    ? defaultMediaPath
+                    : PreferenceManager.getDefaultSharedPreferences(context)
+                            .getString(Constants.MEDIA_FILE_PATH, defaultMediaPath);
+            dcim = new File(phoneDirectory);
             //Included check for default path only.
             if (!dcim.exists()) {
                 dcim.mkdirs();

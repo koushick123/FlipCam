@@ -109,7 +109,6 @@ public class Camera2Manager implements CameraOperations {
 //            previewSize = configs.getOutputSizes(SurfaceTexture.class)[0];
             if(VERBOSE)Log.d(TAG,"callback = "+stateCallback+", cam id = "+cameraId);
             if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED
-                || ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
                     || ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
                 return;
             }

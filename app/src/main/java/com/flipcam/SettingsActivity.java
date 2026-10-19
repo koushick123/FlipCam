@@ -9,7 +9,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -26,9 +25,9 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.flipcam.adapter.FeedbackMailTask;
 import com.flipcam.constants.Constants;
+import com.flipcam.util.MediaStorage;
 import com.flipcam.util.SDCardUtil;
 
-import static android.os.Environment.getExternalStoragePublicDirectory;
 
 public class SettingsActivity extends AppCompatActivity{
 
@@ -104,8 +103,10 @@ public class SettingsActivity extends AppCompatActivity{
         userManualParent = findViewById(R.id.userManualParent);
         thresholdText.setText(getString(R.string.memoryThresholdLimit, getResources().getInteger(R.integer.minimumMemoryWarning) + "MB"));
         getSupportActionBar().setTitle(getString(R.string.settingTitle));
-        defaultMediaPath = getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + getResources().getString(R.string.FC_ROOT)).getPath();
-        mediaPath = PreferenceManager.getDefaultSharedPreferences(this).getString(Constants.MEDIA_FILE_PATH, defaultMediaPath);
+        defaultMediaPath = MediaStorage.getPhoneMediaDirectory(this).getPath();
+        mediaPath = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q
+                ? defaultMediaPath
+                : PreferenceManager.getDefaultSharedPreferences(this).getString(Constants.MEDIA_FILE_PATH, defaultMediaPath);
         settingsPref = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
         settingsEditor = settingsPref.edit();
         if(VERBOSE)Log.d(TAG,"SD Card Path onCreate = "+settingsPref.getString(Constants.SD_CARD_PATH,""));
@@ -303,19 +304,18 @@ public class SettingsActivity extends AppCompatActivity{
     }
 
     public void selectSaveMedia(View view){
-        switch (view.getId()){
-            case R.id.phoneMemButton:
-                if(VERBOSE)Log.d(TAG,"Save in phone memory");
-                settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM,true);
-                settingsEditor.commit();
-                phoneMemBtn.setChecked(true);
-                sdCardBtn.setChecked(false);
-                hideSDCardPath();
-                phoneMemLayout.setVisibility(View.VISIBLE);
-                phoneMempathmsg.setText(mediaPath);
-                controlVisbilityPreference.setMediaSelectedPosition(0);
-                break;
-            case R.id.sdCardbutton:
+        int selectedViewId = view.getId();
+        if (selectedViewId == R.id.phoneMemButton) {
+            if(VERBOSE)Log.d(TAG,"Save in phone memory");
+            settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM,true);
+            settingsEditor.commit();
+            phoneMemBtn.setChecked(true);
+            sdCardBtn.setChecked(false);
+            hideSDCardPath();
+            phoneMemLayout.setVisibility(View.VISIBLE);
+            phoneMempathmsg.setText(mediaPath);
+            controlVisbilityPreference.setMediaSelectedPosition(0);
+        } else if (selectedViewId == R.id.sdCardbutton) {
                 if(VERBOSE)Log.d(TAG,"Save in sd card");
                 phoneMemBtn.setChecked(false);
                 sdCardBtn.setChecked(true);
@@ -364,7 +364,7 @@ public class SettingsActivity extends AppCompatActivity{
                         phoneMempathmsg.setText(mediaPath);
                         hideSDCardPath();
                         showSDCardWriteErrorMessage();
-                        break;
+                        return;
                     }
                 }
                 warningMsg.setContentView(warningMsgRoot);
@@ -377,7 +377,6 @@ public class SettingsActivity extends AppCompatActivity{
                         warningMsg.dismiss();
                     }
                 });
-                break;
         }
     }
 

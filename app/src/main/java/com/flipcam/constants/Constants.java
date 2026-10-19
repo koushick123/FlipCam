@@ -1,7 +1,5 @@
 package com.flipcam.constants;
 
-import android.os.Build;
-
 /**
  * Created by koushick on 22-Aug-17.
  */
@@ -92,7 +90,4 @@ public class Constants
     public static final String MEDIA_MOUNTED = "android.intent.action.MEDIA_MOUNTED";
     public static final String MEDIA_FILE_PATH = "mediaFilePath";
 
-    public static final boolean isAndroidVersionT(){
-        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU;
-    }
 }
