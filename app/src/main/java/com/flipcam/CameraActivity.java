@@ -25,16 +25,23 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.FragmentTransaction;
 
 import com.flipcam.constants.Constants;
+import com.flipcam.model.Dimension;
 import com.flipcam.util.GLUtil;
+import com.flipcam.view.CameraView;
 import com.flipcam.view.PinchZoomGestureListener;
+import com.flipcam.util.SDCardUtil;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.TreeSet;
 
 public class CameraActivity extends AppCompatActivity implements VideoFragment.PermissionInterface, PhotoFragment.PhotoPermission,VideoFragment.SwitchInterface,
 PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, PhotoFragment.LowestThresholdCheckForPictureInterface
@@ -53,6 +60,8 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
     Dialog settingsDialog;
     ImageView brightness;
     ImageView toggleAudio;
+    TextView storageDestination;
+    TextView videoResolution;
     LinearLayout instantSettingsParent;
     ControlVisbilityPreference controlVisbilityPreference;
     boolean fromGallery = false;
@@ -72,10 +81,17 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
         setContentView(R.layout.activity_camera);
         brightness = (ImageView)findViewById(R.id.brightness);
         toggleAudio = findViewById(R.id.toggleAudio);
+        storageDestination = findViewById(R.id.storageDestination);
+        videoResolution = findViewById(R.id.resInfo);
         instantSettingsParent = findViewById(R.id.instantSettingsParent);
         controlVisbilityPreference = (ControlVisbilityPreference)getApplicationContext();
         getSupportActionBar().hide();
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        getWindow().setStatusBarColor(getResources().getColor(R.color.settingsBarColor));
+        getWindow().setNavigationBarColor(getResources().getColor(R.color.settingsBarColor));
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            getWindow().setNavigationBarContrastEnforced(false);
+        }
         if(savedInstanceState == null) {
             //Start with video fragment
             showVideoFragment();
@@ -88,6 +104,7 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
         settingsRootView = layoutInflater.inflate(R.layout.brightness_settings, null);
         settingsDialog = new Dialog(this);
         sharedPreferences = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
+        updateStorageDestinationLabel();
         Bundle bundle = getIntent().getExtras();
         if(bundle != null) {
             fromGallery = bundle.getBoolean("fromGallery");
@@ -160,10 +177,143 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
         return sharedPreferences.getString(Constants.SD_CARD_PATH, "");
     }
 
-    public void goToSettings(View view){
-        Intent settingsIntent = new Intent(this, SettingsActivity.class);
-        startActivity(settingsIntent);
-        overridePendingTransition(R.anim.slide_from_right,R.anim.slide_to_left);
+    public void chooseStorageDestination(View view) {
+        if (videoFragment != null && videoFragment.getCameraView() != null
+                && videoFragment.getCameraView().isRecord()) {
+            Toast.makeText(this, R.string.stopRecordingToChangeStorage, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        boolean savesToPhone = sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
+        String[] destinations = {
+                getString(R.string.storagePhoneShort),
+                getString(R.string.storageSdShort)
+        };
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.saveMedia)
+                .setSingleChoiceItems(destinations, savesToPhone ? 0 : 1, (dialog, which) -> {
+                    dialog.dismiss();
+                    if (which == 0) {
+                        sharedPreferences.edit()
+                                .putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)
+                                .apply();
+                        updateStorageDestinationLabel();
+                    } else {
+                        selectSdCardDestination();
+                    }
+                })
+                .setNegativeButton(R.string.cancelBtn, null)
+                .show();
+    }
+
+    private void selectSdCardDestination() {
+        String sdCardPath = SDCardUtil.doesSDCardExist(getApplicationContext());
+        if (sdCardPath == null) {
+            fallBackToPhoneStorage(R.string.sdCardNotDetectTitle, R.string.sdCardNotPresentForRecord);
+            return;
+        }
+        if (!SDCardUtil.isPathWritable(sdCardPath)) {
+            fallBackToPhoneStorage(R.string.sdCardWriteError, R.string.sdCardWriteErrorMessage);
+            return;
+        }
+
+        sharedPreferences.edit()
+                .putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, false)
+                .putString(Constants.SD_CARD_PATH, sdCardPath)
+                .apply();
+        updateStorageDestinationLabel();
+    }
+
+    private void fallBackToPhoneStorage(int titleId, int messageId) {
+        sharedPreferences.edit()
+                .putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)
+                .apply();
+        updateStorageDestinationLabel();
+        new AlertDialog.Builder(this)
+                .setTitle(titleId)
+                .setMessage(messageId)
+                .setPositiveButton(R.string.okBtn, null)
+                .show();
+    }
+
+    public void updateStorageDestinationLabel() {
+        if (storageDestination == null || sharedPreferences == null) return;
+        boolean savesToPhone = sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
+        storageDestination.setText(savesToPhone ? R.string.storagePhoneShort : R.string.storageSdShort);
+        storageDestination.setContentDescription(getString(R.string.storageDestinationDescription,
+                getString(savesToPhone ? R.string.storagePhoneShort : R.string.storageSdShort)));
+    }
+
+    public void chooseVideoResolution(View view) {
+        if (videoFragment == null || videoFragment.getCameraView() == null) return;
+        CameraView cameraView = videoFragment.getCameraView();
+        if (cameraView.isRecord()) {
+            Toast.makeText(this, R.string.stopRecordingToChangeResolution, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        List<String> supportedResolutions = cameraView.getSupportedVideoResolutions();
+        if (supportedResolutions.isEmpty()) {
+            new AlertDialog.Builder(this)
+                    .setMessage(R.string.videoResolutionUnavailable)
+                    .setPositiveButton(R.string.okBtn, null)
+                    .show();
+            return;
+        }
+
+        TreeSet<Dimension> sortedSizes = new TreeSet<>();
+        for (String resolution : supportedResolutions) {
+            String[] dimensions = resolution.split(" X ");
+            if (dimensions.length == 2) {
+                sortedSizes.add(new Dimension(Integer.parseInt(dimensions[0]),
+                        Integer.parseInt(dimensions[1])));
+            }
+        }
+        List<String> options = new ArrayList<>();
+        for (Dimension size : sortedSizes) options.add(size.toString());
+        String[] entries = options.toArray(new String[0]);
+        SharedPreferences videoPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        String selectedResolution = videoPreferences.getString(Constants.SELECT_VIDEO_RESOLUTION, null);
+        int selectedIndex = options.indexOf(selectedResolution);
+
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.videoResolutionHeading)
+                .setSingleChoiceItems(entries, selectedIndex, (dialog, which) -> {
+                    String newResolution = entries[which];
+                    dialog.dismiss();
+                    if (newResolution.equals(selectedResolution)) return;
+
+                    videoPreferences.edit()
+                            .putString(Constants.SELECT_VIDEO_RESOLUTION, newResolution)
+                            .apply();
+                    try {
+                        cameraView.applyVideoResolution();
+                    } catch (RuntimeException exception) {
+                        videoPreferences.edit()
+                                .putString(Constants.SELECT_VIDEO_RESOLUTION, selectedResolution)
+                                .apply();
+                        if (selectedResolution != null) cameraView.applyVideoResolution();
+                        new AlertDialog.Builder(this)
+                                .setMessage(R.string.videoResolutionUnavailable)
+                                .setPositiveButton(R.string.okBtn, null)
+                                .show();
+                    }
+                })
+                .setNegativeButton(R.string.cancelBtn, null)
+                .show();
+    }
+
+    private void setVideoResolutionControlEnabled(boolean enabled) {
+        if (videoResolution == null) return;
+        videoResolution.setOnClickListener(enabled ? this::chooseVideoResolution : null);
+        videoResolution.setClickable(enabled);
+        videoResolution.setFocusable(enabled);
+        videoResolution.setCompoundDrawablesRelativeWithIntrinsicBounds(
+                null, null, enabled ? getDrawable(R.drawable.ic_dropdown_arrow) : null, null);
+        if (enabled) videoResolution.setBackgroundResource(R.drawable.ripple);
+        else videoResolution.setBackground(null);
+        videoResolution.setContentDescription(enabled
+                ? getString(R.string.videoResolutionSelectorDescription)
+                : null);
     }
 
     public void toggleMicrophone(View view){
@@ -172,13 +322,15 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
         boolean noAudio;
         if(!micPrefs.getBoolean(Constants.NO_AUDIO_MSG, false)){
             //Disable audio
-            toggleAudio.setImageDrawable(getResources().getDrawable(R.drawable.microphone_mute_sound_icon));
+            toggleAudio.setImageDrawable(getResources().getDrawable(R.drawable.ic_video_mic_off));
+            toggleAudio.setContentDescription(getString(R.string.microphoneMuted));
             prefsEditor.putBoolean(Constants.NO_AUDIO_MSG, true);
             noAudio = true;
         }
         else{
             //Enable audio
-            toggleAudio.setImageDrawable(getResources().getDrawable(R.drawable.microphone_music_sound_icon));
+            toggleAudio.setImageDrawable(getResources().getDrawable(R.drawable.ic_video_mic_on));
+            toggleAudio.setContentDescription(getString(R.string.microphoneEnabled));
             prefsEditor.putBoolean(Constants.NO_AUDIO_MSG, false);
             noAudio = false;
         }
@@ -300,6 +452,7 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
 
     public void showVideoFragment()
     {
+        setVideoResolutionControlEnabled(true);
         if(videoFragment == null) {
             if(VERBOSE)Log.d(TAG,"creating videofragment");
             videoFragment = VideoFragment.newInstance();
@@ -307,11 +460,6 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
         }
         FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
         fragmentTransaction.replace(R.id.cameraPreview, videoFragment).commit();
-        if(controlVisbilityPreference.isShowUserManual()){
-            controlVisbilityPreference.setShowUserManual(false);
-            Intent userManualIntent = new Intent(this, UserManualActivity.class);
-            startActivity(userManualIntent);
-        }
         if(VERBOSE)Log.d(TAG, "brightnessLevel SET to = "+controlVisbilityPreference.getBrightnessLevel());
         instantSettingsParent.setVisibility(View.VISIBLE);
         setPinchZoomScaleListener(videoFragment, null);
@@ -319,6 +467,7 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
 
     public void showPhotoFragment()
     {
+        setVideoResolutionControlEnabled(false);
         instantSettingsParent.setVisibility(View.GONE);
         FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
         if(photoFragment == null) {
@@ -335,6 +484,7 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
             if(doesSDCardExist() == null){
                 settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
                 settingsEditor.commit();
+                updateStorageDestinationLabel();
                 TextView warningTitle = (TextView)warningMsgRoot.findViewById(R.id.warningTitle);
                 warningTitle.setText(getResources().getString(R.string.sdCardRemovedTitle));
                 TextView warningText = (TextView)warningMsgRoot.findViewById(R.id.warningText);
@@ -459,6 +609,18 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
     protected void onResume() {
         super.onResume();
         if(VERBOSE)Log.d(TAG,"onResume");
+        if (sharedPreferences != null
+                && !sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)) {
+            String sdCardPath = SDCardUtil.doesSDCardExist(getApplicationContext());
+            if (sdCardPath == null) {
+                fallBackToPhoneStorage(R.string.sdCardNotDetectTitle, R.string.sdCardNotPresentForRecord);
+            } else if (!SDCardUtil.isPathWritable(sdCardPath)) {
+                fallBackToPhoneStorage(R.string.sdCardWriteError, R.string.sdCardWriteErrorMessage);
+            } else {
+                sharedPreferences.edit().putString(Constants.SD_CARD_PATH, sdCardPath).apply();
+            }
+        }
+        updateStorageDestinationLabel();
     }
 
     @Override

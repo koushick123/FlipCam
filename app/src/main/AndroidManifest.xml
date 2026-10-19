@@ -11,11 +11,6 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity
-            android:name=".UserManualActivity"
-            android:exported="false"
-            android:screenOrientation="portrait"/>
-
-        <activity
             android:name=".PermissionActivity"
             android:exported="true">
             <intent-filter>
@@ -33,23 +28,8 @@
             android:name=".MediaActivity"
             android:configChanges="orientation|screenSize" />
         <activity
-            android:name=".SettingsActivity"
-            android:configChanges="orientation|screenSize"></activity>
-        <activity
-            android:name=".MemoryLimitActivity"
-            android:windowSoftInputMode="adjustResize" />
-
-        <activity
             android:name=".GalleryActivity"
             android:configChanges="orientation|screenSize" />
-        <activity
-            android:name=".PhotoSettingsActivity"
-            android:configChanges="orientation|screenSize"
-            android:label="@string/photoSettingsTitle" />
-
-        <activity
-            android:name=".VideoSettingsActivity"
-            android:label="@string/videoSettingsTitle" />
         <meta-data
             android:name="com.google.android.apps.drive.APP_ID"
             android:value="790824425492" />

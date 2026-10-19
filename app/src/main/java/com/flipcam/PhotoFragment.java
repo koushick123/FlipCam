@@ -71,7 +71,6 @@ public class PhotoFragment extends Fragment {
     ImageButton videoMode;
     ImageView substitute;
     ImageView thumbnail;
-    ImageButton settings;
     LinearLayout photoBar;
     LinearLayout settingsBar;
     PhotoPermission photoPermission;
@@ -166,7 +165,6 @@ public class PhotoFragment extends Fragment {
             cameraView.setWindowManager(getActivity().getWindowManager());
         }
         settingsBar = (LinearLayout)getActivity().findViewById(R.id.settingsBar);
-        settings = (ImageButton)getActivity().findViewById(R.id.settings);
         flash = (ImageButton)getActivity().findViewById(R.id.flashOn);
         flash.setOnClickListener(new View.OnClickListener(){
             @Override
@@ -319,7 +317,6 @@ public class PhotoFragment extends Fragment {
                 flash.setClickable(false);
                 videoMode.setClickable(false);
                 thumbnail.setClickable(false);
-                settings.setClickable(false);
 
                 cameraView.switchCamera();
                 getZoomBar().setProgress(0);
@@ -330,7 +327,6 @@ public class PhotoFragment extends Fragment {
                 flash.setClickable(true);
                 videoMode.setClickable(true);
                 thumbnail.setClickable(true);
-                settings.setClickable(true);
             }
         });
 
@@ -452,6 +448,9 @@ public class PhotoFragment extends Fragment {
         SharedPreferences.Editor settingsEditor = sharedPreferences.edit();
         settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
         settingsEditor.commit();
+        if (getActivity() instanceof CameraActivity) {
+            ((CameraActivity) getActivity()).updateStorageDestinationLabel();
+        }
         TextView warningTitle = (TextView)warningMsgRoot.findViewById(R.id.warningTitle);
         warningTitle.setText(getResources().getString(R.string.sdCardRemovedTitle));
         TextView warningText = (TextView)warningMsgRoot.findViewById(R.id.warningText);
@@ -548,7 +547,6 @@ public class PhotoFragment extends Fragment {
     }
 
     public void disableButtons(){
-        settings.setClickable(false);
         flash.setClickable(false);
         capturePic.setClickable(false);
         videoMode.setClickable(false);
@@ -557,7 +555,6 @@ public class PhotoFragment extends Fragment {
     }
 
     public void enableButtons(){
-        settings.setClickable(true);
         flash.setClickable(true);
         capturePic.setClickable(true);
         videoMode.setClickable(true);

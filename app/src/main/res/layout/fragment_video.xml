@@ -5,7 +5,7 @@
     android:id="@+id/cameraView"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/settingsBarColor"
+    android:background="@color/transparentBar"
     android:orientation="vertical"
     tools:context="com.flipcam.VideoFragment">
 
@@ -48,7 +48,7 @@
             android:layout_width="match_parent"
             android:layout_height="70dp"
             android:layout_weight="0.90"
-            android:background="@color/settingsBarColor"
+        android:background="@color/settingsBarColor"
             android:gravity="center"
             android:orientation="horizontal"
             android:weightSum="1">
@@ -59,7 +59,7 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_vertical"
                 android:layout_marginStart="5dp"
-                android:background="@color/settingsBarColor"
+                android:background="@color/transparentBar"
                 android:contentDescription="@string/placeholderContentDescription"
                 android:src="@drawable/placeholder" />
 
@@ -69,9 +69,9 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_vertical"
                 android:layout_marginStart="15dp"
-                android:background="@color/settingsBarColor"
+                android:background="@color/transparentBar"
                 android:contentDescription="@string/switchCamera"
-                android:src="@drawable/switch_camera" />
+                android:src="@drawable/ic_video_switch_camera" />
 
             <ImageButton
                 android:id="@+id/cameraRecord"
@@ -81,10 +81,10 @@
                 android:layout_marginEnd="5dp"
                 android:layout_marginStart="15dp"
                 android:layout_weight="0.08"
-                android:background="@color/settingsBarColor"
+                android:background="@color/transparentBar"
                 android:contentDescription="@string/recordVideo"
                 android:scaleType="centerCrop"
-                android:src="@drawable/camera_record_start" />
+                android:src="@drawable/ic_video_record_start" />
 
             <ImageButton
                 android:id="@+id/photoMode"
@@ -93,7 +93,7 @@
                 android:layout_gravity="center_vertical"
                 android:layout_marginEnd="10dp"
                 android:layout_marginStart="10dp"
-                android:background="@color/settingsBarColor"
+                android:background="@color/transparentBar"
                 android:contentDescription="@string/photoMode"
                 android:src="@drawable/photo_mode" />
 
@@ -110,7 +110,7 @@
                     android:layout_marginEnd="5dp"
                     android:layout_marginStart="5dp"
                     android:layout_weight="0.06"
-                    android:background="@color/settingsBarColor"
+                    android:background="@color/transparentBar"
                     android:contentDescription="@string/thumbnail"
                     android:src="@drawable/placeholder" />
 

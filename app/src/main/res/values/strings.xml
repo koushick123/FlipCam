@@ -82,6 +82,11 @@
     <string name="facebookPackage">com.facebook.katana</string>
     <string name="settingTitle">FlipCam Settings</string>
     <string name="saveMedia">Save Media in</string>
+    <string name="storagePhoneShort">Phone</string>
+    <string name="storageSdShort">SD Card</string>
+    <string name="storageDestinationDescription">Save media to %1$s. Tap to change.</string>
+    <string name="storageDestinationDescriptionDefault">Choose where to save media</string>
+    <string name="stopRecordingToChangeStorage">Stop recording before changing the save location.</string>
     <string name="phoneMemory">Phone Memory</string>
     <string name="sdCard">SD Card</string>
     <string name="phoneMemoryLimit">Phone Memory Limit</string>
@@ -225,6 +230,11 @@
     <string name="videoMode">Switch to Video</string>
     <string name="recordedImage">Captured Image</string>
     <string name="recordVideo">Record Video</string>
+    <string name="stopRecording">Stop recording</string>
+    <string name="pauseRecording">Pause recording</string>
+    <string name="resumeRecording">Resume recording</string>
+    <string name="microphoneEnabled">Microphone on. Tap to mute.</string>
+    <string name="microphoneMuted">Microphone muted. Tap to enable.</string>
     <string name="photoMode">Switch to Photo</string>
     <string name="googleDriveDesc">Google Drive Icon</string>
     <string name="warningSymbol">Warning Message</string>
@@ -237,6 +247,9 @@
     <string name="singleMode">Auto</string>
     <string name="videoResolutionHeading">Video Resolutions</string>
     <string name="videoResolutionSummary">Set the video recording resolution for the camera.</string>
+    <string name="videoResolutionSelectorDescription">Choose video resolution</string>
+    <string name="videoResolutionUnavailable">No video resolutions are available for this camera.</string>
+    <string name="stopRecordingToChangeResolution">Stop recording before changing video resolution.</string>
     <string name="videoResHigh">HIGH</string>
     <string name="videoResMedium">MEDIUM</string>
     <string name="videoResLow">LOW</string>
@@ -305,36 +318,5 @@
     <string name="mediaInfoDateFormat">dd MMMM yyyy HH:mm:ss</string>
     //Nokia 7.1 model
     <string name="nokia71">Nokia 7.1</string>
-    //Labels for User Manual
-    <string name="fcUserManualHeading">FlipCam User Manual</string>
-    <string name="fcUserManualScreen1Heading">Video Screen</string>
-    //Use same for screen 2 and 3
-    <string name="fcUserManualScreen2Heading">Video Recording Screen</string>
-    <string name="fcUserManualScreen4Heading">Video Recording Pause Screen</string>
-    <string name="fcUserManualScreen5Heading">Photo Screen</string>
-    <string name="fcUserManualScreen6Heading">Settings Screen</string>
-    <string name="fcUserManualScreen7Heading">Settings Screen</string>
-    //Use same for screen 8 and 9
-    <string name="fcUserManualScreen8Heading">Media Screen</string>
-    //Use for screen 10
-    <string name="fcUserManualScreen10Heading">Media Location Screen</string>
-    <string name="fcUserManualScreen11Heading">GridView Screen</string>
-    <string name="fcUserManualWelcome">Welcome to FlipCam</string>
-    <string name="fcUserManual">User Manual</string>
-    <string name="fcUserManualFirstScreen">WELCOME TO FLIPCAM!\n\n
-        THIS IS A USER MANUAL TO HELP YOU\n NAVIGATE AND USE THE APP.\n\n
-        SWIPE LEFT FOR MORE DETAILS.
-    </string>
-    <string name="fcUserManualExitHeading">Enjoy FlipCam!!</string>
-    <string name="fcUserManualExit">Please click on back button if you would like to exit the User Manual.</string>
-    <string name="fcUserManualExitMsg">Click on back button to exit the User Manual.</string>
-    <string name="fcUserManualExitScreen">ENJOY THE APP. KEEP FLIPPING TO CREATE MORE EXCITING VIDEOS!!\n\n
-        YOU CAN REVISIT THIS USER MANUAL BY CLICKING ON SETTINGS ICON
-    </string>
-    <string name="fcUserManualExitScreen2">IN THE PHOTO OR VIDEO RECORDING SCREEN AND CHOOSING USER MANUAL OPTION.</string>
-    <string name="fcUserManualFirstScreenMsg1">TO REVISIT THE USER MANUAL, CLICK ON SETTINGS ICON</string>
-    <string name="fcUserManualFirstScreenMsg2">IN THE PHOTO OR VIDEO RECORDING SCREEN AND CHOOSE USER MANUAL OPTION.</string>
-    <string name="fcUserManualLeftSwipeText">Swipe Left to go to next screen.</string>
-    <string name="fcUserManualRightSwipeText">Swipe Right to go to previous screen.</string>
 </resources>
 

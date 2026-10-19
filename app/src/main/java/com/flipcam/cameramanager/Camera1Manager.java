@@ -139,6 +139,34 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         fetchSupportedVideoSizesForCamera(supportedVids, sharedPreferences, mCamera, cameraId);
     }
 
+    public List<String> getSupportedVideoResolutions() {
+        List<String> resolutions = new java.util.ArrayList<>();
+        if (mCamera == null) return resolutions;
+
+        List<Camera.Size> videoSizes = mCamera.getParameters().getSupportedVideoSizes();
+        if (videoSizes == null || videoSizes.isEmpty()) {
+            videoSizes = mCamera.getParameters().getSupportedPreviewSizes();
+        }
+        if (videoSizes == null || videoSizes.isEmpty()) return resolutions;
+        Set<String> resolutionsSupportedByBothCameras = obtainSettingsPrefs()
+                .getStringSet(Constants.SUPPORT_VIDEO_RESOLUTIONS, null);
+        TreeSet<Dimension> sortedSizes = new TreeSet<>();
+        for (Camera.Size size : videoSizes) {
+            String resolution = size.width + " X " + size.height;
+            Integer quality = camcorderVideoRes.get(size.width + "x" + size.height);
+            if (quality != null
+                    && CamcorderProfile.hasProfile(cameraId, quality)
+                    && (resolutionsSupportedByBothCameras == null
+                    || resolutionsSupportedByBothCameras.contains(resolution))) {
+                sortedSizes.add(new Dimension(size.width, size.height));
+            }
+        }
+        for (Dimension size : sortedSizes) {
+            resolutions.add(size.toString());
+        }
+        return resolutions;
+    }
+
     private boolean isResolutionPresentInCamcorder(String camResolution){
         Set<String> resolKeys = camcorderVideoRes.keySet();
         return resolKeys.contains(camResolution);
@@ -771,7 +799,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
 
     @Override
     public String getFlashMode() {
-        return mCamera.getParameters().getFlashMode();
+        return mCamera == null ? null : mCamera.getParameters().getFlashMode();
     }
 
     @Override
