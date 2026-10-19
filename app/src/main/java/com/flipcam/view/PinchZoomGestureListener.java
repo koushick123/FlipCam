@@ -4,14 +4,12 @@ import android.content.Context;
 import android.util.Log;
 import android.view.ScaleGestureDetector;
 
-import com.flipcam.PhotoFragment;
 import com.flipcam.VideoFragment;
 
 public class PinchZoomGestureListener extends ScaleGestureDetector.SimpleOnScaleGestureListener{
 
     public static final String TAG = "PinchZoomGestureListner";
     VideoFragment videoFragment;
-    PhotoFragment photoFragment;
     CameraView cameraView;
     Context appContext;
     float progress = 0.0f;
@@ -22,21 +20,14 @@ public class PinchZoomGestureListener extends ScaleGestureDetector.SimpleOnScale
     float zoomInSensitivity = 1f;
     float zoomOutSensitivity = -13f;
     float zoomDiff = 0.5f;
-    public PinchZoomGestureListener(Context context, VideoFragment vFrag, PhotoFragment pFrag){
+    public PinchZoomGestureListener(Context context, VideoFragment vFrag){
         appContext = context;
         videoFragment = vFrag;
-        photoFragment = pFrag;
     }
 
     private void checkSmoothZoom(){
-        if(videoFragment != null) {
-            cameraView = videoFragment.getCameraView();
-            cameraMaxZoom = videoFragment.getCameraMaxZoom();
-        }
-        else{
-            cameraView = photoFragment.getCameraView();
-            cameraMaxZoom = photoFragment.getCameraMaxZoom();
-        }
+        cameraView = videoFragment.getCameraView();
+        cameraMaxZoom = videoFragment.getCameraMaxZoom();
 
         Log.d(TAG, "cameraMaxZoom = "+cameraMaxZoom);
 
@@ -129,11 +120,6 @@ public class PinchZoomGestureListener extends ScaleGestureDetector.SimpleOnScale
     }
 
     private void incrementProgressBar(){
-        if(videoFragment!=null){
-            videoFragment.getZoomBar().setProgress((int)progress);
-        }
-        else{
-            photoFragment.getZoomBar().setProgress((int)progress);
-        }
+        videoFragment.getZoomBar().setProgress((int)progress);
     }
 }

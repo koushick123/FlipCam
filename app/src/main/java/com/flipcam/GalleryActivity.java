@@ -130,7 +130,7 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
         if(medias != null && medias.length > 0) {
             noImage.setVisibility(View.GONE);
             noImageText.setVisibility(View.GONE);
-            mediaCount.setText(getResources().getString(R.string.galleryCount, MediaUtil.getPhotosCount(), MediaUtil.getVideosCount()));
+            mediaCount.setText(getResources().getString(R.string.galleryCount, MediaUtil.getVideosCount()));
             MediaAdapter mediaAdapter = new MediaAdapter(getApplicationContext(), medias);
             mediaGrid.setAdapter(mediaAdapter);
             mediaGrid.invalidate();
@@ -167,7 +167,7 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
             }
         }
         else{
-            mediaCount.setText(getResources().getString(R.string.galleryCount, 0, 0));
+            mediaCount.setText(getResources().getString(R.string.galleryCount, 0));
             noImage.setVisibility(View.VISIBLE);
             noImageText.setVisibility(View.VISIBLE);
             //Refresh Media Grid to remove any earlier stored media previews

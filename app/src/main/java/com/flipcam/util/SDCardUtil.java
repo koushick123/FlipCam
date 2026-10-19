@@ -83,8 +83,7 @@ public class SDCardUtil {
         Resources resources = context.getResources();
         File flipCamFolder = new File(sdCardPath);
         return (flipCamFolder.list((dir, name) -> {
-            if(name.endsWith(resources.getString(R.string.VID_EXT)) || name.endsWith(resources.getString(R.string.IMG_EXT))
-            || name.endsWith(resources.getString(R.string.ANOTHER_IMG_EXT))){
+            if(name.endsWith(resources.getString(R.string.VID_EXT))) {
                 return true;
             }
             else{

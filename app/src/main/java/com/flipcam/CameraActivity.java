@@ -43,13 +43,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeSet;
 
-public class CameraActivity extends AppCompatActivity implements VideoFragment.PermissionInterface, PhotoFragment.PhotoPermission,VideoFragment.SwitchInterface,
-PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, PhotoFragment.LowestThresholdCheckForPictureInterface
+public class CameraActivity extends AppCompatActivity implements VideoFragment.PermissionInterface,
+VideoFragment.LowestThresholdCheckForVideoInterface
 {
 
     private static final String TAG = "CameraActivity";
     VideoFragment videoFragment = null;
-    PhotoFragment photoFragment = null;
     View warningMsgRoot;
     Dialog warningMsg;
     Button okButton;
@@ -109,15 +108,14 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
         if(bundle != null) {
             fromGallery = bundle.getBoolean("fromGallery");
         }
-        setPinchZoomScaleListener(videoFragment!=null ? videoFragment : null, photoFragment!=null ? photoFragment : null);
+        setPinchZoomScaleListener(videoFragment);
     }
 
-    private void setPinchZoomScaleListener(VideoFragment videoFragment, PhotoFragment photoFragment){
+    private void setPinchZoomScaleListener(VideoFragment videoFragment){
         if(pinchZoomGestureListener != null){
             pinchZoomGestureListener = null;
         }
-        pinchZoomGestureListener = new PinchZoomGestureListener(getApplicationContext(), videoFragment,
-                photoFragment);
+        pinchZoomGestureListener = new PinchZoomGestureListener(getApplicationContext(), videoFragment);
         scaleGestureDetector = new ScaleGestureDetector(getApplicationContext(), pinchZoomGestureListener);
     }
 
@@ -402,52 +400,34 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
         increaseBrightness.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(isVideo()) {
-                    if(GLUtil.colorVal < 0.25f) {
-                        GLUtil.colorVal += 0.05f;
-                        brightnessBar.incrementProgressBy(1);
-                        controlVisbilityPreference.setBrightnessLevel(brightnessBar.getProgress());
-                    }
-                    else{
-                        GLUtil.colorVal = 0.25f;
-                    }
-                    controlVisbilityPreference.setBrightnessProgress(GLUtil.colorVal);
+                if(GLUtil.colorVal < 0.25f) {
+                    GLUtil.colorVal += 0.05f;
+                    brightnessBar.incrementProgressBy(1);
+                    controlVisbilityPreference.setBrightnessLevel(brightnessBar.getProgress());
                 }
+                else{
+                    GLUtil.colorVal = 0.25f;
+                }
+                controlVisbilityPreference.setBrightnessProgress(GLUtil.colorVal);
             }
         });
         Button decreaseBrightness = (Button)settingsRootView.findViewById(R.id.setTimer);
         decreaseBrightness.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(isVideo()){
-                    if(GLUtil.colorVal > -0.25f) {
-                        GLUtil.colorVal -= 0.05f;
-                        brightnessBar.incrementProgressBy(-1);
-                        controlVisbilityPreference.setBrightnessLevel(brightnessBar.getProgress());
-                    }
-                    else{
-                        GLUtil.colorVal = -0.25f;
-                    }
-                    controlVisbilityPreference.setBrightnessProgress(GLUtil.colorVal);
+                if(GLUtil.colorVal > -0.25f) {
+                    GLUtil.colorVal -= 0.05f;
+                    brightnessBar.incrementProgressBy(-1);
+                    controlVisbilityPreference.setBrightnessLevel(brightnessBar.getProgress());
                 }
+                else{
+                    GLUtil.colorVal = -0.25f;
+                }
+                controlVisbilityPreference.setBrightnessProgress(GLUtil.colorVal);
             }
         });
         settingsDialog.getWindow().setBackgroundDrawableResource(R.color.backColorSettingPopup);
         settingsDialog.show();
-    }
-
-    private boolean isVideo(){
-        return videoFragment!=null;
-    }
-
-    @Override
-    public void switchToPhoto() {
-        showPhotoFragment();
-    }
-
-    @Override
-    public void switchToVideo() {
-        showVideoFragment();
     }
 
     public void showVideoFragment()
@@ -462,96 +442,7 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
         fragmentTransaction.replace(R.id.cameraPreview, videoFragment).commit();
         if(VERBOSE)Log.d(TAG, "brightnessLevel SET to = "+controlVisbilityPreference.getBrightnessLevel());
         instantSettingsParent.setVisibility(View.VISIBLE);
-        setPinchZoomScaleListener(videoFragment, null);
-    }
-
-    public void showPhotoFragment()
-    {
-        setVideoResolutionControlEnabled(false);
-        instantSettingsParent.setVisibility(View.GONE);
-        FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
-        if(photoFragment == null) {
-            if(VERBOSE)Log.d(TAG,"creating photofragment");
-            photoFragment = PhotoFragment.newInstance();
-            photoFragment.setApplicationContext(getApplicationContext());
-        }
-        setPinchZoomScaleListener(null, photoFragment);
-        fragmentTransaction.replace(R.id.cameraPreview, photoFragment).commit();
-        if(VERBOSE)Log.d(TAG,"photofragment added");
-        SharedPreferences.Editor settingsEditor = sharedPreferences.edit();
-        if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
-            //Check if SD Card exists
-            if(doesSDCardExist() == null){
-                settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
-                settingsEditor.commit();
-                updateStorageDestinationLabel();
-                TextView warningTitle = (TextView)warningMsgRoot.findViewById(R.id.warningTitle);
-                warningTitle.setText(getResources().getString(R.string.sdCardRemovedTitle));
-                TextView warningText = (TextView)warningMsgRoot.findViewById(R.id.warningText);
-                warningText.setText(getResources().getString(R.string.sdCardNotPresentForRecord));
-                okButton = (Button)warningMsgRoot.findViewById(R.id.okButton);
-                okButton.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        warningMsg.dismiss();
-                        photoFragment.getLatestFileIfExists();
-                    }
-                });
-                warningMsg.setContentView(warningMsgRoot);
-                warningMsg.setCancelable(false);
-                warningMsg.show();
-            }
-        }
-        else if(!checkIfPhoneMemoryIsBelowLowThreshold() && !sharedPreferences.getBoolean(Constants.PHONE_MEMORY_DISABLE, true)) {
-            final SharedPreferences.Editor editor = sharedPreferences.edit();
-            int memoryThreshold = Integer.parseInt(sharedPreferences.getString(Constants.PHONE_MEMORY_LIMIT, ""));
-            String memoryMetric = sharedPreferences.getString(Constants.PHONE_MEMORY_METRIC, "");
-            StatFs storageStat = new StatFs(Environment.getDataDirectory().getPath());
-            long memoryValue = 0;
-            String metric = "";
-            switch (memoryMetric) {
-                case Constants.METRIC_MB:
-                    memoryValue = (memoryThreshold * (long) Constants.MEGA_BYTE);
-                    metric = Constants.METRIC_MB;
-                    break;
-                case Constants.METRIC_GB:
-                    memoryValue = (memoryThreshold * (long) Constants.GIGA_BYTE);
-                    metric = Constants.METRIC_GB;
-                    break;
-            }
-            if(VERBOSE)Log.d(TAG, "memory value = " + memoryValue);
-            if(VERBOSE)Log.d(TAG, "Avail mem = " + storageStat.getAvailableBytes());
-            if (storageStat.getAvailableBytes() < memoryValue) {
-                LayoutInflater layoutInflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-                View thresholdExceededRoot = layoutInflater.inflate(R.layout.threshold_exceeded, null);
-                final Dialog thresholdDialog = new Dialog(this);
-                TextView memoryLimitMsg = (TextView) thresholdExceededRoot.findViewById(R.id.memoryLimitMsg);
-                final CheckBox disableThreshold = (CheckBox) thresholdExceededRoot.findViewById(R.id.disableThreshold);
-                Button okButton = (Button) thresholdExceededRoot.findViewById(R.id.okButton);
-                okButton.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        if(VERBOSE)Log.d(TAG, "disableThreshold.isChecked = " + disableThreshold.isChecked());
-                        if (disableThreshold.isChecked()) {
-                            editor.remove(Constants.PHONE_MEMORY_LIMIT);
-                            editor.remove(Constants.PHONE_MEMORY_METRIC);
-                            editor.putBoolean(Constants.PHONE_MEMORY_DISABLE, true);
-                            editor.commit();
-                            Toast.makeText(getApplicationContext(), getResources().getString(R.string.minimumThresholdDisabled), Toast.LENGTH_LONG).show();
-                        }
-                        thresholdDialog.dismiss();
-                    }
-                });
-                StringBuilder memThreshold = new StringBuilder(memoryThreshold + "");
-                memThreshold.append(" ");
-                memThreshold.append(metric);
-                if(VERBOSE)Log.d(TAG, "memory threshold for display = " + memThreshold);
-                memoryLimitMsg.setText(getResources().getString(R.string.thresholdLimitExceededMsg, memThreshold.toString()));
-                thresholdDialog.setContentView(thresholdExceededRoot);
-                thresholdDialog.setCancelable(false);
-                thresholdDialog.show();
-            }
-        }
+        setPinchZoomScaleListener(videoFragment);
     }
 
     public boolean checkIfPhoneMemoryIsBelowLowThreshold(){
@@ -571,11 +462,6 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
         else{
             return false;
         }
-    }
-
-    @Override
-    public boolean checkIfPhoneMemoryIsBelowLowestThresholdForPicture() {
-        return checkIfPhoneMemoryIsBelowLowThreshold();
     }
 
     @Override
@@ -630,19 +516,11 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
         if(this.videoFragment!=null) {
             this.videoFragment.getZoomBar().setProgress(0);
         }
-        else if(this.photoFragment!=null) {
-            this.photoFragment.getZoomBar().setProgress(0);
-        }
         pinchZoomGestureListener.setProgress(0);
     }
 
     @Override
     public void askPermission() {
-        askCameraPermission();
-    }
-
-    @Override
-    public void askPhotoPermission() {
         askCameraPermission();
     }
 

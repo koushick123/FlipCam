@@ -23,7 +23,6 @@ public class Constants
     public final static int RECORD_STOP_LOW_MEMORY = 10000;
     public final static int RECORD_STOP_NO_SD_CARD = 11000;
     public final static int RECORD_STOPPED = 18000;
-    public final static int SHOW_SELFIE_TIMER = 12000;
 
     //File size for calculating memory consumed
     public final static double KILO_BYTE = 1024.0;
@@ -62,11 +61,6 @@ public class Constants
     public static final String MEDIA_COUNT_MEM = "mediaCountMem";
     public static final String MEDIA_COUNT_SD_CARD = "mediaCountSdCard";
     public static final String MEDIA_COUNT_ALL = "mediaCountAll";
-    //Enable/Disable shutter sound
-    public static final String SHUTTER_SOUND = "ShutterSound";
-    //Set Selfie Timer
-    public static final String SELFIE_TIMER = "SelfieTimer";
-    public static final String SELFIE_TIMER_ENABLE = "SelfieTimerEnable";
     //Screen Resolution
     public static final String PREVIEW_RESOLUTION = "PreviewResolution";
     //Video Resolution
@@ -80,11 +74,6 @@ public class Constants
     //Normal brightness level
     public static final int NORMAL_BRIGHTNESS = 5;
     public static final float NORMAL_BRIGHTNESS_PROGRESS = 0.0f;
-    //Photo Resolution
-    public static final String SELECT_PHOTO_RESOLUTION = "SelectPhotoResolution";
-    public static final String SELECT_PHOTO_RESOLUTION_FRONT = "SelectPhotoResolutionFront";
-    public static final String SUPPORT_PHOTO_RESOLUTIONS = "SupportedPhotoResolutions";
-    public static final String SUPPORT_PHOTO_RESOLUTIONS_FRONT = "SupportedPhotoResolutionsFront";
     public static final String SUPPORT_VIDEO_RESOLUTIONS = "SupportVideoResolutions";
     //Unmounted/Mounted Intent
     public static final String MEDIA_UNMOUNTED = "android.intent.action.MEDIA_UNMOUNTED";

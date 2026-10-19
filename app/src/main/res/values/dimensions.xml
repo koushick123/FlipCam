@@ -17,12 +17,6 @@
     //Pause button
     <dimen name="pauseButtonHeight">50dp</dimen>
     <dimen name="pauseButtonWidth">50dp</dimen>
-    //Picture button
-    <dimen name="pictureButtonWidth">67dp</dimen>
-    <dimen name="pictureButtonHeight">76dp</dimen>
-    //Picture button margin
-    <dimen name="picBtnLeftMargin">15dp</dimen>
-    <dimen name="picBtnRightMargin">15dp</dimen>
     //Video Mode button margin
     <dimen name="videoModeBtnLeftMargin">0dp</dimen>
     <dimen name="videoModeBtnRightMargin">10dp</dimen>
@@ -77,7 +71,6 @@
     <dimen name="settingsMainText">17sp</dimen>
     //Text size for subtext
     <dimen name="settingsSubText">14sp</dimen>
-    <dimen name="settingsSubTextPhoto">7sp</dimen>
     <dimen name="headTextLeftMargin">20dp</dimen>
     <dimen name="phoneMemTextLeftMargin">17dp</dimen>
     <dimen name="headTextTopMargin">10dp</dimen>
@@ -129,15 +122,7 @@
     <dimen name="increaseDecreaseTextSize">19sp</dimen>
     //Margin for video res bottom margin
     <dimen name="videoResBottomMargin">5dp</dimen>
-    //Size for Photo res
-    <dimen name="photoResTitleSize">15sp</dimen>
-    <dimen name="photoResSummarySize">13sp</dimen>
-    <dimen name="photoResSummaryTopBottomMargin">15dp</dimen>
-    <dimen name="photoResLeftMargin">10dp</dimen>
-    <dimen name="photoResTopBottomMargin">15dp</dimen>
     <dimen name="listPrefSeparatorTopBottomPadding">20dp</dimen>
-    //Photo highlight thickness
-    <dimen name="photoHighlightWidth">4dp</dimen>
     //Margin for settings message
     <dimen name="featureLeftAndRightMargin">10dp</dimen>
     <dimen name="valueLeftAndRightMargin">10dp</dimen>

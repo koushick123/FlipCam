@@ -151,7 +151,8 @@ public class MediaUtil {
         File[] mediaFiles = media.listFiles();
         if(media.exists() && media.isDirectory() && mediaFiles != null && mediaFiles.length > 0){
             media.listFiles((file) -> {
-                if (!file.isDirectory()) {
+                if (!file.isDirectory() && file.getName().startsWith(appContext.getResources().getString(R.string.FC_VID_PREFIX))
+                        && file.getName().endsWith(appContext.getResources().getString(R.string.VID_EXT))) {
                     FileMedia fileMedia = new FileMedia();
                     fileMedia.setPath(file.getPath());
                     fileMedia.setLastModified(file.lastModified());
@@ -168,10 +169,9 @@ public class MediaUtil {
         File[] mediaFiles = media.listFiles();
         if(media.exists() && media.isDirectory() && mediaFiles != null && mediaFiles.length > 0){
             mediaFiles = media.listFiles((file) -> {
-                if (!file.isDirectory() && (file.getPath().endsWith(appContext.getResources().getString(R.string.IMG_EXT)) ||
-                        file.getPath().endsWith(appContext.getResources().getString(R.string.ANOTHER_IMG_EXT)) ||
-                        file.getPath().endsWith(appContext.getResources().getString(R.string.VID_EXT)) && (file.getName().startsWith(appContext.getResources().getString(R.string.FC_VID_PREFIX)) ||
-                                file.getName().startsWith(appContext.getResources().getString(R.string.FC_IMG_PREFIX))))) {
+                if (!file.isDirectory()
+                        && file.getName().startsWith(appContext.getResources().getString(R.string.FC_VID_PREFIX))
+                        && file.getName().endsWith(appContext.getResources().getString(R.string.VID_EXT))) {
                     return true;
                 }
                 return false;
@@ -209,19 +209,6 @@ public class MediaUtil {
             }
         }
         return false;
-    }
-
-    public static int getPhotosCount(){
-        int count = 0;
-        if(mediaList != null && mediaList.length > 0){
-            for(int i=0;i<mediaList.length;i++){
-                if(mediaList[i].getPath().endsWith(appContext.getResources().getString(R.string.IMG_EXT)) ||
-                        mediaList[i].getPath().endsWith(appContext.getResources().getString(R.string.ANOTHER_IMG_EXT))){
-                    count++;
-                }
-            }
-        }
-        return count;
     }
 
     public static int getVideosCount() {

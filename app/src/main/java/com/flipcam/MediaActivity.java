@@ -16,7 +16,6 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Point;
 import android.media.AudioManager;
-import android.media.ExifInterface;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
 import android.media.RingtoneManager;
@@ -139,7 +138,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
     CheckBox donotShowBox;
     ImageView externalPlayerClose;
     boolean externalPlayerMessageShown = false;
-    ImageButton imageRotate;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -192,7 +190,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             //If the MediaActivity is opened from Gallery we should not check for SAVE_MEDIA_PHONE_MEM preferences
             //The MediaUtil will open based on selection.
             //All over the app, where ever we use SAVE_MEDIA_PHONE_MEM to check for location preferences, we need to see if
-            //we are coming from Video/Photo fragment or Gallery using fromGallery. A user can choose to see SD Card media even
+            //We are coming from the video fragment or Gallery. A user can choose to see SD Card videos even
             //though under location preferences he may choose phone storage, and vice versa.
             medias = MediaUtil.getMediaList(getApplicationContext(), fromGallery);
         }
@@ -214,11 +212,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 deleteMediaRoot = layoutInflater.inflate(R.layout.delete_media, null);
                 if(VERBOSE)Log.d(TAG, "Delete position = " + selectedPosition);
                 TextView deleteMsg = (TextView) deleteMediaRoot.findViewById(R.id.deleteMsg);
-                if (isImage(medias[selectedPosition].getPath())) {
-                    deleteMsg.setText(getResources().getString(R.string.deleteMessage, getResources().getString(R.string.photo)));
-                } else {
-                    deleteMsg.setText(getResources().getString(R.string.deleteMessage, getResources().getString(R.string.video)));
-                }
+                deleteMsg.setText(getResources().getString(R.string.deleteMessage, getResources().getString(R.string.video)));
                 deleteAlert = new Dialog(this);
                 deleteAlert.setContentView(deleteMediaRoot);
                 deleteAlert.setCancelable(true);
@@ -234,7 +228,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         logoutFB = new Dialog(this);
         permissionFB = new Dialog(this);
         appNotExist = new Dialog(this);
-        imageRotate = findViewById(R.id.imageRotate);
         shareMedia.setOnClickListener((view) -> {
             if(VERBOSE)Log.d(TAG, "from Gallery? = "+fromGallery);
             medias = MediaUtil.getMediaList(getApplicationContext(), fromGallery);
@@ -252,19 +245,11 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 Intent shareIntent = new Intent();
                 shareIntent.setAction(Intent.ACTION_SEND);
                 shareIntent.putExtra(Intent.EXTRA_STREAM, mediaUri);
-                if (isImage(medias[selectedPosition].getPath())) {
-                    shareIntent.setType(getResources().getString(R.string.imageType));
-                } else {
-                    shareIntent.setType(getResources().getString(R.string.videoType));
-                }
+                shareIntent.setType(getResources().getString(R.string.videoType));
                 if (doesAppExistForIntent(shareIntent)) {
                     if(VERBOSE)Log.d(TAG, "Apps exists");
                     Intent chooser;
-                    if (isImage(medias[selectedPosition].getPath())) {
-                        chooser = Intent.createChooser(shareIntent, getResources().getString(R.string.chooserTitleImage));
-                    } else {
-                        chooser = Intent.createChooser(shareIntent, getResources().getString(R.string.chooserTitleVideo));
-                    }
+                    chooser = Intent.createChooser(shareIntent, getResources().getString(R.string.chooserTitleVideo));
                     if (shareIntent.resolveActivity(getPackageManager()) != null) {
                         if(VERBOSE)Log.d(TAG, "Start activity to choose");
                         if(!fromGallery) {
@@ -312,14 +297,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             }
             if(VERBOSE)Log.d(TAG, "selectedPosition === "+selectedPosition);
 
-            if(isImage(medias[selectedPosition].getPath())) {
-                if(VERBOSE)Log.d(TAG, "Hide PlayForVideo");
-                removeVideoControls();
-                hidePlayForVideo();
-                showRotateForImage();
-            }
-            else{
-                if(videoPrefs.getString(Constants.SELECT_VIDEO_PLAYER, externalPlayer).equalsIgnoreCase(fcPlayer)) {
+            if(videoPrefs.getString(Constants.SELECT_VIDEO_PLAYER, externalPlayer).equalsIgnoreCase(fcPlayer)) {
                     playCircle.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_circle_outline));
                     if (!controlVisbilityPreference.isHideControl()) {
                         if (VERBOSE) Log.d(TAG, "Show PlayForVideo");
@@ -334,8 +312,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                         showExternalPlayerMessage();
                     }
                 }
-                hideRotateForImage();
-            }
         }
         folderViewOn.setOnClickListener((view1) -> {
                 mediaLocationView = layoutInflater.inflate(R.layout.medialocation, null);
@@ -535,61 +511,32 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             MediaDetail mediaInfo = new MediaDetail();
             Dimension dimension;
             String path = medias[selectedPosition].getPath();
-            boolean isAnImage = true;
-            try {
-                int width;
-                int height;
-                if(isImage(path)) {
-                    ExifInterface photoMetaData = new ExifInterface(path);
-                    width = Integer.parseInt(photoMetaData.getAttribute(ExifInterface.TAG_IMAGE_WIDTH));
-                    height = Integer.parseInt(photoMetaData.getAttribute(ExifInterface.TAG_IMAGE_LENGTH));
-                    int orientation = Integer.parseInt(photoMetaData.getAttribute(ExifInterface.TAG_ORIENTATION));
-                    Log.d(TAG, "Image Orientation = "+orientation);
-                    if(width == 0 || width == -1 || height == 0 || height == -1){
-                        Log.d(TAG, "PATH = "+path);
-                        Bitmap selImage = BitmapFactory.decodeFile(path);
-                        width = selImage.getWidth();
-                        height = selImage.getHeight();
-                    }
-                    if(orientation != ExifInterface.ORIENTATION_UNDEFINED){
-                        if(orientation == ExifInterface.ORIENTATION_ROTATE_90 || orientation == ExifInterface.ORIENTATION_ROTATE_270){
-                            //For Portrait, swap dimension values
-                            int temp = width;
-                            width = height;
-                            height = temp;
-                        }
-                    }
-                }
-                else{
-                    MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
-                    mediaMetadataRetriever.setDataSource(path);
-                    width = Integer.parseInt(mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH));
-                    height = Integer.parseInt(mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT));
-                    isAnImage = false;
-                }
-                if(VERBOSE)Log.d(TAG, "WIDTH X HEIGHT = "+width +" X "+height);
-                dimension = new Dimension(width, height);
-                mediaInfo.setResolution(dimension);
-                File selectedFile = new File(path);
-                Date dateCreated = new Date(selectedFile.lastModified());
-                SimpleDateFormat simpleDateFormat = new SimpleDateFormat(getResources().getString(R.string.mediaInfoDateFormat));
-                String dateDisplay = simpleDateFormat.format(dateCreated);
-                if (VERBOSE) Log.d(TAG, "Date display = " + dateDisplay);
-                mediaInfo.setDateCreated(dateDisplay);
-                String name = path.substring(path.lastIndexOf("/") + 1);
-                if (VERBOSE) Log.d(TAG, "Name = " + name);
-                mediaInfo.setName(name);
-                if (VERBOSE) Log.d(TAG, "Path = " + path.substring(0, path.lastIndexOf("/")));
-                mediaInfo.setPath(path.substring(0, path.lastIndexOf("/")));
-                mediaInfo.setSize(MediaUtil.convertMemoryForDisplay(selectedFile.length()));
-                populateMediaDetail(mediaInfo, isAnImage);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            int width;
+            int height;
+            MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
+            mediaMetadataRetriever.setDataSource(path);
+            width = Integer.parseInt(mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH));
+            height = Integer.parseInt(mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT));
+            if(VERBOSE)Log.d(TAG, "WIDTH X HEIGHT = "+width +" X "+height);
+            dimension = new Dimension(width, height);
+            mediaInfo.setResolution(dimension);
+            File selectedFile = new File(path);
+            Date dateCreated = new Date(selectedFile.lastModified());
+            SimpleDateFormat simpleDateFormat = new SimpleDateFormat(getResources().getString(R.string.mediaInfoDateFormat));
+            String dateDisplay = simpleDateFormat.format(dateCreated);
+            if (VERBOSE) Log.d(TAG, "Date display = " + dateDisplay);
+            mediaInfo.setDateCreated(dateDisplay);
+            String name = path.substring(path.lastIndexOf("/") + 1);
+            if (VERBOSE) Log.d(TAG, "Name = " + name);
+            mediaInfo.setName(name);
+            if (VERBOSE) Log.d(TAG, "Path = " + path.substring(0, path.lastIndexOf("/")));
+            mediaInfo.setPath(path.substring(0, path.lastIndexOf("/")));
+            mediaInfo.setSize(MediaUtil.convertMemoryForDisplay(selectedFile.length()));
+            populateMediaDetail(mediaInfo);
         }
     }
 
-    private void populateMediaDetail(MediaDetail mediaInfo, boolean isImage){
+    private void populateMediaDetail(MediaDetail mediaInfo){
         TextView mediaName = mediaInfoView.findViewById(R.id.name);
         TextView mediaPath = mediaInfoView.findViewById(R.id.path);
         TextView mediaDimension = mediaInfoView.findViewById(R.id.dimension);
@@ -602,12 +549,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         });
         //Set the labels and values for Media Info
         Resources resources = getResources();
-        if(isImage){
-            mediaInfoTitle.setText(resources.getString(R.string.mediaInfoTitle, resources.getString(R.string.PHOTO_MODE)));
-        }
-        else{
-            mediaInfoTitle.setText(resources.getString(R.string.mediaInfoTitle, resources.getString(R.string.VIDEO_MODE)));
-        }
+        mediaInfoTitle.setText(resources.getString(R.string.mediaInfoTitle, resources.getString(R.string.VIDEO_MODE)));
         StringBuffer mediaLabelAndValue = new StringBuffer();
         //NAME
         mediaLabelAndValue.append(resources.getString(R.string.mediaInfoName));
@@ -725,18 +667,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         playCircle.setVisibility(View.GONE);
     }
 
-    public void showRotateForImage(){
-        pause.setVisibility(View.GONE);
-        imageRotate.setVisibility(View.VISIBLE);
-        imageRotate.setOnClickListener((view) -> {
-            hashMapFrags.get(selectedPosition).rotatePicture();
-        });
-    }
-
-    public void hideRotateForImage(){
-        imageRotate.setVisibility(View.GONE);
-    }
-
     public boolean doesAppExistForIntent(Intent shareIntent){
         PackageManager packageManager = getPackageManager();
         List activities = packageManager.queryIntentActivities(shareIntent, PackageManager.MATCH_DEFAULT_ONLY);
@@ -851,25 +781,14 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
             MediaFragment previousFragment = hashMapFrags.get(previousSelectedFragment);
             //If previous fragment had a video, stop the video and tracker thread immediately.
             if(VERBOSE)Log.d(TAG, "medias length = "+medias.length);
-            if (!isImage(medias[previousSelectedFragment].getPath())) {
-                if(VERBOSE)Log.d(TAG, "Stop previous tracker thread = " + previousFragment.path);
-                previousFragment.stopTrackerThread();
-                if (previousFragment.mediaPlayer.isPlaying()) {
-                    if(VERBOSE)Log.d(TAG, "Pause previous playback");
-                    previousFragment.mediaPlayer.pause();
-                }
+            if(VERBOSE)Log.d(TAG, "Stop previous tracker thread = " + previousFragment.path);
+            previousFragment.stopTrackerThread();
+            if (previousFragment.mediaPlayer.isPlaying()) {
+                if(VERBOSE)Log.d(TAG, "Pause previous playback");
+                previousFragment.mediaPlayer.pause();
             }
         }
-        //Display controls based on image/video
-        if(isImage(medias[position].getPath())){
-            if(VERBOSE)Log.d(TAG,"HIDE VIDEO");
-            hidePlayForVideo();
-            removeVideoControls();
-            showRotateForImage();
-            currentFrag.resetPicture();
-        }
-        else{
-            if(videoPrefs.getString(Constants.SELECT_VIDEO_PLAYER, externalPlayer).equalsIgnoreCase(fcPlayer)) {
+        if(videoPrefs.getString(Constants.SELECT_VIDEO_PLAYER, externalPlayer).equalsIgnoreCase(fcPlayer)) {
                 playCircle.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_circle_outline));
                 if (controlVisbilityPreference.isHideControl()) {
                     if (VERBOSE) Log.d(TAG, "show controls");
@@ -894,8 +813,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                     showExternalPlayerMessage();
                 }
             }
-            hideRotateForImage();
-        }
         previousSelectedFragment = position;
     }
 
@@ -1239,14 +1156,6 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         }
     }
 
-    public boolean isImage(String path)
-    {
-        if(path.endsWith(getResources().getString(R.string.IMG_EXT)) || path.endsWith(getResources().getString(R.string.ANOTHER_IMG_EXT))){
-            return true;
-        }
-        return false;
-    }
-
     class MediaSlidePager extends FragmentStatePagerAdapter
     {
         @Override
@@ -1263,21 +1172,8 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
                 if(VERBOSE)Log.d(TAG, "fromGallery sent to MediaFragment = "+fromGallery);
                 mediaFragment = MediaFragment.newInstance(position, true, fromGallery);
                 if(mediaFragment.getUserVisibleHint()) {
-                    if (isImage(medias[position].getPath())) {
-                        if(VERBOSE)Log.d(TAG, "IS image");
-                        removeVideoControls();
-                        showRotateForImage();
-                        if(videoPrefs.getString(Constants.SELECT_VIDEO_PLAYER, externalPlayer).equalsIgnoreCase(externalPlayer)){
-                            //Playcircle icon will always be visible. Need to hide it for image
-                            Log.d(TAG, "HIDE PLAYCIRCLE");
-                            playCircle.setVisibility(View.GONE);
-                        }
-                    } else {
-                        if(VERBOSE)Log.d(TAG, "IS video");
-                        showControls();
-                        hideRotateForImage();
-                        setupVideoControls(position);
-                    }
+                    showControls();
+                    setupVideoControls(position);
                 }
             }
             else{

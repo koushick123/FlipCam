@@ -11,12 +11,10 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.hardware.SensorManager;
 import android.media.AudioManager;
-import android.media.ExifInterface;
 import android.media.MediaCodecInfo;
 import android.media.MediaCodecList;
 import android.media.MediaMetadataRetriever;
@@ -75,7 +73,6 @@ public class VideoFragment extends Fragment{
     ImageButton switchCamera;
     ImageButton startRecord;
     ImageButton flash;
-    ImageButton photoMode;
     ImageView substitute;
     ImageView thumbnail;
     LinearLayout videoBar;
@@ -83,7 +80,6 @@ public class VideoFragment extends Fragment{
     TextView timeElapsed;
     TextView memoryConsumed;
     PermissionInterface permissionInterface;
-    SwitchInterface switchInterface;
     LowestThresholdCheckForVideoInterface lowestThresholdCheckForVideoInterface;
     ImageButton stopRecord;
     ImageButton pauseRecord;
@@ -94,7 +90,6 @@ public class VideoFragment extends Fragment{
     int orientation = -1;
     LinearLayout flashParentLayout;
     FrameLayout thumbnailParent;
-    ExifInterface exifInterface=null;
     View warningMsgRoot;
     Dialog warningMsg;
     LayoutInflater layoutInflater;
@@ -130,9 +125,6 @@ public class VideoFragment extends Fragment{
         void askPermission();
     }
 
-    public interface SwitchInterface{
-        void switchToPhoto();
-    }
 
     public interface LowestThresholdCheckForVideoInterface{
         boolean checkIfPhoneMemoryIsBelowLowestThresholdForVideo();
@@ -172,7 +164,6 @@ public class VideoFragment extends Fragment{
         resInfo = (TextView)cameraActivity.findViewById(R.id.resInfo);
         modeLayout = (LinearLayout)cameraActivity.findViewById(R.id.modeLayout);
         permissionInterface = (PermissionInterface)cameraActivity;
-        switchInterface = (SwitchInterface)cameraActivity;
         lowestThresholdCheckForVideoInterface = (LowestThresholdCheckForVideoInterface)cameraActivity;
         layoutInflater = (LayoutInflater)cameraActivity.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         warningMsgRoot = layoutInflater.inflate(R.layout.warning_message, null);
@@ -257,20 +248,12 @@ public class VideoFragment extends Fragment{
         thumbnail = (ImageView)view.findViewById(R.id.thumbnail);
         microThumbnail = (ImageView)view.findViewById(R.id.microThumbnail);
         thumbnailParent = (FrameLayout)view.findViewById(R.id.thumbnailParent);
-        photoMode = (ImageButton) view.findViewById(R.id.photoMode);
-        photoMode.setOnClickListener(new View.OnClickListener(){
-            @Override
-            public void onClick(View view1){
-                switchInterface.switchToPhoto();
-            }
-        });
         switchCamera = (ImageButton)view.findViewById(R.id.switchCamera);
         switchCamera.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 startRecord.setClickable(false);
                 flash.setClickable(false);
-                photoMode.setClickable(false);
                 thumbnail.setClickable(false);
                 toggleAudio.setClickable(false);
 
@@ -281,7 +264,6 @@ public class VideoFragment extends Fragment{
                 zoombar.setProgress(0);
                 startRecord.setClickable(true);
                 flash.setClickable(true);
-                photoMode.setClickable(true);
                 thumbnail.setClickable(true);
                 toggleAudio.setClickable(true);
             }
@@ -293,7 +275,6 @@ public class VideoFragment extends Fragment{
             public void onClick(View view) {
                 startRecord.setClickable(false);
                 switchCamera.setClickable(false);
-                photoMode.setClickable(false);
                 thumbnail.setClickable(false);
                 toggleAudio.setClickable(false);
                 if(lowestThresholdCheckForVideoInterface.checkIfPhoneMemoryIsBelowLowestThresholdForVideo()){
@@ -315,7 +296,6 @@ public class VideoFragment extends Fragment{
                         public void onClick(View view) {
                             thresholdDialog.dismiss();
                             startRecord.setClickable(true);
-                            photoMode.setClickable(true);
                             thumbnail.setClickable(true);
                             switchCamera.setClickable(true);
                             toggleAudio.setClickable(true);
@@ -362,7 +342,6 @@ public class VideoFragment extends Fragment{
         });
         if(VERBOSE)Log.d(TAG,"passing videofragment to cameraview");
         cameraView.setFragmentInstance(this);
-        cameraView.setPhotoFragmentInstance(null);
         orientationEventListener = new OrientationEventListener(getActivity().getApplicationContext(), SensorManager.SENSOR_DELAY_UI){
             @Override
             public void onOrientationChanged(int i) {
@@ -464,7 +443,6 @@ public class VideoFragment extends Fragment{
         okButton = (Button)warningMsgRoot.findViewById(R.id.okButton);
         okButton.setOnClickListener((view) -> {
             startRecord.setClickable(true);
-            photoMode.setClickable(true);
             thumbnail.setClickable(true);
             switchCamera.setClickable(true);
             warningMsg.dismiss();
@@ -512,7 +490,6 @@ public class VideoFragment extends Fragment{
             audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_MUTE, 0);
         }
         startRecord.setEnabled(false);
-        photoMode.setClickable(true);
         thumbnail.setClickable(true);
         switchCamera.setClickable(true);
         toggleAudio.setClickable(true);
@@ -585,23 +562,11 @@ public class VideoFragment extends Fragment{
     public void rotateIcons()
     {
         switchCamera.setRotation(rotationAngle);
-        photoMode.setRotation(rotationAngle);
         flash.setRotation(rotationAngle);
         microThumbnail.setRotation(rotationAngle);
         if(pauseRecord!=null) {
             pauseRecord.setRotation(rotationAngle);
             pauseText.setRotation(rotationAngle);
-        }
-        if(exifInterface!=null && !filePath.equalsIgnoreCase(""))
-        {
-            if(isImage(filePath)) {
-                if(exifInterface.getAttribute(ExifInterface.TAG_ORIENTATION).equalsIgnoreCase(String.valueOf(ExifInterface.ORIENTATION_ROTATE_90))) {
-                    rotationAngle += 90f;
-                }
-                else if(exifInterface.getAttribute(ExifInterface.TAG_ORIENTATION).equalsIgnoreCase(String.valueOf(ExifInterface.ORIENTATION_ROTATE_270))) {
-                    rotationAngle += 270f;
-                }
-            }
         }
         thumbnail.setRotation(rotationAngle);
     }
@@ -635,6 +600,12 @@ public class VideoFragment extends Fragment{
         });
         switchCamera.setBackgroundColor(getResources().getColor(R.color.transparentBar));
         switchCamera.setRotation(rotationAngle);
+        // In preview this control is hosted by an alignment slot. Detach it
+        // before moving it into the recording controls row.
+        ViewParent switchCameraParent = switchCamera.getParent();
+        if (switchCameraParent instanceof ViewGroup) {
+            ((ViewGroup) switchCameraParent).removeView(switchCamera);
+        }
         videoBar.addView(switchCamera);
         videoBar.addView(stopRecord);
         addPauseButton();
@@ -730,7 +701,6 @@ public class VideoFragment extends Fragment{
                 }
                 else{
                     startRecord.setClickable(false);
-                    photoMode.setClickable(false);
                     thumbnail.setClickable(false);
                     switchCamera.setClickable(false);
                     noSdCard = true;
@@ -807,11 +777,10 @@ public class VideoFragment extends Fragment{
             prefsEditor.apply();
         }
         videoBar.removeAllViews();
-        videoBar.addView(substitute);
-        videoBar.addView(switchCamera);
-        videoBar.addView(startRecord);
-        videoBar.addView(photoMode);
-        videoBar.addView(thumbnailParent);
+        videoBar.setWeightSum(3);
+        addBottomControlSlot(switchCamera);
+        addBottomControlSlot(startRecord);
+        addBottomControlSlot(thumbnailParent);
         settingsBar.removeAllViews();
         settingsBar.setWeightSum(3);
         settingsBar.setBackgroundColor(getResources().getColor(R.color.settingsBarColor));
@@ -860,6 +829,18 @@ public class VideoFragment extends Fragment{
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER));
         settingsBar.addView(slot, new LinearLayout.LayoutParams(
                 0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+    }
+
+    private void addBottomControlSlot(View control) {
+        ViewParent parent = control.getParent();
+        if (parent instanceof ViewGroup) {
+            ((ViewGroup) parent).removeView(control);
+        }
+        FrameLayout slot = new FrameLayout(getActivity());
+        slot.addView(control, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER));
+        videoBar.addView(slot, new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.MATCH_PARENT, 1f));
     }
 
     public void setVideoResInfo(String width, String height){
@@ -1165,14 +1146,6 @@ public class VideoFragment extends Fragment{
         }
     }
 
-    public boolean isImage(String path)
-    {
-        if(path.endsWith(getResources().getString(R.string.IMG_EXT)) || path.endsWith(getResources().getString(R.string.ANOTHER_IMG_EXT))){
-            return true;
-        }
-        return false;
-    }
-
     public void addMediaToDB(){
         if (cameraView.getMediaPath() == null || cameraView.getMediaPath().isEmpty()) {
             Log.e(TAG, "Skipping media index update because the recording path is empty");
@@ -1199,7 +1172,6 @@ public class VideoFragment extends Fragment{
         if (medias != null && medias.length > 0) {
             if(VERBOSE)Log.d(TAG, "Latest file is = " + medias[0].getPath());
             filePath = medias[0].getPath();
-            if (!isImage(filePath)) {
                 MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
                 Bitmap vid = null;
                 try {
@@ -1240,26 +1212,6 @@ public class VideoFragment extends Fragment{
                     microThumbnail.setVisibility(View.INVISIBLE);
                     setPlaceholderThumbnail();
                 }
-            } else {
-                try {
-                    exifInterface = new ExifInterface(filePath);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                if(VERBOSE)Log.d(TAG, "TAG_ORIENTATION = "+exifInterface.getAttribute(ExifInterface.TAG_ORIENTATION));
-                Bitmap pic = BitmapFactory.decodeFile(filePath);
-                pic = Bitmap.createScaledBitmap(pic, (int) getResources().getDimension(R.dimen.thumbnailWidth),
-                        (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
-                thumbnail.setImageBitmap(pic);
-                microThumbnail.setVisibility(View.INVISIBLE);
-                thumbnail.setClickable(true);
-                thumbnail.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        openMedia();
-                    }
-                });
-            }
         }
         else{
             microThumbnail.setVisibility(View.INVISIBLE);
