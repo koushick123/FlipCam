@@ -286,6 +286,7 @@ VideoFragment.LowestThresholdCheckForVideoInterface
                     try {
                         cameraView.applyVideoResolution();
                     } catch (RuntimeException exception) {
+                        Log.e(TAG, "Unable to apply video resolution " + newResolution, exception);
                         videoPreferences.edit()
                                 .putString(Constants.SELECT_VIDEO_RESOLUTION, selectedResolution)
                                 .apply();

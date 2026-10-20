@@ -760,6 +760,15 @@ public class VideoFragment extends Fragment{
 
     public void showRecordAndThumbnail()
     {
+        // A preview resize can rebuild the top controls before Camera1 updates
+        // its VideoFragment reference. Restore the label from the saved choice
+        // so the displayed resolution does not depend on that callback order.
+        String selectedResolution = PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
+                .getString(Constants.SELECT_VIDEO_RESOLUTION, null);
+        if (selectedResolution != null && resInfo != null) {
+            resInfo.setText(selectedResolution);
+            resInfo.setVisibility(View.VISIBLE);
+        }
         cameraActivity.toggleAudio.setVisibility(View.VISIBLE);
         if (pauseText != null) pauseText.setVisibility(View.INVISIBLE);
         View decor = cameraActivity.getWindow().getDecorView();

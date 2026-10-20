@@ -21,10 +21,8 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 import java.util.TreeSet;
 
 /**
@@ -61,6 +59,8 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     double targetVideoRatio;
     int screenWidth;
     boolean zoomChangeListener = false;
+    private boolean previewStarted = false;
+    private SurfaceTexture previewSurfaceTexture;
 
     public static Camera1Manager getInstance() {
         if (camera1Manager == null) {
@@ -87,12 +87,14 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     }
 
     public void getSupportedVideoSizes(){
-        Set<String> supportedVids=null;
         SharedPreferences sharedPreferences = obtainSettingsPrefs();
-        //For camera get all supported video resolutions.
-        supportedVids = sharedPreferences.getStringSet(Constants.SUPPORT_VIDEO_RESOLUTIONS, null);
-        Log.d(TAG, "SupportedVids = " + supportedVids);
-        fetchSupportedVideoSizesForCamera(supportedVids, sharedPreferences, mCamera, cameraId);
+        List<String> supportedResolutions = getSupportedVideoResolutions();
+        String selectedResolution = sharedPreferences.getString(Constants.SELECT_VIDEO_RESOLUTION, null);
+        if (!supportedResolutions.isEmpty() && !supportedResolutions.contains(selectedResolution)) {
+            sharedPreferences.edit()
+                    .putString(Constants.SELECT_VIDEO_RESOLUTION, supportedResolutions.get(0))
+                    .apply();
+        }
     }
 
     public List<String> getSupportedVideoResolutions() {
@@ -104,16 +106,9 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
             videoSizes = mCamera.getParameters().getSupportedPreviewSizes();
         }
         if (videoSizes == null || videoSizes.isEmpty()) return resolutions;
-        Set<String> resolutionsSupportedByBothCameras = obtainSettingsPrefs()
-                .getStringSet(Constants.SUPPORT_VIDEO_RESOLUTIONS, null);
         TreeSet<Dimension> sortedSizes = new TreeSet<>();
         for (Camera.Size size : videoSizes) {
-            String resolution = size.width + " X " + size.height;
-            Integer quality = camcorderVideoRes.get(size.width + "x" + size.height);
-            if (quality != null
-                    && CamcorderProfile.hasProfile(cameraId, quality)
-                    && (resolutionsSupportedByBothCameras == null
-                    || resolutionsSupportedByBothCameras.contains(resolution))) {
+            if (getCamcorderProfileForResolution(size.width, size.height) != null) {
                 sortedSizes.add(new Dimension(size.width, size.height));
             }
         }
@@ -123,136 +118,52 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         return resolutions;
     }
 
-    private boolean isResolutionPresentInCamcorder(String camResolution){
-        Set<String> resolKeys = camcorderVideoRes.keySet();
-        return resolKeys.contains(camResolution);
-    }
-
     public HashMap<String, Integer> camcorderVideoRes =  new HashMap<String, Integer>(){
         {
             put("1920x1080", CamcorderProfile.QUALITY_1080P);
             put("3840x2160", CamcorderProfile.QUALITY_2160P);
             put("720x480", CamcorderProfile.QUALITY_480P);
             put("1280x720", CamcorderProfile.QUALITY_720P);
+            put("640x480", CamcorderProfile.QUALITY_VGA);
             put("352x288", CamcorderProfile.QUALITY_CIF);
             put("176x144", CamcorderProfile.QUALITY_QCIF);
             put("320x240", CamcorderProfile.QUALITY_QVGA);
         }
     };
 
-    private static Set<String> supportedVideoResolutions = new HashSet<>();
-    private void fetchSupportedVideoSizesForCamera(Set<String> supportedVids, SharedPreferences sharedPreferences, Camera selectedCam, int camId){
-        if (supportedVids == null) {
-            SharedPreferences.Editor editor = sharedPreferences.edit();
-            List<Camera.Size> videoSizes = selectedCam.getParameters().getSupportedVideoSizes();
-            StringBuilder resolSize = new StringBuilder();
-            for (Camera.Size size : videoSizes) {
-                resolSize.append(size.width);
-                resolSize.append("x");
-                resolSize.append(size.height);
-                if(VERBOSE)Log.d(TAG, "resolSize ==== "+resolSize);
-                if(!cameraView.isBackCamera()) {
-                    if (isResolutionPresentInCamcorder(resolSize.toString()) && CamcorderProfile.hasProfile(camId, camcorderVideoRes.get(resolSize.toString()))) {
-                        supportedVideoResolutions.add(size.width + " X " + size.height);
-                    }
-                }
-                else{
-                    Set<String> removeResolutions = new HashSet<>();
-                    //Exclude resolutions not supported by front camera.
-                    Iterator<String> iter = supportedVideoResolutions.iterator();
-                    while (iter.hasNext()){
-                        String resolution = iter.next();
-                        String[] tempRes = resolution.split(" X ");
-                        if(!CamcorderProfile.hasProfile(camId, camcorderVideoRes.get(tempRes[0]+"x"+tempRes[1]))){
-                            if(VERBOSE)Log.d(TAG, "Removing "+tempRes[0]+" X "+tempRes[1]+" for rear camera");
-                            removeResolutions.add(resolution);
-                        }
-                    }
-                    //Remove those resolutions.
-                    for(String temp : removeResolutions){
-                        supportedVideoResolutions.remove(temp);
-                    }
-                }
-                resolSize.delete(0, resolSize.length());
-            }
+    private Integer getCamcorderProfileForResolution(int width, int height) {
+        Integer mappedQuality = camcorderVideoRes.get(width + "x" + height);
+        if (profileMatchesResolution(mappedQuality, width, height)) return mappedQuality;
 
-            if(cameraView.isBackCamera()) {
-                //Sort by descending order and take the largest value as default video resolution.
-                TreeSet<Dimension> sortedVidSizes = new TreeSet<>();
-                if(VERBOSE)Log.d(TAG, "videoRES SIZE = " + supportedVideoResolutions.size());
-                int width = 0, height = 0;
-                for (String resol : supportedVideoResolutions) {
-                    width = Integer.parseInt(resol.split(" X ")[0]);
-                    if(VERBOSE)Log.d(TAG, "WIDTH ==== " + width);
-                    height = Integer.parseInt(resol.split(" X ")[1]);
-                    if(VERBOSE)Log.d(TAG, "HEIGHT ==== " + height);
-                    sortedVidSizes.add(new Dimension(width, height));
-                }
-                Dimension firstEle = sortedVidSizes.first();
-                width = firstEle.getWidth();
-                height = firstEle.getHeight();
-                editor.putStringSet(Constants.SUPPORT_VIDEO_RESOLUTIONS, supportedVideoResolutions);
-                editor.putString(Constants.SELECT_VIDEO_RESOLUTION, width + " X " + height);
-                editor.commit();
-            }
+        int[] fallbackQualities = {CamcorderProfile.QUALITY_HIGH, CamcorderProfile.QUALITY_LOW};
+        for (int quality : fallbackQualities) {
+            if (profileMatchesResolution(quality, width, height)) return quality;
         }
+        return null;
+    }
+
+    private boolean profileMatchesResolution(Integer quality, int width, int height) {
+        if (quality == null || !CamcorderProfile.hasProfile(cameraId, quality)) return false;
+        CamcorderProfile profile = CamcorderProfile.get(cameraId, quality);
+        return profile.videoFrameWidth == width && profile.videoFrameHeight == height;
     }
 
     @Override
     public void openCamera(boolean backCamera, Context context) {
         appContext = context;
-        SharedPreferences sharedPreferences = obtainSettingsPrefs();
-        Set<String> frontCamResolutions = sharedPreferences.getStringSet(Constants.SUPPORT_VIDEO_RESOLUTIONS, null);
-        if(frontCamResolutions != null) {
-            for (int i = 0; i < Camera.getNumberOfCameras(); i++) {
-                Camera.getCameraInfo(i, info);
-                if (backCamera) {
-                    if (info.facing == Camera.CameraInfo.CAMERA_FACING_BACK) {
-                        mCamera = Camera.open(i);
-                        setCameraInfo(info);
-                        if (VERBOSE) Log.d(TAG, "Open back facing camera");
-                        cameraId = i;
-                        break;
-                    }
-                } else {
-                    if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
-                        mCamera = Camera.open(i);
-                        setCameraInfo(info);
-                        if (VERBOSE) Log.d(TAG, "Open front facing camera");
-                        cameraId = i;
-                        break;
-                    }
-                }
-            }
-        }
-        else{
-            for (int i = 0; i < Camera.getNumberOfCameras(); i++) {
-                Camera.getCameraInfo(i, info);
-                if (info.facing == Camera.CameraInfo.CAMERA_FACING_BACK) {
-                    if (VERBOSE) Log.d(TAG, "Open back facing camera FIRST TIME");
-                    setCameraInfo(info);
-                    cameraId = i;
-                }
-                if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
-                    if (VERBOSE) Log.d(TAG, "Open front facing camera FIRST TIME");
-                    //This is for front camera, when the app is opening the camera for the very first time.
-                    Camera frontCam = Camera.open(i);
-                    //Fetch all video resolutions for front camera and check the rear camera resolutions against this list to ensure recordings for both cameras work.
-                    cameraView.setBackCamera(false);
-                    fetchSupportedVideoSizesForCamera(null, sharedPreferences,frontCam, i);
-                    //Reset to rear camera
-                    cameraView.setBackCamera(true);
-                    frontCam.release();
-                    frontCam = null;
-                    //Now, open the back facing camera.
-                    if(cameraId != -1) {
-                        mCamera = Camera.open(cameraId);
-                        break;
-                    }
-                }
-            }
-            if(mCamera == null){
-                mCamera = Camera.open(cameraId);
+        cameraId = -1;
+        int requestedFacing = backCamera
+                ? Camera.CameraInfo.CAMERA_FACING_BACK
+                : Camera.CameraInfo.CAMERA_FACING_FRONT;
+        for (int i = 0; i < Camera.getNumberOfCameras(); i++) {
+            Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
+            Camera.getCameraInfo(i, cameraInfo);
+            if (cameraInfo.facing == requestedFacing) {
+                cameraId = i;
+                setCameraInfo(cameraInfo);
+                mCamera = Camera.open(i);
+                if (VERBOSE) Log.d(TAG, backCamera ? "Open back facing camera" : "Open front facing camera");
+                break;
             }
         }
         if (cameraId != -1) {
@@ -269,6 +180,9 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
 
     @Override
     public void releaseCamera() {
+        previewStarted = false;
+        previewSurfaceTexture = null;
+        if (mCamera == null) return;
         mCamera.release();
         mCamera = null;
         zoomChangeListener = false;
@@ -345,9 +259,24 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
 
     @Override
     public void setResolution() {
-        setVideoSize();
-        setPreviewSizeForTargetRatio();
-        mCamera.setParameters(parameters);
+        if (mCamera == null) return;
+
+        boolean restartPreview = previewStarted && previewSurfaceTexture != null;
+        if (restartPreview) {
+            mCamera.stopPreview();
+            previewStarted = false;
+        }
+        try {
+            // Always base changes on the camera's current parameters; the cached object
+            // can be stale after other camera controls have called setParameters().
+            parameters = mCamera.getParameters();
+            setVideoSize();
+            setPreviewSizeForTargetRatio();
+            mCamera.setParameters(parameters);
+            parameters = mCamera.getParameters();
+        } finally {
+            if (restartPreview) startPreview(previewSurfaceTexture);
+        }
     }
 
     @Override
@@ -394,17 +323,23 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
 
     @Override
     public void stopPreview() {
-        mCamera.stopPreview();
+        if (mCamera != null && previewStarted) {
+            mCamera.stopPreview();
+            previewStarted = false;
+        }
     }
 
     @Override
     public void startPreview(SurfaceTexture surfaceTexture) {
+        if (mCamera == null) return;
         try {
             mCamera.setPreviewTexture(surfaceTexture);
         } catch (IOException ioe) {
             throw new RuntimeException(ioe);
         }
         mCamera.startPreview();
+        previewSurfaceTexture = surfaceTexture;
+        previewStarted = true;
     }
 
     @Override
@@ -438,7 +373,9 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         }
         targetVideoRatio = Double.parseDouble(targetWidth) / Double.parseDouble(targetHeight);
         if(!cameraView.isRecord()) {
-            cameraView.setCamProfileForRecord(camcorderVideoRes.get(targetWidth+"x"+targetHeight));
+            Integer profile = getCamcorderProfileForResolution(
+                    Integer.parseInt(targetWidth), Integer.parseInt(targetHeight));
+            if (profile != null) cameraView.setCamProfileForRecord(profile);
             cameraView.setRecordVideoWidth(Integer.parseInt(targetWidth));
             cameraView.setRecordVideoHeight(Integer.parseInt(targetHeight));
             if(this.videoFrag != null){
