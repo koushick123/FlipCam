@@ -806,9 +806,6 @@ public class VideoFragment extends Fragment{
         addBottomControlSlot(thumbnailParent,
                 (int) getResources().getDimension(R.dimen.thumbnailSlotWidth),
                 (int) getResources().getDimension(R.dimen.cameraSideControlSize));
-        settingsBar.removeAllViews();
-        settingsBar.setWeightSum(3);
-        settingsBar.setBackgroundColor(getResources().getColor(R.color.transparentBar));
         flashParentLayout.removeAllViews();
         if(cameraView.isCameraReady()) {
             if (cameraView.isFlashOn()) {
@@ -836,41 +833,37 @@ public class VideoFragment extends Fragment{
             }
         });
         cameraView.setFlashButton(flash);
-        modeLayout.setGravity(Gravity.CENTER_HORIZONTAL);
-        if (resInfo.getParent() != modeLayout) {
-            ViewGroup previousParent = (ViewGroup) resInfo.getParent();
-            if (previousParent != null) previousParent.removeView(resInfo);
-            modeLayout.addView(resInfo);
+        populatePreviewTopControls();
+    }
+
+    private void populatePreviewTopControls() {
+        if (settingsBar == null || resInfo == null || cameraActivity == null) return;
+        settingsBar.removeAllViews();
+        settingsBar.setWeightSum(0);
+        settingsBar.setBackgroundColor(getResources().getColor(R.color.transparentBar));
+        FrameLayout parentCamera = cameraActivity.findViewById(R.id.parentCamera);
+        if (parentCamera == null) return;
+        ViewParent currentParent = resInfo.getParent();
+        if (currentParent instanceof ViewGroup && currentParent != parentCamera) {
+            ((ViewGroup) currentParent).removeView(resInfo);
         }
-        if (cameraActivity.storageDestination != null) {
-            cameraActivity.storageDestination.setGravity(Gravity.CENTER);
-        }
-        // Leave the left slot empty to preserve the centered resolution label.
-        addPreviewControlSlot(new View(getActivity()), 0, 0);
-        addPreviewControlSlot(modeLayout);
-        if (cameraActivity.storageDestination != null) {
-            addPreviewControlSlot(cameraActivity.storageDestination);
-        } else {
-            // Keep the resolution label in the center slot after removing the top storage control.
-            addPreviewControlSlot(new View(getActivity()), 0, 0);
+        resInfo.setGravity(Gravity.CENTER);
+        resInfo.setVisibility(View.VISIBLE);
+        if (resInfo.getParent() != parentCamera) {
+            FrameLayout.LayoutParams labelParams = new FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    (int) getResources().getDimension(R.dimen.cameraControlSize),
+                    Gravity.TOP);
+            parentCamera.addView(resInfo, labelParams);
         }
     }
 
-    private void addPreviewControlSlot(View control) {
-        addPreviewControlSlot(control, ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT);
-    }
-
-    private void addPreviewControlSlot(View control, int width, int height) {
-        ViewParent parent = control.getParent();
-        if (parent instanceof ViewGroup) {
-            ((ViewGroup) parent).removeView(control);
+    private void ensurePreviewTopControls() {
+        if (cameraView == null || settingsBar == null || resInfo == null) return;
+        FrameLayout parentCamera = cameraActivity.findViewById(R.id.parentCamera);
+        if (parentCamera != null && resInfo.getParent() != parentCamera) {
+            populatePreviewTopControls();
         }
-        FrameLayout slot = new FrameLayout(getActivity());
-        slot.addView(control, new FrameLayout.LayoutParams(
-                width, height, Gravity.CENTER));
-        settingsBar.addView(slot, new LinearLayout.LayoutParams(
-                0, ViewGroup.LayoutParams.MATCH_PARENT, 1f));
     }
 
     private void addBottomControlSlot(View control, int controlWidth, int controlHeight) {
@@ -886,7 +879,10 @@ public class VideoFragment extends Fragment{
     }
 
     public void setVideoResInfo(String width, String height){
+        if (resInfo == null) return;
         resInfo.setText(getResources().getString(R.string.resolutionDisplay, width, height));
+        resInfo.setVisibility(View.VISIBLE);
+        ensurePreviewTopControls();
     }
 
     public void hideSettingsBarAndIcon()
@@ -913,9 +909,7 @@ public class VideoFragment extends Fragment{
         }, 350);
         settingsBar.removeAllViews();
         flashParentLayout.removeAllViews();
-        if (resInfo.getParent() == modeLayout) {
-            modeLayout.removeView(resInfo);
-        }
+        resInfo.setVisibility(View.GONE);
         settingsBar.setWeightSum(0);
         settingsBar.setBackgroundColor(getResources().getColor(R.color.transparentBar));
         flashParentLayout.setOrientation(LinearLayout.VERTICAL);

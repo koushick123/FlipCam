@@ -470,6 +470,17 @@ VideoFragment.LowestThresholdCheckForVideoInterface
                             .apply();
                     try {
                         cameraView.applyVideoResolution();
+                        String[] dimensions = newResolution.split(" X ");
+                        if (dimensions.length == 2) {
+                            videoFragment.setVideoResInfo(dimensions[0], dimensions[1]);
+                            // Camera preview relayout can finish after the selection callback and
+                            // rebuild the overlay. Reassert the label once that resize settles.
+                            cameraView.postDelayed(() -> {
+                                if (!cameraView.isRecord()) {
+                                    videoFragment.setVideoResInfo(dimensions[0], dimensions[1]);
+                                }
+                            }, 500);
+                        }
                     } catch (RuntimeException exception) {
                         Log.e(TAG, "Unable to apply video resolution " + newResolution, exception);
                         videoPreferences.edit()
