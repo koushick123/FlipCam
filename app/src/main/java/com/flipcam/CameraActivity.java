@@ -71,6 +71,7 @@ VideoFragment.LowestThresholdCheckForVideoInterface
     private ImageButton speedDialToggle;
     private TextView storageActionLabel;
     private TextView microphoneActionLabel;
+    private ImageView speedDialFlashIcon;
     private boolean speedDialExpanded;
     ControlVisbilityPreference controlVisbilityPreference;
     boolean fromGallery = false;
@@ -141,8 +142,6 @@ VideoFragment.LowestThresholdCheckForVideoInterface
         speedDialMenu.setOrientation(LinearLayout.VERTICAL);
         speedDialMenu.setGravity(Gravity.END);
         speedDialMenu.setVisibility(View.GONE);
-        instantSettingsParent.addView(speedDialMenu, new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
 
         addSpeedDialAction(R.string.speedDialResolution, R.drawable.ic_speed_dial_resolution,
                 null, getString(R.string.speedDialResolutionDescription),
@@ -162,13 +161,23 @@ VideoFragment.LowestThresholdCheckForVideoInterface
                 micMuted ? R.string.speedDialMicOff : R.string.speedDialMicOn,
                 0, toggleAudio, getString(R.string.speedDialMicDescription),
                 () -> toggleMicrophone(null));
+        TextView flashActionLabel = addSpeedDialAction(R.string.speedDialFlash,
+                R.drawable.ic_video_flash_on, null,
+                getString(R.string.speedDialFlashDescription),
+                () -> {
+                    if (videoFragment != null) videoFragment.toggleFlashFromSpeedDial();
+                });
+        View flashRow = (View) flashActionLabel.getParent();
+        View flashIconHolder = ((ViewGroup) flashRow).getChildAt(1);
+        speedDialFlashIcon = (ImageView) ((ViewGroup) flashIconHolder).getChildAt(0);
+        if (videoFragment != null) updateSpeedDialFlashIcon(videoFragment.isFlashOn());
         brightness.setImageResource(R.drawable.ic_video_brightness);
         addSpeedDialAction(R.string.speedDialBrightness, R.drawable.ic_video_brightness,
                 brightness, getString(R.string.brightnessContentDescription),
                 () -> openBrightnessPopup(null));
 
         speedDialToggle = new ImageButton(this);
-        speedDialToggle.setImageResource(R.drawable.ic_speed_dial_tune);
+        speedDialToggle.setImageResource(R.drawable.ic_speed_dial_settings);
         speedDialToggle.setColorFilter(Color.WHITE);
         speedDialToggle.setScaleType(ImageView.ScaleType.FIT_CENTER);
         speedDialToggle.setPadding(dp(14), dp(14), dp(14), dp(14));
@@ -176,6 +185,8 @@ VideoFragment.LowestThresholdCheckForVideoInterface
         speedDialToggle.setElevation(dp(6));
         speedDialToggle.setContentDescription(getString(R.string.speedDialOpenDescription));
         speedDialToggle.setOnClickListener(view -> setCameraSpeedDialExpanded(!speedDialExpanded));
+        instantSettingsParent.addView(speedDialMenu, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
         instantSettingsParent.addView(speedDialToggle,
                 new LinearLayout.LayoutParams(dp(52), dp(52)));
         updateStorageDestinationLabel();
@@ -214,6 +225,7 @@ VideoFragment.LowestThresholdCheckForVideoInterface
         icon.setClickable(false);
         icon.setVisibility(View.VISIBLE);
         icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        icon.setColorFilter(Color.WHITE);
         if (existingIcon == null) icon.setImageResource(iconResource);
         iconHolder.addView(icon, new FrameLayout.LayoutParams(dp(24), dp(24), Gravity.CENTER));
 
@@ -234,8 +246,8 @@ VideoFragment.LowestThresholdCheckForVideoInterface
     private GradientDrawable createSpeedDialCircleBackground(boolean primary) {
         GradientDrawable background = new GradientDrawable();
         background.setShape(GradientDrawable.OVAL);
-        background.setColor(primary ? 0xD9222222 : 0xC9111111);
-        background.setStroke(dp(1), primary ? 0xCCFFFFFF : 0x77FFFFFF);
+        background.setColor(primary ? 0x80333333 : 0x66333333);
+        background.setStroke(dp(1), primary ? 0x99FFFFFF : 0x66FFFFFF);
         return background;
     }
 
@@ -257,7 +269,7 @@ VideoFragment.LowestThresholdCheckForVideoInterface
         speedDialExpanded = expanded;
         speedDialMenu.setVisibility(expanded ? View.VISIBLE : View.GONE);
         speedDialToggle.setImageResource(expanded
-                ? R.drawable.ic_speed_dial_close : R.drawable.ic_speed_dial_tune);
+                ? R.drawable.ic_speed_dial_close : R.drawable.ic_speed_dial_settings);
         speedDialToggle.setContentDescription(getString(expanded
                 ? R.string.speedDialCloseDescription : R.string.speedDialOpenDescription));
     }
@@ -270,6 +282,13 @@ VideoFragment.LowestThresholdCheckForVideoInterface
         if (instantSettingsParent == null) return;
         instantSettingsParent.setVisibility(View.VISIBLE);
         instantSettingsParent.invalidate();
+    }
+
+    public void updateSpeedDialFlashIcon(boolean flashEnabled) {
+        if (speedDialFlashIcon != null) {
+            speedDialFlashIcon.setImageResource(flashEnabled
+                    ? R.drawable.ic_video_flash_off : R.drawable.ic_video_flash_on);
+        }
     }
 
     public PinchZoomGestureListener getPinchZoomGestureListener(){
@@ -468,6 +487,11 @@ VideoFragment.LowestThresholdCheckForVideoInterface
     }
 
     public void toggleMicrophone(View view){
+        if (videoFragment != null && videoFragment.getCameraView() != null
+                && videoFragment.getCameraView().isRecord()) {
+            Toast.makeText(this, R.string.stopRecordingToChangeMicrophone, Toast.LENGTH_SHORT).show();
+            return;
+        }
         SharedPreferences micPrefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         SharedPreferences.Editor prefsEditor = micPrefs.edit();
         boolean noAudio;

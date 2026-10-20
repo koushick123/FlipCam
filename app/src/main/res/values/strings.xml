@@ -15,7 +15,7 @@
     <string name="MEM_PF_KB"> KB</string>
     <string name="MEM_PF_MB"> MB</string>
     <string name="MEM_PF_GB"> GB</string>
-    <string name="START_TIME">00 : 00 : 00</string>
+    <string name="START_TIME">00:00:00</string>
     <string name="START_MEMORY">0 MB</string>
     <string name="VIDEO_MODE">VIDEO</string>
     <string name="video">Video</string>
@@ -80,6 +80,7 @@
     <string name="storageDestinationDescription">Save media to %1$s. Tap to change.</string>
     <string name="storageDestinationDescriptionDefault">Choose where to save media</string>
     <string name="stopRecordingToChangeStorage">Stop recording before changing the save location.</string>
+    <string name="stopRecordingToChangeMicrophone">Stop recording before changing the microphone setting.</string>
     <string name="phoneMemory">Phone Memory</string>
     <string name="sdCard">SD Card</string>
     <string name="phoneMemoryLimit">Phone Memory Limit</string>
@@ -226,6 +227,7 @@
     <string name="googleDriveDesc">Google Drive Icon</string>
     <string name="warningSymbol">Warning Message</string>
     <string name="zoomNotSupported">Zoom not supported for this camera.</string>
+    <string name="zoomControlDescription">Zoom</string>
     <string name="unableToDelete">Unable to delete file</string>
     <string name="torchMode">Torch</string>
     <string name="flashOnMode">On</string>
@@ -241,6 +243,8 @@
     <string name="speedDialStorageDescription">Choose where videos are saved</string>
     <string name="speedDialMicOn">Mic on</string>
     <string name="speedDialMicOff">Mic off</string>
+    <string name="speedDialFlash">Flash</string>
+    <string name="speedDialFlashDescription">Toggle camera flash</string>
     <string name="speedDialMicDescription">Toggle microphone audio</string>
     <string name="speedDialBrightness">Brightness</string>
     <string name="speedDialOpenDescription">Open camera controls</string>
@@ -272,7 +276,7 @@
     <string name="sendFeedbackTitleMsg">Feedback...</string>
     <string name="mediaSlideview">Slide View</string>
     <string name="brightnessHeading">BRIGHTNESS</string>
-    <string name="resolutionDisplay">%1$s X %2$s</string>
+    <string name="resolutionDisplay">%1$s × %2$s</string>
     <string name="backCamResTitle">Back Camera Resolution</string>
     <string name="frontCamResTitle">Front Camera Resolution</string>
     <string name="videoSettingsTitle">Video Settings</string>

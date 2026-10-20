@@ -138,6 +138,39 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     File videoFile;
     ImageButton stopButton;
     float imageRotationAngle = 0.0f;
+
+    /**
+     * Fit the camera image within the available screen area while preserving
+     * the selected recording aspect ratio. The black parent area becomes
+     * visible letterboxing only when the screen and camera ratios differ.
+     */
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        int availableWidth = MeasureSpec.getSize(widthMeasureSpec);
+        int availableHeight = MeasureSpec.getSize(heightMeasureSpec);
+        if (availableWidth <= 0 || availableHeight <= 0) {
+            super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+            return;
+        }
+
+        int sourceWidth = Math.max(recordVideoWidth, 1);
+        int sourceHeight = Math.max(recordVideoHeight, 1);
+        float cameraAspectRatio = portrait
+                ? (float) sourceHeight / sourceWidth
+                : (float) sourceWidth / sourceHeight;
+        float screenAspectRatio = (float) availableWidth / availableHeight;
+
+        int fittedWidth = availableWidth;
+        int fittedHeight = availableHeight;
+        if (Math.abs(cameraAspectRatio - screenAspectRatio) > 0.001f) {
+            if (screenAspectRatio > cameraAspectRatio) {
+                fittedWidth = Math.round(availableHeight * cameraAspectRatio);
+            } else {
+                fittedHeight = Math.round(availableWidth / cameraAspectRatio);
+            }
+        }
+        setMeasuredDimension(fittedWidth, fittedHeight);
+    }
     long previousTime = 0;
     long focusPreviousTime=0;
     int previousOrientation = -1;
@@ -522,7 +555,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             showHr.delete(0, showHr.length());
             showHr.append(hour);
         }
-        timeElapsed.setText(showHr + " : " + showMin + " : " + showSec);
+        timeElapsed.setText(showHr + ":" + showMin + ":" + showSec);
         //This is added for blinking the timer if recording is paused.
         timeElapsed.setVisibility(View.VISIBLE);
     }
@@ -867,31 +900,15 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
 
     public void setLayoutAspectRatio()
     {
-        // Set the preview aspect ratio.
-        requestLayout();
         ViewGroup.LayoutParams layoutParams = getLayoutParams();
-        VIDEO_WIDTH = camera1.getDisplaySizes()[0];
-        VIDEO_HEIGHT = camera1.getDisplaySizes()[1];
-        int temp = VIDEO_HEIGHT;
-        VIDEO_HEIGHT = VIDEO_WIDTH;
-        VIDEO_WIDTH = temp;
-        if (isRecord()) {
-            // Fill the entire camera container while recording. The previous
-            // resolution-sized SurfaceView left uncovered black bands above
-            // and below the preview on screens with a different aspect ratio.
+        if (layoutParams != null) {
+            // Keep the view bounded by the screen in both preview and
+            // recording. onMeasure fits it to the selected camera ratio.
             layoutParams.height = ViewGroup.LayoutParams.MATCH_PARENT;
             layoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT;
-        } else {
-            layoutParams.height = VIDEO_HEIGHT;
-            layoutParams.width = VIDEO_WIDTH;
+            setLayoutParams(layoutParams);
         }
-        if(VERBOSE)Log.d(TAG,"LP Height = "+layoutParams.height);
-        if(VERBOSE)Log.d(TAG,"LP Width = "+layoutParams.width);
-        if(!portrait) {
-            temp = VIDEO_HEIGHT;
-            VIDEO_HEIGHT = VIDEO_WIDTH;
-            VIDEO_WIDTH = temp;
-        }
+        requestLayout();
         int degree;
         if(VERBOSE)Log.d(TAG, "backCamera = "+backCamera);
         if(backCamera) {

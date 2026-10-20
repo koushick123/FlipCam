@@ -100,7 +100,6 @@ public class VideoFragment extends Fragment{
     TextView pauseText;
     boolean sdCardUnavailWarned = false;
     SharedPreferences sharedPreferences;
-    ImageView microThumbnail;
     AppWidgetManager appWidgetManager;
     boolean VERBOSE = false;
     boolean isPause = false;
@@ -247,7 +246,6 @@ public class VideoFragment extends Fragment{
             }
         });
         thumbnail = (ImageView)view.findViewById(R.id.thumbnail);
-        microThumbnail = (ImageView)view.findViewById(R.id.microThumbnail);
         thumbnailParent = (FrameLayout)view.findViewById(R.id.thumbnailParent);
         switchCamera = (ImageButton)view.findViewById(R.id.switchCamera);
         switchCamera.setOnClickListener(new View.OnClickListener() {
@@ -566,7 +564,6 @@ public class VideoFragment extends Fragment{
     {
         switchCamera.setRotation(rotationAngle);
         flash.setRotation(rotationAngle);
-        microThumbnail.setRotation(rotationAngle);
         if(pauseRecord!=null) {
             pauseRecord.setRotation(rotationAngle);
             pauseText.setRotation(rotationAngle);
@@ -585,14 +582,15 @@ public class VideoFragment extends Fragment{
         videoBar.setBackgroundColor(getResources().getColor(R.color.transparentBar));
         LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,LinearLayout.LayoutParams.WRAP_CONTENT);
         stopRecord = new ImageButton(getActivity().getApplicationContext());
-        stopRecord.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        stopRecord.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        stopRecord.setPadding(0, 0, 0, 0);
         stopRecord.setBackgroundColor(getResources().getColor(R.color.transparentBar));
         stopRecord.setImageDrawable(getResources().getDrawable(R.drawable.ic_video_record_stop));
         stopRecord.setContentDescription(getString(R.string.stopRecording));
         cameraView.setStopButton(stopRecord);
 
-        layoutParams.height=(int)getResources().getDimension(R.dimen.stopButtonHeight);
-        layoutParams.width=(int)getResources().getDimension(R.dimen.stopButtonWidth);
+        layoutParams.height=(int)getResources().getDimension(R.dimen.cameraCenterControlSize);
+        layoutParams.width=(int)getResources().getDimension(R.dimen.cameraCenterControlSize);
         layoutParams.setMargins((int)getResources().getDimension(R.dimen.stopBtnLeftMargin),0,(int)getResources().getDimension(R.dimen.stopBtnRightMargin),0);
         stopRecord.setLayoutParams(layoutParams);
         stopRecord.setOnClickListener(new View.OnClickListener() {
@@ -601,7 +599,6 @@ public class VideoFragment extends Fragment{
                 stopRecordAndSaveFile(false);
             }
         });
-        switchCamera.setBackgroundColor(getResources().getColor(R.color.transparentBar));
         switchCamera.setRotation(rotationAngle);
         // In preview this control is hosted by an alignment slot. Detach it
         // before moving it into the recording controls row.
@@ -609,8 +606,12 @@ public class VideoFragment extends Fragment{
         if (switchCameraParent instanceof ViewGroup) {
             ((ViewGroup) switchCameraParent).removeView(switchCamera);
         }
-        videoBar.addView(switchCamera);
-        videoBar.addView(stopRecord);
+        addBottomControlSlot(switchCamera,
+                (int) getResources().getDimension(R.dimen.cameraSideControlSize),
+                (int) getResources().getDimension(R.dimen.cameraSideControlSize));
+        addBottomControlSlot(stopRecord,
+                (int) getResources().getDimension(R.dimen.cameraCenterControlSize),
+                (int) getResources().getDimension(R.dimen.cameraCenterControlSize));
         addPauseButton();
         toggleAudio.setClickable(false);
     }
@@ -618,7 +619,8 @@ public class VideoFragment extends Fragment{
     @TargetApi(Build.VERSION_CODES.N)
     public void addPauseButton(){
         pauseRecord = new ImageButton(getActivity().getApplicationContext());
-        pauseRecord.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        pauseRecord.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        pauseRecord.setPadding(0, 0, 0, 0);
         pauseRecord.setBackgroundColor(getResources().getColor(R.color.transparentBar));
         pauseRecord.setImageDrawable(getResources().getDrawable(R.drawable.ic_video_pause));
         pauseRecord.setContentDescription(getString(R.string.pauseRecording));
@@ -647,7 +649,9 @@ public class VideoFragment extends Fragment{
         layoutParams.width = (int)getResources().getDimension(R.dimen.pauseButtonWidth);
         layoutParams.height = (int)getResources().getDimension(R.dimen.pauseButtonHeight);
         pauseRecord.setLayoutParams(layoutParams);
-        videoBar.addView(pauseRecord);
+        addBottomControlSlot(pauseRecord,
+                (int) getResources().getDimension(R.dimen.cameraSideControlSize),
+                (int) getResources().getDimension(R.dimen.cameraSideControlSize));
     }
 
     public boolean isPause() {
@@ -780,7 +784,7 @@ public class VideoFragment extends Fragment{
         decor.setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN);
         new WindowInsetsControllerCompat(cameraActivity.getWindow(), decor)
                 .show(WindowInsetsCompat.Type.navigationBars());
-        videoBar.setBackgroundColor(getResources().getColor(R.color.settingsBarColor));
+        videoBar.setBackgroundColor(getResources().getColor(R.color.transparentBar));
         //Enable Audio if disabled, after recording is completed.
         SharedPreferences micPrefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         SharedPreferences.Editor prefsEditor = micPrefs.edit();
@@ -793,12 +797,18 @@ public class VideoFragment extends Fragment{
         }
         videoBar.removeAllViews();
         videoBar.setWeightSum(3);
-        addBottomControlSlot(switchCamera);
-        addBottomControlSlot(startRecord);
-        addBottomControlSlot(thumbnailParent);
+        addBottomControlSlot(switchCamera,
+                (int) getResources().getDimension(R.dimen.cameraSideControlSize),
+                (int) getResources().getDimension(R.dimen.cameraSideControlSize));
+        addBottomControlSlot(startRecord,
+                (int) getResources().getDimension(R.dimen.cameraCenterControlSize),
+                (int) getResources().getDimension(R.dimen.cameraCenterControlSize));
+        addBottomControlSlot(thumbnailParent,
+                (int) getResources().getDimension(R.dimen.thumbnailSlotWidth),
+                (int) getResources().getDimension(R.dimen.cameraSideControlSize));
         settingsBar.removeAllViews();
         settingsBar.setWeightSum(3);
-        settingsBar.setBackgroundColor(getResources().getColor(R.color.settingsBarColor));
+        settingsBar.setBackgroundColor(getResources().getColor(R.color.transparentBar));
         flashParentLayout.removeAllViews();
         if(cameraView.isCameraReady()) {
             if (cameraView.isFlashOn()) {
@@ -808,9 +818,15 @@ public class VideoFragment extends Fragment{
             }
         }
         FrameLayout.LayoutParams flashParams = new FrameLayout.LayoutParams(
-                (int)getResources().getDimension(R.dimen.flashOnWidth),
-                (int)getResources().getDimension(R.dimen.flashOnHeight), Gravity.CENTER);
+                (int)getResources().getDimension(R.dimen.cameraControlSize),
+                (int)getResources().getDimension(R.dimen.cameraControlSize), Gravity.CENTER);
         flash.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        flash.setPadding((int)getResources().getDimension(R.dimen.controlIconPadding),
+                (int)getResources().getDimension(R.dimen.controlIconPadding),
+                (int)getResources().getDimension(R.dimen.controlIconPadding),
+                (int)getResources().getDimension(R.dimen.controlIconPadding));
+        flash.setBackgroundResource(R.drawable.camera_control_circle);
+        flash.setColorFilter(android.graphics.Color.WHITE);
         flash.setLayoutParams(flashParams);
         flash.setOnClickListener(new View.OnClickListener(){
             @Override
@@ -829,10 +845,8 @@ public class VideoFragment extends Fragment{
         if (cameraActivity.storageDestination != null) {
             cameraActivity.storageDestination.setGravity(Gravity.CENTER);
         }
-        flash.setBackgroundColor(getResources().getColor(R.color.transparentBar));
-        addPreviewControlSlot(flash,
-                (int) getResources().getDimension(R.dimen.flashOnWidth),
-                (int) getResources().getDimension(R.dimen.flashOnHeight));
+        // Leave the left slot empty to preserve the centered resolution label.
+        addPreviewControlSlot(new View(getActivity()), 0, 0);
         addPreviewControlSlot(modeLayout);
         if (cameraActivity.storageDestination != null) {
             addPreviewControlSlot(cameraActivity.storageDestination);
@@ -856,17 +870,17 @@ public class VideoFragment extends Fragment{
         slot.addView(control, new FrameLayout.LayoutParams(
                 width, height, Gravity.CENTER));
         settingsBar.addView(slot, new LinearLayout.LayoutParams(
-                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+                0, ViewGroup.LayoutParams.MATCH_PARENT, 1f));
     }
 
-    private void addBottomControlSlot(View control) {
+    private void addBottomControlSlot(View control, int controlWidth, int controlHeight) {
         ViewParent parent = control.getParent();
         if (parent instanceof ViewGroup) {
             ((ViewGroup) parent).removeView(control);
         }
         FrameLayout slot = new FrameLayout(getActivity());
         slot.addView(control, new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER));
+                controlWidth, controlHeight, Gravity.CENTER));
         videoBar.addView(slot, new LinearLayout.LayoutParams(
                 0, ViewGroup.LayoutParams.MATCH_PARENT, 1f));
     }
@@ -913,12 +927,17 @@ public class VideoFragment extends Fragment{
             flash.setImageDrawable(getResources().getDrawable(R.drawable.ic_video_flash_on));
         }
         flash.setOnClickListener((view) -> setFlash());
-        LinearLayout.LayoutParams flashParam = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        flashParam.width = (int)getResources().getDimension(R.dimen.flashOnWidth);
-        flashParam.height = (int)getResources().getDimension(R.dimen.flashOnHeight);
+        LinearLayout.LayoutParams flashParam = new LinearLayout.LayoutParams(
+                (int)getResources().getDimension(R.dimen.cameraControlSize),
+                (int)getResources().getDimension(R.dimen.cameraControlSize));
         flash.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        flash.setPadding((int)getResources().getDimension(R.dimen.controlIconPadding),
+                (int)getResources().getDimension(R.dimen.controlIconPadding),
+                (int)getResources().getDimension(R.dimen.controlIconPadding),
+                (int)getResources().getDimension(R.dimen.controlIconPadding));
         flash.setLayoutParams(flashParam);
-        flash.setBackgroundColor(getResources().getColor(R.color.transparentBar));
+        flash.setBackgroundResource(R.drawable.camera_control_circle);
+        flash.setColorFilter(android.graphics.Color.WHITE);
         cameraView.setFlashButton(flash);
         ViewParent flashParent = flash.getParent();
         if (flashParent instanceof ViewGroup) {
@@ -942,9 +961,12 @@ public class VideoFragment extends Fragment{
         timeElapsed.setGravity(Gravity.CENTER_HORIZONTAL);
         timeElapsed.setTypeface(Typeface.DEFAULT_BOLD);
         timeElapsed.setBackgroundColor(getResources().getColor(R.color.transparentBar));
-        timeElapsed.setTextColor(getResources().getColor(R.color.timeElapsed));
+        timeElapsed.setTextColor(android.graphics.Color.WHITE);
         timeElapsed.setText(getResources().getString(R.string.START_TIME));
         timeElapsed.setTextSize(24);
+        timeElapsed.setCompoundDrawablePadding((int) (8 * getResources().getDisplayMetrics().density));
+        timeElapsed.setCompoundDrawablesWithIntrinsicBounds(
+                R.drawable.recording_indicator, 0, 0, 0);
         timeElapsed.setShadowLayer(3f, 0f, 1f, Color.BLACK);
         FrameLayout.LayoutParams timerOverlayParams = new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER);
@@ -1044,6 +1066,11 @@ public class VideoFragment extends Fragment{
             }).start();
         }
         cameraView.flashOnOff(flashOn);
+        cameraActivity.updateSpeedDialFlashIcon(flashOn);
+    }
+
+    public void toggleFlashFromSpeedDial() {
+        setFlash();
     }
 
     public boolean isFlashOn()
@@ -1143,8 +1170,7 @@ public class VideoFragment extends Fragment{
         if(VERBOSE)Log.d(TAG,"width = "+firstFrame.getWidth()+" , height = "+firstFrame.getHeight());
         boolean isDetached=false;
         try {
-            firstFrame = Bitmap.createScaledBitmap(firstFrame, (int) getResources().getDimension(R.dimen.thumbnailWidth),
-                    (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
+            firstFrame = cropThumbnailToCircle(firstFrame);
         }
         catch (IllegalStateException illegal){
             if(VERBOSE)Log.d(TAG,"video fragment is already detached. ");
@@ -1153,8 +1179,6 @@ public class VideoFragment extends Fragment{
         showRecordSaved();
         addMediaToDB();
         if(!isDetached) {
-            updateMicroThumbnailAsPerPlayer();
-            microThumbnail.setVisibility(View.VISIBLE);
             thumbnail.setVisibility(View.VISIBLE);
             thumbnailParent.setVisibility(View.VISIBLE);
             thumbnail.setImageBitmap(firstFrame);
@@ -1165,15 +1189,6 @@ public class VideoFragment extends Fragment{
                     openMedia();
                 }
             });
-        }
-    }
-
-    private void updateMicroThumbnailAsPerPlayer(){
-        if(isUseFCPlayer()){
-            microThumbnail.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_circle_outline));
-        }
-        else{
-            microThumbnail.setImageDrawable(getResources().getDrawable(R.drawable.ic_external_play_circle_outline));
         }
     }
 
@@ -1224,11 +1239,8 @@ public class VideoFragment extends Fragment{
                 if(VERBOSE)Log.d(TAG, "Vid = "+vid);
                 //If video cannot be played for whatever reason
                 if (vid != null) {
-                    vid = Bitmap.createScaledBitmap(vid, (int) getResources().getDimension(R.dimen.thumbnailWidth),
-                            (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
+                    vid = cropThumbnailToCircle(vid);
                     thumbnail.setImageBitmap(vid);
-                    updateMicroThumbnailAsPerPlayer();
-                    microThumbnail.setVisibility(View.VISIBLE);
                     if(VERBOSE)Log.d(TAG, "set as image bitmap");
                     thumbnail.setClickable(true);
                     thumbnail.setOnClickListener(new View.OnClickListener() {
@@ -1240,12 +1252,10 @@ public class VideoFragment extends Fragment{
                 } else {
                     // Leave an existing video intact and display the default
                     // thumbnail if this device cannot decode a preview frame.
-                    microThumbnail.setVisibility(View.INVISIBLE);
                     setPlaceholderThumbnail();
                 }
         }
         else{
-            microThumbnail.setVisibility(View.INVISIBLE);
             setPlaceholderThumbnail();
         }
     }
@@ -1254,6 +1264,16 @@ public class VideoFragment extends Fragment{
     {
         thumbnail.setImageDrawable(getResources().getDrawable(R.drawable.placeholder));
         thumbnail.setClickable(false);
+    }
+
+    private Bitmap cropThumbnailToCircle(Bitmap source) {
+        int side = Math.min(source.getWidth(), source.getHeight());
+        int left = (source.getWidth() - side) / 2;
+        int top = (source.getHeight() - side) / 2;
+        Bitmap square = Bitmap.createBitmap(source, left, top, side, side);
+        int targetSize = (int) getResources().getDimension(R.dimen.thumbnailWidth);
+        if (square.getWidth() == targetSize) return square;
+        return Bitmap.createScaledBitmap(square, targetSize, targetSize, true);
     }
 
     private void openMedia()

@@ -38,17 +38,22 @@
         <SeekBar
             android:id="@+id/zoomBar"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="10dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="24dp"
+            android:layout_marginEnd="24dp"
+            android:layout_marginBottom="0dp"
+            android:contentDescription="@string/zoomControlDescription"
             android:progressBackgroundTint="@color/settingsBarColor"
+            android:progressTint="@color/progressFill"
             android:thumb="@drawable/greencircle" />
 
         <LinearLayout
             android:id="@+id/videoFunctions"
             android:layout_width="match_parent"
-            android:layout_height="70dp"
+            android:layout_height="92dp"
             android:layout_weight="0.90"
-        android:background="@color/settingsBarColor"
+            android:background="@android:color/transparent"
+            android:paddingBottom="8dp"
             android:gravity="center"
             android:orientation="horizontal"
             android:weightSum="1">
@@ -65,25 +70,25 @@
 
             <ImageButton
                 android:id="@+id/switchCamera"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_width="@dimen/cameraSideControlSize"
+                android:layout_height="@dimen/cameraSideControlSize"
                 android:layout_gravity="center_vertical"
-                android:layout_marginStart="15dp"
-                android:background="@color/transparentBar"
+                android:background="@drawable/camera_control_circle"
                 android:contentDescription="@string/switchCamera"
-                android:src="@drawable/ic_video_switch_camera" />
+                android:padding="14dp"
+                android:src="@drawable/ic_video_switch_camera"
+                android:tint="@android:color/white" />
 
             <ImageButton
                 android:id="@+id/cameraRecord"
                 android:layout_width="@dimen/startButtonWidth"
                 android:layout_height="@dimen/startButtonHeight"
                 android:layout_gravity="center"
-                android:layout_marginEnd="5dp"
-                android:layout_marginStart="15dp"
                 android:layout_weight="0.08"
                 android:background="@color/transparentBar"
                 android:contentDescription="@string/recordVideo"
-                android:scaleType="centerCrop"
+                android:padding="0dp"
+                android:scaleType="fitCenter"
                 android:src="@drawable/ic_video_record_start" />
 
             <FrameLayout
@@ -93,24 +98,18 @@
 
                 <ImageView
                     android:id="@+id/thumbnail"
-                    android:layout_width="wrap_content"
-                    android:layout_height="65dp"
+                    android:layout_width="@dimen/thumbnailWidth"
+                    android:layout_height="@dimen/thumbnailHeight"
                     android:layout_gravity="center_vertical"
                     android:layout_marginEnd="5dp"
                     android:layout_marginStart="5dp"
                     android:layout_weight="0.06"
-                    android:background="@color/transparentBar"
+                    android:background="@drawable/camera_thumbnail_circle"
+                    android:foreground="@drawable/camera_thumbnail_circle"
+                    android:clipToOutline="true"
                     android:contentDescription="@string/thumbnail"
+                    android:scaleType="centerCrop"
                     android:src="@drawable/placeholder" />
-
-                <ImageView
-                    android:id="@+id/microThumbnail"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:contentDescription="@string/playVideoCircle"
-                    android:visibility="invisible"
-                    app:srcCompat="@drawable/ic_play_circle_thumbnail" />
             </FrameLayout>
         </LinearLayout>
     </LinearLayout>
