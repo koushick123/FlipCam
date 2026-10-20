@@ -843,7 +843,7 @@ public class MediaActivity extends AppCompatActivity implements ViewPager.OnPage
         videoControls.addView(parentMedia);
         videoSeek.setMax(Integer.parseInt(duration));
         videoSeek.setProgress(0);
-        videoSeek.setProgressTintList(ColorStateList.valueOf(getResources().getColor(R.color.turqoise)));
+        videoSeek.setProgressTintList(ColorStateList.valueOf(getResources().getColor(R.color.uiAccent)));
         videoSeek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {

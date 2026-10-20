@@ -216,7 +216,7 @@ public class VideoFragment extends Fragment{
         if(VERBOSE)Log.d(TAG,"cameraview onresume visibility= "+cameraView.getWindowVisibility());
         pauseText = view.findViewById(R.id.pauseText);
         zoombar = (SeekBar)view.findViewById(R.id.zoomBar);
-        zoombar.setProgressTintList(ColorStateList.valueOf(getResources().getColor(R.color.progressFill)));
+        zoombar.setProgressTintList(ColorStateList.valueOf(getResources().getColor(R.color.uiAccent)));
         cameraView.setSeekBar(zoombar);
         zoombar.setProgress(0);
         zoombar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {

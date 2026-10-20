@@ -36,6 +36,7 @@
         android:weightSum="1">
 
         <SeekBar
+        android:thumbTint="@color/uiAccent"
             android:id="@+id/zoomBar"
             android:layout_width="match_parent"
             android:layout_height="40dp"
@@ -44,8 +45,8 @@
             android:layout_marginBottom="0dp"
             android:contentDescription="@string/zoomControlDescription"
             android:progressBackgroundTint="@color/settingsBarColor"
-            android:progressTint="@color/progressFill"
-            android:thumb="@drawable/greencircle" />
+            android:progressTint="@color/uiAccent"
+            android:thumb="@drawable/slider_thumb" />
 
         <LinearLayout
             android:id="@+id/videoFunctions"

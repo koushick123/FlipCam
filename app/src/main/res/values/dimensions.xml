@@ -79,8 +79,6 @@
     <dimen name="headTextLeftMargin">20dp</dimen>
     <dimen name="phoneMemTextLeftMargin">17dp</dimen>
     <dimen name="headTextTopMargin">10dp</dimen>
-    <dimen name="greenArrowWidth">40dp</dimen>
-    <dimen name="greenArrowHeight">40dp</dimen>
     <dimen name="switchRightMargin">60dp</dimen>
     <dimen name="separatorHeight">3dp</dimen>
     <dimen name="separatorHeightSmall">0.5dp</dimen>

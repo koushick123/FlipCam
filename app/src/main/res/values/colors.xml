@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Shared white accent for controls, messages, and borders. -->
+    <color name="uiAccent">#FFFFFF</color>
     <color name="colorPrimary">#4267B2</color>
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#FF4081</color>
@@ -13,22 +15,13 @@
     <color name="permissionBackground">#000000</color>
     //Placeholder color for thumbnail
     <color name="thumbnailPlaceholder">#686565</color>
-    //Progress fill color for zoombar
-    <color name="progressFill">#4dc2a5</color>
-    //Theme color for the app
-    <color name="turqoise">#4dc2a5</color>
     <color name="external_play_color">#0A2ECF</color>
-    //Color for thumbnail
-    <color name="turqoiseLight">#04f9bc</color>
-    <color name="turqoiseDark">#354540</color>
     //Time elapsed text color
     <color name="timeElapsed">#ff0000</color>
     //Memory consumed text color
     <color name="memoryConsumed">#ff0000</color>
     //Top and Bottom media control color for image
     <color name="mediaControlColor">#000000</color>
-    //Background color for mode
-    <color name="modeText">#4dc2a5</color>
     //Text for color for save message
     <color name="saveText">#ffffff</color>
     //Transparent color for saved message
@@ -48,11 +41,9 @@
     //Background color for settings popup message
     <color name="backColorSettingPopup">#80000000</color>
     //Background color for ripple
-    <color name="rippleColor">#387171</color>
+    <color name="rippleColor">#33FFFFFF</color>
     //Transparent color for floating button
     <color name="fabBackground">#90000000</color>
-    //Audio Enable
-    <color name="audioEnable">#4dc2a5</color>
     //Audio Disable
     <color name="audioDisable">#ff0000</color>
 </resources>

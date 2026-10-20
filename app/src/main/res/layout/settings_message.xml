@@ -7,13 +7,14 @@
     android:background="@color/savedMsg">
 
     <ImageView
+        android:tint="@color/uiAccent"
         android:id="@+id/heading"
         android:layout_width="@dimen/widthAndHeightForHeading"
         android:layout_height="@dimen/widthAndHeightForHeading"
         android:layout_centerHorizontal="true"
         android:layout_centerInParent="false"
         android:layout_marginTop="@dimen/featureAndValueTopAndBottomMargin"
-        app:srcCompat="@drawable/greencircle" />
+        app:srcCompat="@drawable/slider_thumb" />
 
     <LinearLayout
         android:id="@+id/featureParent"
@@ -37,7 +38,7 @@
             android:layout_weight="1"
             android:gravity="center"
             android:text="TextView"
-            android:textColor="@color/turqoise"
+            android:textColor="@color/uiAccent"
             android:textStyle="bold" />
 
         <TextView
@@ -54,7 +55,7 @@
             android:layout_weight="1"
             android:gravity="center"
             android:text="TextView"
-            android:textColor="@color/turqoise"
+            android:textColor="@color/uiAccent"
             android:textStyle="bold" />
 
     </LinearLayout>

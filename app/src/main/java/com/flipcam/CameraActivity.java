@@ -538,7 +538,7 @@ VideoFragment.LowestThresholdCheckForVideoInterface
             noAudioText.setText(getResources().getString(R.string.audioDisableMessage));
         }
         else{
-            noAudioText.setTextColor(getResources().getColor(R.color.audioEnable));
+            noAudioText.setTextColor(getResources().getColor(R.color.uiAccent));
             noAudioText.setText(getResources().getString(R.string.audioEnableMessage));
         }
         noAudioLayout.addView(noAudioText);

@@ -10,7 +10,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/turqoise"
+        android:background="@color/uiAccent"
         android:gravity="center"
         android:orientation="horizontal">
 
@@ -50,7 +50,7 @@
         android:layout_marginStart="@dimen/mediaInfoStartMargin"
         android:layout_marginTop="@dimen/mediaInfoTopMargin"
         android:layout_marginEnd="@dimen/mediaInfoStartMargin"
-        android:textColor="@color/turqoise"
+        android:textColor="@color/uiAccent"
         tools:text="TextView" />
 
     <TextView
@@ -60,7 +60,7 @@
         android:layout_marginStart="@dimen/mediaInfoStartMargin"
         android:layout_marginTop="@dimen/mediaInfoTopMargin"
         android:layout_marginEnd="@dimen/mediaInfoStartMargin"
-        android:textColor="@color/turqoise"
+        android:textColor="@color/uiAccent"
         tools:text="TextView" />
 
     <TextView
@@ -70,7 +70,7 @@
         android:layout_marginStart="@dimen/mediaInfoStartMargin"
         android:layout_marginTop="@dimen/mediaInfoTopMargin"
         android:layout_marginEnd="@dimen/mediaInfoStartMargin"
-        android:textColor="@color/turqoise"
+        android:textColor="@color/uiAccent"
         tools:text="TextView" />
 
     <TextView
@@ -80,7 +80,7 @@
         android:layout_marginStart="@dimen/mediaInfoStartMargin"
         android:layout_marginTop="@dimen/mediaInfoTopMargin"
         android:layout_marginEnd="@dimen/mediaInfoStartMargin"
-        android:textColor="@color/turqoise"
+        android:textColor="@color/uiAccent"
         tools:text="TextView" />
 
     <TextView
@@ -90,7 +90,7 @@
         android:layout_marginStart="@dimen/mediaInfoStartMargin"
         android:layout_marginTop="@dimen/mediaInfoTopMargin"
         android:layout_marginEnd="@dimen/mediaInfoStartMargin"
-        android:textColor="@color/turqoise"
+        android:textColor="@color/uiAccent"
         tools:text="TextView" />
 
     <LinearLayout
@@ -112,7 +112,7 @@
             android:contentDescription="@string/closeBtnContentDescription"
             android:onClick="okToClose"
             android:text="@string/closeButton"
-            android:textColor="@color/turqoise"
+            android:textColor="@color/uiAccent"
             app:srcCompat="@android:drawable/ic_menu_close_clear_cancel" />
     </LinearLayout>
 

@@ -91,6 +91,7 @@
             android:src="@drawable/share_icon" />
 
         <ImageView
+        android:tint="@color/uiAccent"
             android:id="@+id/folderViewOn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -124,7 +125,7 @@
                 android:layout_weight="0.5"
                 android:gravity="start"
                 android:text="@string/START_TIME"
-                android:textColor="@color/turqoise"
+                android:textColor="@color/uiAccent"
                 android:textStyle="bold" />
 
             <TextView
@@ -133,15 +134,16 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="0.5"
                 android:gravity="end"
-                android:textColor="@color/turqoise"
+                android:textColor="@color/uiAccent"
                 android:textStyle="bold" />
         </LinearLayout>
 
         <SeekBar
+        android:thumbTint="@color/uiAccent"
             android:id="@+id/videoSeek"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:thumb="@drawable/greencircle" />
+            android:thumb="@drawable/slider_thumb" />
 
         <LinearLayout
             android:id="@+id/parentMedia"

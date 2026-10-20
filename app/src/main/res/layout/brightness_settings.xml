@@ -14,10 +14,11 @@
         android:layout_marginBottom="30dp"
         android:layout_marginTop="15dp"
         android:gravity="center_horizontal"
-        android:textColor="@color/turqoise"
+        android:textColor="@color/uiAccent"
         android:textStyle="bold" />
 
     <ImageView
+        android:tint="@color/uiAccent"
         android:id="@+id/maxBrightness"
         android:layout_width="@dimen/brightnessWidth"
         android:layout_height="@dimen/brightnessHeight"
@@ -28,6 +29,7 @@
         app:srcCompat="@drawable/full_brightness" />
 
     <ImageView
+        android:tint="@color/uiAccent"
         android:id="@+id/minBrightness"
         android:layout_width="@dimen/brightnessWidth"
         android:layout_height="@dimen/brightnessHeight"
@@ -37,6 +39,7 @@
         app:srcCompat="@drawable/low_brightness" />
 
     <SeekBar
+        android:thumbTint="@color/uiAccent"
         android:id="@+id/brightnessBar"
         style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="match_parent"
@@ -48,10 +51,11 @@
         android:layout_marginStart="15dp"
         android:indeterminate="false"
         android:progressBackgroundTint="@color/settingsBarColor"
-        android:progressTint="@color/turqoise"
-        android:thumb="@drawable/greencircle" />
+        android:progressTint="@color/uiAccent"
+        android:thumb="@drawable/slider_thumb" />
 
     <ImageView
+        android:tint="@color/uiAccent"
         android:id="@+id/normalBrightness"
         android:layout_width="@dimen/normalBrightnessWidth"
         android:layout_height="@dimen/normalBrightnessHeight"
@@ -79,7 +83,7 @@
             android:layout_marginLeft="20dp"
             android:layout_marginRight="20dp"
             android:layout_weight="1"
-            android:background="@color/turqoise"
+            android:background="@color/uiAccent"
             android:text="-"
             android:textSize="@dimen/increaseDecreaseTextSize" />
 
@@ -93,7 +97,7 @@
             android:layout_marginRight="20dp"
             android:layout_toRightOf="@+id/setTimer"
             android:layout_weight="1"
-            android:background="@color/turqoise"
+            android:background="@color/uiAccent"
             android:text="+"
             android:textSize="@dimen/increaseDecreaseTextSize" />
 

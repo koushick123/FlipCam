@@ -217,7 +217,7 @@ MediaPlayer.OnErrorListener, Serializable{
 
     public void reConstructVideo(Media savedVideo){
         videoSeek.setMax(savedVideo.getSeekDuration());
-        videoSeek.setProgressTintList(ColorStateList.valueOf(getResources().getColor(R.color.turqoise)));
+        videoSeek.setProgressTintList(ColorStateList.valueOf(getResources().getColor(R.color.uiAccent)));
         if(VERBOSE)Log.d(TAG, "Retrieve media completed == " + savedVideo.isMediaCompleted());
         if (savedVideo.isMediaCompleted()) {
             videoSeek.setProgress(0);
@@ -532,7 +532,7 @@ MediaPlayer.OnErrorListener, Serializable{
                 showAllControls();
                 showTimeElapsed();
                 calculateAndDisplayEndTime(Integer.parseInt(duration), true);
-                videoSeek.setProgressTintList(ColorStateList.valueOf(getResources().getColor(R.color.turqoise)));
+                videoSeek.setProgressTintList(ColorStateList.valueOf(getResources().getColor(R.color.uiAccent)));
                 videoSeek.setMax(Integer.parseInt(duration));
                 videoSeek.setProgress(0);
                 videoSeek.setOnSeekBarChangeListener(seekBarChangeListener);

@@ -6,6 +6,7 @@
     android:orientation="vertical">
 
     <ImageView
+        android:tint="@color/uiAccent"
         android:id="@+id/mediaFolder"
         android:layout_width="80dp"
         android:layout_height="80dp"
@@ -20,7 +21,7 @@
         android:layout_gravity="center_horizontal"
         android:layout_marginBottom="15dp"
         android:background="@color/settingsBarColor"
-        android:textColor="@color/turqoise"
+        android:textColor="@color/uiAccent"
         android:textStyle="bold" />
 
 </LinearLayout>

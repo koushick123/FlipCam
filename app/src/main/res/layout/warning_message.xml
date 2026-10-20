@@ -10,7 +10,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/turqoise"
+        android:background="@color/uiAccent"
         android:gravity="center"
         android:orientation="horizontal">
 
@@ -70,7 +70,7 @@
             android:paddingBottom="@dimen/noConnMsgTopAndBottomPadding"
             android:paddingTop="@dimen/noConnMsgTopAndBottomPadding"
             android:text="@string/noConnectionMessage"
-            android:textColor="@color/turqoise"
+            android:textColor="@color/uiAccent"
             android:textStyle="bold" />
     </LinearLayout>
 
@@ -91,6 +91,6 @@
             android:background="@color/thumbnailPlaceholder"
             android:onClick="okToClose"
             android:text="@string/okToDelete"
-            android:textColor="@color/turqoise" />
+            android:textColor="@color/uiAccent" />
     </LinearLayout>
 </LinearLayout>

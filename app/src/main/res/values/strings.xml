@@ -213,7 +213,6 @@
     <string name="shareMedia">Share video</string>
     <string name="infoMediaContentDescription">Display Media Info</string>
     <string name="playVideo">Play Video</string>
-    <string name="greenArrow">Navigate to Memory Threshold Activity</string>
     <string name="folderCreated">Folder Created Successfully.</string>
     <string name="thumbnail">Video thumbnail</string>
     <string name="switchCamera">Switch Camera</string>

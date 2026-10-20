@@ -15,7 +15,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:background="@color/turqoise"
+            android:background="@color/uiAccent"
             android:gravity="center"
             android:orientation="horizontal">
 
@@ -56,7 +56,7 @@
             android:layout_marginTop="20dp"
             android:text="@string/autouploadFolderUpdated"
             android:textAlignment="center"
-            android:textColor="@color/turqoise"
+            android:textColor="@color/uiAccent"
             android:textSize="13sp" />
 
         <CheckBox
@@ -71,9 +71,9 @@
             android:checked="false"
             android:onClick="createDropboxFolder"
             android:text="@string/createUploadFolderDropbox"
-            android:textColor="@color/turqoise"
+            android:textColor="@color/uiAccent"
             android:textSize="12sp"
-            app:buttonTint="@color/turqoise" />
+            app:buttonTint="@color/uiAccent" />
 
         <LinearLayout
             android:layout_width="match_parent"

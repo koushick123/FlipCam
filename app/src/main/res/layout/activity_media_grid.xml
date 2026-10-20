@@ -48,7 +48,7 @@
                 android:layout_marginTop="@dimen/fcGalleryTextTopAndBottomMargin"
                 android:layout_marginBottom="@dimen/fcGalleryTextTopAndBottomMargin"
                 android:layout_weight=".7"
-                android:textColor="@color/turqoise" />
+                android:textColor="@color/uiAccent" />
 
             <TextView
                 android:id="@+id/mediaSource"
@@ -60,7 +60,7 @@
                 android:layout_marginBottom="@dimen/fcGalleryTextTopAndBottomMargin"
                 android:layout_weight=".3"
                 android:gravity="center"
-                android:textColor="@color/turqoise" />
+                android:textColor="@color/uiAccent" />
 
         </LinearLayout>
 
@@ -100,7 +100,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:indeterminate="true"
-        android:indeterminateTint="@color/turqoise"
-        android:progressTint="@color/turqoise"
+        android:indeterminateTint="@color/uiAccent"
+        android:progressTint="@color/uiAccent"
         android:visibility="gone" />
 </FrameLayout>
