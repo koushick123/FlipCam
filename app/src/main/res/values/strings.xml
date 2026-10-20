@@ -234,6 +234,17 @@
     <string name="videoResolutionHeading">Video Resolutions</string>
     <string name="videoResolutionSummary">Set the video recording resolution for the camera.</string>
     <string name="videoResolutionSelectorDescription">Choose video resolution</string>
+    <string name="speedDialResolution">Resolution</string>
+    <string name="speedDialResolutionDescription">Choose video resolution</string>
+    <string name="speedDialStoragePhone">Storage · Phone</string>
+    <string name="speedDialStorageSd">Storage · SD card</string>
+    <string name="speedDialStorageDescription">Choose where videos are saved</string>
+    <string name="speedDialMicOn">Mic on</string>
+    <string name="speedDialMicOff">Mic off</string>
+    <string name="speedDialMicDescription">Toggle microphone audio</string>
+    <string name="speedDialBrightness">Brightness</string>
+    <string name="speedDialOpenDescription">Open camera controls</string>
+    <string name="speedDialCloseDescription">Close camera controls</string>
     <string name="videoResolutionUnavailable">No video resolutions are available for this camera.</string>
     <string name="stopRecordingToChangeResolution">Stop recording before changing video resolution.</string>
     <string name="videoResHigh">HIGH</string>

@@ -150,6 +150,7 @@ public class VideoFragment extends Fragment{
             cameraView.setWindowManager(getActivity().getWindowManager());
         }
         cameraActivity = (CameraActivity)getActivity();
+        cameraActivity.setupCameraSpeedDial();
         toggleAudio = cameraActivity.findViewById(R.id.toggleAudio);
         settingsBar = (LinearLayout)cameraActivity.findViewById(R.id.settingsBar);
         flash = (ImageButton)cameraActivity.findViewById(R.id.flashOn);
@@ -494,6 +495,8 @@ public class VideoFragment extends Fragment{
         switchCamera.setClickable(true);
         toggleAudio.setClickable(true);
         toggleAudio.setVisibility(View.GONE);
+        cameraActivity.closeCameraSpeedDial();
+        cameraActivity.instantSettingsParent.setVisibility(View.GONE);
         addStopAndPauseIcons();
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putBoolean("videoCapture", true);
@@ -770,6 +773,8 @@ public class VideoFragment extends Fragment{
             resInfo.setVisibility(View.VISIBLE);
         }
         cameraActivity.toggleAudio.setVisibility(View.VISIBLE);
+        cameraActivity.closeCameraSpeedDial();
+        cameraActivity.showCameraSpeedDial();
         if (pauseText != null) pauseText.setVisibility(View.INVISIBLE);
         View decor = cameraActivity.getWindow().getDecorView();
         decor.setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN);
@@ -782,6 +787,7 @@ public class VideoFragment extends Fragment{
         if(micPrefs.getBoolean(Constants.NO_AUDIO_MSG, false)) {
             cameraActivity.toggleAudio.setImageDrawable(getResources().getDrawable(R.drawable.ic_video_mic_on));
             cameraActivity.toggleAudio.setContentDescription(getString(R.string.microphoneEnabled));
+            cameraActivity.updateMicrophoneActionLabel(false);
             prefsEditor.putBoolean(Constants.NO_AUDIO_MSG, false);
             prefsEditor.apply();
         }
@@ -820,13 +826,20 @@ public class VideoFragment extends Fragment{
             if (previousParent != null) previousParent.removeView(resInfo);
             modeLayout.addView(resInfo);
         }
-        cameraActivity.storageDestination.setGravity(Gravity.CENTER);
+        if (cameraActivity.storageDestination != null) {
+            cameraActivity.storageDestination.setGravity(Gravity.CENTER);
+        }
         flash.setBackgroundColor(getResources().getColor(R.color.transparentBar));
         addPreviewControlSlot(flash,
                 (int) getResources().getDimension(R.dimen.flashOnWidth),
                 (int) getResources().getDimension(R.dimen.flashOnHeight));
         addPreviewControlSlot(modeLayout);
-        addPreviewControlSlot(cameraActivity.storageDestination);
+        if (cameraActivity.storageDestination != null) {
+            addPreviewControlSlot(cameraActivity.storageDestination);
+        } else {
+            // Keep the resolution label in the center slot after removing the top storage control.
+            addPreviewControlSlot(new View(getActivity()), 0, 0);
+        }
     }
 
     private void addPreviewControlSlot(View control) {
@@ -864,6 +877,8 @@ public class VideoFragment extends Fragment{
 
     public void hideSettingsBarAndIcon()
     {
+        cameraActivity.closeCameraSpeedDial();
+        cameraActivity.instantSettingsParent.setVisibility(View.GONE);
         View decor = cameraActivity.getWindow().getDecorView();
         decor.setSystemUiVisibility(
                 View.SYSTEM_UI_FLAG_FULLSCREEN

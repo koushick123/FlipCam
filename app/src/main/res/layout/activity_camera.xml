@@ -57,13 +57,6 @@
                 android:id="@+id/resInfo"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:background="?android:attr/selectableItemBackground"
-                android:clickable="true"
-                android:contentDescription="@string/videoResolutionSelectorDescription"
-                android:drawableEnd="@drawable/ic_dropdown_arrow"
-                android:drawablePadding="3dp"
-                android:focusable="true"
-                android:onClick="chooseVideoResolution"
                 android:paddingStart="4dp"
                 android:paddingTop="3dp"
                 android:paddingEnd="4dp"
@@ -79,36 +72,16 @@
             android:layout_weight="1"
             android:layout_gravity="center_vertical">
 
-            <TextView
-                android:id="@+id/storageDestination"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:background="?android:attr/selectableItemBackground"
-                android:clickable="true"
-                android:contentDescription="@string/storageDestinationDescriptionDefault"
-                android:drawableStart="@drawable/ic_storage_destination"
-                android:drawablePadding="4dp"
-                android:focusable="true"
-                android:gravity="center"
-                android:onClick="chooseStorageDestination"
-                android:paddingStart="6dp"
-                android:paddingTop="8dp"
-                android:paddingEnd="6dp"
-                android:paddingBottom="8dp"
-                android:text="@string/storagePhoneShort"
-                android:textColor="@color/turqoise"
-                android:textSize="12sp" />
         </FrameLayout>
 
     </LinearLayout>
 
     <LinearLayout
         android:id="@+id/instantSettingsParent"
-        android:layout_width="@dimen/instantSettingWidth"
-        android:layout_height="120dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
-        android:layout_marginBottom="80dp"
+        android:layout_marginBottom="100dp"
         android:layout_marginEnd="10dp"
         android:gravity="top|center_horizontal"
         android:orientation="vertical">
@@ -129,7 +102,7 @@
             android:onClick="openBrightnessPopup"
             android:contentDescription="@string/brightnessContentDescription"
             android:background="?android:attr/selectableItemBackground"
-            android:src="@drawable/ic_video_brightness" />
+            android:src="@drawable/ic_speed_dial_tune" />
 
     </LinearLayout>
 
