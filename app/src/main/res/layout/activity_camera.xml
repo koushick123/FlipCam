@@ -54,16 +54,6 @@
                 android:orientation="vertical">
 
             <TextView
-                android:id="@+id/modeInfo"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:layout_marginBottom="@dimen/modeInfoBottomMargin"
-                android:background="@color/modeText"
-                android:text="@string/VIDEO_MODE"
-                android:textColor="@color/settingsBarColor" />
-
-            <TextView
                 android:id="@+id/resInfo"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"

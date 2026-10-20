@@ -85,7 +85,6 @@ public class VideoFragment extends Fragment{
     LowestThresholdCheckForVideoInterface lowestThresholdCheckForVideoInterface;
     ImageButton stopRecord;
     ImageButton pauseRecord;
-    TextView modeText;
     TextView resInfo;
     LinearLayout modeLayout;
     OrientationEventListener orientationEventListener;
@@ -162,7 +161,6 @@ public class VideoFragment extends Fragment{
             }
         });
         cameraView.setFlashButton(flash);
-        modeText = (TextView)cameraActivity.findViewById(R.id.modeInfo);
         resInfo = (TextView)cameraActivity.findViewById(R.id.resInfo);
         modeLayout = (LinearLayout)cameraActivity.findViewById(R.id.modeLayout);
         permissionInterface = (PermissionInterface)cameraActivity;
@@ -814,21 +812,27 @@ public class VideoFragment extends Fragment{
             modeLayout.addView(resInfo);
         }
         cameraActivity.storageDestination.setGravity(Gravity.CENTER);
-        modeText.setText(getResources().getString(R.string.VIDEO_MODE));
         flash.setBackgroundColor(getResources().getColor(R.color.transparentBar));
-        addPreviewControlSlot(flash);
+        addPreviewControlSlot(flash,
+                (int) getResources().getDimension(R.dimen.flashOnWidth),
+                (int) getResources().getDimension(R.dimen.flashOnHeight));
         addPreviewControlSlot(modeLayout);
         addPreviewControlSlot(cameraActivity.storageDestination);
     }
 
     private void addPreviewControlSlot(View control) {
+        addPreviewControlSlot(control, ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
+    }
+
+    private void addPreviewControlSlot(View control, int width, int height) {
         ViewParent parent = control.getParent();
         if (parent instanceof ViewGroup) {
             ((ViewGroup) parent).removeView(control);
         }
         FrameLayout slot = new FrameLayout(getActivity());
         slot.addView(control, new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER));
+                width, height, Gravity.CENTER));
         settingsBar.addView(slot, new LinearLayout.LayoutParams(
                 0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
     }
