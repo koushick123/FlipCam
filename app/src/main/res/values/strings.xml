@@ -305,5 +305,7 @@
     <string name="mediaInfoDateFormat">dd MMMM yyyy HH:mm:ss</string>
     //Nokia 7.1 model
     <string name="nokia71">Nokia 7.1</string>
+    <string name="speedDialLeftAlign">Left align</string>
+    <string name="speedDialRightAlign">Right align</string>
 </resources>
 

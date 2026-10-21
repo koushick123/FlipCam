@@ -795,17 +795,7 @@ public class VideoFragment extends Fragment{
             prefsEditor.putBoolean(Constants.NO_AUDIO_MSG, false);
             prefsEditor.apply();
         }
-        videoBar.removeAllViews();
-        videoBar.setWeightSum(3);
-        addBottomControlSlot(switchCamera,
-                (int) getResources().getDimension(R.dimen.cameraSideControlSize),
-                (int) getResources().getDimension(R.dimen.cameraSideControlSize));
-        addBottomControlSlot(startRecord,
-                (int) getResources().getDimension(R.dimen.cameraCenterControlSize),
-                (int) getResources().getDimension(R.dimen.cameraCenterControlSize));
-        addBottomControlSlot(thumbnailParent,
-                (int) getResources().getDimension(R.dimen.thumbnailSlotWidth),
-                (int) getResources().getDimension(R.dimen.cameraSideControlSize));
+        populatePreviewBottomControls();
         flashParentLayout.removeAllViews();
         if(cameraView.isCameraReady()) {
             if (cameraView.isFlashOn()) {
@@ -834,6 +824,26 @@ public class VideoFragment extends Fragment{
         });
         cameraView.setFlashButton(flash);
         populatePreviewTopControls();
+    }
+
+    public void applyPreviewHandedness() {
+        if (cameraView == null || cameraView.isRecord() || videoBar == null
+                || switchCamera == null || startRecord == null || thumbnailParent == null) return;
+        populatePreviewBottomControls();
+    }
+
+    private void populatePreviewBottomControls() {
+        boolean left = cameraActivity.isLeftHandedPreview();
+        int sideSize = (int) getResources().getDimension(R.dimen.cameraSideControlSize);
+        int thumbnailWidth = (int) getResources().getDimension(R.dimen.thumbnailSlotWidth);
+        int centerSize = (int) getResources().getDimension(R.dimen.cameraCenterControlSize);
+        videoBar.removeAllViews();
+        videoBar.setWeightSum(3);
+        addBottomControlSlot(left ? thumbnailParent : switchCamera,
+                left ? thumbnailWidth : sideSize, sideSize);
+        addBottomControlSlot(startRecord, centerSize, centerSize);
+        addBottomControlSlot(left ? switchCamera : thumbnailParent,
+                left ? sideSize : thumbnailWidth, sideSize);
     }
 
     private void populatePreviewTopControls() {

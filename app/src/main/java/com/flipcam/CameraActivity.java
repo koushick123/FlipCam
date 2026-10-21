@@ -73,6 +73,9 @@ VideoFragment.LowestThresholdCheckForVideoInterface
     private TextView microphoneActionLabel;
     private ImageView speedDialFlashIcon;
     private boolean speedDialExpanded;
+    private static final String LEFT_HANDED_PREVIEW = "LeftHandedPreview";
+    private TextView alignmentActionLabel;
+    private ImageView alignmentActionIcon;
     ControlVisbilityPreference controlVisbilityPreference;
     boolean fromGallery = false;
     PinchZoomGestureListener pinchZoomGestureListener;
@@ -176,6 +179,17 @@ VideoFragment.LowestThresholdCheckForVideoInterface
                 brightness, getString(R.string.brightnessContentDescription),
                 () -> openBrightnessPopup(null));
 
+        alignmentActionLabel = addSpeedDialAction(R.string.speedDialLeftAlign,
+                R.drawable.ic_align_left, null, getString(R.string.speedDialLeftAlign), () -> {});
+        ViewGroup alignmentRow = (ViewGroup) alignmentActionLabel.getParent();
+        alignmentActionIcon = (ImageView) ((ViewGroup) alignmentRow.getChildAt(1)).getChildAt(0);
+        // Moving the menu keeps it expanded and preserves the existing action views.
+        alignmentRow.setOnClickListener(view -> {
+            getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE).edit()
+                    .putBoolean(LEFT_HANDED_PREVIEW, !isLeftHandedPreview()).apply();
+            applyPreviewHandedness();
+        });
+
         speedDialToggle = new ImageButton(this);
         speedDialToggle.setImageResource(R.drawable.ic_speed_dial_settings);
         speedDialToggle.setColorFilter(Color.WHITE);
@@ -190,6 +204,46 @@ VideoFragment.LowestThresholdCheckForVideoInterface
         instantSettingsParent.addView(speedDialToggle,
                 new LinearLayout.LayoutParams(dp(52), dp(52)));
         updateStorageDestinationLabel();
+        applyPreviewHandedness();
+    }
+
+    public boolean isLeftHandedPreview() {
+        return getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE)
+                .getBoolean(LEFT_HANDED_PREVIEW, false);
+    }
+
+    private void applyPreviewHandedness() {
+        boolean left = isLeftHandedPreview();
+        int side = left ? Gravity.LEFT : Gravity.RIGHT;
+        View controls = findViewById(R.id.cameraRightControls);
+        FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) controls.getLayoutParams();
+        params.gravity = Gravity.BOTTOM | side;
+        params.setMarginStart(dp(12));
+        params.setMarginEnd(dp(12));
+        controls.setLayoutParams(params);
+        ((LinearLayout) controls).setGravity(side);
+        instantSettingsParent.setGravity(Gravity.BOTTOM | side);
+        speedDialMenu.setGravity(side);
+        // Reorder labels and icons without mirroring text or the camera surface.
+        for (int i = 0; i < speedDialMenu.getChildCount(); i++) {
+            LinearLayout row = (LinearLayout) speedDialMenu.getChildAt(i);
+            View label = row.getChildAt(0) instanceof TextView ? row.getChildAt(0) : row.getChildAt(1);
+            View iconHolder = row.getChildAt(0) instanceof FrameLayout ? row.getChildAt(0) : row.getChildAt(1);
+            row.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
+            row.setGravity(Gravity.CENTER_VERTICAL | side);
+            if ((left && row.getChildAt(0) != iconHolder) || (!left && row.getChildAt(0) != label)) {
+                row.removeView(iconHolder);
+                row.addView(iconHolder, left ? 0 : 1);
+            }
+            LinearLayout.LayoutParams iconParams = (LinearLayout.LayoutParams) iconHolder.getLayoutParams();
+            iconParams.setMargins(left ? 0 : dp(8), 0, left ? dp(8) : 0, 0);
+            iconHolder.setLayoutParams(iconParams);
+        }
+        int title = left ? R.string.speedDialRightAlign : R.string.speedDialLeftAlign;
+        alignmentActionLabel.setText(title);
+        ((View) alignmentActionLabel.getParent()).setContentDescription(getString(title));
+        alignmentActionIcon.setImageResource(left ? R.drawable.ic_align_right : R.drawable.ic_align_left);
+        if (videoFragment != null) videoFragment.applyPreviewHandedness();
     }
 
     private TextView addSpeedDialAction(int titleResource, int iconResource, ImageView existingIcon,
