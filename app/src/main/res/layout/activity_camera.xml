@@ -100,13 +100,6 @@
                 android:layout_height="30dp"
                 android:contentDescription="@string/microphoneEnabled"
                 android:src="@drawable/ic_video_mic_on" />
-
-            <ImageView
-                android:id="@+id/brightness"
-                android:layout_width="@dimen/brightnessWidth"
-                android:layout_height="@dimen/brightnessHeight"
-                android:contentDescription="@string/brightnessContentDescription"
-                android:src="@drawable/ic_speed_dial_tune" />
         </LinearLayout>
 
     </LinearLayout>

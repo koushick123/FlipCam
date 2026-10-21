@@ -212,7 +212,6 @@ public class VideoFragment extends Fragment{
         substitute = (ImageView)view.findViewById(R.id.substitute);
         substitute.setVisibility(View.INVISIBLE);
         cameraView = (CameraView)view.findViewById(R.id.cameraSurfaceView);
-        GLUtil.colorVal = Constants.NORMAL_BRIGHTNESS_PROGRESS;
         if(VERBOSE)Log.d(TAG,"cameraview onresume visibility= "+cameraView.getWindowVisibility());
         pauseText = view.findViewById(R.id.pauseText);
         zoombar = (SeekBar)view.findViewById(R.id.zoomBar);

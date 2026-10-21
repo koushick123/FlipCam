@@ -62,7 +62,6 @@ VideoFragment.LowestThresholdCheckForVideoInterface
     boolean VERBOSE = false;
     View settingsRootView;
     Dialog settingsDialog;
-    ImageView brightness;
     ImageView toggleAudio;
     TextView storageDestination;
     TextView videoResolution;
@@ -92,7 +91,6 @@ VideoFragment.LowestThresholdCheckForVideoInterface
         super.onCreate(savedInstanceState);
         if(VERBOSE)Log.d(TAG,"onCreate");
         setContentView(R.layout.activity_camera);
-        brightness = (ImageView)findViewById(R.id.brightness);
         toggleAudio = findViewById(R.id.toggleAudio);
         storageDestination = null;
         videoResolution = findViewById(R.id.resInfo);
@@ -108,13 +106,11 @@ VideoFragment.LowestThresholdCheckForVideoInterface
         if(savedInstanceState == null) {
             //Start with video fragment
             showVideoFragment();
-            controlVisbilityPreference.setBrightnessLevel(Constants.NORMAL_BRIGHTNESS);
-            controlVisbilityPreference.setBrightnessProgress(0.0f);
         }
         layoutInflater = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         warningMsgRoot = layoutInflater.inflate(R.layout.warning_message,null);
         warningMsg = new Dialog(this);
-        settingsRootView = layoutInflater.inflate(R.layout.brightness_settings, null);
+        settingsRootView = layoutInflater.inflate(R.layout.warning_message, null);
         settingsDialog = new Dialog(this);
         sharedPreferences = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
         updateStorageDestinationLabel();
@@ -134,7 +130,6 @@ VideoFragment.LowestThresholdCheckForVideoInterface
     }
 
     public void setupCameraSpeedDial() {
-        brightness = findViewById(R.id.brightness);
         toggleAudio = findViewById(R.id.toggleAudio);
         instantSettingsParent = findViewById(R.id.instantSettingsParent);
         instantSettingsParent.removeAllViews();
@@ -174,10 +169,6 @@ VideoFragment.LowestThresholdCheckForVideoInterface
         View flashIconHolder = ((ViewGroup) flashRow).getChildAt(1);
         speedDialFlashIcon = (ImageView) ((ViewGroup) flashIconHolder).getChildAt(0);
         if (videoFragment != null) updateSpeedDialFlashIcon(videoFragment.isFlashOn());
-        brightness.setImageResource(R.drawable.ic_video_brightness);
-        addSpeedDialAction(R.string.speedDialBrightness, R.drawable.ic_video_brightness,
-                brightness, getString(R.string.brightnessContentDescription),
-                () -> openBrightnessPopup(null));
 
         alignmentActionLabel = addSpeedDialAction(R.string.speedDialLeftAlign,
                 R.drawable.ic_align_left, null, getString(R.string.speedDialLeftAlign), () -> {});
@@ -610,68 +601,6 @@ VideoFragment.LowestThresholdCheckForVideoInterface
             }
         }).start();
     }
-    public void openBrightnessPopup(View view){
-        TextView header = (TextView)settingsRootView.findViewById(R.id.timerText);
-        header.setText(getResources().getString(R.string.brightnessHeading));
-        Point size = new Point();
-        getWindowManager().getDefaultDisplay().getSize(size);
-        settingsDialog.setContentView(settingsRootView);
-        settingsDialog.setCancelable(true);
-        WindowManager.LayoutParams lp = settingsDialog.getWindow().getAttributes();
-        lp.dimAmount = 0.0f;
-        lp.width = (int)(size.x * 0.8);
-        final SeekBar brightnessBar = (SeekBar)settingsRootView.findViewById(R.id.brightnessBar);
-        brightnessBar.setMax(10);
-        brightnessBar.setProgress(controlVisbilityPreference.getBrightnessLevel());
-        brightnessBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-                seekBar.setProgress(controlVisbilityPreference.getBrightnessLevel());
-            }
-        });
-        Button increaseBrightness = (Button)settingsRootView.findViewById(R.id.increaseBrightness);
-        increaseBrightness.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if(GLUtil.colorVal < 0.25f) {
-                    GLUtil.colorVal += 0.05f;
-                    brightnessBar.incrementProgressBy(1);
-                    controlVisbilityPreference.setBrightnessLevel(brightnessBar.getProgress());
-                }
-                else{
-                    GLUtil.colorVal = 0.25f;
-                }
-                controlVisbilityPreference.setBrightnessProgress(GLUtil.colorVal);
-            }
-        });
-        Button decreaseBrightness = (Button)settingsRootView.findViewById(R.id.setTimer);
-        decreaseBrightness.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if(GLUtil.colorVal > -0.25f) {
-                    GLUtil.colorVal -= 0.05f;
-                    brightnessBar.incrementProgressBy(-1);
-                    controlVisbilityPreference.setBrightnessLevel(brightnessBar.getProgress());
-                }
-                else{
-                    GLUtil.colorVal = -0.25f;
-                }
-                controlVisbilityPreference.setBrightnessProgress(GLUtil.colorVal);
-            }
-        });
-        settingsDialog.getWindow().setBackgroundDrawableResource(R.color.backColorSettingPopup);
-        settingsDialog.show();
-    }
 
     public void showVideoFragment()
     {
@@ -682,7 +611,6 @@ VideoFragment.LowestThresholdCheckForVideoInterface
         }
         FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
         fragmentTransaction.replace(R.id.cameraPreview, videoFragment).commit();
-        if(VERBOSE)Log.d(TAG, "brightnessLevel SET to = "+controlVisbilityPreference.getBrightnessLevel());
         showCameraSpeedDial();
         setPinchZoomScaleListener(videoFragment);
     }

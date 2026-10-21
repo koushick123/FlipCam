@@ -14,8 +14,6 @@ public class ControlVisbilityPreference extends Application implements Serializa
 
     private boolean hideControl;
     private int mediaSelectedPosition;
-    private int brightnessLevel = Constants.NORMAL_BRIGHTNESS;
-    private float brightnessProgress = Constants.NORMAL_BRIGHTNESS_PROGRESS;
     private boolean fromGallery = false;
 
     public boolean isFromGallery() {
@@ -26,21 +24,6 @@ public class ControlVisbilityPreference extends Application implements Serializa
         this.fromGallery = fromGallery;
     }
 
-    public float getBrightnessProgress() {
-        return brightnessProgress;
-    }
-
-    public void setBrightnessProgress(float brightnessProgress) {
-        this.brightnessProgress = brightnessProgress;
-    }
-
-    public int getBrightnessLevel() {
-        return brightnessLevel;
-    }
-
-    public void setBrightnessLevel(int brightnessLevel) {
-        this.brightnessLevel = brightnessLevel;
-    }
 
     public int getMediaSelectedPosition() {
         return mediaSelectedPosition;

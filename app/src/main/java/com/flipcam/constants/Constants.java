@@ -71,9 +71,6 @@ public class Constants
     //Video Player
     public static final String SELECT_VIDEO_PLAYER = "SelectVideoPlayer";
     public static final String SHOW_EXTERNAL_PLAYER_MESSAGE = "ShowExternalPlayerMessage";
-    //Normal brightness level
-    public static final int NORMAL_BRIGHTNESS = 5;
-    public static final float NORMAL_BRIGHTNESS_PROGRESS = 0.0f;
     public static final String SUPPORT_VIDEO_RESOLUTIONS = "SupportVideoResolutions";
     //Unmounted/Mounted Intent
     public static final String MEDIA_UNMOUNTED = "android.intent.action.MEDIA_UNMOUNTED";
