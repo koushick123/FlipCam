@@ -1,0 +1,34 @@
+<resources>
+    <string name="clipAction">Clip</string>
+    <string name="clipPlay">Play</string>
+    <string name="clipBack">Back</string>
+    <string name="clipEditorTitle">Clip latest video</string>
+    <string name="clipSourceInfo">Latest recording · %1$s</string>
+    <string name="clipPreview">Preview selection</string>
+    <string name="clipSaveNew">Save new clip</string>
+    <string name="clipOriginalKept">Original video is kept</string>
+    <string name="clipOriginalPreview">Original recording preview</string>
+    <string name="clipCancelExport">Cancel export</string>
+    <string name="clipExportTitle">Exporting clip</string>
+    <string name="clipExportCaption">Creating your %1$s-second clip</string>
+    <string name="clipOriginalRecording">Original recording</string>
+    <string name="clipPlayOriginal">Play original recording</string>
+    <string name="clipSavedSection">Saved clip</string>
+    <string name="clipPlaySaved">Play clip</string>
+    <string name="clipSavedTitle">Clip saved</string>
+    <string name="clipSameFolder">Saved in the same folder as the original video.</string>
+    <string name="clipBackToCamera">Back to camera</string>
+    <string name="clipLatestTitle">Latest video</string>
+    <string name="clipUnavailable">The latest recording is unavailable.</string>
+    <string name="clipFailed">Unable to create the clip. Your original video is kept.</string>
+    <string name="clipCanceled">Export canceled. Your original video is kept.</string>
+    <string name="clipInvalidRange">Choose an end time after the start and within the video.</string>
+    <string name="clipStartTime">Start time</string>
+    <string name="clipEndTime">End time</string>
+    <string name="clipTimeHint">mm:ss or mm:ss.SSS</string>
+    <string name="clipStartField">Start\n%1$s</string>
+    <string name="clipEndField">End\n%1$s</string>
+    <string name="clipLength">Clip length: %1$s</string>
+    <string name="clipOriginalInfo">%1$s · Original kept</string>
+    <string name="clipRangeInfo">%1$s–%2$s · %3$s seconds</string>
+</resources>

@@ -72,6 +72,7 @@ VideoFragment.LowestThresholdCheckForVideoInterface
     private TextView microphoneActionLabel;
     private ImageView speedDialFlashIcon;
     private boolean speedDialExpanded;
+    private FrameLayout thumbnailMenuOverlay;
     private static final String LEFT_HANDED_PREVIEW = "LeftHandedPreview";
     private TextView alignmentActionLabel;
     private ImageView alignmentActionIcon;
@@ -311,6 +312,7 @@ VideoFragment.LowestThresholdCheckForVideoInterface
 
     private void setCameraSpeedDialExpanded(boolean expanded) {
         if (speedDialMenu == null) return;
+        if (expanded) closeThumbnailActions();
         speedDialExpanded = expanded;
         speedDialMenu.setVisibility(expanded ? View.VISIBLE : View.GONE);
         speedDialToggle.setImageResource(expanded
@@ -320,7 +322,80 @@ VideoFragment.LowestThresholdCheckForVideoInterface
     }
 
     public void closeCameraSpeedDial() {
+        closeThumbnailActions();
         setCameraSpeedDialExpanded(false);
+    }
+
+    public void showThumbnailActions(View thumbnail, Runnable play, Runnable clip) {
+        if (thumbnailMenuOverlay != null) { closeThumbnailActions(); return; }
+        if (videoFragment == null || videoFragment.getCameraView().isRecord()) return;
+        setCameraSpeedDialExpanded(false);
+        FrameLayout root = findViewById(R.id.parentCamera);
+        int[] anchor = new int[2], origin = new int[2];
+        thumbnail.getLocationOnScreen(anchor); root.getLocationOnScreen(origin);
+        boolean left = isLeftHandedPreview();
+        LinearLayout menu = new LinearLayout(this);
+        menu.setOrientation(LinearLayout.VERTICAL);
+        menu.setGravity(left ? Gravity.LEFT : Gravity.RIGHT);
+        // Same row sizes and spacing as settings; Play is immediately above the thumbnail.
+        addThumbnailAction(menu, R.string.clipAction, R.drawable.ic_clip, left, clip);
+        addThumbnailAction(menu, R.string.clipPlay, R.drawable.ic_play_arrow, left, play);
+        menu.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
+        int center = anchor[0] - origin[0] + thumbnail.getWidth()/2;
+        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        params.gravity = Gravity.TOP | Gravity.LEFT;
+        params.leftMargin = left ? center-dp(24) : center+dp(24)-menu.getMeasuredWidth();
+        params.topMargin = Math.max(0, anchor[1]-origin[1]-menu.getMeasuredHeight());
+        thumbnailMenuOverlay = new FrameLayout(this);
+        thumbnailMenuOverlay.setContentDescription("Latest video actions");
+        thumbnailMenuOverlay.setOnClickListener(view -> closeThumbnailActions());
+        thumbnailMenuOverlay.addView(menu, params);
+        instantSettingsParent.setVisibility(View.INVISIBLE);
+        videoFragment.getZoomBar().setVisibility(View.INVISIBLE);
+        root.addView(thumbnailMenuOverlay, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+    }
+
+    private void addThumbnailAction(LinearLayout menu, int text, int iconResource, boolean left, Runnable action) {
+        LinearLayout row = new LinearLayout(this);
+        row.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        TextView label = new TextView(this);
+        label.setText(text); label.setTextColor(Color.WHITE); label.setTextSize(14);
+        label.setPadding(dp(12), dp(8), dp(12), dp(8));
+        label.setBackground(createSpeedDialLabelBackground());
+        FrameLayout holder = new FrameLayout(this);
+        holder.setBackground(createSpeedDialCircleBackground(false));
+        ImageView icon = new ImageView(this);
+        icon.setImageResource(iconResource); icon.setColorFilter(Color.WHITE);
+        holder.addView(icon, new FrameLayout.LayoutParams(dp(24), dp(24), Gravity.CENTER));
+        LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(dp(48), dp(48));
+        iconParams.setMargins(left ? 0 : dp(8), 0, left ? dp(8) : 0, 0);
+        if (left) { row.addView(holder, iconParams); row.addView(label); }
+        else { row.addView(label); row.addView(holder, iconParams); }
+        row.setContentDescription(getString(text));
+        row.setFocusable(true);
+        row.setOnClickListener(view -> { closeThumbnailActions(); action.run(); });
+        LinearLayout.LayoutParams rowParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, dp(52));
+        rowParams.bottomMargin = dp(8); menu.addView(row, rowParams);
+    }
+
+    public void closeThumbnailActions() {
+        if (thumbnailMenuOverlay == null) return;
+        ((ViewGroup) thumbnailMenuOverlay.getParent()).removeView(thumbnailMenuOverlay);
+        thumbnailMenuOverlay = null;
+        if (videoFragment != null && !videoFragment.getCameraView().isRecord()) {
+            instantSettingsParent.setVisibility(View.VISIBLE);
+            videoFragment.getZoomBar().setVisibility(View.VISIBLE);
+        }
+    }
+
+    @Override public void onBackPressed() {
+        if (thumbnailMenuOverlay != null) { closeThumbnailActions(); return; }
+        if (speedDialExpanded) { closeCameraSpeedDial(); return; }
+        super.onBackPressed();
     }
 
     public void showCameraSpeedDial() {

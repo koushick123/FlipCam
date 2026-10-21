@@ -23,6 +23,8 @@
         <activity
             android:name=".CameraActivity"
             android:screenOrientation="nosensor" />
+        <activity android:name=".ClipActivity" android:exported="false"
+            android:screenOrientation="portrait" android:theme="@style/ClipTheme" />
 
         <activity
             android:name=".MediaActivity"

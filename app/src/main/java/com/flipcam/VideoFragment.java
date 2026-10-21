@@ -53,10 +53,9 @@ import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.fragment.app.Fragment;
 
 import com.flipcam.constants.Constants;
+import com.flipcam.clip.LatestRecordingStore;
 import com.flipcam.data.MediaTableConstants;
-import com.flipcam.media.FileMedia;
 import com.flipcam.util.GLUtil;
-import com.flipcam.util.MediaUtil;
 import com.flipcam.util.SDCardUtil;
 import com.flipcam.view.CameraView;
 import com.flipcam.view.PinchZoomGestureListener;
@@ -1116,6 +1115,7 @@ public class VideoFragment extends Fragment{
             Log.e(TAG, "Cannot show recording thumbnail: output file is missing or empty: " + mediaPath);
             return;
         }
+        LatestRecordingStore.recorded(getApplicationContext(), video);
         MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
         Bitmap firstFrame = null;
         try {
@@ -1168,6 +1168,9 @@ public class VideoFragment extends Fragment{
                     + " (" + video.length() + " bytes)");
             addMediaToDB();
             showRecordSaved();
+            setPlaceholderThumbnail();
+            thumbnail.setClickable(true);
+            thumbnail.setOnClickListener(view -> showThumbnailActions());
             return;
         }
         if(VERBOSE)Log.d(TAG,"width = "+firstFrame.getWidth()+" , height = "+firstFrame.getHeight());
@@ -1189,7 +1192,7 @@ public class VideoFragment extends Fragment{
             thumbnail.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    openMedia();
+                    showThumbnailActions();
                 }
             });
         }
@@ -1217,10 +1220,9 @@ public class VideoFragment extends Fragment{
     String filePath = "";
     public void getLatestFileIfExists()
     {
-        FileMedia[] medias = MediaUtil.getMediaList(getActivity().getApplicationContext(), false);
-        if (medias != null && medias.length > 0) {
-            if(VERBOSE)Log.d(TAG, "Latest file is = " + medias[0].getPath());
-            filePath = medias[0].getPath();
+        File latest = LatestRecordingStore.latest(getActivity().getApplicationContext());
+        if (latest != null) {
+            filePath = latest.getAbsolutePath();
                 MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
                 Bitmap vid = null;
                 try {
@@ -1249,13 +1251,15 @@ public class VideoFragment extends Fragment{
                     thumbnail.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View view) {
-                            openMedia();
+                            showThumbnailActions();
                         }
                     });
                 } else {
                     // Leave an existing video intact and display the default
                     // thumbnail if this device cannot decode a preview frame.
                     setPlaceholderThumbnail();
+                    thumbnail.setClickable(true);
+                    thumbnail.setOnClickListener(view -> showThumbnailActions());
                 }
         }
         else{
@@ -1304,6 +1308,17 @@ public class VideoFragment extends Fragment{
             Log.e(TAG, "Unable to share recorded video with an installed video app", invalidVideoUri);
             Toast.makeText(context, "Unable to open this video", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private void showThumbnailActions() {
+        cameraActivity.showThumbnailActions(thumbnail, this::openMedia, () -> {
+            if (LatestRecordingStore.latest(getApplicationContext()) == null) {
+                Toast.makeText(getContext(), R.string.clipUnavailable, Toast.LENGTH_SHORT).show();
+                return;
+            }
+            setCameraClose();
+            startActivity(new Intent(getActivity(), ClipActivity.class));
+        });
     }
 
     private void setCameraClose()
@@ -1360,6 +1375,7 @@ public class VideoFragment extends Fragment{
 
     @Override
     public void onPause() {
+        if (cameraActivity != null) cameraActivity.closeThumbnailActions();
         if(VERBOSE)Log.d(TAG,"Fragment pause....app is being quit");
         setCameraQuit();
         if(cameraView!=null){
