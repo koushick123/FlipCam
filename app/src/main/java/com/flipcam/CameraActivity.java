@@ -18,6 +18,7 @@ import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewConfiguration;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -74,8 +75,9 @@ VideoFragment.LowestThresholdCheckForVideoInterface
     private boolean speedDialExpanded;
     private FrameLayout thumbnailMenuOverlay;
     private static final String LEFT_HANDED_PREVIEW = "LeftHandedPreview";
-    private TextView alignmentActionLabel;
-    private ImageView alignmentActionIcon;
+    private float settingsX = Float.NaN, settingsY = Float.NaN;
+    private float dragDownX, dragDownY, dragStartX, dragStartY;
+    private boolean settingsDragging;
     ControlVisbilityPreference controlVisbilityPreference;
     boolean fromGallery = false;
     PinchZoomGestureListener pinchZoomGestureListener;
@@ -171,17 +173,6 @@ VideoFragment.LowestThresholdCheckForVideoInterface
         speedDialFlashIcon = (ImageView) ((ViewGroup) flashIconHolder).getChildAt(0);
         if (videoFragment != null) updateSpeedDialFlashIcon(videoFragment.isFlashOn());
 
-        alignmentActionLabel = addSpeedDialAction(R.string.speedDialLeftAlign,
-                R.drawable.ic_align_left, null, getString(R.string.speedDialLeftAlign), () -> {});
-        ViewGroup alignmentRow = (ViewGroup) alignmentActionLabel.getParent();
-        alignmentActionIcon = (ImageView) ((ViewGroup) alignmentRow.getChildAt(1)).getChildAt(0);
-        // Moving the menu keeps it expanded and preserves the existing action views.
-        alignmentRow.setOnClickListener(view -> {
-            getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE).edit()
-                    .putBoolean(LEFT_HANDED_PREVIEW, !isLeftHandedPreview()).apply();
-            applyPreviewHandedness();
-        });
-
         speedDialToggle = new ImageButton(this);
         speedDialToggle.setImageResource(R.drawable.ic_speed_dial_settings);
         speedDialToggle.setColorFilter(Color.WHITE);
@@ -196,46 +187,113 @@ VideoFragment.LowestThresholdCheckForVideoInterface
         instantSettingsParent.addView(speedDialToggle,
                 new LinearLayout.LayoutParams(dp(52), dp(52)));
         updateStorageDestinationLabel();
-        applyPreviewHandedness();
+        installSettingsDrag();
+        // Preserve the existing initial bottom-control setup; dragging never invokes it.
+        if (videoFragment != null) videoFragment.applyPreviewHandedness();
+        instantSettingsParent.post(this::positionSettingsMenu);
     }
 
     public boolean isLeftHandedPreview() {
+        // Retain the existing bottom-button order independently of the draggable menu.
         return getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE)
                 .getBoolean(LEFT_HANDED_PREVIEW, false);
     }
 
-    private void applyPreviewHandedness() {
-        boolean left = isLeftHandedPreview();
-        int side = left ? Gravity.LEFT : Gravity.RIGHT;
+    // Only this overlay moves. Camera surfaces and top/bottom controls keep their layout.
+    private void installSettingsDrag() {
+        speedDialToggle.setOnTouchListener((view, event) -> {
+            switch (event.getActionMasked()) {
+                case MotionEvent.ACTION_DOWN:
+                    dragDownX = event.getRawX();
+                    dragDownY = event.getRawY();
+                    dragStartX = settingsX;
+                    dragStartY = settingsY;
+                    settingsDragging = false;
+                    view.getParent().requestDisallowInterceptTouchEvent(true);
+                    return true;
+                case MotionEvent.ACTION_MOVE:
+                    float dx = event.getRawX() - dragDownX;
+                    float dy = event.getRawY() - dragDownY;
+                    if (!settingsDragging && Math.hypot(dx, dy)
+                            > ViewConfiguration.get(this).getScaledTouchSlop()) {
+                        settingsDragging = true;
+                        setCameraSpeedDialExpanded(false);
+                    }
+                    if (settingsDragging) {
+                        settingsX = dragStartX + dx;
+                        settingsY = dragStartY + dy;
+                        positionSettingsMenu();
+                    }
+                    return true;
+                case MotionEvent.ACTION_UP:
+                    view.getParent().requestDisallowInterceptTouchEvent(false);
+                    if (settingsDragging) {
+                        settingsX = dragStartX + event.getRawX() - dragDownX;
+                        settingsY = dragStartY + event.getRawY() - dragDownY;
+                        positionSettingsMenu();
+                    } else view.performClick();
+                    settingsDragging = false;
+                    return true;
+                case MotionEvent.ACTION_CANCEL:
+                    view.getParent().requestDisallowInterceptTouchEvent(false);
+                    settingsDragging = false;
+                    return true;
+                default:
+                    return true;
+            }
+        });
+    }
+
+    private void positionSettingsMenu() {
+        FrameLayout root = findViewById(R.id.parentCamera);
         View controls = findViewById(R.id.cameraRightControls);
-        FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) controls.getLayoutParams();
-        params.gravity = Gravity.BOTTOM | side;
-        params.setMarginStart(dp(12));
-        params.setMarginEnd(dp(12));
-        controls.setLayoutParams(params);
+        if (root.getWidth() == 0 || root.getHeight() == 0) return;
+        int button = dp(52), edge = dp(4);
+        if (Float.isNaN(settingsX)) {
+            settingsX = root.getWidth() - dp(12) - button;
+            settingsY = root.getHeight() - dp(132) - button;
+        }
+        settingsX = Math.max(edge, Math.min(settingsX, root.getWidth() - button - edge));
+        View resolution = findViewById(R.id.resInfo);
+        int top = resolution != null ? resolution.getBottom() + edge : edge;
+        View zoom = videoFragment == null ? null : videoFragment.getZoomBar();
+        int bottom = zoom != null && zoom.getTop() > top ? zoom.getTop() - edge : root.getHeight() - dp(132);
+        settingsY = Math.max(top, Math.min(settingsY, bottom - button));
+        boolean left = settingsX + button / 2f < root.getWidth() / 2f;
+        int side = left ? Gravity.LEFT : Gravity.RIGHT;
         ((LinearLayout) controls).setGravity(side);
-        instantSettingsParent.setGravity(Gravity.BOTTOM | side);
+        instantSettingsParent.setGravity(side);
         speedDialMenu.setGravity(side);
-        // Reorder labels and icons without mirroring text or the camera surface.
         for (int i = 0; i < speedDialMenu.getChildCount(); i++) {
             LinearLayout row = (LinearLayout) speedDialMenu.getChildAt(i);
             View label = row.getChildAt(0) instanceof TextView ? row.getChildAt(0) : row.getChildAt(1);
-            View iconHolder = row.getChildAt(0) instanceof FrameLayout ? row.getChildAt(0) : row.getChildAt(1);
+            View holder = row.getChildAt(0) instanceof FrameLayout ? row.getChildAt(0) : row.getChildAt(1);
             row.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
             row.setGravity(Gravity.CENTER_VERTICAL | side);
-            if ((left && row.getChildAt(0) != iconHolder) || (!left && row.getChildAt(0) != label)) {
-                row.removeView(iconHolder);
-                row.addView(iconHolder, left ? 0 : 1);
+            ((TextView) label).setGravity(left ? Gravity.LEFT : Gravity.RIGHT);
+            if (row.indexOfChild(holder) != (left ? 0 : 1)) {
+                row.removeView(holder);
+                row.addView(holder, left ? 0 : 1);
             }
-            LinearLayout.LayoutParams iconParams = (LinearLayout.LayoutParams) iconHolder.getLayoutParams();
-            iconParams.setMargins(left ? 0 : dp(8), 0, left ? dp(8) : 0, 0);
-            iconHolder.setLayoutParams(iconParams);
+            LinearLayout.LayoutParams ip = (LinearLayout.LayoutParams) holder.getLayoutParams();
+            ip.setMargins(left ? 0 : dp(8), 0, left ? dp(8) : 0, 0);
+            holder.setLayoutParams(ip);
         }
-        int title = left ? R.string.speedDialRightAlign : R.string.speedDialLeftAlign;
-        alignmentActionLabel.setText(title);
-        ((View) alignmentActionLabel.getParent()).setContentDescription(getString(title));
-        alignmentActionIcon.setImageResource(left ? R.drawable.ic_align_right : R.drawable.ic_align_left);
-        if (videoFragment != null) videoFragment.applyPreviewHandedness();
+        speedDialMenu.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
+        int menuHeight = speedDialExpanded ? speedDialMenu.getMeasuredHeight() : 0;
+        int width = speedDialExpanded ? Math.max(button, speedDialMenu.getMeasuredWidth()) : button;
+        // Prefer opening upward; near the top open downward, leaving the gear at release point.
+        boolean above = settingsY - top >= menuHeight;
+        int desiredIndex = above ? 0 : 1;
+        if (instantSettingsParent.indexOfChild(speedDialMenu) != desiredIndex) {
+            instantSettingsParent.removeView(speedDialMenu);
+            instantSettingsParent.addView(speedDialMenu, desiredIndex);
+        }
+        // Translation does not remeasure the preview or the fixed control bars while dragging.
+        float baseX = root.getWidth() - dp(12) - (left ? width : button);
+        float baseY = root.getHeight() - dp(132) - button - (above ? 0 : menuHeight);
+        controls.setTranslationX(settingsX - baseX);
+        controls.setTranslationY(settingsY - baseY);
     }
 
     private TextView addSpeedDialAction(int titleResource, int iconResource, ImageView existingIcon,
@@ -315,10 +373,10 @@ VideoFragment.LowestThresholdCheckForVideoInterface
         if (expanded) closeThumbnailActions();
         speedDialExpanded = expanded;
         speedDialMenu.setVisibility(expanded ? View.VISIBLE : View.GONE);
-        speedDialToggle.setImageResource(expanded
-                ? R.drawable.ic_speed_dial_close : R.drawable.ic_speed_dial_settings);
+        speedDialToggle.setImageResource(R.drawable.ic_speed_dial_settings);
         speedDialToggle.setContentDescription(getString(expanded
                 ? R.string.speedDialCloseDescription : R.string.speedDialOpenDescription));
+        positionSettingsMenu();
     }
 
     public void closeCameraSpeedDial() {
