@@ -35,6 +35,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.FragmentTransaction;
 
 import com.flipcam.constants.Constants;
+import com.flipcam.splash.LaunchSplash;
 import com.flipcam.model.Dimension;
 import com.flipcam.util.GLUtil;
 import com.flipcam.view.CameraView;
@@ -122,6 +123,10 @@ VideoFragment.LowestThresholdCheckForVideoInterface
             fromGallery = bundle.getBoolean("fromGallery");
         }
         setPinchZoomScaleListener(videoFragment);
+        if (savedInstanceState == null
+                && getIntent().getBooleanExtra(LaunchSplash.EXTRA_FRESH_LAUNCH, false)) {
+            LaunchSplash.show(this);
+        }
     }
 
     private void setPinchZoomScaleListener(VideoFragment videoFragment){

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="SplashLaunchTheme" parent="AppTheme">
+        <item name="android:windowBackground">#090C10</item>
+        <item name="android:colorBackground">#090C10</item>
+        <item name="android:statusBarColor">#090C10</item>
+        <item name="android:navigationBarColor">#090C10</item>
+        <!-- The camera overlay draws the branding once while preview initializes. -->
+        <item name="android:windowSplashScreenBackground">#090C10</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@android:color/transparent</item>
+        <item name="android:windowSplashScreenAnimationDuration">0</item>
+    </style>
+</resources>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="splash_title">FlipCam Video Recorder</string>
+    <item name="launchSplashOverlay" type="id" />
+    <style name="CameraLaunchTheme" parent="AppTheme">
+        <!-- Avoid a light starting window between launcher and camera. -->
+        <item name="android:windowBackground">#090C10</item>
+        <item name="android:windowDisablePreview">true</item>
+        <item name="android:statusBarColor">#090C10</item>
+        <item name="android:navigationBarColor">#090C10</item>
+    </style>
+    <style name="SplashLaunchTheme" parent="AppTheme">
+        <item name="android:windowBackground">#090C10</item>
+        <item name="android:colorBackground">#090C10</item>
+        <item name="android:statusBarColor">#090C10</item>
+        <item name="android:navigationBarColor">#090C10</item>
+    </style>
+</resources>

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Total animation time, including the fade. Set to 0 to skip the custom splash. -->
+    <integer name="splash_duration_ms">1200</integer>
+</resources>

@@ -12,6 +12,7 @@
         android:theme="@style/AppTheme">
         <activity
             android:name=".PermissionActivity"
+            android:theme="@style/SplashLaunchTheme"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -22,6 +23,7 @@
 
         <activity
             android:name=".CameraActivity"
+            android:theme="@style/CameraLaunchTheme"
             android:screenOrientation="nosensor" />
         <activity android:name=".ClipActivity" android:exported="false"
             android:screenOrientation="portrait" android:theme="@style/ClipTheme" />

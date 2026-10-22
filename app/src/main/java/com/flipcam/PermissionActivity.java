@@ -19,6 +19,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import com.flipcam.constants.Constants;
+import com.flipcam.splash.LaunchSplash;
 
 public class PermissionActivity extends AppCompatActivity {
 
@@ -37,6 +38,7 @@ public class PermissionActivity extends AppCompatActivity {
     AlertDialog.Builder alertDialog;
     private static SharedPreferences sharedPreferences;
     boolean VERBOSE = false;
+    private boolean showLaunchSplash;
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -77,6 +79,11 @@ public class PermissionActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            // The camera owns the branding; skip a second system exit animation.
+            getSplashScreen().setOnExitAnimationListener(splashScreenView -> splashScreenView.remove());
+        }
+        showLaunchSplash = savedInstanceState == null && isTaskRoot();
         if(VERBOSE)Log.d(TAG,"onCreate");
         setContentView(R.layout.activity_permission);
         if(VERBOSE)Log.d(TAG,"saved instance state == "+savedInstanceState);
@@ -194,7 +201,10 @@ public class PermissionActivity extends AppCompatActivity {
             editor.putBoolean("startCamera", true);
             editor.commit();
             Intent cameraIntent = new Intent(this, CameraActivity.class);
+            cameraIntent.putExtra(LaunchSplash.EXTRA_FRESH_LAUNCH, showLaunchSplash);
+            showLaunchSplash = false;
             startActivity(cameraIntent);
+            overridePendingTransition(0, 0);
         }
     }
 
