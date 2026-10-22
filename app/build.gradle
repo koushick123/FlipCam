@@ -2,29 +2,29 @@ plugins {
     id 'com.android.application'
 }
 // Load keystore
-//def keystorePropertiesFile = rootProject.file("app/src/main/keystore.properties");
-//def keystoreProperties = new Properties()
-//keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+def keystorePropertiesFile = rootProject.file("app/src/main/keystore.properties");
+def keystoreProperties = new Properties()
+keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 android {
-    namespace "com.flipcam"
-//    signingConfigs {
-//        FC_Release {
-//            keyAlias keystoreProperties['keyAlias']
-//            keyPassword keystoreProperties['keyPassword']
-//            storeFile file(keystoreProperties['storeFile'])
-//            storePassword keystoreProperties['storePassword']
-//        }
-//    }
-    compileSdk 34
+    namespace = "com.flipcam"
+    signingConfigs {
+        FC_Release {
+            keyAlias keystoreProperties['keyAlias']
+            keyPassword keystoreProperties['keyPassword']
+            storeFile file(keystoreProperties['storeFile'])
+            storePassword keystoreProperties['storePassword']
+        }
+    }
+    compileSdk = 36
     defaultConfig {
         applicationId "com.flipcam"
-        minSdk 21
-        targetSdk 34
-        versionCode 9
-        versionName "1.6"
+        minSdk = 30
+        targetSdk = 36
+        versionCode 15
+        versionName "2.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         // Enabling multidex support.
-        multiDexEnabled true
+        multiDexEnabled = true
     }
     buildTypes {
         release {
@@ -53,7 +53,7 @@ android {
 
 repositories {
     mavenCentral()
-    maven { url 'https://maven.google.com' }
+    maven { url = 'https://maven.google.com' }
 }
 
 dependencies {

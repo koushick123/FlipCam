@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.Point;
+import android.graphics.Rect;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.os.Environment;
@@ -33,6 +34,9 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.FragmentTransaction;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 import com.flipcam.constants.Constants;
 import com.flipcam.splash.LaunchSplash;
@@ -79,6 +83,10 @@ VideoFragment.LowestThresholdCheckForVideoInterface
     private float settingsX = Float.NaN, settingsY = Float.NaN;
     private float dragDownX, dragDownY, dragStartX, dragStartY;
     private boolean settingsDragging;
+    private boolean recordingInsets;
+    private WindowInsetsCompat cameraWindowInsets;
+    private final Rect settingsViewport = new Rect();
+    private boolean settingsRestorePending;
     ControlVisbilityPreference controlVisbilityPreference;
     boolean fromGallery = false;
     PinchZoomGestureListener pinchZoomGestureListener;
@@ -95,6 +103,14 @@ VideoFragment.LowestThresholdCheckForVideoInterface
         super.onCreate(savedInstanceState);
         if(VERBOSE)Log.d(TAG,"onCreate");
         setContentView(R.layout.activity_camera);
+        if (android.os.Build.VERSION.SDK_INT >= 35) {
+            ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.parentCamera), (view, insets) -> {
+                cameraWindowInsets = insets;
+                applyCameraWindowInsets();
+                return insets;
+            });
+            ViewCompat.requestApplyInsets(findViewById(R.id.parentCamera));
+        }
         toggleAudio = findViewById(R.id.toggleAudio);
         storageDestination = null;
         videoResolution = findViewById(R.id.resInfo);
@@ -126,6 +142,23 @@ VideoFragment.LowestThresholdCheckForVideoInterface
         if (savedInstanceState == null
                 && getIntent().getBooleanExtra(LaunchSplash.EXTRA_FRESH_LAUNCH, false)) {
             LaunchSplash.show(this);
+        }
+    }
+
+    public void setRecordingInsets(boolean recording) {
+        recordingInsets = recording;
+        applyCameraWindowInsets();
+    }
+
+    private void applyCameraWindowInsets() {
+        if (cameraWindowInsets == null) return;
+        View root = findViewById(R.id.parentCamera);
+        // Restore the pre-edge-to-edge preview viewport; recording stays fully immersive.
+        Insets safe = recordingInsets ? Insets.NONE : cameraWindowInsets.getInsetsIgnoringVisibility(
+                WindowInsetsCompat.Type.navigationBars() | WindowInsetsCompat.Type.displayCutout());
+        if (root.getPaddingLeft() != safe.left || root.getPaddingTop() != safe.top
+                || root.getPaddingRight() != safe.right || root.getPaddingBottom() != safe.bottom) {
+            root.setPadding(safe.left, safe.top, safe.right, safe.bottom);
         }
     }
 
@@ -196,6 +229,32 @@ VideoFragment.LowestThresholdCheckForVideoInterface
         // Preserve the existing initial bottom-control setup; dragging never invokes it.
         if (videoFragment != null) videoFragment.applyPreviewHandedness();
         instantSettingsParent.post(this::positionSettingsMenu);
+        // Navigation restoration can resize the window after recording stops.
+        // Resolve the gear translation against the laid-out preview before it is drawn.
+        FrameLayout cameraRoot = findViewById(R.id.parentCamera);
+        cameraRoot.getViewTreeObserver().addOnPreDrawListener(() -> {
+            if (instantSettingsParent.getVisibility() == View.GONE) {
+                settingsRestorePending = false;
+                settingsViewport.setEmpty();
+                return true;
+            }
+            int left = cameraRoot.getPaddingLeft(), top = cameraRoot.getPaddingTop();
+            int right = cameraRoot.getWidth() - cameraRoot.getPaddingRight();
+            int bottom = cameraRoot.getHeight() - cameraRoot.getPaddingBottom();
+            if (!settingsRestorePending && settingsViewport.left == left && settingsViewport.top == top
+                    && settingsViewport.right == right && settingsViewport.bottom == bottom) return true;
+            WindowInsetsCompat insets = ViewCompat.getRootWindowInsets(cameraRoot);
+            if (settingsRestorePending && insets != null
+                    && !insets.isVisible(WindowInsetsCompat.Type.navigationBars())) return true;
+            if (cameraRoot.isLayoutRequested() || right <= left || bottom <= top) return true;
+            positionSettingsMenu();
+            settingsViewport.set(left, top, right, bottom);
+            if (settingsRestorePending) {
+                settingsRestorePending = false;
+                instantSettingsParent.setVisibility(View.VISIBLE);
+            }
+            return true;
+        });
     }
 
     public boolean isLeftHandedPreview() {
@@ -255,14 +314,16 @@ VideoFragment.LowestThresholdCheckForVideoInterface
         if (root.getWidth() == 0 || root.getHeight() == 0) return;
         int button = dp(52), edge = dp(4);
         if (Float.isNaN(settingsX)) {
-            settingsX = root.getWidth() - dp(12) - button;
-            settingsY = root.getHeight() - dp(132) - button;
+            settingsX = root.getWidth() - root.getPaddingRight() - dp(12) - button;
+            settingsY = root.getHeight() - root.getPaddingBottom() - dp(132) - button;
         }
-        settingsX = Math.max(edge, Math.min(settingsX, root.getWidth() - button - edge));
+        settingsX = Math.max(root.getPaddingLeft() + edge,
+                Math.min(settingsX, root.getWidth() - root.getPaddingRight() - button - edge));
         View resolution = findViewById(R.id.resInfo);
-        int top = resolution != null ? resolution.getBottom() + edge : edge;
+        int top = resolution != null ? resolution.getBottom() + edge : root.getPaddingTop() + edge;
         View zoom = videoFragment == null ? null : videoFragment.getZoomBar();
-        int bottom = zoom != null && zoom.getTop() > top ? zoom.getTop() - edge : root.getHeight() - dp(132);
+        int bottom = zoom != null && zoom.getTop() > top ? zoom.getTop() - edge
+                : root.getHeight() - root.getPaddingBottom() - dp(132);
         settingsY = Math.max(top, Math.min(settingsY, bottom - button));
         boolean left = settingsX + button / 2f < root.getWidth() / 2f;
         int side = left ? Gravity.LEFT : Gravity.RIGHT;
@@ -295,8 +356,8 @@ VideoFragment.LowestThresholdCheckForVideoInterface
             instantSettingsParent.addView(speedDialMenu, desiredIndex);
         }
         // Translation does not remeasure the preview or the fixed control bars while dragging.
-        float baseX = root.getWidth() - dp(12) - (left ? width : button);
-        float baseY = root.getHeight() - dp(132) - button - (above ? 0 : menuHeight);
+        float baseX = root.getWidth() - root.getPaddingRight() - dp(12) - (left ? width : button);
+        float baseY = root.getHeight() - root.getPaddingBottom() - dp(132) - button - (above ? 0 : menuHeight);
         controls.setTranslationX(settingsX - baseX);
         controls.setTranslationY(settingsY - baseY);
     }
@@ -463,7 +524,9 @@ VideoFragment.LowestThresholdCheckForVideoInterface
 
     public void showCameraSpeedDial() {
         if (instantSettingsParent == null) return;
-        instantSettingsParent.setVisibility(View.VISIBLE);
+        // INVISIBLE keeps its measurement while navigation/layout restoration finishes.
+        settingsRestorePending = true;
+        instantSettingsParent.setVisibility(View.INVISIBLE);
         instantSettingsParent.invalidate();
     }
 

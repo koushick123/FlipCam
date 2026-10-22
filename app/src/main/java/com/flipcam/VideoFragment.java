@@ -765,6 +765,7 @@ public class VideoFragment extends Fragment{
 
     public void showRecordAndThumbnail()
     {
+        cameraActivity.setRecordingInsets(false);
         // A preview resize can rebuild the top controls before Camera1 updates
         // its VideoFragment reference. Restore the label from the saved choice
         // so the displayed resolution does not depend on that callback order.
@@ -895,6 +896,7 @@ public class VideoFragment extends Fragment{
 
     public void hideSettingsBarAndIcon()
     {
+        cameraActivity.setRecordingInsets(true);
         cameraActivity.closeCameraSpeedDial();
         cameraActivity.instantSettingsParent.setVisibility(View.GONE);
         View decor = cameraActivity.getWindow().getDecorView();
