@@ -15,6 +15,7 @@ import android.hardware.SensorManager;
 import android.media.AudioManager;
 import android.media.CamcorderProfile;
 import android.media.MediaRecorder;
+import android.media.MediaScannerConnection;
 import android.opengl.EGL14;
 import android.opengl.EGLExt;
 import android.opengl.EGLSurface;
@@ -1075,6 +1076,23 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             }
         }
     }
+    /** Publish only finalized recordings, independently of thumbnail/UI lifecycle. */
+    private void scanSavedRecording() {
+        final File savedVideo = videoFile;
+        if (savedVideo == null || !savedVideo.isFile() || savedVideo.length() == 0) return;
+        try {
+            MediaScannerConnection.scanFile(getContext().getApplicationContext(),
+                    new String[]{savedVideo.getAbsolutePath()}, new String[]{"video/mp4"},
+                    (path, uri) -> {
+                        if (uri == null) Log.w(TAG, "Recording media scan returned no URI: " + path);
+                        else Log.d(TAG, "Recording indexed: " + path + " -> " + uri);
+                    });
+        } catch (RuntimeException scanError) {
+            // Indexing failure must never interrupt a successfully saved recording.
+            Log.w(TAG, "Unable to request recording media scan", scanError);
+        }
+    }
+
     //This is the class that draws the each camera frame onto the device's screen. It uses OpenGL API to draw the preview frame.
     //It also controls the video recording.
     class CameraRenderer extends Thread
@@ -1305,6 +1323,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 }
                 if(FRAME_VERBOSE)Log.d(TAG,"stop isRecording == "+isRecording);
                 if(!cameraHandler.isRecordIncomplete()){
+                    scanSavedRecording();
                     mainHandler.sendEmptyMessage(Constants.RECORD_COMPLETE);
                 }
                 mainHandler.sendEmptyMessage(Constants.RECORD_STOP_LOW_MEMORY);
@@ -1412,6 +1431,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         setRecordPaused(false);
                         if(VERBOSE)Log.d(TAG,"stop isRecording == "+isRecording);
                         if(!recordIncomplete && videoFile != null && videoFile.isFile() && videoFile.length() > 0){
+                            scanSavedRecording();
                             mainHandler.sendEmptyMessage(Constants.RECORD_COMPLETE);
                         } else if (!recordIncomplete) {
                             Log.e(TAG, "Recorder stopped without producing a non-empty file");
