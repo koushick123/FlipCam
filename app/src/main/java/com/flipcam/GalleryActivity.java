@@ -72,6 +72,7 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        com.flipcam.util.BackNavigation.register(this);
         if(VERBOSE)Log.d(TAG, "onCreate");
         setContentView(R.layout.activity_media_grid);
         mediaCount = findViewById(R.id.mediaCount);

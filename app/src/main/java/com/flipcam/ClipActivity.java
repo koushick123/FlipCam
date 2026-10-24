@@ -82,6 +82,7 @@ public final class ClipActivity extends AppCompatActivity {
 
     @Override protected void onCreate(Bundle state) {
         super.onCreate(state);
+        com.flipcam.util.BackNavigation.register(this);
         setContentView(R.layout.activity_clip);
         if (Build.VERSION.SDK_INT >= 35) {
             ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.clipRoot), (view, insets) -> {

@@ -79,6 +79,9 @@ VideoFragment.LowestThresholdCheckForVideoInterface
     private ImageView speedDialFlashIcon;
     private boolean speedDialExpanded;
     private FrameLayout thumbnailMenuOverlay;
+    private View thumbnailMenuAnchor;
+    private LinearLayout thumbnailActions;
+    private int thumbnailActionGap;
     private static final String LEFT_HANDED_PREVIEW = "LeftHandedPreview";
     private float settingsX = Float.NaN, settingsY = Float.NaN;
     private float dragDownX, dragDownY, dragStartX, dragStartY;
@@ -101,6 +104,7 @@ VideoFragment.LowestThresholdCheckForVideoInterface
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        com.flipcam.util.BackNavigation.register(this);
         if(VERBOSE)Log.d(TAG,"onCreate");
         setContentView(R.layout.activity_camera);
         if (android.os.Build.VERSION.SDK_INT >= 35) {
@@ -236,6 +240,12 @@ VideoFragment.LowestThresholdCheckForVideoInterface
             if (instantSettingsParent.getVisibility() == View.GONE) {
                 settingsRestorePending = false;
                 settingsViewport.setEmpty();
+                return true;
+            }
+            // A delayed recording/navigation restore must never reveal the gear over Play.
+            if (thumbnailMenuOverlay != null) {
+                instantSettingsParent.setVisibility(View.INVISIBLE);
+                positionThumbnailActions();
                 return true;
             }
             int left = cameraRoot.getPaddingLeft(), top = cameraRoot.getPaddingTop();
@@ -455,30 +465,80 @@ VideoFragment.LowestThresholdCheckForVideoInterface
         if (videoFragment == null || videoFragment.getCameraView().isRecord()) return;
         setCameraSpeedDialExpanded(false);
         FrameLayout root = findViewById(R.id.parentCamera);
-        int[] anchor = new int[2], origin = new int[2];
-        thumbnail.getLocationOnScreen(anchor); root.getLocationOnScreen(origin);
         boolean left = isLeftHandedPreview();
-        LinearLayout menu = new LinearLayout(this);
-        menu.setOrientation(LinearLayout.VERTICAL);
-        menu.setGravity(left ? Gravity.LEFT : Gravity.RIGHT);
-        // Same row sizes and spacing as settings; Play is immediately above the thumbnail.
-        addThumbnailAction(menu, R.string.clipAction, R.drawable.ic_clip, left, clip);
-        addThumbnailAction(menu, R.string.clipPlay, R.drawable.ic_play_arrow, left, play);
-        menu.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
-        int center = anchor[0] - origin[0] + thumbnail.getWidth()/2;
-        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        params.gravity = Gravity.TOP | Gravity.LEFT;
-        params.leftMargin = left ? center-dp(24) : center+dp(24)-menu.getMeasuredWidth();
-        params.topMargin = Math.max(0, anchor[1]-origin[1]-menu.getMeasuredHeight());
+        thumbnailMenuAnchor = thumbnail;
+        thumbnailActions = new LinearLayout(this);
+        thumbnailActions.setOrientation(LinearLayout.VERTICAL);
+        thumbnailActions.setGravity(left ? Gravity.LEFT : Gravity.RIGHT);
+        addThumbnailAction(thumbnailActions, R.string.clipAction, R.drawable.ic_clip, left, clip);
+        addThumbnailAction(thumbnailActions, R.string.clipPlay, R.drawable.ic_play_arrow, left, play);
         thumbnailMenuOverlay = new FrameLayout(this);
         thumbnailMenuOverlay.setContentDescription("Latest video actions");
         thumbnailMenuOverlay.setOnClickListener(view -> closeThumbnailActions());
-        thumbnailMenuOverlay.addView(menu, params);
+        thumbnailMenuOverlay.addView(thumbnailActions, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT,
+                Gravity.TOP | Gravity.LEFT));
+        // Cancel any pending gear restoration; closing this overlay restores it explicitly.
+        settingsRestorePending = false;
         instantSettingsParent.setVisibility(View.INVISIBLE);
         videoFragment.getZoomBar().setVisibility(View.INVISIBLE);
         root.addView(thumbnailMenuOverlay, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        positionThumbnailActions();
+    }
+
+    private void positionThumbnailActions() {
+        FrameLayout root = findViewById(R.id.parentCamera);
+        if (thumbnailMenuAnchor == null || root.getWidth() == 0 || root.getHeight() == 0) return;
+        // Root padding already includes navigation-bar/cutout insets. All positions below
+        // are relative to that usable viewport, never to display pixels or an OS version.
+        int width = root.getWidth() - root.getPaddingLeft() - root.getPaddingRight();
+        int height = root.getHeight() - root.getPaddingTop() - root.getPaddingBottom();
+        int edge = Math.round(Math.min(width, height) * 0.025f);
+        int gap = Math.round(Math.min(width, height) * 0.02f);
+        int availableWidth = Math.max(1, width - 2 * edge);
+        if (thumbnailActionGap != gap) {
+            thumbnailActionGap = gap;
+            for (int i = 0; i < thumbnailActions.getChildCount(); i++) {
+                LinearLayout row = (LinearLayout) thumbnailActions.getChildAt(i);
+                LinearLayout.LayoutParams rowParams = (LinearLayout.LayoutParams) row.getLayoutParams();
+                rowParams.bottomMargin = i == thumbnailActions.getChildCount() - 1 ? 0 : gap;
+                row.setLayoutParams(rowParams);
+                for (int j = 0; j < row.getChildCount(); j++) {
+                    View child = row.getChildAt(j);
+                    if (child instanceof TextView) {
+                        ((TextView) child).setMaxWidth(Math.max(1, availableWidth - dp(48) - gap));
+                    } else {
+                        LinearLayout.LayoutParams iconParams = (LinearLayout.LayoutParams) child.getLayoutParams();
+                        iconParams.setMargins(isLeftHandedPreview() ? 0 : gap, 0,
+                                isLeftHandedPreview() ? gap : 0, 0);
+                        child.setLayoutParams(iconParams);
+                    }
+                }
+            }
+        }
+        thumbnailActions.measure(View.MeasureSpec.makeMeasureSpec(availableWidth, View.MeasureSpec.AT_MOST),
+                View.MeasureSpec.makeMeasureSpec(Math.max(1, height - 2 * edge), View.MeasureSpec.AT_MOST));
+        int[] anchor = new int[2], origin = new int[2];
+        thumbnailMenuAnchor.getLocationOnScreen(anchor);
+        root.getLocationOnScreen(origin);
+        int menuWidth = thumbnailActions.getMeasuredWidth();
+        int menuHeight = thumbnailActions.getMeasuredHeight();
+        int center = anchor[0] - origin[0] + thumbnailMenuAnchor.getWidth() / 2;
+        int x = isLeftHandedPreview() ? center - dp(48) / 2 : center + dp(48) / 2 - menuWidth;
+        int y = anchor[1] - origin[1] - gap - menuHeight;
+        FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) thumbnailActions.getLayoutParams();
+        // FrameLayout margins start inside its padding; compensate for root padding once.
+        x = Math.max(root.getPaddingLeft() + edge,
+                Math.min(x, root.getWidth() - root.getPaddingRight() - edge - menuWidth));
+        y = Math.max(root.getPaddingTop() + edge,
+                Math.min(y, root.getHeight() - root.getPaddingBottom() - edge - menuHeight));
+        int localX = x - root.getPaddingLeft(), localY = y - root.getPaddingTop();
+        if (params.leftMargin != localX || params.topMargin != localY) {
+            params.leftMargin = localX;
+            params.topMargin = localY;
+            thumbnailActions.setLayoutParams(params);
+        }
     }
 
     private void addThumbnailAction(LinearLayout menu, int text, int iconResource, boolean left, Runnable action) {
@@ -510,6 +570,9 @@ VideoFragment.LowestThresholdCheckForVideoInterface
         if (thumbnailMenuOverlay == null) return;
         ((ViewGroup) thumbnailMenuOverlay.getParent()).removeView(thumbnailMenuOverlay);
         thumbnailMenuOverlay = null;
+        thumbnailMenuAnchor = null;
+        thumbnailActions = null;
+        thumbnailActionGap = -1;
         if (videoFragment != null && !videoFragment.getCameraView().isRecord()) {
             instantSettingsParent.setVisibility(View.VISIBLE);
             videoFragment.getZoomBar().setVisibility(View.VISIBLE);
@@ -525,7 +588,7 @@ VideoFragment.LowestThresholdCheckForVideoInterface
     public void showCameraSpeedDial() {
         if (instantSettingsParent == null) return;
         // INVISIBLE keeps its measurement while navigation/layout restoration finishes.
-        settingsRestorePending = true;
+        settingsRestorePending = thumbnailMenuOverlay == null;
         instantSettingsParent.setVisibility(View.INVISIBLE);
         instantSettingsParent.invalidate();
     }

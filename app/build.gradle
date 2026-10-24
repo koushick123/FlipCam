@@ -2,19 +2,19 @@ plugins {
     id 'com.android.application'
 }
 // Load keystore
-def keystorePropertiesFile = rootProject.file("app/src/main/keystore.properties");
-def keystoreProperties = new Properties()
-keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+//def keystorePropertiesFile = rootProject.file("app/src/main/keystore.properties");
+//def keystoreProperties = new Properties()
+//keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 android {
     namespace = "com.flipcam"
-    signingConfigs {
-        FC_Release {
-            keyAlias keystoreProperties['keyAlias']
-            keyPassword keystoreProperties['keyPassword']
-            storeFile file(keystoreProperties['storeFile'])
-            storePassword keystoreProperties['storePassword']
-        }
-    }
+//    signingConfigs {
+//        FC_Release {
+//            keyAlias keystoreProperties['keyAlias']
+//            keyPassword keystoreProperties['keyPassword']
+//            storeFile file(keystoreProperties['storeFile'])
+//            storePassword keystoreProperties['storePassword']
+//        }
+//    }
     compileSdk = 36
     defaultConfig {
         applicationId "com.flipcam"
