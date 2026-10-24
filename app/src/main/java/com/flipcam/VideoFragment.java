@@ -622,25 +622,10 @@ public class VideoFragment extends Fragment{
         pauseRecord.setBackgroundColor(getResources().getColor(R.color.transparentBar));
         pauseRecord.setImageDrawable(getResources().getDrawable(R.drawable.ic_video_pause));
         pauseRecord.setContentDescription(getString(R.string.pauseRecording));
-        pauseRecord.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                pauseRecord.setEnabled(false);
-                if(VERBOSE)Log.d(TAG, "isPause ==== "+isPause());
-                if(!isPause()) {
-                    cameraView.recordPause();
-                    pauseRecord.setImageDrawable(getResources().getDrawable(R.drawable.ic_video_resume));
-                    pauseRecord.setContentDescription(getString(R.string.resumeRecording));
-                    setPause(true);
-                }
-                else{
-                    cameraView.recordResume();
-                    pauseRecord.setImageDrawable(getResources().getDrawable(R.drawable.ic_video_pause));
-                    pauseRecord.setContentDescription(getString(R.string.pauseRecording));
-                    setPause(false);
-                }
-                pauseRecord.setEnabled(true);
-            }
+        pauseRecord.setEnabled(cameraView.canChangeRecordingPause());
+        pauseRecord.setOnClickListener(v -> {
+            if (isPause()) cameraView.recordResume();
+            else cameraView.recordPause();
         });
         LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,LinearLayout.LayoutParams.WRAP_CONTENT);
         layoutParams.setMargins(0, 0, (int) getResources().getDimension(R.dimen.recordSubsBtnRightMargin), 0);
@@ -650,6 +635,14 @@ public class VideoFragment extends Fragment{
         addBottomControlSlot(pauseRecord,
                 (int) getResources().getDimension(R.dimen.cameraSideControlSize),
                 (int) getResources().getDimension(R.dimen.cameraSideControlSize));
+    }
+
+    public void updateRecordingPauseState(boolean paused, boolean enabled) {
+        setPause(paused);
+        if (pauseRecord == null) return;
+        pauseRecord.setImageResource(paused ? R.drawable.ic_video_resume : R.drawable.ic_video_pause);
+        pauseRecord.setContentDescription(getString(paused ? R.string.resumeRecording : R.string.pauseRecording));
+        pauseRecord.setEnabled(enabled);
     }
 
     public boolean isPause() {

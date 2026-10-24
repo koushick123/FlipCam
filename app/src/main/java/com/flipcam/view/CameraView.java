@@ -110,6 +110,26 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     boolean backCamera = true;
     volatile boolean isRecord = false;
     MediaRecorder mediaRecorder = null;
+    // Only the renderer changes recorder state; the UI reads it to gate controls.
+    private enum RecorderState { IDLE, PREPARING, PREPARED, RECORDING, PAUSED }
+    private volatile RecorderState recorderState = RecorderState.IDLE;
+    private volatile boolean pauseActionPending;
+
+    public boolean canChangeRecordingPause() {
+        return isRecord() && !pauseActionPending
+                && (recorderState == RecorderState.RECORDING || recorderState == RecorderState.PAUSED);
+    }
+
+    private void publishRecordingPauseState() {
+        mainHandler.post(() -> {
+            pauseActionPending = false;
+            if (videoFragment != null) {
+                videoFragment.updateRecordingPauseState(
+                        recorderState == RecorderState.PAUSED, canChangeRecordingPause());
+            }
+        });
+    }
+
     int frameCount=0;
     volatile int cameraFrameCnt=0;
     volatile int frameCnt=0;
@@ -183,7 +203,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     boolean stopCamera = false;
     int camProfileForRecord;
     int totalRotation;
-    boolean recordPaused = false;
+    volatile boolean recordPaused = false;
     SharedPreferences sharedPreferences;
     CameraView.VideoTimer videoTimer;
 
@@ -838,10 +858,16 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     }
 
     public void recordPause(){
+        if (!canChangeRecordingPause() || recorderState != RecorderState.RECORDING) return;
+        pauseActionPending = true;
+        videoFragment.updateRecordingPauseState(false, false);
         cameraHandler.sendEmptyMessage(Constants.RECORD_PAUSE);
     }
 
     public void recordResume(){
+        if (!canChangeRecordingPause() || recorderState != RecorderState.PAUSED) return;
+        pauseActionPending = true;
+        videoFragment.updateRecordingPauseState(true, false);
         cameraHandler.sendEmptyMessage(Constants.RECORD_RESUME);
     }
 
@@ -1166,9 +1192,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             try {
                 mediaRecorder.prepare();
             } catch (IOException e) {
-                e.printStackTrace();
-                Log.e(TAG, e.getMessage());
+                throw new IllegalStateException("Unable to prepare recorder", e);
             }
+            recorderState = RecorderState.PREPARED;
             encoderSurface = GLUtil.prepareWindowSurface(mediaRecorder.getSurface(), GLUtil.getmEGLDisplay(), GLUtil.getmEGLConfig());
             mediaContent = new ContentValues();
             mediaContent.put("filename", mNextVideoAbsolutePath);
@@ -1285,10 +1311,17 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         mainHandler.sendEmptyMessage(Constants.SHOW_MEMORY_CONSUMED);
                     }
 
-                    if (recordStop == -1) {
-                        mediaRecorder.start();
-                        updateTimer = true;
-                        recordStop = 1;
+                    if (recorderState == RecorderState.PREPARED) {
+                        try {
+                            mediaRecorder.start();
+                            recorderState = RecorderState.RECORDING;
+                            updateTimer = true;
+                            recordStop = 1;
+                            publishRecordingPauseState();
+                        } catch (RuntimeException failure) {
+                            failRecording("start", failure);
+                            return;
+                        }
                     }
                     EGLExt.eglPresentationTimeANDROID(GLUtil.getmEGLDisplay(), encoderSurface, getPTSUs());
                     EGL14.eglSwapBuffers(GLUtil.getmEGLDisplay(), encoderSurface);
@@ -1315,6 +1348,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                     }
                     cameraHandler.setRecordIncomplete(true);
                 }
+                recorderState = RecorderState.IDLE;
+                publishRecordingPauseState();
                 mediaRecorder.release();
                 mediaRecorder = null;
                 releaseEncoderSurface();
@@ -1335,21 +1370,64 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
 
         @TargetApi(Build.VERSION_CODES.N)
         private void pause(){
-            Log.d(TAG, "pauseDelayTime in PAUSE === "+pauseDelayTime);
-            mediaRecorder.pause();
-            oncePauseTime = System.nanoTime() / 1000;
-            Log.d(TAG, "oncePauseTime in PAUSE ==== "+oncePauseTime);
-            isRecording = false;
+            if (!isRecord() || mediaRecorder == null || recorderState != RecorderState.RECORDING) {
+                publishRecordingPauseState();
+                return;
+            }
+            try {
+                mediaRecorder.pause();
+                recorderState = RecorderState.PAUSED;
+                oncePauseTime = System.nanoTime() / 1000;
+                isRecording = false;
+                updateTimer = false;
+                setRecordPaused(true);
+                if (videoTimer != null) videoTimer.interrupt();
+                // Pausing before the first-second frame check must not leave Stop disabled.
+                mainHandler.sendEmptyMessage(Constants.RECORD_STOP_ENABLE);
+                mainHandler.sendEmptyMessage(Constants.SHOW_PAUSE_TEXT);
+                publishRecordingPauseState();
+            } catch (RuntimeException failure) {
+                failRecording("pause", failure);
+            }
         }
 
         @TargetApi(Build.VERSION_CODES.N)
         private void resumeRecord(){
-            mediaRecorder.resume();
-            oncePauseTime = System.nanoTime() / 1000 - oncePauseTime;
-            Log.d(TAG, "oncePauseTime in RESUME ===== "+oncePauseTime);
-            pauseDelayTime += oncePauseTime;
-            Log.d(TAG, "pauseDelayTime ===== "+pauseDelayTime);
-            isRecording = true;
+            if (!isRecord() || mediaRecorder == null || recorderState != RecorderState.PAUSED) {
+                publishRecordingPauseState();
+                return;
+            }
+            try {
+                mediaRecorder.resume();
+                recorderState = RecorderState.RECORDING;
+                pauseDelayTime += System.nanoTime() / 1000 - oncePauseTime;
+                isRecording = true;
+                setRecordPaused(false);
+                updateTimer = true;
+                mainHandler.sendEmptyMessage(Constants.HIDE_PAUSE_TEXT);
+                publishRecordingPauseState();
+            } catch (RuntimeException failure) {
+                failRecording("resume", failure);
+            }
+        }
+
+        private void failRecording(String operation, RuntimeException failure) {
+            Log.e(TAG, "Recorder " + operation + " failed; restoring preview", failure);
+            // Reuse finalization so a recoverable partial recording can still be saved.
+            setRecord(false);
+            stopTimerThread();
+            cameraHandler.removeMessages(Constants.RECORD_PAUSE);
+            cameraHandler.removeMessages(Constants.RECORD_RESUME);
+            cameraHandler.sendEmptyMessage(Constants.RECORD_STOP);
+            mainHandler.post(() -> {
+                setKeepScreenOn(false);
+                orientationEventListener.enable();
+                camera1.disableRecordingHint();
+                System.arraycopy(IDENTITY_MATRIX, 0, RECORD_IDENTITY_MATRIX, 0, IDENTITY_MATRIX.length);
+                rotationAngle = 0f;
+                setLayoutAspectRatio();
+                hidePauseText();
+            });
         }
 
         protected long getPTSUs() {
@@ -1399,9 +1477,17 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         if(FRAME_VERBOSE)Log.d(TAG,"Record = "+isRecord());
                         break;
                     case Constants.RECORD_START:
-                        cameraRenderer.setupMediaRecorder(getRecordVideoWidth(), getRecordVideoHeight(), getCamProfileForRecord());
-                        hour = 0; minute = 0; second = 0;
-                        isRecording = true;
+                        if (!isRecord() || recorderState != RecorderState.IDLE) break;
+                        recorderState = RecorderState.PREPARING;
+                        pauseDelayTime = 0;
+                        setRecordPaused(false);
+                        try {
+                            cameraRenderer.setupMediaRecorder(getRecordVideoWidth(), getRecordVideoHeight(), getCamProfileForRecord());
+                            hour = 0; minute = 0; second = 0;
+                            isRecording = true;
+                        } catch (RuntimeException failure) {
+                            failRecording("prepare", failure);
+                        }
                         break;
                     case Constants.RECORD_STOP:
                         recordIncomplete = false;
@@ -1418,6 +1504,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                             }
                             recordIncomplete = true;
                         }
+                        recorderState = RecorderState.IDLE;
+                        publishRecordingPauseState();
+                        cameraHandler.removeMessages(Constants.RECORD_PAUSE);
+                        cameraHandler.removeMessages(Constants.RECORD_RESUME);
                         if (mediaRecorder != null) {
                             mediaRecorder.release();
                             mediaRecorder = null;
@@ -1441,17 +1531,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         if(VERBOSE)Log.d(TAG,"Orig frame = "+frameCount+" , Rendered frame "+frameCnt);
                         break;
                     case Constants.RECORD_PAUSE:
-                        if(VERBOSE)Log.d(TAG, "Pausing record");
-                        videoTimer.interrupt();
                         pause();
-                        mainHandler.sendEmptyMessage(Constants.SHOW_PAUSE_TEXT);
                         break;
                     case Constants.RECORD_RESUME:
-                        if(VERBOSE)Log.d(TAG, "Resuming record");
-                        mainHandler.sendEmptyMessage(Constants.HIDE_PAUSE_TEXT);
                         resumeRecord();
-                        updateTimer = true;
-                        setRecordPaused(false);
                         break;
                     case Constants.RECORD_STOP_NO_SD_CARD:
                         isRecording = false;
@@ -1459,6 +1542,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         videoFragment.setPause(false);
                         recordStop = -1;
                         recordIncomplete = false;
+                        recorderState = RecorderState.IDLE;
+                        publishRecordingPauseState();
+                        cameraHandler.removeMessages(Constants.RECORD_PAUSE);
+                        cameraHandler.removeMessages(Constants.RECORD_RESUME);
                         if (mediaRecorder != null) {
                             mediaRecorder.release();
                             mediaRecorder = null;
@@ -1487,6 +1574,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     public void stopTimerThread()
     {
         startTimer = false;
+        updateTimer = false;
         if (videoTimer != null && videoTimer.isAlive()) videoTimer.stopTimer();
     }
     volatile boolean startTimer = false;
@@ -1537,10 +1625,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                     } catch (InterruptedException e) {
                         if (!timerRunning) break;
                         endSleep = System.currentTimeMillis();
-                        updateTimer = false;
-                        setRecordPaused(true);
                         //Recalculate sleep time since user has paused recording.
-                        sleepTime = 1000 - (endSleep - startSleep);
+                        sleepTime = Math.max(1, Math.min(1000, 1000 - (endSleep - startSleep)));
                         if(VERBOSE)Log.d(TAG, "PAUSED VIDEO... Sleep incomplete at === "+(endSleep - startSleep) + " milliseconds");
                     }
                     if (!timerRunning) {
