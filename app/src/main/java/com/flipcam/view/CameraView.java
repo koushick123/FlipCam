@@ -1453,9 +1453,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             }
         }
 
-        private volatile long pauseDelayTime = 0;
-        private volatile long oncePauseTime;
-
         @TargetApi(Build.VERSION_CODES.N)
         private void pause(){
             if (!isRecord() || mediaRecorder == null || recorderState != RecorderState.RECORDING) {
@@ -1465,7 +1462,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             try {
                 mediaRecorder.pause();
                 recorderState = RecorderState.PAUSED;
-                oncePauseTime = System.nanoTime() / 1000;
                 isRecording = false;
                 updateTimer = false;
                 setRecordPaused(true);
@@ -1488,7 +1484,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             try {
                 mediaRecorder.resume();
                 recorderState = RecorderState.RECORDING;
-                pauseDelayTime += System.nanoTime() / 1000 - oncePauseTime;
                 isRecording = true;
                 setRecordPaused(false);
                 updateTimer = true;
@@ -1519,7 +1514,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         }
 
         protected long getPTSUs() {
-            return System.nanoTime() - pauseDelayTime;
+            // Keep surface timestamps on the monotonic nanosecond clock. MediaRecorder's
+            // pause()/resume() already removes the paused interval from the output timeline;
+            // subtracting it here makes the video track shorter than the audio track.
+            return System.nanoTime();
         }
 
         void shutdown()
@@ -1567,7 +1565,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                     case Constants.RECORD_START:
                         if (!isRecord() || recorderState != RecorderState.IDLE) break;
                         recorderState = RecorderState.PREPARING;
-                        pauseDelayTime = 0;
                         setRecordPaused(false);
                         try {
                             cameraRenderer.setupMediaRecorder(getRecordVideoWidth(), getRecordVideoHeight(), getCamProfileForRecord());
@@ -1602,7 +1599,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         }
                         cameraRenderer.releaseEncoderSurface();
                         if(VERBOSE)Log.d(TAG, "RESET PAUSE");
-                        pauseDelayTime = 0;
                         videoFragment.setPause(false);
                         isRecording = false;
                         recordStop = -1;
@@ -1626,7 +1622,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         break;
                     case Constants.RECORD_STOP_NO_SD_CARD:
                         isRecording = false;
-                        pauseDelayTime = 0;
                         videoFragment.setPause(false);
                         recordStop = -1;
                         recordIncomplete = false;
