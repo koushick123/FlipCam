@@ -1,23 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.flipcam">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <application
         android:name=".ControlVisbilityPreference"
         android:allowBackup="true"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@mipmap/ic_launcher_flipcam"
         android:label="@string/app_name"
-        android:requestLegacyExternalStorage="true"
-        android:roundIcon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_flipcam"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity
-            android:name=".UserManualActivity"
-            android:exported="false"
-            android:screenOrientation="portrait"/>
-
-        <activity
             android:name=".PermissionActivity"
+            android:theme="@style/SplashLaunchTheme"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -28,29 +22,17 @@
 
         <activity
             android:name=".CameraActivity"
+            android:theme="@style/CameraLaunchTheme"
             android:screenOrientation="nosensor" />
+        <activity android:name=".ClipActivity" android:exported="false"
+            android:screenOrientation="portrait" android:theme="@style/ClipTheme" />
 
         <activity
             android:name=".MediaActivity"
             android:configChanges="orientation|screenSize" />
         <activity
-            android:name=".SettingsActivity"
-            android:configChanges="orientation|screenSize"></activity>
-        <activity
-            android:name=".MemoryLimitActivity"
-            android:windowSoftInputMode="adjustResize" />
-
-        <activity
             android:name=".GalleryActivity"
             android:configChanges="orientation|screenSize" />
-        <activity
-            android:name=".PhotoSettingsActivity"
-            android:configChanges="orientation|screenSize"
-            android:label="@string/photoSettingsTitle" />
-
-        <activity
-            android:name=".VideoSettingsActivity"
-            android:label="@string/videoSettingsTitle" />
         <meta-data
             android:name="com.google.android.apps.drive.APP_ID"
             android:value="790824425492" />
@@ -77,8 +59,8 @@
         android:required="false" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />

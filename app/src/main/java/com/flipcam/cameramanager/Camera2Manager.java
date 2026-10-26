@@ -23,8 +23,6 @@ import android.view.WindowManager;
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 
-import com.flipcam.PermissionActivity;
-import com.flipcam.PhotoFragment;
 import com.flipcam.VideoFragment;
 import com.flipcam.camerainterface.CameraOperations;
 import com.flipcam.constants.Constants;
@@ -52,7 +50,6 @@ public class Camera2Manager implements CameraOperations {
     private static int VIDEO_HEIGHT = 480;
     private static Camera2Manager camera2Manager;
     private SurfaceTexture surfaceTexture;
-    private PhotoFragment photoFrag;
     private VideoFragment videoFrag;
     boolean VERBOSE = true;
     float[] focalLengths;
@@ -74,11 +71,6 @@ public class Camera2Manager implements CameraOperations {
     public Camera.CameraInfo getCameraInfo()
     {
         return null;
-    }
-
-    @Override
-    public void getSupportedPictureSizes() {
-
     }
 
     public void getSupportedVideoSizes(){
@@ -109,7 +101,6 @@ public class Camera2Manager implements CameraOperations {
 //            previewSize = configs.getOutputSizes(SurfaceTexture.class)[0];
             if(VERBOSE)Log.d(TAG,"callback = "+stateCallback+", cam id = "+cameraId);
             if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED
-                || ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
                     || ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
                 return;
             }
@@ -173,17 +164,6 @@ public class Camera2Manager implements CameraOperations {
             if (this.videoFrag != null && isFocusModeSupported(getFocusModeVideo())) {
                 if (VERBOSE) Log.d(TAG, "Continuous AF Video");
                 setFocusMode(getFocusModeVideo());
-            }
-            else if (this.photoFrag != null) {
-                if(isFocusModeSupported(getFocusModePicture())) {
-                    if (VERBOSE) Log.d(TAG, "Continuous AF Picture");
-                    setFocusMode(getFocusModePicture());
-                    this.photoFrag.setContinuousAF(true);
-                }
-                else{
-                    if (VERBOSE) Log.d(TAG, "Use Auto AF instead");
-                    this.photoFrag.setContinuousAF(false);
-                }
             }
             // This is the output Surface we need to start preview
             Surface videoSurface = new Surface(surfaceTexture);
@@ -290,12 +270,7 @@ public class Camera2Manager implements CameraOperations {
 
         SharedPreferences sharedPreferences;
         SharedPreferences.Editor editor;
-        if(photoFrag != null) {
-            sharedPreferences = photoFrag.getActivity().getSharedPreferences(PermissionActivity.FC_SHARED_PREFERENCE, Context.MODE_PRIVATE);
-        }
-        else{
-            sharedPreferences = videoFrag.getActivity().getSharedPreferences(PermissionActivity.FC_SHARED_PREFERENCE, Context.MODE_PRIVATE);
-        }
+        sharedPreferences = videoFrag.getActivity().getSharedPreferences(com.flipcam.PermissionActivity.FC_SHARED_PREFERENCE, Context.MODE_PRIVATE);
         //Obtain preview resolution from Preferences if already set, else, measure as below.
         String savedPreview = sharedPreferences.getString(Constants.PREVIEW_RESOLUTION, null);
         if(savedPreview != null && !savedPreview.equals("")){
@@ -388,7 +363,7 @@ public class Camera2Manager implements CameraOperations {
     }
 
     @Override
-    public void setAutoFocus(boolean noPic) {
+    public void setAutoFocus() {
         captureRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_START);
         reCreateCaptureSession();
     }
@@ -479,16 +454,6 @@ public class Camera2Manager implements CameraOperations {
     }
 
     @Override
-    public void setPictureSize() {
-
-    }
-
-    @Override
-    public void capturePicture() {
-
-    }
-
-    @Override
     public String getFocusModeAuto() {
         return CameraMetadata.CONTROL_AF_MODE_AUTO+"";
     }
@@ -509,37 +474,12 @@ public class Camera2Manager implements CameraOperations {
     }
 
     @Override
-    public String getFocusModePicture() {
-        return CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_PICTURE+"";
-    }
-
-    @Override
     public String getFlashModeTorch() {
         return CameraMetadata.FLASH_MODE_TORCH+"";
     }
 
     @Override
     public void setRotation(int rotation) {
-
-    }
-
-    @Override
-    public void setPhotoFragmentInstance(PhotoFragment photoFragment) {
-        photoFrag = photoFragment;
-    }
-
-    @Override
-    public void setPhotoPath(String mediaPath) {
-
-    }
-
-    @Override
-    public void enableShutterSound(boolean enable) {
-
-    }
-
-    @Override
-    public void removePreviewCallback() {
 
     }
 

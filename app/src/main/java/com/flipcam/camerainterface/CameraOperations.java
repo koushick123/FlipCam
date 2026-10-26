@@ -4,7 +4,6 @@ import android.content.Context;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 
-import com.flipcam.PhotoFragment;
 import com.flipcam.VideoFragment;
 import com.flipcam.view.CameraView;
 
@@ -12,7 +11,7 @@ import com.flipcam.view.CameraView;
  * Created by Koushick on 02-08-2017.
  * Contains a list of camera related operations.
  * This Interface will be the only way to use a camera in this app. This will have two implementations. One for Camera 1 API and another for Camera 2 API.
- * This will promote loose coupling, since only minimal code changes will be necessary in the Photo or Video fragments.
+ * This will promote loose coupling between the camera operations and video fragment.
  *
  * This will contain methods which are Camera 1 and Camera 2 API specific. Those methods that do not have a purpose for a specific API, will need an empty
  * implementation.
@@ -44,7 +43,7 @@ import com.flipcam.view.CameraView;
     //To stop preview
      void stopPreview();
     //To set auto focus
-     void setAutoFocus(boolean noPic);
+     void setAutoFocus();
     //To set recording hint for certain optimization done by camera
      void setRecordingHint();
     //To disable recording hint
@@ -75,22 +74,14 @@ import com.flipcam.view.CameraView;
      boolean isCameraReady();
     //To set display orientation to match that of the activity/frame
      void setDisplayOrientation(int result);
-    //To get supported picture sizes
-     void getSupportedPictureSizes();
-    //To set picture size
-     void setPictureSize();
      //To set Video Size for Recording
      void setVideoSize();
-      //To capture picture
-     void capturePicture();
     //Fetch AF mode
     String getFocusModeAuto();
     //Fetch flash mode off
     String getFlashModeOff();
     //Fetch focus mode video
     String getFocusModeVideo();
-    //Fetch focus mode picture
-    String getFocusModePicture();
     //Fetch flash mode torch
     String getFlashModeTorch();
     //Fetch flash mode on
@@ -99,14 +90,9 @@ import com.flipcam.view.CameraView;
     Camera.CameraInfo getCameraInfo();
     //Get display sizes for recording
     int[] getDisplaySizes();
-    //Set picture orientation (For Camera 1 API)
+    //Set video orientation (For Camera 1 API)
     void setRotation(int rotation);
-    //For enable/disable shutter sound
-    void enableShutterSound(boolean enable);
     //The below methods are not necessary for camera, but are included for the sake of maintaining loose coupling between CameraView and Camera APIs
-    void setPhotoFragmentInstance(PhotoFragment photoFragment);
-    void setPhotoPath(String mediaPath);
-    void removePreviewCallback();
     void setSurfaceView(CameraView surfaceView);
     //For video fragment instance
     void setVideoFragmentInstance(VideoFragment videoFragment);

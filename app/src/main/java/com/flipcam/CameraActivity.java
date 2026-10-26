@@ -4,7 +4,10 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.graphics.Point;
+import android.graphics.Rect;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.StatFs;
@@ -15,9 +18,13 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.ViewConfiguration;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.FrameLayout;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
@@ -25,24 +32,34 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.FragmentTransaction;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 import com.flipcam.constants.Constants;
+import com.flipcam.splash.LaunchSplash;
+import com.flipcam.model.Dimension;
 import com.flipcam.util.GLUtil;
+import com.flipcam.view.CameraView;
 import com.flipcam.view.PinchZoomGestureListener;
+import com.flipcam.util.SDCardUtil;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.TreeSet;
 
-public class CameraActivity extends AppCompatActivity implements VideoFragment.PermissionInterface, PhotoFragment.PhotoPermission,VideoFragment.SwitchInterface,
-PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, PhotoFragment.LowestThresholdCheckForPictureInterface
+public class CameraActivity extends AppCompatActivity implements VideoFragment.PermissionInterface,
+VideoFragment.LowestThresholdCheckForVideoInterface
 {
 
     private static final String TAG = "CameraActivity";
     VideoFragment videoFragment = null;
-    PhotoFragment photoFragment = null;
     View warningMsgRoot;
     Dialog warningMsg;
     Button okButton;
@@ -51,9 +68,28 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
     boolean VERBOSE = false;
     View settingsRootView;
     Dialog settingsDialog;
-    ImageView brightness;
     ImageView toggleAudio;
+    TextView storageDestination;
+    TextView videoResolution;
     LinearLayout instantSettingsParent;
+    private LinearLayout speedDialMenu;
+    private ImageButton speedDialToggle;
+    private TextView storageActionLabel;
+    private TextView microphoneActionLabel;
+    private ImageView speedDialFlashIcon;
+    private boolean speedDialExpanded;
+    private FrameLayout thumbnailMenuOverlay;
+    private View thumbnailMenuAnchor;
+    private LinearLayout thumbnailActions;
+    private int thumbnailActionGap;
+    private static final String LEFT_HANDED_PREVIEW = "LeftHandedPreview";
+    private float settingsX = Float.NaN, settingsY = Float.NaN;
+    private float dragDownX, dragDownY, dragStartX, dragStartY;
+    private boolean settingsDragging;
+    private boolean recordingInsets;
+    private WindowInsetsCompat cameraWindowInsets;
+    private final Rect settingsViewport = new Rect();
+    private boolean settingsRestorePending;
     ControlVisbilityPreference controlVisbilityPreference;
     boolean fromGallery = false;
     PinchZoomGestureListener pinchZoomGestureListener;
@@ -68,40 +104,500 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        com.flipcam.util.BackNavigation.register(this);
         if(VERBOSE)Log.d(TAG,"onCreate");
         setContentView(R.layout.activity_camera);
-        brightness = (ImageView)findViewById(R.id.brightness);
+        if (android.os.Build.VERSION.SDK_INT >= 35) {
+            ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.parentCamera), (view, insets) -> {
+                cameraWindowInsets = insets;
+                applyCameraWindowInsets();
+                return insets;
+            });
+            ViewCompat.requestApplyInsets(findViewById(R.id.parentCamera));
+        }
         toggleAudio = findViewById(R.id.toggleAudio);
+        storageDestination = null;
+        videoResolution = findViewById(R.id.resInfo);
         instantSettingsParent = findViewById(R.id.instantSettingsParent);
         controlVisbilityPreference = (ControlVisbilityPreference)getApplicationContext();
         getSupportActionBar().hide();
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        getWindow().setStatusBarColor(getResources().getColor(R.color.settingsBarColor));
+        getWindow().setNavigationBarColor(getResources().getColor(R.color.settingsBarColor));
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            getWindow().setNavigationBarContrastEnforced(false);
+        }
         if(savedInstanceState == null) {
             //Start with video fragment
             showVideoFragment();
-            controlVisbilityPreference.setBrightnessLevel(Constants.NORMAL_BRIGHTNESS);
-            controlVisbilityPreference.setBrightnessProgress(0.0f);
         }
         layoutInflater = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         warningMsgRoot = layoutInflater.inflate(R.layout.warning_message,null);
         warningMsg = new Dialog(this);
-        settingsRootView = layoutInflater.inflate(R.layout.brightness_settings, null);
+        settingsRootView = layoutInflater.inflate(R.layout.warning_message, null);
         settingsDialog = new Dialog(this);
         sharedPreferences = getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
+        updateStorageDestinationLabel();
         Bundle bundle = getIntent().getExtras();
         if(bundle != null) {
             fromGallery = bundle.getBoolean("fromGallery");
         }
-        setPinchZoomScaleListener(videoFragment!=null ? videoFragment : null, photoFragment!=null ? photoFragment : null);
+        setPinchZoomScaleListener(videoFragment);
+        if (savedInstanceState == null
+                && getIntent().getBooleanExtra(LaunchSplash.EXTRA_FRESH_LAUNCH, false)) {
+            LaunchSplash.show(this);
+        }
     }
 
-    private void setPinchZoomScaleListener(VideoFragment videoFragment, PhotoFragment photoFragment){
+    public void setRecordingInsets(boolean recording) {
+        recordingInsets = recording;
+        applyCameraWindowInsets();
+    }
+
+    private void applyCameraWindowInsets() {
+        if (cameraWindowInsets == null) return;
+        View root = findViewById(R.id.parentCamera);
+        // Restore the pre-edge-to-edge preview viewport; recording stays fully immersive.
+        Insets safe = recordingInsets ? Insets.NONE : cameraWindowInsets.getInsetsIgnoringVisibility(
+                WindowInsetsCompat.Type.navigationBars() | WindowInsetsCompat.Type.displayCutout());
+        if (root.getPaddingLeft() != safe.left || root.getPaddingTop() != safe.top
+                || root.getPaddingRight() != safe.right || root.getPaddingBottom() != safe.bottom) {
+            root.setPadding(safe.left, safe.top, safe.right, safe.bottom);
+        }
+    }
+
+    private void setPinchZoomScaleListener(VideoFragment videoFragment){
         if(pinchZoomGestureListener != null){
             pinchZoomGestureListener = null;
         }
-        pinchZoomGestureListener = new PinchZoomGestureListener(getApplicationContext(), videoFragment,
-                photoFragment);
+        pinchZoomGestureListener = new PinchZoomGestureListener(getApplicationContext(), videoFragment);
         scaleGestureDetector = new ScaleGestureDetector(getApplicationContext(), pinchZoomGestureListener);
+    }
+
+    public void setupCameraSpeedDial() {
+        toggleAudio = findViewById(R.id.toggleAudio);
+        instantSettingsParent = findViewById(R.id.instantSettingsParent);
+        instantSettingsParent.removeAllViews();
+        instantSettingsParent.setOrientation(LinearLayout.VERTICAL);
+        instantSettingsParent.setGravity(Gravity.BOTTOM | Gravity.END);
+
+        speedDialMenu = new LinearLayout(this);
+        speedDialMenu.setOrientation(LinearLayout.VERTICAL);
+        speedDialMenu.setGravity(Gravity.END);
+        speedDialMenu.setVisibility(View.GONE);
+
+        addSpeedDialAction(R.string.speedDialResolution, R.drawable.ic_speed_dial_resolution,
+                null, getString(R.string.speedDialResolutionDescription),
+                () -> chooseVideoResolution(null));
+        storageActionLabel = addSpeedDialAction(R.string.speedDialStoragePhone,
+                R.drawable.ic_storage_destination, null,
+                getString(R.string.speedDialStorageDescription),
+                () -> chooseStorageDestination(null));
+
+        boolean micMuted = PreferenceManager.getDefaultSharedPreferences(this)
+                .getBoolean(Constants.NO_AUDIO_MSG, false);
+        toggleAudio.setImageResource(micMuted
+                ? R.drawable.ic_video_mic_off : R.drawable.ic_video_mic_on);
+        toggleAudio.setContentDescription(getString(micMuted
+                ? R.string.microphoneMuted : R.string.microphoneEnabled));
+        microphoneActionLabel = addSpeedDialAction(
+                micMuted ? R.string.speedDialMicOff : R.string.speedDialMicOn,
+                0, toggleAudio, getString(R.string.speedDialMicDescription),
+                () -> toggleMicrophone(null));
+        TextView flashActionLabel = addSpeedDialAction(R.string.speedDialFlash,
+                R.drawable.ic_video_flash_on, null,
+                getString(R.string.speedDialFlashDescription),
+                () -> {
+                    if (videoFragment != null) videoFragment.toggleFlashFromSpeedDial();
+                });
+        View flashRow = (View) flashActionLabel.getParent();
+        View flashIconHolder = ((ViewGroup) flashRow).getChildAt(1);
+        speedDialFlashIcon = (ImageView) ((ViewGroup) flashIconHolder).getChildAt(0);
+        if (videoFragment != null) updateSpeedDialFlashIcon(videoFragment.isFlashOn());
+
+        speedDialToggle = new ImageButton(this);
+        speedDialToggle.setImageResource(R.drawable.ic_speed_dial_settings);
+        speedDialToggle.setColorFilter(Color.WHITE);
+        speedDialToggle.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        speedDialToggle.setPadding(dp(14), dp(14), dp(14), dp(14));
+        speedDialToggle.setBackground(createSpeedDialCircleBackground(true));
+        speedDialToggle.setElevation(dp(6));
+        speedDialToggle.setContentDescription(getString(R.string.speedDialOpenDescription));
+        speedDialToggle.setOnClickListener(view -> setCameraSpeedDialExpanded(!speedDialExpanded));
+        instantSettingsParent.addView(speedDialMenu, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+        instantSettingsParent.addView(speedDialToggle,
+                new LinearLayout.LayoutParams(dp(52), dp(52)));
+        updateStorageDestinationLabel();
+        installSettingsDrag();
+        // Preserve the existing initial bottom-control setup; dragging never invokes it.
+        if (videoFragment != null) videoFragment.applyPreviewHandedness();
+        instantSettingsParent.post(this::positionSettingsMenu);
+        // Navigation restoration can resize the window after recording stops.
+        // Resolve the gear translation against the laid-out preview before it is drawn.
+        FrameLayout cameraRoot = findViewById(R.id.parentCamera);
+        cameraRoot.getViewTreeObserver().addOnPreDrawListener(() -> {
+            if (instantSettingsParent.getVisibility() == View.GONE) {
+                settingsRestorePending = false;
+                settingsViewport.setEmpty();
+                return true;
+            }
+            // A delayed recording/navigation restore must never reveal the gear over Play.
+            if (thumbnailMenuOverlay != null) {
+                instantSettingsParent.setVisibility(View.INVISIBLE);
+                positionThumbnailActions();
+                return true;
+            }
+            int left = cameraRoot.getPaddingLeft(), top = cameraRoot.getPaddingTop();
+            int right = cameraRoot.getWidth() - cameraRoot.getPaddingRight();
+            int bottom = cameraRoot.getHeight() - cameraRoot.getPaddingBottom();
+            if (!settingsRestorePending && settingsViewport.left == left && settingsViewport.top == top
+                    && settingsViewport.right == right && settingsViewport.bottom == bottom) return true;
+            WindowInsetsCompat insets = ViewCompat.getRootWindowInsets(cameraRoot);
+            if (settingsRestorePending && insets != null
+                    && !insets.isVisible(WindowInsetsCompat.Type.navigationBars())) return true;
+            if (cameraRoot.isLayoutRequested() || right <= left || bottom <= top) return true;
+            positionSettingsMenu();
+            settingsViewport.set(left, top, right, bottom);
+            if (settingsRestorePending) {
+                settingsRestorePending = false;
+                instantSettingsParent.setVisibility(View.VISIBLE);
+            }
+            return true;
+        });
+    }
+
+    public boolean isLeftHandedPreview() {
+        // Retain the existing bottom-button order independently of the draggable menu.
+        return getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE)
+                .getBoolean(LEFT_HANDED_PREVIEW, false);
+    }
+
+    // Only this overlay moves. Camera surfaces and top/bottom controls keep their layout.
+    private void installSettingsDrag() {
+        speedDialToggle.setOnTouchListener((view, event) -> {
+            switch (event.getActionMasked()) {
+                case MotionEvent.ACTION_DOWN:
+                    dragDownX = event.getRawX();
+                    dragDownY = event.getRawY();
+                    dragStartX = settingsX;
+                    dragStartY = settingsY;
+                    settingsDragging = false;
+                    view.getParent().requestDisallowInterceptTouchEvent(true);
+                    return true;
+                case MotionEvent.ACTION_MOVE:
+                    float dx = event.getRawX() - dragDownX;
+                    float dy = event.getRawY() - dragDownY;
+                    if (!settingsDragging && Math.hypot(dx, dy)
+                            > ViewConfiguration.get(this).getScaledTouchSlop()) {
+                        settingsDragging = true;
+                        setCameraSpeedDialExpanded(false);
+                    }
+                    if (settingsDragging) {
+                        settingsX = dragStartX + dx;
+                        settingsY = dragStartY + dy;
+                        positionSettingsMenu();
+                    }
+                    return true;
+                case MotionEvent.ACTION_UP:
+                    view.getParent().requestDisallowInterceptTouchEvent(false);
+                    if (settingsDragging) {
+                        settingsX = dragStartX + event.getRawX() - dragDownX;
+                        settingsY = dragStartY + event.getRawY() - dragDownY;
+                        positionSettingsMenu();
+                    } else view.performClick();
+                    settingsDragging = false;
+                    return true;
+                case MotionEvent.ACTION_CANCEL:
+                    view.getParent().requestDisallowInterceptTouchEvent(false);
+                    settingsDragging = false;
+                    return true;
+                default:
+                    return true;
+            }
+        });
+    }
+
+    private void positionSettingsMenu() {
+        FrameLayout root = findViewById(R.id.parentCamera);
+        View controls = findViewById(R.id.cameraRightControls);
+        if (root.getWidth() == 0 || root.getHeight() == 0) return;
+        int button = dp(52), edge = dp(4);
+        if (Float.isNaN(settingsX)) {
+            settingsX = root.getWidth() - root.getPaddingRight() - dp(12) - button;
+            settingsY = root.getHeight() - root.getPaddingBottom() - dp(132) - button;
+        }
+        settingsX = Math.max(root.getPaddingLeft() + edge,
+                Math.min(settingsX, root.getWidth() - root.getPaddingRight() - button - edge));
+        View resolution = findViewById(R.id.resInfo);
+        int top = resolution != null ? resolution.getBottom() + edge : root.getPaddingTop() + edge;
+        View zoom = videoFragment == null ? null : videoFragment.getZoomBar();
+        int bottom = zoom != null && zoom.getTop() > top ? zoom.getTop() - edge
+                : root.getHeight() - root.getPaddingBottom() - dp(132);
+        settingsY = Math.max(top, Math.min(settingsY, bottom - button));
+        boolean left = settingsX + button / 2f < root.getWidth() / 2f;
+        int side = left ? Gravity.LEFT : Gravity.RIGHT;
+        ((LinearLayout) controls).setGravity(side);
+        instantSettingsParent.setGravity(side);
+        speedDialMenu.setGravity(side);
+        for (int i = 0; i < speedDialMenu.getChildCount(); i++) {
+            LinearLayout row = (LinearLayout) speedDialMenu.getChildAt(i);
+            View label = row.getChildAt(0) instanceof TextView ? row.getChildAt(0) : row.getChildAt(1);
+            View holder = row.getChildAt(0) instanceof FrameLayout ? row.getChildAt(0) : row.getChildAt(1);
+            row.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
+            row.setGravity(Gravity.CENTER_VERTICAL | side);
+            ((TextView) label).setGravity(left ? Gravity.LEFT : Gravity.RIGHT);
+            if (row.indexOfChild(holder) != (left ? 0 : 1)) {
+                row.removeView(holder);
+                row.addView(holder, left ? 0 : 1);
+            }
+            LinearLayout.LayoutParams ip = (LinearLayout.LayoutParams) holder.getLayoutParams();
+            ip.setMargins(left ? 0 : dp(8), 0, left ? dp(8) : 0, 0);
+            holder.setLayoutParams(ip);
+        }
+        speedDialMenu.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
+        int menuHeight = speedDialExpanded ? speedDialMenu.getMeasuredHeight() : 0;
+        int width = speedDialExpanded ? Math.max(button, speedDialMenu.getMeasuredWidth()) : button;
+        // Prefer opening upward; near the top open downward, leaving the gear at release point.
+        boolean above = settingsY - top >= menuHeight;
+        int desiredIndex = above ? 0 : 1;
+        if (instantSettingsParent.indexOfChild(speedDialMenu) != desiredIndex) {
+            instantSettingsParent.removeView(speedDialMenu);
+            instantSettingsParent.addView(speedDialMenu, desiredIndex);
+        }
+        // Translation does not remeasure the preview or the fixed control bars while dragging.
+        float baseX = root.getWidth() - root.getPaddingRight() - dp(12) - (left ? width : button);
+        float baseY = root.getHeight() - root.getPaddingBottom() - dp(132) - button - (above ? 0 : menuHeight);
+        controls.setTranslationX(settingsX - baseX);
+        controls.setTranslationY(settingsY - baseY);
+    }
+
+    private TextView addSpeedDialAction(int titleResource, int iconResource, ImageView existingIcon,
+                                        String contentDescription, Runnable action) {
+        LinearLayout row = new LinearLayout(this);
+        row.setGravity(Gravity.CENTER_VERTICAL | Gravity.END);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setMinimumHeight(dp(48));
+        row.setFocusable(true);
+        row.setClickable(true);
+        row.setContentDescription(contentDescription);
+
+        TextView label = new TextView(this);
+        label.setText(titleResource);
+        label.setTextColor(Color.WHITE);
+        label.setTextSize(14);
+        label.setPadding(dp(12), dp(8), dp(12), dp(8));
+        label.setBackground(createSpeedDialLabelBackground());
+        row.addView(label, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+
+        FrameLayout iconHolder = new FrameLayout(this);
+        iconHolder.setBackground(createSpeedDialCircleBackground(false));
+        LinearLayout.LayoutParams iconHolderParams = new LinearLayout.LayoutParams(dp(48), dp(48));
+        iconHolderParams.setMargins(dp(8), 0, 0, 0);
+        row.addView(iconHolder, iconHolderParams);
+
+        ImageView icon = existingIcon == null ? new ImageView(this) : existingIcon;
+        if (icon.getParent() instanceof ViewGroup) {
+            ((ViewGroup) icon.getParent()).removeView(icon);
+        }
+        icon.setOnClickListener(null);
+        icon.setClickable(false);
+        icon.setVisibility(View.VISIBLE);
+        icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        icon.setColorFilter(Color.WHITE);
+        if (existingIcon == null) icon.setImageResource(iconResource);
+        iconHolder.addView(icon, new FrameLayout.LayoutParams(dp(24), dp(24), Gravity.CENTER));
+
+        row.setOnClickListener(view -> {
+            setCameraSpeedDialExpanded(false);
+            action.run();
+        });
+        if (existingIcon == toggleAudio) {
+            icon.setOnClickListener(view -> row.performClick());
+        }
+        LinearLayout.LayoutParams rowParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, dp(52));
+        rowParams.bottomMargin = dp(8);
+        speedDialMenu.addView(row, rowParams);
+        return label;
+    }
+
+    private GradientDrawable createSpeedDialCircleBackground(boolean primary) {
+        GradientDrawable background = new GradientDrawable();
+        background.setShape(GradientDrawable.OVAL);
+        background.setColor(primary ? 0x80333333 : 0x66333333);
+        background.setStroke(dp(1), primary ? 0x99FFFFFF : 0x66FFFFFF);
+        return background;
+    }
+
+    private GradientDrawable createSpeedDialLabelBackground() {
+        GradientDrawable background = new GradientDrawable();
+        background.setShape(GradientDrawable.RECTANGLE);
+        background.setCornerRadius(dp(18));
+        background.setColor(0xD9111111);
+        background.setStroke(dp(1), 0x55FFFFFF);
+        return background;
+    }
+
+    private int dp(float value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
+    }
+
+    private void setCameraSpeedDialExpanded(boolean expanded) {
+        if (speedDialMenu == null) return;
+        if (expanded) closeThumbnailActions();
+        speedDialExpanded = expanded;
+        speedDialMenu.setVisibility(expanded ? View.VISIBLE : View.GONE);
+        speedDialToggle.setImageResource(R.drawable.ic_speed_dial_settings);
+        speedDialToggle.setContentDescription(getString(expanded
+                ? R.string.speedDialCloseDescription : R.string.speedDialOpenDescription));
+        positionSettingsMenu();
+    }
+
+    public void closeCameraSpeedDial() {
+        closeThumbnailActions();
+        setCameraSpeedDialExpanded(false);
+    }
+
+    public void showThumbnailActions(View thumbnail, Runnable play, Runnable clip) {
+        if (thumbnailMenuOverlay != null) { closeThumbnailActions(); return; }
+        if (videoFragment == null || videoFragment.getCameraView().isRecord()) return;
+        setCameraSpeedDialExpanded(false);
+        FrameLayout root = findViewById(R.id.parentCamera);
+        boolean left = isLeftHandedPreview();
+        thumbnailMenuAnchor = thumbnail;
+        thumbnailActions = new LinearLayout(this);
+        thumbnailActions.setOrientation(LinearLayout.VERTICAL);
+        thumbnailActions.setGravity(left ? Gravity.LEFT : Gravity.RIGHT);
+        addThumbnailAction(thumbnailActions, R.string.clipAction, R.drawable.ic_clip, left, clip);
+        addThumbnailAction(thumbnailActions, R.string.clipPlay, R.drawable.ic_play_arrow, left, play);
+        thumbnailMenuOverlay = new FrameLayout(this);
+        thumbnailMenuOverlay.setContentDescription("Latest video actions");
+        thumbnailMenuOverlay.setOnClickListener(view -> closeThumbnailActions());
+        thumbnailMenuOverlay.addView(thumbnailActions, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT,
+                Gravity.TOP | Gravity.LEFT));
+        // Cancel any pending gear restoration; closing this overlay restores it explicitly.
+        settingsRestorePending = false;
+        instantSettingsParent.setVisibility(View.INVISIBLE);
+        videoFragment.getZoomBar().setVisibility(View.INVISIBLE);
+        root.addView(thumbnailMenuOverlay, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        positionThumbnailActions();
+    }
+
+    private void positionThumbnailActions() {
+        FrameLayout root = findViewById(R.id.parentCamera);
+        if (thumbnailMenuAnchor == null || root.getWidth() == 0 || root.getHeight() == 0) return;
+        // Root padding already includes navigation-bar/cutout insets. All positions below
+        // are relative to that usable viewport, never to display pixels or an OS version.
+        int width = root.getWidth() - root.getPaddingLeft() - root.getPaddingRight();
+        int height = root.getHeight() - root.getPaddingTop() - root.getPaddingBottom();
+        int edge = Math.round(Math.min(width, height) * 0.025f);
+        int gap = Math.round(Math.min(width, height) * 0.02f);
+        int availableWidth = Math.max(1, width - 2 * edge);
+        if (thumbnailActionGap != gap) {
+            thumbnailActionGap = gap;
+            for (int i = 0; i < thumbnailActions.getChildCount(); i++) {
+                LinearLayout row = (LinearLayout) thumbnailActions.getChildAt(i);
+                LinearLayout.LayoutParams rowParams = (LinearLayout.LayoutParams) row.getLayoutParams();
+                rowParams.bottomMargin = i == thumbnailActions.getChildCount() - 1 ? 0 : gap;
+                row.setLayoutParams(rowParams);
+                for (int j = 0; j < row.getChildCount(); j++) {
+                    View child = row.getChildAt(j);
+                    if (child instanceof TextView) {
+                        ((TextView) child).setMaxWidth(Math.max(1, availableWidth - dp(48) - gap));
+                    } else {
+                        LinearLayout.LayoutParams iconParams = (LinearLayout.LayoutParams) child.getLayoutParams();
+                        iconParams.setMargins(isLeftHandedPreview() ? 0 : gap, 0,
+                                isLeftHandedPreview() ? gap : 0, 0);
+                        child.setLayoutParams(iconParams);
+                    }
+                }
+            }
+        }
+        thumbnailActions.measure(View.MeasureSpec.makeMeasureSpec(availableWidth, View.MeasureSpec.AT_MOST),
+                View.MeasureSpec.makeMeasureSpec(Math.max(1, height - 2 * edge), View.MeasureSpec.AT_MOST));
+        int[] anchor = new int[2], origin = new int[2];
+        thumbnailMenuAnchor.getLocationOnScreen(anchor);
+        root.getLocationOnScreen(origin);
+        int menuWidth = thumbnailActions.getMeasuredWidth();
+        int menuHeight = thumbnailActions.getMeasuredHeight();
+        int center = anchor[0] - origin[0] + thumbnailMenuAnchor.getWidth() / 2;
+        int x = isLeftHandedPreview() ? center - dp(48) / 2 : center + dp(48) / 2 - menuWidth;
+        int y = anchor[1] - origin[1] - gap - menuHeight;
+        FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) thumbnailActions.getLayoutParams();
+        // FrameLayout margins start inside its padding; compensate for root padding once.
+        x = Math.max(root.getPaddingLeft() + edge,
+                Math.min(x, root.getWidth() - root.getPaddingRight() - edge - menuWidth));
+        y = Math.max(root.getPaddingTop() + edge,
+                Math.min(y, root.getHeight() - root.getPaddingBottom() - edge - menuHeight));
+        int localX = x - root.getPaddingLeft(), localY = y - root.getPaddingTop();
+        if (params.leftMargin != localX || params.topMargin != localY) {
+            params.leftMargin = localX;
+            params.topMargin = localY;
+            thumbnailActions.setLayoutParams(params);
+        }
+    }
+
+    private void addThumbnailAction(LinearLayout menu, int text, int iconResource, boolean left, Runnable action) {
+        LinearLayout row = new LinearLayout(this);
+        row.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        TextView label = new TextView(this);
+        label.setText(text); label.setTextColor(Color.WHITE); label.setTextSize(14);
+        label.setPadding(dp(12), dp(8), dp(12), dp(8));
+        label.setBackground(createSpeedDialLabelBackground());
+        FrameLayout holder = new FrameLayout(this);
+        holder.setBackground(createSpeedDialCircleBackground(false));
+        ImageView icon = new ImageView(this);
+        icon.setImageResource(iconResource); icon.setColorFilter(Color.WHITE);
+        holder.addView(icon, new FrameLayout.LayoutParams(dp(24), dp(24), Gravity.CENTER));
+        LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(dp(48), dp(48));
+        iconParams.setMargins(left ? 0 : dp(8), 0, left ? dp(8) : 0, 0);
+        if (left) { row.addView(holder, iconParams); row.addView(label); }
+        else { row.addView(label); row.addView(holder, iconParams); }
+        row.setContentDescription(getString(text));
+        row.setFocusable(true);
+        row.setOnClickListener(view -> { closeThumbnailActions(); action.run(); });
+        LinearLayout.LayoutParams rowParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, dp(52));
+        rowParams.bottomMargin = dp(8); menu.addView(row, rowParams);
+    }
+
+    public void closeThumbnailActions() {
+        if (thumbnailMenuOverlay == null) return;
+        ((ViewGroup) thumbnailMenuOverlay.getParent()).removeView(thumbnailMenuOverlay);
+        thumbnailMenuOverlay = null;
+        thumbnailMenuAnchor = null;
+        thumbnailActions = null;
+        thumbnailActionGap = -1;
+        if (videoFragment != null && !videoFragment.getCameraView().isRecord()) {
+            instantSettingsParent.setVisibility(View.VISIBLE);
+            videoFragment.getZoomBar().setVisibility(View.VISIBLE);
+        }
+    }
+
+    @Override public void onBackPressed() {
+        if (thumbnailMenuOverlay != null) { closeThumbnailActions(); return; }
+        if (speedDialExpanded) { closeCameraSpeedDial(); return; }
+        super.onBackPressed();
+    }
+
+    public void showCameraSpeedDial() {
+        if (instantSettingsParent == null) return;
+        // INVISIBLE keeps its measurement while navigation/layout restoration finishes.
+        settingsRestorePending = thumbnailMenuOverlay == null;
+        instantSettingsParent.setVisibility(View.INVISIBLE);
+        instantSettingsParent.invalidate();
+    }
+
+    public void updateSpeedDialFlashIcon(boolean flashEnabled) {
+        if (speedDialFlashIcon != null) {
+            speedDialFlashIcon.setImageResource(flashEnabled
+                    ? R.drawable.ic_video_flash_off : R.drawable.ic_video_flash_on);
+        }
     }
 
     public PinchZoomGestureListener getPinchZoomGestureListener(){
@@ -160,29 +656,181 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
         return sharedPreferences.getString(Constants.SD_CARD_PATH, "");
     }
 
-    public void goToSettings(View view){
-        Intent settingsIntent = new Intent(this, SettingsActivity.class);
-        startActivity(settingsIntent);
-        overridePendingTransition(R.anim.slide_from_right,R.anim.slide_to_left);
+    public void chooseStorageDestination(View view) {
+        if (videoFragment != null && videoFragment.getCameraView() != null
+                && videoFragment.getCameraView().isRecord()) {
+            Toast.makeText(this, R.string.stopRecordingToChangeStorage, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        boolean savesToPhone = sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
+        String[] destinations = {
+                getString(R.string.storagePhoneShort),
+                getString(R.string.storageSdShort)
+        };
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.saveMedia)
+                .setSingleChoiceItems(destinations, savesToPhone ? 0 : 1, (dialog, which) -> {
+                    dialog.dismiss();
+                    if (which == 0) {
+                        sharedPreferences.edit()
+                                .putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)
+                                .apply();
+                        updateStorageDestinationLabel();
+                    } else {
+                        selectSdCardDestination();
+                    }
+                })
+                .setNegativeButton(R.string.cancelBtn, null)
+                .show();
+    }
+
+    private void selectSdCardDestination() {
+        String sdCardPath = SDCardUtil.doesSDCardExist(getApplicationContext());
+        if (sdCardPath == null) {
+            fallBackToPhoneStorage(R.string.sdCardNotDetectTitle, R.string.sdCardNotPresentForRecord);
+            return;
+        }
+        if (!SDCardUtil.isPathWritable(sdCardPath)) {
+            fallBackToPhoneStorage(R.string.sdCardWriteError, R.string.sdCardWriteErrorMessage);
+            return;
+        }
+
+        sharedPreferences.edit()
+                .putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, false)
+                .putString(Constants.SD_CARD_PATH, sdCardPath)
+                .apply();
+        updateStorageDestinationLabel();
+    }
+
+    private void fallBackToPhoneStorage(int titleId, int messageId) {
+        sharedPreferences.edit()
+                .putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)
+                .apply();
+        updateStorageDestinationLabel();
+        new AlertDialog.Builder(this)
+                .setTitle(titleId)
+                .setMessage(messageId)
+                .setPositiveButton(R.string.okBtn, null)
+                .show();
+    }
+
+    public void updateStorageDestinationLabel() {
+        if (sharedPreferences == null) return;
+        boolean savesToPhone = sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
+        if (storageDestination != null) {
+            storageDestination.setText(savesToPhone ? R.string.storagePhoneShort : R.string.storageSdShort);
+            storageDestination.setContentDescription(getString(R.string.storageDestinationDescription,
+                    getString(savesToPhone ? R.string.storagePhoneShort : R.string.storageSdShort)));
+        }
+        if (storageActionLabel != null) {
+            storageActionLabel.setText(savesToPhone
+                    ? R.string.speedDialStoragePhone : R.string.speedDialStorageSd);
+        }
+    }
+
+    public void updateMicrophoneActionLabel(boolean micMuted) {
+        if (microphoneActionLabel != null) {
+            microphoneActionLabel.setText(micMuted
+                    ? R.string.speedDialMicOff : R.string.speedDialMicOn);
+        }
+    }
+
+    public void chooseVideoResolution(View view) {
+        if (videoFragment == null || videoFragment.getCameraView() == null) return;
+        CameraView cameraView = videoFragment.getCameraView();
+        if (cameraView.isRecord()) {
+            Toast.makeText(this, R.string.stopRecordingToChangeResolution, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        List<String> supportedResolutions = cameraView.getSupportedVideoResolutions();
+        if (supportedResolutions.isEmpty()) {
+            new AlertDialog.Builder(this)
+                    .setMessage(R.string.videoResolutionUnavailable)
+                    .setPositiveButton(R.string.okBtn, null)
+                    .show();
+            return;
+        }
+
+        TreeSet<Dimension> sortedSizes = new TreeSet<>();
+        for (String resolution : supportedResolutions) {
+            String[] dimensions = resolution.split(" X ");
+            if (dimensions.length == 2) {
+                sortedSizes.add(new Dimension(Integer.parseInt(dimensions[0]),
+                        Integer.parseInt(dimensions[1])));
+            }
+        }
+        List<String> options = new ArrayList<>();
+        for (Dimension size : sortedSizes) options.add(size.toString());
+        String[] entries = options.toArray(new String[0]);
+        SharedPreferences videoPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        String selectedResolution = videoPreferences.getString(Constants.SELECT_VIDEO_RESOLUTION, null);
+        int selectedIndex = options.indexOf(selectedResolution);
+
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.videoResolutionHeading)
+                .setSingleChoiceItems(entries, selectedIndex, (dialog, which) -> {
+                    String newResolution = entries[which];
+                    dialog.dismiss();
+                    if (newResolution.equals(selectedResolution)) return;
+
+                    videoPreferences.edit()
+                            .putString(Constants.SELECT_VIDEO_RESOLUTION, newResolution)
+                            .apply();
+                    try {
+                        cameraView.applyVideoResolution();
+                        String[] dimensions = newResolution.split(" X ");
+                        if (dimensions.length == 2) {
+                            videoFragment.setVideoResInfo(dimensions[0], dimensions[1]);
+                            // Camera preview relayout can finish after the selection callback and
+                            // rebuild the overlay. Reassert the label once that resize settles.
+                            cameraView.postDelayed(() -> {
+                                if (!cameraView.isRecord()) {
+                                    videoFragment.setVideoResInfo(dimensions[0], dimensions[1]);
+                                }
+                            }, 500);
+                        }
+                    } catch (RuntimeException exception) {
+                        Log.e(TAG, "Unable to apply video resolution " + newResolution, exception);
+                        videoPreferences.edit()
+                                .putString(Constants.SELECT_VIDEO_RESOLUTION, selectedResolution)
+                                .apply();
+                        if (selectedResolution != null) cameraView.applyVideoResolution();
+                        new AlertDialog.Builder(this)
+                                .setMessage(R.string.videoResolutionUnavailable)
+                                .setPositiveButton(R.string.okBtn, null)
+                                .show();
+                    }
+                })
+                .setNegativeButton(R.string.cancelBtn, null)
+                .show();
     }
 
     public void toggleMicrophone(View view){
+        if (videoFragment != null && videoFragment.getCameraView() != null
+                && videoFragment.getCameraView().isRecord()) {
+            Toast.makeText(this, R.string.stopRecordingToChangeMicrophone, Toast.LENGTH_SHORT).show();
+            return;
+        }
         SharedPreferences micPrefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         SharedPreferences.Editor prefsEditor = micPrefs.edit();
         boolean noAudio;
         if(!micPrefs.getBoolean(Constants.NO_AUDIO_MSG, false)){
             //Disable audio
-            toggleAudio.setImageDrawable(getResources().getDrawable(R.drawable.microphone_mute_sound_icon));
+            toggleAudio.setImageDrawable(getResources().getDrawable(R.drawable.ic_video_mic_off));
+            toggleAudio.setContentDescription(getString(R.string.microphoneMuted));
             prefsEditor.putBoolean(Constants.NO_AUDIO_MSG, true);
             noAudio = true;
         }
         else{
             //Enable audio
-            toggleAudio.setImageDrawable(getResources().getDrawable(R.drawable.microphone_music_sound_icon));
+            toggleAudio.setImageDrawable(getResources().getDrawable(R.drawable.ic_video_mic_on));
+            toggleAudio.setContentDescription(getString(R.string.microphoneEnabled));
             prefsEditor.putBoolean(Constants.NO_AUDIO_MSG, false);
             noAudio = false;
         }
         prefsEditor.commit();
+        updateMicrophoneActionLabel(noAudio);
         showToggleAudioMessage(noAudio);
     }
 
@@ -199,7 +847,7 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
             noAudioText.setText(getResources().getString(R.string.audioDisableMessage));
         }
         else{
-            noAudioText.setTextColor(getResources().getColor(R.color.audioEnable));
+            noAudioText.setTextColor(getResources().getColor(R.color.uiAccent));
             noAudioText.setText(getResources().getString(R.string.audioEnableMessage));
         }
         noAudioLayout.addView(noAudioText);
@@ -217,86 +865,6 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
             }
         }).start();
     }
-    public void openBrightnessPopup(View view){
-        TextView header = (TextView)settingsRootView.findViewById(R.id.timerText);
-        header.setText(getResources().getString(R.string.brightnessHeading));
-        Point size = new Point();
-        getWindowManager().getDefaultDisplay().getSize(size);
-        settingsDialog.setContentView(settingsRootView);
-        settingsDialog.setCancelable(true);
-        WindowManager.LayoutParams lp = settingsDialog.getWindow().getAttributes();
-        lp.dimAmount = 0.0f;
-        lp.width = (int)(size.x * 0.8);
-        final SeekBar brightnessBar = (SeekBar)settingsRootView.findViewById(R.id.brightnessBar);
-        brightnessBar.setMax(10);
-        brightnessBar.setProgress(controlVisbilityPreference.getBrightnessLevel());
-        brightnessBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-                seekBar.setProgress(controlVisbilityPreference.getBrightnessLevel());
-            }
-        });
-        Button increaseBrightness = (Button)settingsRootView.findViewById(R.id.increaseBrightness);
-        increaseBrightness.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if(isVideo()) {
-                    if(GLUtil.colorVal < 0.25f) {
-                        GLUtil.colorVal += 0.05f;
-                        brightnessBar.incrementProgressBy(1);
-                        controlVisbilityPreference.setBrightnessLevel(brightnessBar.getProgress());
-                    }
-                    else{
-                        GLUtil.colorVal = 0.25f;
-                    }
-                    controlVisbilityPreference.setBrightnessProgress(GLUtil.colorVal);
-                }
-            }
-        });
-        Button decreaseBrightness = (Button)settingsRootView.findViewById(R.id.setTimer);
-        decreaseBrightness.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if(isVideo()){
-                    if(GLUtil.colorVal > -0.25f) {
-                        GLUtil.colorVal -= 0.05f;
-                        brightnessBar.incrementProgressBy(-1);
-                        controlVisbilityPreference.setBrightnessLevel(brightnessBar.getProgress());
-                    }
-                    else{
-                        GLUtil.colorVal = -0.25f;
-                    }
-                    controlVisbilityPreference.setBrightnessProgress(GLUtil.colorVal);
-                }
-            }
-        });
-        settingsDialog.getWindow().setBackgroundDrawableResource(R.color.backColorSettingPopup);
-        settingsDialog.show();
-    }
-
-    private boolean isVideo(){
-        return videoFragment!=null;
-    }
-
-    @Override
-    public void switchToPhoto() {
-        showPhotoFragment();
-    }
-
-    @Override
-    public void switchToVideo() {
-        showVideoFragment();
-    }
 
     public void showVideoFragment()
     {
@@ -307,101 +875,8 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
         }
         FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
         fragmentTransaction.replace(R.id.cameraPreview, videoFragment).commit();
-        if(controlVisbilityPreference.isShowUserManual()){
-            controlVisbilityPreference.setShowUserManual(false);
-            Intent userManualIntent = new Intent(this, UserManualActivity.class);
-            startActivity(userManualIntent);
-        }
-        if(VERBOSE)Log.d(TAG, "brightnessLevel SET to = "+controlVisbilityPreference.getBrightnessLevel());
-        instantSettingsParent.setVisibility(View.VISIBLE);
-        setPinchZoomScaleListener(videoFragment, null);
-    }
-
-    public void showPhotoFragment()
-    {
-        instantSettingsParent.setVisibility(View.GONE);
-        FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
-        if(photoFragment == null) {
-            if(VERBOSE)Log.d(TAG,"creating photofragment");
-            photoFragment = PhotoFragment.newInstance();
-            photoFragment.setApplicationContext(getApplicationContext());
-        }
-        setPinchZoomScaleListener(null, photoFragment);
-        fragmentTransaction.replace(R.id.cameraPreview, photoFragment).commit();
-        if(VERBOSE)Log.d(TAG,"photofragment added");
-        SharedPreferences.Editor settingsEditor = sharedPreferences.edit();
-        if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
-            //Check if SD Card exists
-            if(doesSDCardExist() == null){
-                settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
-                settingsEditor.commit();
-                TextView warningTitle = (TextView)warningMsgRoot.findViewById(R.id.warningTitle);
-                warningTitle.setText(getResources().getString(R.string.sdCardRemovedTitle));
-                TextView warningText = (TextView)warningMsgRoot.findViewById(R.id.warningText);
-                warningText.setText(getResources().getString(R.string.sdCardNotPresentForRecord));
-                okButton = (Button)warningMsgRoot.findViewById(R.id.okButton);
-                okButton.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        warningMsg.dismiss();
-                        photoFragment.getLatestFileIfExists();
-                    }
-                });
-                warningMsg.setContentView(warningMsgRoot);
-                warningMsg.setCancelable(false);
-                warningMsg.show();
-            }
-        }
-        else if(!checkIfPhoneMemoryIsBelowLowThreshold() && !sharedPreferences.getBoolean(Constants.PHONE_MEMORY_DISABLE, true)) {
-            final SharedPreferences.Editor editor = sharedPreferences.edit();
-            int memoryThreshold = Integer.parseInt(sharedPreferences.getString(Constants.PHONE_MEMORY_LIMIT, ""));
-            String memoryMetric = sharedPreferences.getString(Constants.PHONE_MEMORY_METRIC, "");
-            StatFs storageStat = new StatFs(Environment.getDataDirectory().getPath());
-            long memoryValue = 0;
-            String metric = "";
-            switch (memoryMetric) {
-                case Constants.METRIC_MB:
-                    memoryValue = (memoryThreshold * (long) Constants.MEGA_BYTE);
-                    metric = Constants.METRIC_MB;
-                    break;
-                case Constants.METRIC_GB:
-                    memoryValue = (memoryThreshold * (long) Constants.GIGA_BYTE);
-                    metric = Constants.METRIC_GB;
-                    break;
-            }
-            if(VERBOSE)Log.d(TAG, "memory value = " + memoryValue);
-            if(VERBOSE)Log.d(TAG, "Avail mem = " + storageStat.getAvailableBytes());
-            if (storageStat.getAvailableBytes() < memoryValue) {
-                LayoutInflater layoutInflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-                View thresholdExceededRoot = layoutInflater.inflate(R.layout.threshold_exceeded, null);
-                final Dialog thresholdDialog = new Dialog(this);
-                TextView memoryLimitMsg = (TextView) thresholdExceededRoot.findViewById(R.id.memoryLimitMsg);
-                final CheckBox disableThreshold = (CheckBox) thresholdExceededRoot.findViewById(R.id.disableThreshold);
-                Button okButton = (Button) thresholdExceededRoot.findViewById(R.id.okButton);
-                okButton.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        if(VERBOSE)Log.d(TAG, "disableThreshold.isChecked = " + disableThreshold.isChecked());
-                        if (disableThreshold.isChecked()) {
-                            editor.remove(Constants.PHONE_MEMORY_LIMIT);
-                            editor.remove(Constants.PHONE_MEMORY_METRIC);
-                            editor.putBoolean(Constants.PHONE_MEMORY_DISABLE, true);
-                            editor.commit();
-                            Toast.makeText(getApplicationContext(), getResources().getString(R.string.minimumThresholdDisabled), Toast.LENGTH_LONG).show();
-                        }
-                        thresholdDialog.dismiss();
-                    }
-                });
-                StringBuilder memThreshold = new StringBuilder(memoryThreshold + "");
-                memThreshold.append(" ");
-                memThreshold.append(metric);
-                if(VERBOSE)Log.d(TAG, "memory threshold for display = " + memThreshold);
-                memoryLimitMsg.setText(getResources().getString(R.string.thresholdLimitExceededMsg, memThreshold.toString()));
-                thresholdDialog.setContentView(thresholdExceededRoot);
-                thresholdDialog.setCancelable(false);
-                thresholdDialog.show();
-            }
-        }
+        showCameraSpeedDial();
+        setPinchZoomScaleListener(videoFragment);
     }
 
     public boolean checkIfPhoneMemoryIsBelowLowThreshold(){
@@ -421,11 +896,6 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
         else{
             return false;
         }
-    }
-
-    @Override
-    public boolean checkIfPhoneMemoryIsBelowLowestThresholdForPicture() {
-        return checkIfPhoneMemoryIsBelowLowThreshold();
     }
 
     @Override
@@ -459,6 +929,18 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
     protected void onResume() {
         super.onResume();
         if(VERBOSE)Log.d(TAG,"onResume");
+        if (sharedPreferences != null
+                && !sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)) {
+            String sdCardPath = SDCardUtil.doesSDCardExist(getApplicationContext());
+            if (sdCardPath == null) {
+                fallBackToPhoneStorage(R.string.sdCardNotDetectTitle, R.string.sdCardNotPresentForRecord);
+            } else if (!SDCardUtil.isPathWritable(sdCardPath)) {
+                fallBackToPhoneStorage(R.string.sdCardWriteError, R.string.sdCardWriteErrorMessage);
+            } else {
+                sharedPreferences.edit().putString(Constants.SD_CARD_PATH, sdCardPath).apply();
+            }
+        }
+        updateStorageDestinationLabel();
     }
 
     @Override
@@ -468,19 +950,11 @@ PhotoFragment.SwitchPhoto, VideoFragment.LowestThresholdCheckForVideoInterface, 
         if(this.videoFragment!=null) {
             this.videoFragment.getZoomBar().setProgress(0);
         }
-        else if(this.photoFragment!=null) {
-            this.photoFragment.getZoomBar().setProgress(0);
-        }
         pinchZoomGestureListener.setProgress(0);
     }
 
     @Override
     public void askPermission() {
-        askCameraPermission();
-    }
-
-    @Override
-    public void askPhotoPermission() {
         askCameraPermission();
     }
 

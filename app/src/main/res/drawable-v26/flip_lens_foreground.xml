@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Keep the approved artwork inside the adaptive icon's central viewport. -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:insetLeft="16.6667%" android:insetTop="16.6667%"
+    android:insetRight="16.6667%" android:insetBottom="16.6667%">
+    <bitmap android:src="@drawable/flip_lens_artwork"
+        android:gravity="fill" android:filter="true" />
+</inset>

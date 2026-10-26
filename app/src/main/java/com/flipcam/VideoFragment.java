@@ -6,32 +6,36 @@ import android.appwidget.AppWidgetManager;
 import android.content.BroadcastReceiver;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.graphics.Typeface;
 import android.hardware.SensorManager;
 import android.media.AudioManager;
-import android.media.ExifInterface;
 import android.media.MediaCodecInfo;
 import android.media.MediaCodecList;
 import android.media.MediaMetadataRetriever;
+import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.StatFs;
 import android.preference.PreferenceManager;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.util.Range;
+import android.util.Size;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.OrientationEventListener;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewParent;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.FrameLayout;
@@ -43,13 +47,15 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
+import androidx.core.content.FileProvider;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.fragment.app.Fragment;
 
 import com.flipcam.constants.Constants;
+import com.flipcam.clip.LatestRecordingStore;
 import com.flipcam.data.MediaTableConstants;
-import com.flipcam.media.FileMedia;
 import com.flipcam.util.GLUtil;
-import com.flipcam.util.MediaUtil;
 import com.flipcam.util.SDCardUtil;
 import com.flipcam.view.CameraView;
 import com.flipcam.view.PinchZoomGestureListener;
@@ -68,30 +74,22 @@ public class VideoFragment extends Fragment{
     ImageButton switchCamera;
     ImageButton startRecord;
     ImageButton flash;
-    ImageButton photoMode;
     ImageView substitute;
     ImageView thumbnail;
-    ImageButton settings;
     LinearLayout videoBar;
     LinearLayout settingsBar;
     TextView timeElapsed;
     TextView memoryConsumed;
     PermissionInterface permissionInterface;
-    SwitchInterface switchInterface;
     LowestThresholdCheckForVideoInterface lowestThresholdCheckForVideoInterface;
     ImageButton stopRecord;
     ImageButton pauseRecord;
-    TextView modeText;
     TextView resInfo;
     LinearLayout modeLayout;
     OrientationEventListener orientationEventListener;
     int orientation = -1;
     LinearLayout flashParentLayout;
-    LinearLayout timeElapsedParentLayout;
-    LinearLayout memoryConsumedParentLayout;
-    LinearLayout.LayoutParams parentLayoutParams;
     FrameLayout thumbnailParent;
-    ExifInterface exifInterface=null;
     View warningMsgRoot;
     Dialog warningMsg;
     LayoutInflater layoutInflater;
@@ -101,7 +99,6 @@ public class VideoFragment extends Fragment{
     TextView pauseText;
     boolean sdCardUnavailWarned = false;
     SharedPreferences sharedPreferences;
-    ImageView microThumbnail;
     AppWidgetManager appWidgetManager;
     boolean VERBOSE = false;
     boolean isPause = false;
@@ -127,9 +124,6 @@ public class VideoFragment extends Fragment{
         void askPermission();
     }
 
-    public interface SwitchInterface{
-        void switchToPhoto();
-    }
 
     public interface LowestThresholdCheckForVideoInterface{
         boolean checkIfPhoneMemoryIsBelowLowestThresholdForVideo();
@@ -154,9 +148,9 @@ public class VideoFragment extends Fragment{
             cameraView.setWindowManager(getActivity().getWindowManager());
         }
         cameraActivity = (CameraActivity)getActivity();
+        cameraActivity.setupCameraSpeedDial();
         toggleAudio = cameraActivity.findViewById(R.id.toggleAudio);
         settingsBar = (LinearLayout)cameraActivity.findViewById(R.id.settingsBar);
-        settings = (ImageButton)cameraActivity.findViewById(R.id.settings);
         flash = (ImageButton)cameraActivity.findViewById(R.id.flashOn);
         flash.setOnClickListener(new View.OnClickListener(){
             @Override
@@ -166,11 +160,9 @@ public class VideoFragment extends Fragment{
             }
         });
         cameraView.setFlashButton(flash);
-        modeText = (TextView)cameraActivity.findViewById(R.id.modeInfo);
         resInfo = (TextView)cameraActivity.findViewById(R.id.resInfo);
         modeLayout = (LinearLayout)cameraActivity.findViewById(R.id.modeLayout);
         permissionInterface = (PermissionInterface)cameraActivity;
-        switchInterface = (SwitchInterface)cameraActivity;
         lowestThresholdCheckForVideoInterface = (LowestThresholdCheckForVideoInterface)cameraActivity;
         layoutInflater = (LayoutInflater)cameraActivity.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         warningMsgRoot = layoutInflater.inflate(R.layout.warning_message, null);
@@ -182,6 +174,15 @@ public class VideoFragment extends Fragment{
         sharedPreferences = cameraActivity.getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
         appWidgetManager = (AppWidgetManager)cameraActivity.getSystemService(Context.APPWIDGET_SERVICE);
         pinchZoomGestureListener = cameraActivity.getPinchZoomGestureListener();
+        // Apply the aligned preview controls after the activity's overlay has
+        // completed its first layout so they are present on the initial camera
+        // preview, not only after a surface or recording transition.
+        settingsBar.post(() -> {
+            if (getView() != null && cameraView != null && !cameraView.isRecord()) {
+                showRecordAndThumbnail();
+                getLatestFileIfExists();
+            }
+        });
     }
 
     @Override
@@ -210,11 +211,10 @@ public class VideoFragment extends Fragment{
         substitute = (ImageView)view.findViewById(R.id.substitute);
         substitute.setVisibility(View.INVISIBLE);
         cameraView = (CameraView)view.findViewById(R.id.cameraSurfaceView);
-        GLUtil.colorVal = Constants.NORMAL_BRIGHTNESS_PROGRESS;
         if(VERBOSE)Log.d(TAG,"cameraview onresume visibility= "+cameraView.getWindowVisibility());
         pauseText = view.findViewById(R.id.pauseText);
         zoombar = (SeekBar)view.findViewById(R.id.zoomBar);
-        zoombar.setProgressTintList(ColorStateList.valueOf(getResources().getColor(R.color.progressFill)));
+        zoombar.setProgressTintList(ColorStateList.valueOf(getResources().getColor(R.color.uiAccent)));
         cameraView.setSeekBar(zoombar);
         zoombar.setProgress(0);
         zoombar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -244,24 +244,14 @@ public class VideoFragment extends Fragment{
             }
         });
         thumbnail = (ImageView)view.findViewById(R.id.thumbnail);
-        microThumbnail = (ImageView)view.findViewById(R.id.microThumbnail);
         thumbnailParent = (FrameLayout)view.findViewById(R.id.thumbnailParent);
-        photoMode = (ImageButton) view.findViewById(R.id.photoMode);
-        photoMode.setOnClickListener(new View.OnClickListener(){
-            @Override
-            public void onClick(View view1){
-                switchInterface.switchToPhoto();
-            }
-        });
         switchCamera = (ImageButton)view.findViewById(R.id.switchCamera);
         switchCamera.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 startRecord.setClickable(false);
                 flash.setClickable(false);
-                photoMode.setClickable(false);
                 thumbnail.setClickable(false);
-                settings.setClickable(false);
                 toggleAudio.setClickable(false);
 
                 cameraView.switchCamera();
@@ -271,9 +261,7 @@ public class VideoFragment extends Fragment{
                 zoombar.setProgress(0);
                 startRecord.setClickable(true);
                 flash.setClickable(true);
-                photoMode.setClickable(true);
                 thumbnail.setClickable(true);
-                settings.setClickable(true);
                 toggleAudio.setClickable(true);
             }
         });
@@ -284,7 +272,6 @@ public class VideoFragment extends Fragment{
             public void onClick(View view) {
                 startRecord.setClickable(false);
                 switchCamera.setClickable(false);
-                photoMode.setClickable(false);
                 thumbnail.setClickable(false);
                 toggleAudio.setClickable(false);
                 if(lowestThresholdCheckForVideoInterface.checkIfPhoneMemoryIsBelowLowestThresholdForVideo()){
@@ -306,7 +293,6 @@ public class VideoFragment extends Fragment{
                         public void onClick(View view) {
                             thresholdDialog.dismiss();
                             startRecord.setClickable(true);
-                            photoMode.setClickable(true);
                             thumbnail.setClickable(true);
                             switchCamera.setClickable(true);
                             toggleAudio.setClickable(true);
@@ -331,6 +317,7 @@ public class VideoFragment extends Fragment{
                                     sdCardUnavailWarned = true;
                                     settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
                                     settingsEditor.commit();
+                                    cameraActivity.updateStorageDestinationLabel();
                                     showErrorWarningMessage(getResources().getString(R.string.sdCardRemovedTitle), getResources().getString(R.string.sdCardNotPresentForRecord));
                                     getLatestFileIfExists();
                                 }
@@ -352,7 +339,6 @@ public class VideoFragment extends Fragment{
         });
         if(VERBOSE)Log.d(TAG,"passing videofragment to cameraview");
         cameraView.setFragmentInstance(this);
-        cameraView.setPhotoFragmentInstance(null);
         orientationEventListener = new OrientationEventListener(getActivity().getApplicationContext(), SensorManager.SENSOR_DELAY_UI){
             @Override
             public void onOrientationChanged(int i) {
@@ -364,10 +350,6 @@ public class VideoFragment extends Fragment{
             }
         };
         flashParentLayout = new LinearLayout(getActivity());
-        timeElapsedParentLayout = new LinearLayout(getActivity());
-        memoryConsumedParentLayout = new LinearLayout(getActivity());
-        parentLayoutParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
-        parentLayoutParams.weight = 1;
         MediaCodecList mediaCodecList = new MediaCodecList(MediaCodecList.ALL_CODECS);
         MediaCodecInfo[] mediaCodecInfos = mediaCodecList.getCodecInfos();
         if(getAudioBitRate() == -1 || getAudioChannelInput() == -1 || getAudioSampleRate() == -1) {
@@ -438,6 +420,7 @@ public class VideoFragment extends Fragment{
                     if(VERBOSE)Log.d(TAG, "SD Card Removed");
                     settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
                     settingsEditor.commit();
+                    cameraActivity.updateStorageDestinationLabel();
                     showErrorWarningMessage(getResources().getString(R.string.sdCardRemovedTitle), getResources().getString(R.string.sdCardNotPresentForRecord));
                     getLatestFileIfExists();
                 }
@@ -457,7 +440,6 @@ public class VideoFragment extends Fragment{
         okButton = (Button)warningMsgRoot.findViewById(R.id.okButton);
         okButton.setOnClickListener((view) -> {
             startRecord.setClickable(true);
-            photoMode.setClickable(true);
             thumbnail.setClickable(true);
             switchCamera.setClickable(true);
             warningMsg.dismiss();
@@ -504,17 +486,21 @@ public class VideoFragment extends Fragment{
             if(VERBOSE)Log.d(TAG, "adjustStreamVolume");
             audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_MUTE, 0);
         }
-        startRecord.setClickable(true);
-        photoMode.setClickable(true);
+        startRecord.setEnabled(false);
         thumbnail.setClickable(true);
         switchCamera.setClickable(true);
         toggleAudio.setClickable(true);
+        toggleAudio.setVisibility(View.GONE);
+        cameraActivity.closeCameraSpeedDial();
+        cameraActivity.instantSettingsParent.setVisibility(View.GONE);
         addStopAndPauseIcons();
-        hideSettingsBarAndIcon();
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putBoolean("videoCapture", true);
         editor.commit();
         cameraView.record(false);
+        // Camera size changes can trigger surfaceChanged(), so set recording UI
+        // after the camera transition has queued its layout updates.
+        hideSettingsBarAndIcon();
     }
 
     public void checkIfMemoryLimitIsExceeded(){
@@ -575,23 +561,10 @@ public class VideoFragment extends Fragment{
     public void rotateIcons()
     {
         switchCamera.setRotation(rotationAngle);
-        photoMode.setRotation(rotationAngle);
         flash.setRotation(rotationAngle);
-        microThumbnail.setRotation(rotationAngle);
         if(pauseRecord!=null) {
             pauseRecord.setRotation(rotationAngle);
             pauseText.setRotation(rotationAngle);
-        }
-        if(exifInterface!=null && !filePath.equalsIgnoreCase(""))
-        {
-            if(isImage(filePath)) {
-                if(exifInterface.getAttribute(ExifInterface.TAG_ORIENTATION).equalsIgnoreCase(String.valueOf(ExifInterface.ORIENTATION_ROTATE_90))) {
-                    rotationAngle += 90f;
-                }
-                else if(exifInterface.getAttribute(ExifInterface.TAG_ORIENTATION).equalsIgnoreCase(String.valueOf(ExifInterface.ORIENTATION_ROTATE_270))) {
-                    rotationAngle += 270f;
-                }
-            }
         }
         thumbnail.setRotation(rotationAngle);
     }
@@ -607,13 +580,15 @@ public class VideoFragment extends Fragment{
         videoBar.setBackgroundColor(getResources().getColor(R.color.transparentBar));
         LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,LinearLayout.LayoutParams.WRAP_CONTENT);
         stopRecord = new ImageButton(getActivity().getApplicationContext());
-        stopRecord.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        stopRecord.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        stopRecord.setPadding(0, 0, 0, 0);
         stopRecord.setBackgroundColor(getResources().getColor(R.color.transparentBar));
-        stopRecord.setImageDrawable(getResources().getDrawable(R.drawable.camera_record_stop));
+        stopRecord.setImageDrawable(getResources().getDrawable(R.drawable.ic_video_record_stop));
+        stopRecord.setContentDescription(getString(R.string.stopRecording));
         cameraView.setStopButton(stopRecord);
 
-        layoutParams.height=(int)getResources().getDimension(R.dimen.stopButtonHeight);
-        layoutParams.width=(int)getResources().getDimension(R.dimen.stopButtonWidth);
+        layoutParams.height=(int)getResources().getDimension(R.dimen.cameraCenterControlSize);
+        layoutParams.width=(int)getResources().getDimension(R.dimen.cameraCenterControlSize);
         layoutParams.setMargins((int)getResources().getDimension(R.dimen.stopBtnLeftMargin),0,(int)getResources().getDimension(R.dimen.stopBtnRightMargin),0);
         stopRecord.setLayoutParams(layoutParams);
         stopRecord.setOnClickListener(new View.OnClickListener() {
@@ -622,10 +597,19 @@ public class VideoFragment extends Fragment{
                 stopRecordAndSaveFile(false);
             }
         });
-        switchCamera.setBackgroundColor(getResources().getColor(R.color.transparentBar));
         switchCamera.setRotation(rotationAngle);
-        videoBar.addView(switchCamera);
-        videoBar.addView(stopRecord);
+        // In preview this control is hosted by an alignment slot. Detach it
+        // before moving it into the recording controls row.
+        ViewParent switchCameraParent = switchCamera.getParent();
+        if (switchCameraParent instanceof ViewGroup) {
+            ((ViewGroup) switchCameraParent).removeView(switchCamera);
+        }
+        addBottomControlSlot(switchCamera,
+                (int) getResources().getDimension(R.dimen.cameraSideControlSize),
+                (int) getResources().getDimension(R.dimen.cameraSideControlSize));
+        addBottomControlSlot(stopRecord,
+                (int) getResources().getDimension(R.dimen.cameraCenterControlSize),
+                (int) getResources().getDimension(R.dimen.cameraCenterControlSize));
         addPauseButton();
         toggleAudio.setClickable(false);
     }
@@ -633,33 +617,32 @@ public class VideoFragment extends Fragment{
     @TargetApi(Build.VERSION_CODES.N)
     public void addPauseButton(){
         pauseRecord = new ImageButton(getActivity().getApplicationContext());
-        pauseRecord.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        pauseRecord.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        pauseRecord.setPadding(0, 0, 0, 0);
         pauseRecord.setBackgroundColor(getResources().getColor(R.color.transparentBar));
-        pauseRecord.setImageDrawable(getResources().getDrawable(R.drawable.camera_record_pause));
-        pauseRecord.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                pauseRecord.setEnabled(false);
-                if(VERBOSE)Log.d(TAG, "isPause ==== "+isPause());
-                if(!isPause()) {
-                    cameraView.recordPause();
-                    pauseRecord.setImageDrawable(getResources().getDrawable(R.drawable.camera_record_resume));
-                    setPause(true);
-                }
-                else{
-                    cameraView.recordResume();
-                    pauseRecord.setImageDrawable(getResources().getDrawable(R.drawable.camera_record_pause));
-                    setPause(false);
-                }
-                pauseRecord.setEnabled(true);
-            }
+        pauseRecord.setImageDrawable(getResources().getDrawable(R.drawable.ic_video_pause));
+        pauseRecord.setContentDescription(getString(R.string.pauseRecording));
+        pauseRecord.setEnabled(cameraView.canChangeRecordingPause());
+        pauseRecord.setOnClickListener(v -> {
+            if (isPause()) cameraView.recordResume();
+            else cameraView.recordPause();
         });
         LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,LinearLayout.LayoutParams.WRAP_CONTENT);
         layoutParams.setMargins(0, 0, (int) getResources().getDimension(R.dimen.recordSubsBtnRightMargin), 0);
         layoutParams.width = (int)getResources().getDimension(R.dimen.pauseButtonWidth);
         layoutParams.height = (int)getResources().getDimension(R.dimen.pauseButtonHeight);
         pauseRecord.setLayoutParams(layoutParams);
-        videoBar.addView(pauseRecord);
+        addBottomControlSlot(pauseRecord,
+                (int) getResources().getDimension(R.dimen.cameraSideControlSize),
+                (int) getResources().getDimension(R.dimen.cameraSideControlSize));
+    }
+
+    public void updateRecordingPauseState(boolean paused, boolean enabled) {
+        setPause(paused);
+        if (pauseRecord == null) return;
+        pauseRecord.setImageResource(paused ? R.drawable.ic_video_resume : R.drawable.ic_video_pause);
+        pauseRecord.setContentDescription(getString(paused ? R.string.resumeRecording : R.string.pauseRecording));
+        pauseRecord.setEnabled(enabled);
     }
 
     public boolean isPause() {
@@ -716,13 +699,13 @@ public class VideoFragment extends Fragment{
                 }
                 else{
                     startRecord.setClickable(false);
-                    photoMode.setClickable(false);
                     thumbnail.setClickable(false);
                     switchCamera.setClickable(false);
                     noSdCard = true;
                     SharedPreferences.Editor settingsEditor = sharedPreferences.edit();
                     settingsEditor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
                     settingsEditor.commit();
+                    cameraActivity.updateStorageDestinationLabel();
                     showErrorWarningMessage(getResources().getString(R.string.sdCardRemovedTitle), getResources().getString(R.string.sdCardRemovedWhileRecord));
                     getLatestFileIfExists();
                     new Thread(() -> {
@@ -767,75 +750,62 @@ public class VideoFragment extends Fragment{
 
     public void showRecordSaved()
     {
-        LinearLayout recordSavedLayout = new LinearLayout(getActivity());
-        recordSavedLayout.setGravity(Gravity.CENTER);
-        recordSavedLayout.setOrientation(LinearLayout.VERTICAL);
-        recordSavedLayout.setBackgroundColor(getResources().getColor(R.color.savedMsg));
-        determineOrientation();
-        recordSavedLayout.setRotation(rotationAngle);
-        TextView recordSavedText = new TextView(getActivity());
-        recordSavedText.setText(getResources().getString(R.string.RECORD_SAVED));
-        ImageView recordSavedImg = new ImageView(getActivity());
-        recordSavedImg.setImageDrawable(getResources().getDrawable(R.drawable.ic_done_white));
-        recordSavedText.setPadding((int)getResources().getDimension(R.dimen.recordSavePadding),(int)getResources().getDimension(R.dimen.recordSavePadding),
-                (int)getResources().getDimension(R.dimen.recordSavePadding),(int)getResources().getDimension(R.dimen.recordSavePadding));
-        recordSavedText.setTextColor(getResources().getColor(R.color.saveText));
-        recordSavedImg.setPadding(0,0,0,(int)getResources().getDimension(R.dimen.recordSaveImagePaddingBottom));
-        recordSavedLayout.addView(recordSavedText);
-        recordSavedLayout.addView(recordSavedImg);
-        final Toast showCompleted = Toast.makeText(getActivity().getApplicationContext(),"",Toast.LENGTH_SHORT);
-        showCompleted.setGravity(Gravity.CENTER,0,0);
-        showCompleted.setView(recordSavedLayout);
-        showCompleted.show();
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    Thread.sleep(1000);
-                    showCompleted.cancel();
-                }catch (InterruptedException ie){
-                    ie.printStackTrace();
-                }
-            }
-        }).start();
+        if (!isAdded()) return;
+        // Android 11+ blocks custom-view Toasts. Use a standard text Toast so
+        // the save confirmation remains visible on current Android versions.
+        Toast.makeText(requireContext(), R.string.RECORD_SAVED, Toast.LENGTH_SHORT).show();
     }
 
     public void showRecordAndThumbnail()
     {
-        videoBar.setBackgroundColor(getResources().getColor(R.color.settingsBarColor));
+        cameraActivity.setRecordingInsets(false);
+        // A preview resize can rebuild the top controls before Camera1 updates
+        // its VideoFragment reference. Restore the label from the saved choice
+        // so the displayed resolution does not depend on that callback order.
+        String selectedResolution = PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
+                .getString(Constants.SELECT_VIDEO_RESOLUTION, null);
+        if (selectedResolution != null && resInfo != null) {
+            resInfo.setText(selectedResolution);
+            resInfo.setVisibility(View.VISIBLE);
+        }
+        cameraActivity.toggleAudio.setVisibility(View.VISIBLE);
+        cameraActivity.closeCameraSpeedDial();
+        cameraActivity.showCameraSpeedDial();
+        if (pauseText != null) pauseText.setVisibility(View.INVISIBLE);
+        View decor = cameraActivity.getWindow().getDecorView();
+        decor.setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN);
+        new WindowInsetsControllerCompat(cameraActivity.getWindow(), decor)
+                .show(WindowInsetsCompat.Type.navigationBars());
+        videoBar.setBackgroundColor(getResources().getColor(R.color.transparentBar));
         //Enable Audio if disabled, after recording is completed.
         SharedPreferences micPrefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         SharedPreferences.Editor prefsEditor = micPrefs.edit();
         if(micPrefs.getBoolean(Constants.NO_AUDIO_MSG, false)) {
-            cameraActivity.toggleAudio.setImageDrawable(getResources().getDrawable(R.drawable.microphone_music_sound_icon));
+            cameraActivity.toggleAudio.setImageDrawable(getResources().getDrawable(R.drawable.ic_video_mic_on));
+            cameraActivity.toggleAudio.setContentDescription(getString(R.string.microphoneEnabled));
+            cameraActivity.updateMicrophoneActionLabel(false);
             prefsEditor.putBoolean(Constants.NO_AUDIO_MSG, false);
             prefsEditor.apply();
         }
-        videoBar.removeAllViews();
-        videoBar.addView(substitute);
-        videoBar.addView(switchCamera);
-        videoBar.addView(startRecord);
-        videoBar.addView(photoMode);
-        videoBar.addView(thumbnailParent);
-        settingsBar.removeAllViews();
-        settingsBar.setWeightSum(0);
+        populatePreviewBottomControls();
         flashParentLayout.removeAllViews();
-        timeElapsedParentLayout.removeAllViews();
-        memoryConsumedParentLayout.removeAllViews();
         if(cameraView.isCameraReady()) {
             if (cameraView.isFlashOn()) {
-                flash.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_off));
+                flash.setImageDrawable(getResources().getDrawable(R.drawable.ic_video_flash_off));
             } else {
-                flash.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_on));
+                flash.setImageDrawable(getResources().getDrawable(R.drawable.ic_video_flash_on));
             }
         }
-        LinearLayout.LayoutParams flashParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        flashParams.weight = 0.5f;
-        flashParams.height = (int)getResources().getDimension(R.dimen.flashOnHeight);
-        flashParams.width = (int)getResources().getDimension(R.dimen.flashOnWidth);
-        flashParams.setMargins((int)getResources().getDimension(R.dimen.flashOnLeftMargin),0,0,0);
-        flashParams.gravity=Gravity.CENTER;
+        FrameLayout.LayoutParams flashParams = new FrameLayout.LayoutParams(
+                (int)getResources().getDimension(R.dimen.cameraControlSize),
+                (int)getResources().getDimension(R.dimen.cameraControlSize), Gravity.CENTER);
         flash.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        flash.setPadding((int)getResources().getDimension(R.dimen.controlIconPadding),
+                (int)getResources().getDimension(R.dimen.controlIconPadding),
+                (int)getResources().getDimension(R.dimen.controlIconPadding),
+                (int)getResources().getDimension(R.dimen.controlIconPadding));
+        flash.setBackgroundResource(R.drawable.camera_control_circle);
+        flash.setColorFilter(android.graphics.Color.WHITE);
         flash.setLayoutParams(flashParams);
         flash.setOnClickListener(new View.OnClickListener(){
             @Override
@@ -844,62 +814,164 @@ public class VideoFragment extends Fragment{
                 setFlash();
             }
         });
-        settingsBar.addView(flash);
         cameraView.setFlashButton(flash);
-        settingsBar.addView(modeLayout);
-        settingsBar.addView(settings);
-        modeText.setText(getResources().getString(R.string.VIDEO_MODE));
-        settingsBar.setBackgroundColor(getResources().getColor(R.color.settingsBarColor));
-        flash.setBackgroundColor(getResources().getColor(R.color.settingsBarColor));
+        populatePreviewTopControls();
+    }
+
+    public void applyPreviewHandedness() {
+        if (cameraView == null || cameraView.isRecord() || videoBar == null
+                || switchCamera == null || startRecord == null || thumbnailParent == null) return;
+        populatePreviewBottomControls();
+    }
+
+    private void populatePreviewBottomControls() {
+        boolean left = cameraActivity.isLeftHandedPreview();
+        int sideSize = (int) getResources().getDimension(R.dimen.cameraSideControlSize);
+        int thumbnailWidth = (int) getResources().getDimension(R.dimen.thumbnailSlotWidth);
+        int centerSize = (int) getResources().getDimension(R.dimen.cameraCenterControlSize);
+        videoBar.removeAllViews();
+        videoBar.setWeightSum(3);
+        addBottomControlSlot(left ? thumbnailParent : switchCamera,
+                left ? thumbnailWidth : sideSize, sideSize);
+        addBottomControlSlot(startRecord, centerSize, centerSize);
+        addBottomControlSlot(left ? switchCamera : thumbnailParent,
+                left ? sideSize : thumbnailWidth, sideSize);
+    }
+
+    private void populatePreviewTopControls() {
+        if (settingsBar == null || resInfo == null || cameraActivity == null) return;
+        settingsBar.removeAllViews();
+        settingsBar.setWeightSum(0);
+        settingsBar.setBackgroundColor(getResources().getColor(R.color.transparentBar));
+        FrameLayout parentCamera = cameraActivity.findViewById(R.id.parentCamera);
+        if (parentCamera == null) return;
+        ViewParent currentParent = resInfo.getParent();
+        if (currentParent instanceof ViewGroup && currentParent != parentCamera) {
+            ((ViewGroup) currentParent).removeView(resInfo);
+        }
+        resInfo.setGravity(Gravity.CENTER);
+        resInfo.setVisibility(View.VISIBLE);
+        if (resInfo.getParent() != parentCamera) {
+            FrameLayout.LayoutParams labelParams = new FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    (int) getResources().getDimension(R.dimen.cameraControlSize),
+                    Gravity.TOP);
+            parentCamera.addView(resInfo, labelParams);
+        }
+    }
+
+    private void ensurePreviewTopControls() {
+        if (cameraView == null || settingsBar == null || resInfo == null) return;
+        FrameLayout parentCamera = cameraActivity.findViewById(R.id.parentCamera);
+        if (parentCamera != null && resInfo.getParent() != parentCamera) {
+            populatePreviewTopControls();
+        }
+    }
+
+    private void addBottomControlSlot(View control, int controlWidth, int controlHeight) {
+        ViewParent parent = control.getParent();
+        if (parent instanceof ViewGroup) {
+            ((ViewGroup) parent).removeView(control);
+        }
+        FrameLayout slot = new FrameLayout(getActivity());
+        slot.addView(control, new FrameLayout.LayoutParams(
+                controlWidth, controlHeight, Gravity.CENTER));
+        videoBar.addView(slot, new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.MATCH_PARENT, 1f));
     }
 
     public void setVideoResInfo(String width, String height){
+        if (resInfo == null) return;
         resInfo.setText(getResources().getString(R.string.resolutionDisplay, width, height));
+        resInfo.setVisibility(View.VISIBLE);
+        ensurePreviewTopControls();
     }
 
     public void hideSettingsBarAndIcon()
     {
+        cameraActivity.setRecordingInsets(true);
+        cameraActivity.closeCameraSpeedDial();
+        cameraActivity.instantSettingsParent.setVisibility(View.GONE);
+        View decor = cameraActivity.getWindow().getDecorView();
+        decor.setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_FULLSCREEN
+                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+        WindowInsetsControllerCompat insetsController =
+                new WindowInsetsControllerCompat(cameraActivity.getWindow(), decor);
+        insetsController.setSystemBarsBehavior(
+                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+        insetsController.hide(WindowInsetsCompat.Type.systemBars());
+        // The button tap that starts recording can briefly reveal transient bars
+        // on newer Android releases. Reapply the immersive state after that touch.
+        decor.postDelayed(() -> {
+            if (cameraView.isRecord()) {
+                new WindowInsetsControllerCompat(cameraActivity.getWindow(), decor)
+                        .hide(WindowInsetsCompat.Type.systemBars());
+            }
+        }, 350);
         settingsBar.removeAllViews();
         flashParentLayout.removeAllViews();
-        timeElapsedParentLayout.removeAllViews();
-        memoryConsumedParentLayout.removeAllViews();
-        settingsBar.setWeightSum(3);
+        resInfo.setVisibility(View.GONE);
+        settingsBar.setWeightSum(0);
         settingsBar.setBackgroundColor(getResources().getColor(R.color.transparentBar));
-        flashParentLayout.setLayoutParams(parentLayoutParams);
+        flashParentLayout.setOrientation(LinearLayout.VERTICAL);
+        flashParentLayout.setGravity(Gravity.CENTER);
         if(cameraView.isFlashOn()) {
-            flash.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_off));
+            flash.setImageDrawable(getResources().getDrawable(R.drawable.ic_video_flash_off));
         }
         else{
-            flash.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_on));
+            flash.setImageDrawable(getResources().getDrawable(R.drawable.ic_video_flash_on));
         }
         flash.setOnClickListener((view) -> setFlash());
-        LinearLayout.LayoutParams flashParam = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        flashParam.weight=1f;
-        flashParam.setMargins(0,(int)getResources().getDimension(R.dimen.flashOnTopMargin),0,0);
-        flashParam.width = (int)getResources().getDimension(R.dimen.flashOnWidth);
-        flashParam.height = (int)getResources().getDimension(R.dimen.flashOnHeight);
+        LinearLayout.LayoutParams flashParam = new LinearLayout.LayoutParams(
+                (int)getResources().getDimension(R.dimen.cameraControlSize),
+                (int)getResources().getDimension(R.dimen.cameraControlSize));
         flash.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        flash.setPadding((int)getResources().getDimension(R.dimen.controlIconPadding),
+                (int)getResources().getDimension(R.dimen.controlIconPadding),
+                (int)getResources().getDimension(R.dimen.controlIconPadding),
+                (int)getResources().getDimension(R.dimen.controlIconPadding));
         flash.setLayoutParams(flashParam);
-        flash.setBackgroundColor(getResources().getColor(R.color.transparentBar));
+        flash.setBackgroundResource(R.drawable.camera_control_circle);
+        flash.setColorFilter(android.graphics.Color.WHITE);
         cameraView.setFlashButton(flash);
+        ViewParent flashParent = flash.getParent();
+        if (flashParent instanceof ViewGroup) {
+            ((ViewGroup) flashParent).removeView(flash);
+        }
         flashParentLayout.addView(flash);
-        settingsBar.addView(flashParentLayout);
+        ViewParent oldFlashOverlay = flashParentLayout.getParent();
+        if (oldFlashOverlay instanceof ViewGroup) {
+            ((ViewGroup) oldFlashOverlay).removeView(flashParentLayout);
+        }
+        FrameLayout recordingTopOverlay = new FrameLayout(getActivity());
+        recordingTopOverlay.setBackgroundColor(getResources().getColor(R.color.transparentBar));
+        FrameLayout.LayoutParams flashOverlayParams = new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT,
+                Gravity.START | Gravity.CENTER_VERTICAL);
+        flashOverlayParams.setMargins((int) getResources().getDimension(R.dimen.flashOnLeftMargin), 0, 0, 0);
+        recordingTopOverlay.addView(flashParentLayout, flashOverlayParams);
 
         //Add time elapsed text
         timeElapsed = new TextView(getActivity());
         timeElapsed.setGravity(Gravity.CENTER_HORIZONTAL);
         timeElapsed.setTypeface(Typeface.DEFAULT_BOLD);
         timeElapsed.setBackgroundColor(getResources().getColor(R.color.transparentBar));
-        timeElapsed.setTextColor(getResources().getColor(R.color.timeElapsed));
+        timeElapsed.setTextColor(android.graphics.Color.WHITE);
         timeElapsed.setText(getResources().getString(R.string.START_TIME));
-        LinearLayout.LayoutParams timeElapParam = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        timeElapParam.setMargins(0,(int)getResources().getDimension(R.dimen.timeAndMemTopMargin),0,0);
-        timeElapParam.weight=0.3f;
-        timeElapsed.setLayoutParams(timeElapParam);
+        timeElapsed.setTextSize(24);
+        timeElapsed.setCompoundDrawablePadding((int) (8 * getResources().getDisplayMetrics().density));
+        timeElapsed.setCompoundDrawablesWithIntrinsicBounds(
+                R.drawable.recording_indicator, 0, 0, 0);
+        timeElapsed.setShadowLayer(3f, 0f, 1f, Color.BLACK);
+        FrameLayout.LayoutParams timerOverlayParams = new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER);
+        timeElapsed.setLayoutParams(timerOverlayParams);
         cameraView.setTimeElapsedText(timeElapsed);
-        timeElapsedParentLayout.setLayoutParams(parentLayoutParams);
-        timeElapsedParentLayout.addView(timeElapsed);
-        settingsBar.addView(timeElapsedParentLayout);
+        recordingTopOverlay.addView(timeElapsed);
+        settingsBar.addView(recordingTopOverlay, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
         //Add memory consumed text
         memoryConsumed = new TextView(getActivity());
@@ -909,19 +981,16 @@ public class VideoFragment extends Fragment{
         memoryConsumed.setBackgroundColor(getResources().getColor(R.color.transparentBar));
         memoryConsumed.setText(getResources().getString(R.string.START_MEMORY));
         LinearLayout.LayoutParams memConsumed = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        memConsumed.setMargins(0, (int) getResources().getDimension(R.dimen.timeAndMemTopMargin), 0, 0);
-        memConsumed.weight = 0.3f;
+        memConsumed.setMargins(0, 0, 0, 0);
+        memoryConsumed.setTextSize(11);
         memoryConsumed.setLayoutParams(memConsumed);
-        memoryConsumedParentLayout.setLayoutParams(parentLayoutParams);
-        memoryConsumedParentLayout.addView(memoryConsumed);
-        settingsBar.addView(memoryConsumedParentLayout);
         cameraView.setMemoryConsumedText(memoryConsumed);
-        if(PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getBoolean(Constants.SHOW_MEMORY_CONSUMED_MSG, false)) {
-            memoryConsumed.setVisibility(View.VISIBLE);
-        }
-        else{
-            memoryConsumed.setVisibility(View.INVISIBLE);
-        }
+        memoryConsumed.setVisibility(View.GONE);
+    }
+
+    public void onRecordingStopped() {
+        startRecord.setEnabled(true);
+        startRecord.setClickable(true);
     }
 
     boolean flashOn=false;
@@ -932,7 +1001,7 @@ public class VideoFragment extends Fragment{
             if(VERBOSE)Log.d(TAG,"Flash on");
             if(cameraView.isFlashModeSupported(cameraView.getCameraImplementation().getFlashModeTorch())) {
                 flashOn = true;
-                flash.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_off));
+                flash.setImageDrawable(getResources().getDrawable(R.drawable.ic_video_flash_off));
                 TextView feature = (TextView)settingsMsgRoot.findViewById(R.id.feature);
                 feature.setText(getResources().getString(R.string.flashSetting).toUpperCase());
                 TextView value = (TextView)settingsMsgRoot.findViewById(R.id.value);
@@ -970,13 +1039,13 @@ public class VideoFragment extends Fragment{
         {
             if(VERBOSE)Log.d(TAG,"Flash off");
             flashOn = false;
-            flash.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_on));
+            flash.setImageDrawable(getResources().getDrawable(R.drawable.ic_video_flash_on));
             TextView feature = (TextView)settingsMsgRoot.findViewById(R.id.feature);
             feature.setText(getResources().getString(R.string.flashSetting).toUpperCase());
             TextView value = (TextView)settingsMsgRoot.findViewById(R.id.value);
             value.setText(getResources().getString(R.string.flashOffMode).toUpperCase());
             ImageView heading = (ImageView)settingsMsgRoot.findViewById(R.id.heading);
-            heading.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_off));
+            heading.setImageDrawable(getResources().getDrawable(R.drawable.ic_video_flash_off));
             final Toast settingsMsg = Toast.makeText(getActivity().getApplicationContext(),"",Toast.LENGTH_SHORT);
             settingsMsg.setGravity(Gravity.CENTER,0,0);
             settingsMsg.setView(settingsMsgRoot);
@@ -994,6 +1063,11 @@ public class VideoFragment extends Fragment{
             }).start();
         }
         cameraView.flashOnOff(flashOn);
+        cameraActivity.updateSpeedDialFlashIcon(flashOn);
+    }
+
+    public void toggleFlashFromSpeedDial() {
+        setFlash();
     }
 
     public boolean isFlashOn()
@@ -1024,23 +1098,80 @@ public class VideoFragment extends Fragment{
 
     public void createAndShowThumbnail(String mediaPath)
     {
+        if (mediaPath == null || mediaPath.isEmpty()) {
+            Log.e(TAG, "Cannot show recording thumbnail: media path is empty");
+            return;
+        }
+        filePath = mediaPath;
         //Storing in public folder. This will ensure that the files are visible in other apps as well.
         //Use this for sharing files between apps
         final File video = new File(mediaPath);
+        if (!video.isFile() || video.length() == 0) {
+            Log.e(TAG, "Cannot show recording thumbnail: output file is missing or empty: " + mediaPath);
+            return;
+        }
+        LatestRecordingStore.recorded(getApplicationContext(), video);
         MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
-        mediaMetadataRetriever.setDataSource(mediaPath);
-        Bitmap firstFrame = mediaMetadataRetriever.getFrameAtTime(Constants.FIRST_SEC_MICRO);
-        if(firstFrame == null){
-            if(video != null && video.delete()){
-                if(VERBOSE)Log.d(TAG,"Removed file = "+mediaPath);
+        Bitmap firstFrame = null;
+        try {
+            mediaMetadataRetriever.setDataSource(mediaPath);
+            // Prefer a sync frame around one second for longer recordings.
+            firstFrame = mediaMetadataRetriever.getFrameAtTime(
+                    Constants.FIRST_SEC_MICRO, MediaMetadataRetriever.OPTION_CLOSEST_SYNC);
+            if (firstFrame == null) {
+                firstFrame = mediaMetadataRetriever.getFrameAtTime(
+                        0, MediaMetadataRetriever.OPTION_CLOSEST_SYNC);
             }
+            if (firstFrame == null) {
+                String duration = mediaMetadataRetriever.extractMetadata(
+                        MediaMetadataRetriever.METADATA_KEY_DURATION);
+                if (duration != null) {
+                    long durationMs = Long.parseLong(duration);
+                    firstFrame = mediaMetadataRetriever.getFrameAtTime(
+                            (durationMs / 2) * 1000,
+                            MediaMetadataRetriever.OPTION_CLOSEST);
+                }
+            }
+        } catch (RuntimeException invalidVideo) {
+            Log.e(TAG, "Unable to read the saved recording: " + mediaPath, invalidVideo);
+        } finally {
+            try {
+                mediaMetadataRetriever.release();
+            } catch (IOException releaseError) {
+                Log.w(TAG, "Unable to release media metadata reader", releaseError);
+            }
+        }
+        if (firstFrame == null) {
+            try {
+                // Use Android's file thumbnail implementation as a second
+                // decoder path. This also handles short clips where the
+                // metadata retriever cannot return a sync frame reliably.
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    firstFrame = ThumbnailUtils.createVideoThumbnail(video,
+                            new Size((int) getResources().getDimension(R.dimen.thumbnailWidth),
+                                    (int) getResources().getDimension(R.dimen.thumbnailHeight)), null);
+                } else {
+                    firstFrame = ThumbnailUtils.createVideoThumbnail(
+                            mediaPath, MediaStore.Video.Thumbnails.MINI_KIND);
+                }
+            } catch (IOException | RuntimeException thumbnailError) {
+                Log.e(TAG, "Android thumbnail extraction failed: " + mediaPath, thumbnailError);
+            }
+        }
+        if(firstFrame == null){
+            Log.e(TAG, "No video frame could be decoded for thumbnail: " + mediaPath
+                    + " (" + video.length() + " bytes)");
+            addMediaToDB();
+            showRecordSaved();
+            setPlaceholderThumbnail();
+            thumbnail.setClickable(true);
+            thumbnail.setOnClickListener(view -> showThumbnailActions());
             return;
         }
         if(VERBOSE)Log.d(TAG,"width = "+firstFrame.getWidth()+" , height = "+firstFrame.getHeight());
         boolean isDetached=false;
         try {
-            firstFrame = Bitmap.createScaledBitmap(firstFrame, (int) getResources().getDimension(R.dimen.thumbnailWidth),
-                    (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
+            firstFrame = cropThumbnailToCircle(firstFrame);
         }
         catch (IllegalStateException illegal){
             if(VERBOSE)Log.d(TAG,"video fragment is already detached. ");
@@ -1049,37 +1180,24 @@ public class VideoFragment extends Fragment{
         showRecordSaved();
         addMediaToDB();
         if(!isDetached) {
-            updateMicroThumbnailAsPerPlayer();
-            microThumbnail.setVisibility(View.VISIBLE);
+            thumbnail.setVisibility(View.VISIBLE);
+            thumbnailParent.setVisibility(View.VISIBLE);
             thumbnail.setImageBitmap(firstFrame);
             thumbnail.setClickable(true);
             thumbnail.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    openMedia();
+                    showThumbnailActions();
                 }
             });
         }
     }
 
-    private void updateMicroThumbnailAsPerPlayer(){
-        if(isUseFCPlayer()){
-            microThumbnail.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_circle_outline));
-        }
-        else{
-            microThumbnail.setImageDrawable(getResources().getDrawable(R.drawable.ic_external_play_circle_outline));
-        }
-    }
-
-    public boolean isImage(String path)
-    {
-        if(path.endsWith(getResources().getString(R.string.IMG_EXT)) || path.endsWith(getResources().getString(R.string.ANOTHER_IMG_EXT))){
-            return true;
-        }
-        return false;
-    }
-
     public void addMediaToDB(){
+        if (cameraView.getMediaPath() == null || cameraView.getMediaPath().isEmpty()) {
+            Log.e(TAG, "Skipping media index update because the recording path is empty");
+            return;
+        }
         ContentValues mediaContent = new ContentValues();
         mediaContent.put("filename", cameraView.getMediaPath());
         mediaContent.put("memoryStorage", (sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true) ? "1" : "0"));
@@ -1097,67 +1215,49 @@ public class VideoFragment extends Fragment{
     String filePath = "";
     public void getLatestFileIfExists()
     {
-        FileMedia[] medias = MediaUtil.getMediaList(getActivity().getApplicationContext(), false);
-        if (medias != null && medias.length > 0) {
-            if(VERBOSE)Log.d(TAG, "Latest file is = " + medias[0].getPath());
-            filePath = medias[0].getPath();
-            if (!isImage(filePath)) {
+        File latest = LatestRecordingStore.latest(getActivity().getApplicationContext());
+        if (latest != null) {
+            filePath = latest.getAbsolutePath();
                 MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
+                Bitmap vid = null;
                 try {
                     mediaMetadataRetriever.setDataSource(filePath);
-                }catch(RuntimeException runtime){
-                    if(VERBOSE)Log.d(TAG, "RuntimeException "+runtime.getMessage());
-                    if(!sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
-                        //Possible bad file in SD Card. Remove it.
-                        deleteFileAndRefreshThumbnail();
-                        return;
+                    vid = mediaMetadataRetriever.getFrameAtTime(Constants.FIRST_SEC_MICRO);
+                    if (vid == null) {
+                        vid = mediaMetadataRetriever.getFrameAtTime(0,
+                                MediaMetadataRetriever.OPTION_CLOSEST_SYNC);
+                    }
+                } catch (RuntimeException runtime) {
+                    Log.w(TAG, "Unable to load latest video thumbnail: " + filePath, runtime);
+                } finally {
+                    try {
+                        mediaMetadataRetriever.release();
+                    } catch (IOException releaseError) {
+                        Log.w(TAG, "Unable to release media metadata reader", releaseError);
                     }
                 }
-                Bitmap vid = mediaMetadataRetriever.getFrameAtTime(Constants.FIRST_SEC_MICRO);
                 if(VERBOSE)Log.d(TAG, "Vid = "+vid);
                 //If video cannot be played for whatever reason
                 if (vid != null) {
-                    vid = Bitmap.createScaledBitmap(vid, (int) getResources().getDimension(R.dimen.thumbnailWidth),
-                            (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
+                    vid = cropThumbnailToCircle(vid);
                     thumbnail.setImageBitmap(vid);
-                    updateMicroThumbnailAsPerPlayer();
-                    microThumbnail.setVisibility(View.VISIBLE);
                     if(VERBOSE)Log.d(TAG, "set as image bitmap");
                     thumbnail.setClickable(true);
                     thumbnail.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View view) {
-                            openMedia();
+                            showThumbnailActions();
                         }
                     });
                 } else {
-                    //Possible bad file in SD Card. Remove it.
-                    deleteFileAndRefreshThumbnail();
-                    return;
+                    // Leave an existing video intact and display the default
+                    // thumbnail if this device cannot decode a preview frame.
+                    setPlaceholderThumbnail();
+                    thumbnail.setClickable(true);
+                    thumbnail.setOnClickListener(view -> showThumbnailActions());
                 }
-            } else {
-                try {
-                    exifInterface = new ExifInterface(filePath);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                if(VERBOSE)Log.d(TAG, "TAG_ORIENTATION = "+exifInterface.getAttribute(ExifInterface.TAG_ORIENTATION));
-                Bitmap pic = BitmapFactory.decodeFile(filePath);
-                pic = Bitmap.createScaledBitmap(pic, (int) getResources().getDimension(R.dimen.thumbnailWidth),
-                        (int) getResources().getDimension(R.dimen.thumbnailHeight), false);
-                thumbnail.setImageBitmap(pic);
-                microThumbnail.setVisibility(View.INVISIBLE);
-                thumbnail.setClickable(true);
-                thumbnail.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        openMedia();
-                    }
-                });
-            }
         }
         else{
-            microThumbnail.setVisibility(View.INVISIBLE);
             setPlaceholderThumbnail();
         }
     }
@@ -1168,20 +1268,52 @@ public class VideoFragment extends Fragment{
         thumbnail.setClickable(false);
     }
 
+    private Bitmap cropThumbnailToCircle(Bitmap source) {
+        int side = Math.min(source.getWidth(), source.getHeight());
+        int left = (source.getWidth() - side) / 2;
+        int top = (source.getHeight() - side) / 2;
+        Bitmap square = Bitmap.createBitmap(source, left, top, side, side);
+        int targetSize = (int) getResources().getDimension(R.dimen.thumbnailWidth);
+        if (square.getWidth() == targetSize) return square;
+        return Bitmap.createScaledBitmap(square, targetSize, targetSize, true);
+    }
+
     private void openMedia()
     {
         setCameraClose();
-        Intent mediaIntent = new Intent(getActivity().getApplicationContext(), MediaActivity.class);
-        SharedPreferences.Editor mediaLocEdit = sharedPreferences.edit();
-        String mediaLocValue = sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true) ?
-                getResources().getString(R.string.phoneLocation) : getResources().getString(R.string.sdcardLocation);
-        mediaLocEdit.putString(Constants.MEDIA_LOCATION_VIEW_SELECT, mediaLocValue);
-        mediaLocEdit.commit();
-        if(controlVisbilityPreference == null){
-            controlVisbilityPreference = (ControlVisbilityPreference)getApplicationContext();
+        Context context = getContext();
+        String mediaPath = filePath;
+        if (context == null) return;
+        if (mediaPath == null || mediaPath.isEmpty() || !new File(mediaPath).isFile()) {
+            Toast.makeText(context, "The recorded video is unavailable", Toast.LENGTH_SHORT).show();
+            return;
         }
-        controlVisbilityPreference.setFromGallery(false);
-        startActivity(mediaIntent);
+        try {
+            Uri videoUri = FileProvider.getUriForFile(
+                    context,
+                    BuildConfig.APPLICATION_ID + ".provider",
+                    new File(mediaPath));
+            Intent viewIntent = new Intent(Intent.ACTION_VIEW);
+            viewIntent.setDataAndType(videoUri, "video/mp4");
+            viewIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            startActivity(Intent.createChooser(viewIntent, null));
+        } catch (ActivityNotFoundException noVideoApp) {
+            Toast.makeText(context, "No installed app can open this video", Toast.LENGTH_SHORT).show();
+        } catch (IllegalArgumentException | SecurityException invalidVideoUri) {
+            Log.e(TAG, "Unable to share recorded video with an installed video app", invalidVideoUri);
+            Toast.makeText(context, "Unable to open this video", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void showThumbnailActions() {
+        cameraActivity.showThumbnailActions(thumbnail, this::openMedia, () -> {
+            if (LatestRecordingStore.latest(getApplicationContext()) == null) {
+                Toast.makeText(getContext(), R.string.clipUnavailable, Toast.LENGTH_SHORT).show();
+                return;
+            }
+            setCameraClose();
+            startActivity(new Intent(getActivity(), ClipActivity.class));
+        });
     }
 
     private void setCameraClose()
@@ -1238,6 +1370,7 @@ public class VideoFragment extends Fragment{
 
     @Override
     public void onPause() {
+        if (cameraActivity != null) cameraActivity.closeThumbnailActions();
         if(VERBOSE)Log.d(TAG,"Fragment pause....app is being quit");
         setCameraQuit();
         if(cameraView!=null){

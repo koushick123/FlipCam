@@ -9,7 +9,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/turqoise"
+        android:background="@color/uiAccent"
         android:gravity="center"
         android:orientation="horizontal">
 
@@ -54,7 +54,7 @@
         android:paddingTop="25dp"
         android:text="@string/deleteMessage"
         android:textAlignment="center"
-        android:textColor="@color/turqoise"
+        android:textColor="@color/uiAccent"
         android:textStyle="bold" />
 
     <LinearLayout
@@ -74,7 +74,7 @@
             android:background="@color/thumbnailPlaceholder"
             android:onClick="delete"
             android:text="@string/delete"
-            android:textColor="@color/turqoise" />
+            android:textColor="@color/uiAccent" />
 
         <Button
             android:id="@+id/cancelButton"
@@ -86,7 +86,7 @@
             android:background="@color/thumbnailPlaceholder"
             android:onClick="cancel"
             android:text="@string/cancelToDelete"
-            android:textColor="@color/turqoise" />
+            android:textColor="@color/uiAccent" />
 
     </LinearLayout>
 </LinearLayout>

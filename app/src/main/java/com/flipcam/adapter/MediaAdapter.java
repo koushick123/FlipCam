@@ -98,34 +98,19 @@ public class MediaAdapter extends ArrayAdapter {
         thumbnailParams.width = thumbnailParams.height = thumbnailWidthAndHeight;
         viewHolderImage.recordedMedia.setLayoutParams(thumbnailParams);
         FileMedia media = mediaList[position];
-        if(!isImage(media.getPath())){
-            File thumbnailVideo = new File(media.getPath());
-            Glide.with(getContext())
-                    .load(thumbnailVideo)
-                    .thumbnail(0.1f)
-                    .into(viewHolderImage.recordedMedia);
-            viewHolderImage.playVideo.setVisibility(View.VISIBLE);
-            if(showFCPlayer) {
-                viewHolderImage.playVideo.setImageDrawable(getContext().getResources().getDrawable(R.drawable.ic_play_circle_outline));
-            }
-            else{
-                viewHolderImage.playVideo.setImageDrawable(getContext().getResources().getDrawable(R.drawable.ic_external_play_circle_outline));
-            }
+        File thumbnailVideo = new File(media.getPath());
+        Glide.with(getContext())
+                .load(thumbnailVideo)
+                .thumbnail(0.1f)
+                .into(viewHolderImage.recordedMedia);
+        viewHolderImage.playVideo.setVisibility(View.VISIBLE);
+        if(showFCPlayer) {
+            viewHolderImage.playVideo.setImageDrawable(getContext().getResources().getDrawable(R.drawable.ic_play_circle_outline));
         }
         else{
-            File thumbnailImage = new File(media.getPath());
-            Glide.with(getContext()).load(thumbnailImage).into(viewHolderImage.recordedMedia);
-            viewHolderImage.playVideo.setVisibility(View.INVISIBLE);
+            viewHolderImage.playVideo.setImageDrawable(getContext().getResources().getDrawable(R.drawable.ic_external_play_circle_outline));
         }
         return listItem;
-    }
-
-    boolean isImage(String path)
-    {
-        if(path.endsWith(getContext().getResources().getString(R.string.IMG_EXT)) || path.endsWith(getContext().getResources().getString(R.string.ANOTHER_IMG_EXT))){
-            return true;
-        }
-        return false;
     }
 
     private boolean isUseFCPlayer(){

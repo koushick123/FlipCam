@@ -38,8 +38,7 @@ public class MediaView extends SurfaceView implements SurfaceHolder.Callback {
     @Override
     public void surfaceCreated(SurfaceHolder surfaceHolder) {
         if(VERBOSE)Log.d(TAG,"surfaceCreated = "+mediaPath);
-        if(!isImage()){
-            mPlayer.setDisplay(surfaceHolder);
+        mPlayer.setDisplay(surfaceHolder);
             try {
                 mPlayer.setDataSource("file://"+mediaPath);
                 mPlayer.prepare();
@@ -56,7 +55,6 @@ public class MediaView extends SurfaceView implements SurfaceHolder.Callback {
             if(mediaFragment.getUserVisibleHint() && !mediaFragment.isStartTracker()){
                 mediaFragment.startTrackerThread();
             }
-        }
         mediaFragment.fitVideoToScreen();
     }
 
@@ -68,8 +66,7 @@ public class MediaView extends SurfaceView implements SurfaceHolder.Callback {
     @Override
     public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
         if(VERBOSE)Log.d(TAG,"surfaceDestroyed = "+mediaPath);
-        if(!isImage()){
-            if(mediaFragment.getUserVisibleHint()) {
+        if(mediaFragment.getUserVisibleHint()) {
                 if(VERBOSE)Log.d(TAG, "Reset");
                 mediaFragment.stopTrackerThread();
                 try {
@@ -79,16 +76,7 @@ public class MediaView extends SurfaceView implements SurfaceHolder.Callback {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-            }
-            mPlayer.reset();
         }
-    }
-
-    public boolean isImage()
-    {
-        if(mediaPath.endsWith(getResources().getString(R.string.IMG_EXT)) || mediaPath.endsWith(getResources().getString(R.string.ANOTHER_IMG_EXT))){
-            return true;
-        }
-        return false;
+        mPlayer.reset();
     }
 }

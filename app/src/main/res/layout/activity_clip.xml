@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:id="@+id/clipRoot"
+    android:orientation="vertical" android:background="@android:color/black">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="56dp" android:gravity="center_vertical">
+        <ImageButton android:id="@+id/clipBack" android:layout_width="48dp" android:layout_height="48dp"
+            android:background="@android:color/transparent" android:src="@drawable/ic_clip_back"
+            android:contentDescription="@string/clipBack" />
+        <TextView android:id="@+id/clipTitle" android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:text="@string/clipEditorTitle" android:textColor="@android:color/white"
+            android:textSize="18sp" android:textStyle="bold" />
+    </LinearLayout>
+    <LinearLayout android:id="@+id/clipEditor" android:layout_width="match_parent" android:layout_height="0dp"
+        android:layout_weight="1" android:orientation="vertical" android:paddingStart="16dp" android:paddingEnd="16dp">
+        <TextView android:id="@+id/clipSourceInfo" android:layout_width="match_parent" android:layout_height="36dp"
+            android:gravity="center" android:textColor="#CCCCCC" android:textSize="14sp" />
+        <androidx.media3.ui.PlayerView android:id="@+id/clipPlayer" android:layout_width="match_parent"
+            android:layout_height="0dp" android:layout_weight="1" app:use_controller="false"
+            app:surface_type="texture_view" app:resize_mode="fit" app:shutter_background_color="@android:color/black" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="64dp" android:orientation="vertical" android:gravity="center">
+            <ImageButton android:id="@+id/clipPreviewToggle" android:layout_width="44dp" android:layout_height="36dp"
+                android:src="@drawable/ic_play_arrow" android:background="@android:color/transparent" android:contentDescription="@string/clipPreview" />
+            <TextView android:id="@+id/clipPlaybackTime" android:layout_width="wrap_content" android:layout_height="22dp"
+                android:textColor="#CCCCCC" android:textSize="12sp" />
+        </LinearLayout>
+        <com.flipcam.clip.ClipRangeView android:id="@+id/clipRange" android:layout_width="match_parent" android:layout_height="52dp" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="64dp" android:paddingTop="8dp" android:orientation="horizontal">
+            <TextView android:id="@+id/clipStart" style="@style/ClipTimeField" android:layout_marginEnd="6dp" />
+            <TextView android:id="@+id/clipEnd" style="@style/ClipTimeField" android:layout_marginStart="6dp" />
+        </LinearLayout>
+        <TextView android:id="@+id/clipLength" android:layout_width="match_parent" android:layout_height="40dp"
+            android:gravity="center" android:textColor="@android:color/white" android:textSize="14sp" />
+        <Button android:id="@+id/clipPreview" style="@style/ClipOutlineButton" android:text="@string/clipPreview" />
+        <Button android:id="@+id/clipSave" style="@style/ClipPrimaryButton" android:text="@string/clipSaveNew" />
+        <TextView android:layout_width="match_parent" android:layout_height="40dp" android:gravity="center"
+            android:text="@string/clipOriginalKept" android:textColor="#BBBBBB" android:textSize="13sp" />
+    </LinearLayout>
+    <LinearLayout android:id="@+id/clipExport" android:layout_width="match_parent" android:layout_height="0dp"
+        android:layout_weight="1" android:orientation="vertical" android:gravity="center_horizontal"
+        android:padding="24dp" android:visibility="gone">
+        <Space android:layout_width="1dp" android:layout_height="0dp" android:layout_weight="1" />
+        <ImageView android:id="@+id/clipExportImage" android:layout_width="match_parent" android:layout_height="132dp"
+            android:scaleType="fitCenter" android:contentDescription="@string/clipOriginalPreview" />
+        <com.flipcam.clip.ClipProgressView android:id="@+id/clipProgress" android:layout_width="180dp"
+            android:layout_height="180dp" android:layout_marginTop="28dp" />
+        <TextView android:id="@+id/clipExportCaption" android:layout_width="match_parent" android:layout_height="64dp"
+            android:gravity="center" android:textColor="@android:color/white" android:textSize="16sp" />
+        <Space android:layout_width="1dp" android:layout_height="0dp" android:layout_weight="1" />
+        <TextView android:layout_width="match_parent" android:layout_height="32dp" android:gravity="center"
+            android:text="@string/clipOriginalKept" android:textColor="#BBBBBB" android:textSize="13sp" />
+        <Button android:id="@+id/clipCancel" style="@style/ClipOutlineButton" android:text="@string/clipCancelExport" />
+        <Space android:layout_width="1dp" android:layout_height="16dp" />
+    </LinearLayout>
+    <LinearLayout android:id="@+id/clipSaved" android:layout_width="match_parent" android:layout_height="0dp"
+        android:layout_weight="1" android:orientation="vertical" android:paddingStart="16dp" android:paddingEnd="16dp"
+        android:paddingBottom="16dp" android:visibility="gone">
+        <TextView android:layout_width="match_parent" android:layout_height="28dp" android:gravity="bottom"
+            android:text="@string/clipOriginalRecording" android:textColor="@android:color/white" android:textSize="15sp" />
+        <TextView android:id="@+id/clipSavedOriginalInfo" android:layout_width="match_parent" android:layout_height="28dp"
+            android:gravity="center_vertical" android:textColor="#BBBBBB" android:textSize="13sp" />
+        <FrameLayout android:id="@+id/clipPlayOriginal" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+            android:clickable="true" android:focusable="true" android:contentDescription="@string/clipPlayOriginal">
+            <ImageView android:id="@+id/clipOriginalImage" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" />
+            <ImageView android:layout_width="44dp" android:layout_height="44dp" android:layout_gravity="center"
+                android:padding="6dp" android:background="@drawable/clip_play_overlay" android:src="@drawable/ic_play_arrow" />
+        </FrameLayout>
+        <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#333333" android:layout_marginTop="14dp" android:layout_marginBottom="10dp" />
+        <TextView android:layout_width="match_parent" android:layout_height="28dp" android:gravity="center_vertical"
+            android:text="@string/clipSavedSection" android:textColor="@android:color/white" android:textSize="15sp" />
+        <FrameLayout android:id="@+id/clipPlaySaved" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+            android:clickable="true" android:focusable="true" android:contentDescription="@string/clipPlaySaved">
+            <ImageView android:id="@+id/clipSavedImage" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" />
+            <ImageView android:layout_width="44dp" android:layout_height="44dp" android:layout_gravity="center"
+                android:padding="6dp" android:background="@drawable/clip_play_overlay" android:src="@drawable/ic_play_arrow" />
+        </FrameLayout>
+        <TextView android:id="@+id/clipSavedRange" android:layout_width="match_parent" android:layout_height="32dp"
+            android:gravity="center_vertical" android:textColor="#CCCCCC" android:textSize="13sp" />
+        <TextView android:layout_width="match_parent" android:layout_height="36dp" android:gravity="center"
+            android:text="@string/clipSavedTitle" android:textColor="@android:color/white" android:textStyle="bold" android:textSize="20sp" />
+        <TextView android:layout_width="match_parent" android:layout_height="40dp" android:gravity="center"
+            android:text="@string/clipSameFolder" android:textColor="#CCCCCC" android:textSize="13sp" />
+        <Button android:id="@+id/clipPlaySavedButton" style="@style/ClipPrimaryButton" android:text="@string/clipPlaySaved" />
+        <Button android:id="@+id/clipBackToCamera" style="@style/ClipOutlineButton" android:text="@string/clipBackToCamera" />
+    </LinearLayout>
+</LinearLayout>

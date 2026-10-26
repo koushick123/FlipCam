@@ -2,15 +2,8 @@ package com.flipcam.cameramanager;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.content.res.Resources;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.ImageFormat;
-import android.graphics.Matrix;
 import android.graphics.Point;
-import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
-import android.graphics.YuvImage;
 import android.hardware.Camera;
 import android.media.CamcorderProfile;
 import android.preference.PreferenceManager;
@@ -18,26 +11,18 @@ import android.util.Log;
 import android.view.Display;
 import android.view.WindowManager;
 
-import com.flipcam.PermissionActivity;
-import com.flipcam.PhotoFragment;
-import com.flipcam.R;
 import com.flipcam.VideoFragment;
 import com.flipcam.camerainterface.CameraOperations;
 import com.flipcam.constants.Constants;
 import com.flipcam.model.Dimension;
 import com.flipcam.view.CameraView;
 
-import java.io.ByteArrayOutputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 import java.util.TreeSet;
 
 /**
@@ -47,7 +32,7 @@ import java.util.TreeSet;
 This class controls all Old Camera1 API operations for the camera. The CameraView only uses CameraOperations interface and this is the implementation for
 Camera1.
  */
-public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeListener, Camera.ShutterCallback, Camera.PictureCallback, Camera.PreviewCallback {
+public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeListener {
 
     private Camera mCamera = null;
     public final String TAG = "Camera1Manager";
@@ -61,33 +46,21 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     int cameraId = -1;
     Camera.Parameters parameters;
     Camera.CameraInfo info = new Camera.CameraInfo();
-    private PhotoFragment photoFrag;
     private VideoFragment videoFrag;
-    String photoPath;
     private static Camera1Manager camera1Manager;
-    Bitmap photo;
     boolean VERBOSE = false;
     CameraView cameraView;
     Context appContext;
-    Resources resources;
     WindowManager windowManager;
     Point screenSize = new Point();
     Display display;
     String targetWidth, targetHeight;
     List<Camera.Size> previewSizes;
     double targetVideoRatio;
-    double targetPhotoRatio;
     int screenWidth;
     boolean zoomChangeListener = false;
-    boolean noPicture = false;
-
-    public boolean isNoPicture() {
-        return noPicture;
-    }
-
-    public void setNoPicture(boolean noPicture) {
-        this.noPicture = noPicture;
-    }
+    private boolean previewStarted = false;
+    private SurfaceTexture previewSurfaceTexture;
 
     public static Camera1Manager getInstance() {
         if (camera1Manager == null) {
@@ -113,35 +86,36 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         info = cameraInfo;
     }
 
-    @Override
-    public void getSupportedPictureSizes() {
-        Set<String> supportedPics;
-        SharedPreferences sharedPreferences = obtainSettingsPrefs();
-        if(cameraView.isBackCamera()) {
-            //For rear camera get all supported photo resolutions.
-            supportedPics = sharedPreferences.getStringSet(Constants.SUPPORT_PHOTO_RESOLUTIONS, null);
-            if(VERBOSE)Log.d(TAG, "SupportedPics = " + supportedPics);
-        }
-        else {
-            //For front camera get all supported photo resolutions.
-            supportedPics = sharedPreferences.getStringSet(Constants.SUPPORT_PHOTO_RESOLUTIONS_FRONT, null);
-            if(VERBOSE)Log.d(TAG, "SupportedPics FRONT = " + supportedPics);
-        }
-        fetchSupportedPicSizesForCamera(supportedPics, sharedPreferences, cameraView.isBackCamera(), mCamera);
-    }
-
     public void getSupportedVideoSizes(){
-        Set<String> supportedVids=null;
         SharedPreferences sharedPreferences = obtainSettingsPrefs();
-        //For camera get all supported video resolutions.
-        supportedVids = sharedPreferences.getStringSet(Constants.SUPPORT_VIDEO_RESOLUTIONS, null);
-        Log.d(TAG, "SupportedVids = " + supportedVids);
-        fetchSupportedVideoSizesForCamera(supportedVids, sharedPreferences, mCamera, cameraId);
+        List<String> supportedResolutions = getSupportedVideoResolutions();
+        String selectedResolution = sharedPreferences.getString(Constants.SELECT_VIDEO_RESOLUTION, null);
+        if (!supportedResolutions.isEmpty() && !supportedResolutions.contains(selectedResolution)) {
+            sharedPreferences.edit()
+                    .putString(Constants.SELECT_VIDEO_RESOLUTION, supportedResolutions.get(0))
+                    .apply();
+        }
     }
 
-    private boolean isResolutionPresentInCamcorder(String camResolution){
-        Set<String> resolKeys = camcorderVideoRes.keySet();
-        return resolKeys.contains(camResolution);
+    public List<String> getSupportedVideoResolutions() {
+        List<String> resolutions = new java.util.ArrayList<>();
+        if (mCamera == null) return resolutions;
+
+        List<Camera.Size> videoSizes = mCamera.getParameters().getSupportedVideoSizes();
+        if (videoSizes == null || videoSizes.isEmpty()) {
+            videoSizes = mCamera.getParameters().getSupportedPreviewSizes();
+        }
+        if (videoSizes == null || videoSizes.isEmpty()) return resolutions;
+        TreeSet<Dimension> sortedSizes = new TreeSet<>();
+        for (Camera.Size size : videoSizes) {
+            if (getCamcorderProfileForResolution(size.width, size.height) != null) {
+                sortedSizes.add(new Dimension(size.width, size.height));
+            }
+        }
+        for (Dimension size : sortedSizes) {
+            resolutions.add(size.toString());
+        }
+        return resolutions;
     }
 
     public HashMap<String, Integer> camcorderVideoRes =  new HashMap<String, Integer>(){
@@ -150,169 +124,50 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
             put("3840x2160", CamcorderProfile.QUALITY_2160P);
             put("720x480", CamcorderProfile.QUALITY_480P);
             put("1280x720", CamcorderProfile.QUALITY_720P);
+            put("640x480", CamcorderProfile.QUALITY_VGA);
             put("352x288", CamcorderProfile.QUALITY_CIF);
             put("176x144", CamcorderProfile.QUALITY_QCIF);
             put("320x240", CamcorderProfile.QUALITY_QVGA);
         }
     };
 
-    private void fetchSupportedPicSizesForCamera(Set<String> supportedPics, SharedPreferences sharedPreferences, boolean backCam, Camera selectedCam){
-        if (supportedPics == null) {
-            SharedPreferences.Editor editor = sharedPreferences.edit();
-            supportedPics = new HashSet<>();
-            List<Camera.Size> picsSizes = selectedCam.getParameters().getSupportedPictureSizes();
-            for (Camera.Size size : picsSizes) {
-                if(VERBOSE)Log.d(TAG, "Adding " + size.width + " , " + size.height);
-                supportedPics.add(size.width + " X " + size.height);
-            }
-            //Sort by descending order and take the largest value as default photo resolution.
-            TreeSet<Dimension> sortedPicsSizes = new TreeSet<>();
-            if (VERBOSE) Log.d(TAG, "photoRes SIZE = " + supportedPics.size());
-            int width = 0, height = 0;
-            for (String resol : supportedPics) {
-                width = Integer.parseInt(resol.substring(0, resol.indexOf(" ")));
-                height = Integer.parseInt(resol.substring(resol.lastIndexOf(" ") + 1));
-                sortedPicsSizes.add(new Dimension(width, height));
-            }
-            Iterator<Dimension> resolIter = sortedPicsSizes.iterator();
-            while (resolIter.hasNext()) {
-                //First value has the largest value.
-                Dimension dimen = resolIter.next();
-                width = dimen.getWidth();
-                height = dimen.getHeight();
-                break;
-            }
-            if(backCam) {
-                editor.putStringSet(Constants.SUPPORT_PHOTO_RESOLUTIONS, supportedPics);
-                editor.putString(Constants.SELECT_PHOTO_RESOLUTION, width + " X " + height);
-            }
-            else{
-                editor.putStringSet(Constants.SUPPORT_PHOTO_RESOLUTIONS_FRONT, supportedPics);
-                editor.putString(Constants.SELECT_PHOTO_RESOLUTION_FRONT, width + " X " + height);
-            }
-            editor.commit();
+    private Integer getCamcorderProfileForResolution(int width, int height) {
+        Integer mappedQuality = camcorderVideoRes.get(width + "x" + height);
+        if (profileMatchesResolution(mappedQuality, width, height)) return mappedQuality;
+
+        int[] fallbackQualities = {CamcorderProfile.QUALITY_HIGH, CamcorderProfile.QUALITY_LOW};
+        for (int quality : fallbackQualities) {
+            if (profileMatchesResolution(quality, width, height)) return quality;
         }
+        return null;
     }
 
-    private static Set<String> supportedVideoResolutions = new HashSet<>();
-    private void fetchSupportedVideoSizesForCamera(Set<String> supportedVids, SharedPreferences sharedPreferences, Camera selectedCam, int camId){
-        if (supportedVids == null) {
-            SharedPreferences.Editor editor = sharedPreferences.edit();
-            List<Camera.Size> videoSizes = selectedCam.getParameters().getSupportedVideoSizes();
-            StringBuilder resolSize = new StringBuilder();
-            for (Camera.Size size : videoSizes) {
-                resolSize.append(size.width);
-                resolSize.append("x");
-                resolSize.append(size.height);
-                if(VERBOSE)Log.d(TAG, "resolSize ==== "+resolSize);
-                if(!cameraView.isBackCamera()) {
-                    if (isResolutionPresentInCamcorder(resolSize.toString()) && CamcorderProfile.hasProfile(camId, camcorderVideoRes.get(resolSize.toString()))) {
-                        supportedVideoResolutions.add(size.width + " X " + size.height);
-                    }
-                }
-                else{
-                    Set<String> removeResolutions = new HashSet<>();
-                    //Exclude resolutions not supported by front camera.
-                    Iterator<String> iter = supportedVideoResolutions.iterator();
-                    while (iter.hasNext()){
-                        String resolution = iter.next();
-                        String[] tempRes = resolution.split(" X ");
-                        if(!CamcorderProfile.hasProfile(camId, camcorderVideoRes.get(tempRes[0]+"x"+tempRes[1]))){
-                            if(VERBOSE)Log.d(TAG, "Removing "+tempRes[0]+" X "+tempRes[1]+" for rear camera");
-                            removeResolutions.add(resolution);
-                        }
-                    }
-                    //Remove those resolutions.
-                    for(String temp : removeResolutions){
-                        supportedVideoResolutions.remove(temp);
-                    }
-                }
-                resolSize.delete(0, resolSize.length());
-            }
-
-            if(cameraView.isBackCamera()) {
-                //Sort by descending order and take the largest value as default video resolution.
-                TreeSet<Dimension> sortedVidSizes = new TreeSet<>();
-                if(VERBOSE)Log.d(TAG, "videoRES SIZE = " + supportedVideoResolutions.size());
-                int width = 0, height = 0;
-                for (String resol : supportedVideoResolutions) {
-                    width = Integer.parseInt(resol.split(" X ")[0]);
-                    if(VERBOSE)Log.d(TAG, "WIDTH ==== " + width);
-                    height = Integer.parseInt(resol.split(" X ")[1]);
-                    if(VERBOSE)Log.d(TAG, "HEIGHT ==== " + height);
-                    sortedVidSizes.add(new Dimension(width, height));
-                }
-                Dimension firstEle = sortedVidSizes.first();
-                width = firstEle.getWidth();
-                height = firstEle.getHeight();
-                editor.putStringSet(Constants.SUPPORT_VIDEO_RESOLUTIONS, supportedVideoResolutions);
-                editor.putString(Constants.SELECT_VIDEO_RESOLUTION, width + " X " + height);
-                editor.commit();
-            }
-        }
+    private boolean profileMatchesResolution(Integer quality, int width, int height) {
+        if (quality == null || !CamcorderProfile.hasProfile(cameraId, quality)) return false;
+        CamcorderProfile profile = CamcorderProfile.get(cameraId, quality);
+        return profile.videoFrameWidth == width && profile.videoFrameHeight == height;
     }
 
     @Override
     public void openCamera(boolean backCamera, Context context) {
         appContext = context;
-        SharedPreferences sharedPreferences = obtainSettingsPrefs();
-        String frontCamResols = sharedPreferences.getString(Constants.SELECT_PHOTO_RESOLUTION_FRONT, null);
-        if(frontCamResols!= null) {
-            for (int i = 0; i < Camera.getNumberOfCameras(); i++) {
-                Camera.getCameraInfo(i, info);
-                if (backCamera) {
-                    if (info.facing == Camera.CameraInfo.CAMERA_FACING_BACK) {
-                        mCamera = Camera.open(i);
-                        setCameraInfo(info);
-                        if (VERBOSE) Log.d(TAG, "Open back facing camera");
-                        cameraId = i;
-                        break;
-                    }
-                } else {
-                    if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
-                        mCamera = Camera.open(i);
-                        setCameraInfo(info);
-                        if (VERBOSE) Log.d(TAG, "Open front facing camera");
-                        cameraId = i;
-                        break;
-                    }
-                }
-            }
-        }
-        else{
-            for (int i = 0; i < Camera.getNumberOfCameras(); i++) {
-                Camera.getCameraInfo(i, info);
-                if (info.facing == Camera.CameraInfo.CAMERA_FACING_BACK) {
-                    if (VERBOSE) Log.d(TAG, "Open back facing camera FIRST TIME");
-                    setCameraInfo(info);
-                    cameraId = i;
-                }
-                if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
-                    if (VERBOSE) Log.d(TAG, "Open front facing camera FIRST TIME");
-                    //This is for front camera, when the app is opening the camera for the very first time.
-                    Camera frontCam = Camera.open(i);
-                    fetchSupportedPicSizesForCamera(null, sharedPreferences, false, frontCam);
-                    //Fetch all video resolutions for front camera and check the rear camera resolutions against this list to ensure recordings for both cameras work.
-                    cameraView.setBackCamera(false);
-                    fetchSupportedVideoSizesForCamera(null, sharedPreferences,frontCam, i);
-                    //Reset to rear camera
-                    cameraView.setBackCamera(true);
-                    frontCam.release();
-                    frontCam = null;
-                    //Now, open the back facing camera.
-                    if(cameraId != -1) {
-                        mCamera = Camera.open(cameraId);
-                        break;
-                    }
-                }
-            }
-            if(mCamera == null){
-                mCamera = Camera.open(cameraId);
+        cameraId = -1;
+        int requestedFacing = backCamera
+                ? Camera.CameraInfo.CAMERA_FACING_BACK
+                : Camera.CameraInfo.CAMERA_FACING_FRONT;
+        for (int i = 0; i < Camera.getNumberOfCameras(); i++) {
+            Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
+            Camera.getCameraInfo(i, cameraInfo);
+            if (cameraInfo.facing == requestedFacing) {
+                cameraId = i;
+                setCameraInfo(cameraInfo);
+                mCamera = Camera.open(i);
+                if (VERBOSE) Log.d(TAG, backCamera ? "Open back facing camera" : "Open front facing camera");
+                break;
             }
         }
         if (cameraId != -1) {
             parameters = mCamera.getParameters();
-            mCamera.setPreviewCallback(this);
         } else {
             mCamera = null;
             return;
@@ -321,19 +176,16 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         display = windowManager.getDefaultDisplay();
         display.getSize(screenSize);
         screenWidth = screenSize.x;
-        resources = appContext.getResources();
     }
 
     @Override
     public void releaseCamera() {
+        previewStarted = false;
+        previewSurfaceTexture = null;
+        if (mCamera == null) return;
         mCamera.release();
         mCamera = null;
         zoomChangeListener = false;
-    }
-
-    @Override
-    public void removePreviewCallback() {
-        mCamera.setPreviewCallback(null);
     }
 
     @Override
@@ -374,17 +226,8 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     }
 
     private void setPreviewSizeForTargetRatio() {
-        //For chosen video resolution, we need to display a preview that is a closest match to targetVideoRatio for video
-        // and targetPhotoRatio for photo.
-        double targetRatio;
-        if(this.videoFrag != null){
-            if(VERBOSE)Log.d(TAG, "Video Mode");
-            targetRatio = targetVideoRatio;
-        }
-        else{
-            if(VERBOSE)Log.d(TAG, "Photo Mode");
-            targetRatio = targetPhotoRatio;
-        }
+        // Match the camera preview to the selected video resolution.
+        double targetRatio = targetVideoRatio;
         double arDiff = Double.MAX_VALUE;
         previewSizes = parameters.getSupportedPreviewSizes();
         Collections.sort(previewSizes, new CameraSizeComparator());
@@ -416,9 +259,24 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
 
     @Override
     public void setResolution() {
-        setVideoSize();
-        setPreviewSizeForTargetRatio();
-        mCamera.setParameters(parameters);
+        if (mCamera == null) return;
+
+        boolean restartPreview = previewStarted && previewSurfaceTexture != null;
+        if (restartPreview) {
+            mCamera.stopPreview();
+            previewStarted = false;
+        }
+        try {
+            // Always base changes on the camera's current parameters; the cached object
+            // can be stale after other camera controls have called setParameters().
+            parameters = mCamera.getParameters();
+            setVideoSize();
+            setPreviewSizeForTargetRatio();
+            mCamera.setParameters(parameters);
+            parameters = mCamera.getParameters();
+        } finally {
+            if (restartPreview) startPreview(previewSurfaceTexture);
+        }
     }
 
     @Override
@@ -465,149 +323,28 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
 
     @Override
     public void stopPreview() {
-        mCamera.setPreviewCallback(null);
-        mCamera.stopPreview();
+        if (mCamera != null && previewStarted) {
+            mCamera.stopPreview();
+            previewStarted = false;
+        }
     }
 
     @Override
     public void startPreview(SurfaceTexture surfaceTexture) {
+        if (mCamera == null) return;
         try {
             mCamera.setPreviewTexture(surfaceTexture);
         } catch (IOException ioe) {
             throw new RuntimeException(ioe);
         }
         mCamera.startPreview();
-    }
-
-    FileOutputStream picture = null;
-    String previousFocusMode = null;
-    @Override
-    public void capturePicture() {
-        photo = null;
-        //Reset previousFocusMode in case camera is switched. Front camera may not support the same focus mode as rear camera.
-        previousFocusMode = null;
-        int zoomedVal = photoFrag.getZoomBar().getProgress();
-        if (VERBOSE) Log.d(TAG, "take pic = "+zoomedVal);
-        if(!parameters.getFlashMode().equalsIgnoreCase(Camera.Parameters.FLASH_MODE_TORCH)) {
-            capture = true;
-        }
-        Camera.Parameters parameters = mCamera.getParameters();
-        parameters.setZoom(zoomedVal);
-        mCamera.setParameters(parameters);
-        if(zoomedVal > 0) {
-            mCamera.takePicture(this, null, null, this);
-        }
-        else{
-            /*When the user tries to take a picture, to ensure that it is a properly focused picture, we will set autofocus, provided it is supported by
-            the camera. Once the picture is captured, we reset the focus mode back to Continuous picture, if that was the previous mode.
-            */
-            if(isFocusModeSupported(Camera.Parameters.FOCUS_MODE_AUTO)){
-                if(VERBOSE)Log.d(TAG, "take Focused picture");
-                previousFocusMode = mCamera.getParameters().getFocusMode();
-                takeFocusedPicture();
-            }
-            else{
-                mCamera.takePicture(this, null, null, this);
-            }
-        }
-    }
-
-    private void takeFocusedPicture(){
-        parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
-        mCamera.setParameters(parameters);
-        setAutoFocus(false);
-    }
-
-    @Override
-    public void setPhotoFragmentInstance(PhotoFragment photoFragment) {
-        this.photoFrag = photoFragment;
+        previewSurfaceTexture = surfaceTexture;
+        previewStarted = true;
     }
 
     @Override
     public void setVideoFragmentInstance(VideoFragment videoFragment) {
         this.videoFrag = videoFragment;
-    }
-
-    @Override
-    public void setPhotoPath(String mediaPath) {
-        photoPath = mediaPath;
-    }
-
-    @Override
-    public void onPictureTaken(byte[] data, Camera camera) {
-        if (VERBOSE) Log.d(TAG, "Picture wil be saved at loc = " + photoPath);
-        try {
-            picture = new FileOutputStream(photoPath);
-            picture.write(data);
-            picture.close();
-            if(parameters.getFlashMode().equalsIgnoreCase(Camera.Parameters.FLASH_MODE_TORCH)) {
-                Bitmap photoCaptured = BitmapFactory.decodeByteArray(data, 0, data.length);
-                photoCaptured = Bitmap.createScaledBitmap(photoCaptured, (int) resources.getDimension(R.dimen.thumbnailWidth), (int) resources.getDimension(R.dimen.thumbnailHeight), false);
-                photoFrag.createAndShowPhotoThumbnail(photoCaptured);
-            }
-            SharedPreferences.Editor editor = photoFrag.getActivity().getSharedPreferences(PermissionActivity.FC_SHARED_PREFERENCE, Context.MODE_PRIVATE).edit();
-            editor.putBoolean("videoCapture", false);
-            editor.commit();
-        } catch (FileNotFoundException e1) {
-            e1.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            if (photoFrag.isFlashOn()) {
-                if(VERBOSE)Log.d(TAG,"Switch off Torch");
-                setFlashOnOff(false);
-            }
-            int zoomedVal = photoFrag.getZoomBar().getProgress();
-            if(VERBOSE)Log.d(TAG, "Zoom = "+zoomedVal);
-            Camera.Parameters parameters = camera.getParameters();
-            parameters.setZoom(zoomedVal);
-            //Start the preview no matter if photo is saved or not.
-            if (VERBOSE) Log.d(TAG, "photo is ready");
-            photoFrag.animatePhotoShrink();
-            camera.startPreview();
-            photoFrag.hideImagePreview();
-            photoFrag.getZoomBar().setClickable(true);
-            photoFrag.enableButtons();
-            //Reset Focus mode to Continuous AF if applicable
-            if(previousFocusMode != null){
-                //Cancel AF point
-                mCamera.cancelAutoFocus();
-                parameters.setFocusMode(previousFocusMode);
-                mCamera.setParameters(parameters);
-            }
-            if(zoomedVal > 0){
-                parameters.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
-            }
-            camera.setParameters(parameters);
-        }
-    }
-
-    @Override
-    public void setPictureSize() {
-        List<Integer> formats = mCamera.getParameters().getSupportedPictureFormats();
-        for (int i = 0; i < formats.size(); i++) {
-            if (formats.get(i) == ImageFormat.JPEG) {
-                mCamera.getParameters().setPreviewFormat(formats.get(i));
-                break;
-            }
-        }
-        SharedPreferences sharedPreferences = obtainSettingsPrefs();
-        String photoDimen;
-        if(cameraView.isBackCamera()){
-            photoDimen = sharedPreferences.getString(Constants.SELECT_PHOTO_RESOLUTION, null);
-        }
-        else{
-            photoDimen = sharedPreferences.getString(Constants.SELECT_PHOTO_RESOLUTION_FRONT, null);
-        }
-        String[] dimensions = photoDimen.split(" X ");
-        if(VERBOSE)Log.d(TAG, "SET PIC SIZE = "+photoDimen);
-        parameters.setPictureSize(Integer.parseInt(dimensions[0]), Integer.parseInt(dimensions[1]));
-        if(this.photoFrag != null){
-            this.photoFrag.setPhotoResInfo(dimensions[0], dimensions[1]);
-        }
-        mCamera.setParameters(parameters);
-        targetPhotoRatio = Double.parseDouble(dimensions[0]) / Double.parseDouble(dimensions[1]);
-        if(VERBOSE)Log.d(TAG, "targetPhotoRatio = "+targetPhotoRatio);
     }
 
     private SharedPreferences obtainSettingsPrefs() {
@@ -636,7 +373,9 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         }
         targetVideoRatio = Double.parseDouble(targetWidth) / Double.parseDouble(targetHeight);
         if(!cameraView.isRecord()) {
-            cameraView.setCamProfileForRecord(camcorderVideoRes.get(targetWidth+"x"+targetHeight));
+            Integer profile = getCamcorderProfileForResolution(
+                    Integer.parseInt(targetWidth), Integer.parseInt(targetHeight));
+            if (profile != null) cameraView.setCamProfileForRecord(profile);
             cameraView.setRecordVideoWidth(Integer.parseInt(targetWidth));
             cameraView.setRecordVideoHeight(Integer.parseInt(targetHeight));
             if(this.videoFrag != null){
@@ -648,11 +387,6 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
 
     public int getMAX_FPS() {
         return MAX_FPS;
-    }
-
-    @Override
-    public void onShutter() {
-
     }
 
     class CameraSizeComparator implements Comparator<Camera.Size>{
@@ -689,24 +423,6 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     }
 
     boolean focused=false;
-    Camera.AutoFocusCallback autoFocusCallback = new Camera.AutoFocusCallback() {
-        @Override
-        public void onAutoFocus(boolean success, Camera camera) {
-            //Take a picture regardless of AF success, otherwise we would need to keep retrying more number of times, which would delay
-            //the picture capturing process for the user significantly.
-            if(VERBOSE)Log.d(TAG, "success = "+success);
-            if(!isNoPicture()) {
-                try{
-                    mCamera.takePicture(Camera1Manager.getInstance(), null, null, Camera1Manager.getInstance());
-                }
-                catch(RuntimeException runtime){
-                    if(VERBOSE)Log.d(TAG, "TAKE PIC EXCEPTION");
-                    //Catch block necessary since, after takePicture fires, the image is actually saved, even though exception is thrown.
-                }
-            }
-        }
-    };
-
     @Override
     public void cancelAutoFocus() {
         mCamera.cancelAutoFocus();
@@ -714,9 +430,8 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     }
 
     @Override
-    public void setAutoFocus(boolean noPicture){
-        setNoPicture(noPicture);
-        mCamera.autoFocus(autoFocusCallback);
+    public void setAutoFocus(){
+        mCamera.autoFocus(null);
     }
 
     @Override
@@ -756,7 +471,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
         return false;
     }
 
-    //Flash On for photo mode
+    //Flash on for camera preview.
     @Override
     public void setFlashOnOff(boolean flashOn) {
         if(VERBOSE)Log.d(TAG, "SET FLASH TO "+flashOn);
@@ -771,7 +486,7 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
 
     @Override
     public String getFlashMode() {
-        return mCamera.getParameters().getFlashMode();
+        return mCamera == null ? null : mCamera.getParameters().getFlashMode();
     }
 
     @Override
@@ -802,58 +517,6 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
             camera.getParameters().setZoom(zoomvalue);
         }
     }
-    boolean capture=false;
-
-    @Override
-    public void enableShutterSound(boolean enable) {
-        if(!enable) {
-            if(VERBOSE)Log.d(TAG, "getCameraInfo().canDisableShutterSound? = "+getCameraInfo().canDisableShutterSound);
-            if (getCameraInfo().canDisableShutterSound) {
-                mCamera.enableShutterSound(enable);
-            }
-        }
-        else{
-            mCamera.enableShutterSound(enable);
-        }
-    }
-
-    @Override
-    public void onPreviewFrame(byte[] bytes, Camera camera) {
-        if(capture)
-        {
-            try {
-                capture = false;
-                if(VERBOSE)Log.d(TAG, "inside onpreviewframe");
-                int previewWidth = camera.getParameters().getPreviewSize().width;
-                int previewHeight = camera.getParameters().getPreviewSize().height;
-                YuvImage yuvImage = new YuvImage(bytes, ImageFormat.NV21, previewWidth, previewHeight, null);
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                yuvImage.compressToJpeg(new Rect(0, 0, previewWidth, previewHeight), 100, baos);
-                Bitmap thumb = BitmapFactory.decodeByteArray(baos.toByteArray(), 0, baos.size());
-                baos.close();
-                Matrix rotate = new Matrix();
-                if(cameraView.getTotalRotation() == 0 || cameraView.getTotalRotation() == 180){
-                    //Landscape
-                    rotate.setRotate(cameraView.getTotalRotation());
-                }
-                else {
-                    //Portrait
-                    if(cameraView.isBackCamera()) {
-                        rotate.setRotate(90);
-                    }
-                    else{
-                        rotate.setRotate(270);
-                    }
-                }
-                if(VERBOSE)Log.d(TAG,"Total rotation = "+cameraView.getTotalRotation());
-                thumb = Bitmap.createBitmap(thumb, 0, 0, previewWidth, previewHeight, rotate, false);
-                photoFrag.createAndShowPhotoThumbnail(thumb);
-                if(VERBOSE)Log.d(TAG, "photo thumbnail created");
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
     @Override
     public String getFocusModeAuto() {
         return Camera.Parameters.FOCUS_MODE_AUTO;
@@ -872,11 +535,6 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     @Override
     public String getFocusModeVideo() {
         return Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO;
-    }
-
-    @Override
-    public String getFocusModePicture() {
-        return Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE;
     }
 
     @Override

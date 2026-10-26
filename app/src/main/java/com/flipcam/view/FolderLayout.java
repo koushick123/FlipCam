@@ -19,16 +19,11 @@ import com.flipcam.GalleryActivity;
 import com.flipcam.MediaActivity;
 import com.flipcam.R;
 
-import butterknife.BindView;
-import butterknife.ButterKnife;
-
 public class FolderLayout extends LinearLayout {
 
     public static final String TAG = "FolderLayout";
-    @BindView(R.id.displayLabel)
     TextView displayLabel;
     TypedArray attr;
-    @BindView(R.id.mediaFolder)
     ImageView mediaFolder;
     Drawable folder_circle;
     Drawable folder_no_circle;
@@ -41,7 +36,8 @@ public class FolderLayout extends LinearLayout {
         folder_no_circle = getResources().getDrawable(R.drawable.folder_border_no_circle);
         LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         inflater.inflate(R.layout.custom_folder, this, true);
-        ButterKnife.bind(this);
+        displayLabel = findViewById(R.id.displayLabel);
+        mediaFolder = findViewById(R.id.mediaFolder);
         attr = context.getTheme().obtainStyledAttributes(attributeSet, R.styleable.FolderLayout, 0, 0);
         String dispText = attr.getString(R.styleable.FolderLayout_displayText);
         Drawable dispImage = attr.getDrawable(R.styleable.FolderLayout_displayImage);

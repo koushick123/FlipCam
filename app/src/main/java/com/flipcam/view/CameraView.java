@@ -15,6 +15,7 @@ import android.hardware.SensorManager;
 import android.media.AudioManager;
 import android.media.CamcorderProfile;
 import android.media.MediaRecorder;
+import android.media.MediaScannerConnection;
 import android.opengl.EGL14;
 import android.opengl.EGLExt;
 import android.opengl.EGLSurface;
@@ -38,6 +39,7 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -45,7 +47,7 @@ import android.widget.Toast;
 
 import androidx.core.content.ContextCompat;
 
-import com.flipcam.PhotoFragment;
+import com.flipcam.CameraActivity;
 import com.flipcam.R;
 import com.flipcam.VideoFragment;
 import com.flipcam.camerainterface.CameraOperations;
@@ -53,6 +55,7 @@ import com.flipcam.cameramanager.Camera1Manager;
 import com.flipcam.cameramanager.Camera2Manager;
 import com.flipcam.constants.Constants;
 import com.flipcam.util.GLUtil;
+import com.flipcam.util.MediaStorage;
 import com.flipcam.util.MediaUtil;
 import com.flipcam.util.SDCardUtil;
 
@@ -60,17 +63,17 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.text.SimpleDateFormat;
+import java.util.List;
+import java.util.Set;
 import java.util.Date;
 
-import static android.os.Environment.getExternalStoragePublicDirectory;
 
 /**
  * Created by Koushick on 15-08-2017.
  */
 /*
-CameraView is used to display the camera preview using SurfaceView. This is the class where all camera related operations for both photo and video are
-performed.
-All camera related settings like video resolution, FPS, and photo resolution are set here.
+CameraView is used to display the camera preview and handle video recording operations.
+Video resolution and FPS are configured here.
 CameraView uses CameraOperations for all camera related functions. CameraOperations is an interface with Camera1 and Camera2 API implementations,
 depending on the device's support level.
  */
@@ -107,6 +110,26 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     boolean backCamera = true;
     volatile boolean isRecord = false;
     MediaRecorder mediaRecorder = null;
+    // Only the renderer changes recorder state; the UI reads it to gate controls.
+    private enum RecorderState { IDLE, PREPARING, PREPARED, RECORDING, PAUSED }
+    private volatile RecorderState recorderState = RecorderState.IDLE;
+    private volatile boolean pauseActionPending;
+
+    public boolean canChangeRecordingPause() {
+        return isRecord() && !pauseActionPending
+                && (recorderState == RecorderState.RECORDING || recorderState == RecorderState.PAUSED);
+    }
+
+    private void publishRecordingPauseState() {
+        mainHandler.post(() -> {
+            pauseActionPending = false;
+            if (videoFragment != null) {
+                videoFragment.updateRecordingPauseState(
+                        recorderState == RecorderState.PAUSED, canChangeRecordingPause());
+            }
+        });
+    }
+
     int frameCount=0;
     volatile int cameraFrameCnt=0;
     volatile int frameCnt=0;
@@ -118,7 +141,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     volatile int minute=0;
     volatile int second=0;
     String mNextVideoAbsolutePath=null;
-    String mNextPhotoAbsolutePath=null;
     TextView timeElapsed;
     TextView memoryConsumed;
     //Default display sizes in case windowManager is not able to return screen size.
@@ -128,7 +150,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     String flashMode;
     ImageButton flashBtn;
     VideoFragment videoFragment;
-    PhotoFragment photoFragment;
     private final SensorManager mSensorManager;
     private AudioManager audioManager;
     private final Sensor mAccelerometer;
@@ -138,19 +159,51 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     File videoFile;
     ImageButton stopButton;
     float imageRotationAngle = 0.0f;
+
+    /**
+     * Fit the camera image within the available screen area while preserving
+     * the selected recording aspect ratio. The black parent area becomes
+     * visible letterboxing only when the screen and camera ratios differ.
+     */
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        int availableWidth = MeasureSpec.getSize(widthMeasureSpec);
+        int availableHeight = MeasureSpec.getSize(heightMeasureSpec);
+        if (availableWidth <= 0 || availableHeight <= 0) {
+            super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+            return;
+        }
+
+        int sourceWidth = Math.max(recordVideoWidth, 1);
+        int sourceHeight = Math.max(recordVideoHeight, 1);
+        float cameraAspectRatio = portrait
+                ? (float) sourceHeight / sourceWidth
+                : (float) sourceWidth / sourceHeight;
+        float screenAspectRatio = (float) availableWidth / availableHeight;
+
+        int fittedWidth = availableWidth;
+        int fittedHeight = availableHeight;
+        if (Math.abs(cameraAspectRatio - screenAspectRatio) > 0.001f) {
+            if (screenAspectRatio > cameraAspectRatio) {
+                fittedWidth = Math.round(availableHeight * cameraAspectRatio);
+            } else {
+                fittedHeight = Math.round(availableWidth / cameraAspectRatio);
+            }
+        }
+        setMeasuredDimension(fittedWidth, fittedHeight);
+    }
     long previousTime = 0;
     long focusPreviousTime=0;
     int previousOrientation = -1;
     SharedPreferences memoryPrefs;
     int lowestThreshold = getResources().getInteger(R.integer.minimumMemoryWarning);
     long lowestMemory = lowestThreshold * (long)Constants.MEGA_BYTE;
-    boolean isPhoneMemory = true;
     StatFs availableStatFs = new StatFs(Environment.getDataDirectory().getPath());
     ContentValues mediaContent = new ContentValues();
     boolean stopCamera = false;
     int camProfileForRecord;
     int totalRotation;
-    boolean recordPaused = false;
+    volatile boolean recordPaused = false;
     SharedPreferences sharedPreferences;
     CameraView.VideoTimer videoTimer;
 
@@ -224,7 +277,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 else{
                     if(focusNow) {
                         if(VERBOSE)Log.d(TAG, "Focus now in landscape");
-                        camera1.setAutoFocus(true);
+                        camera1.setAutoFocus();
                         focusNow = false;
                     }
                 }
@@ -237,7 +290,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             else{
                 if(focusNow) {
                     if(VERBOSE)Log.d(TAG, "Focus now");
-                    camera1.setAutoFocus(true);
+                    camera1.setAutoFocus();
                     focusNow = false;
                 }
             }
@@ -296,6 +349,16 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                     //Reset Rotation angle
                     rotationAngle = 0f;
                     videoFragment.stopRecordAndSaveFile(true);
+                    videoFragment.onRecordingStopped();
+                    break;
+                case Constants.RECORD_STOPPED:
+                    if (videoFragment != null) {
+                        // Rebuild the idle preview controls after recorder and
+                        // surface transitions have completed. The synchronous
+                        // stop path can run before SurfaceView relayout finishes.
+                        videoFragment.showRecordAndThumbnail();
+                        videoFragment.onRecordingStopped();
+                    }
                     break;
             }
         }
@@ -330,11 +393,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         return mNextVideoAbsolutePath;
     }
 
-    public String getPhotoMediaPath()
-    {
-        return mNextPhotoAbsolutePath;
-    }
-
     public boolean zoomInAndOut(int progress)
     {
         return camera1.zoomInOrOut(progress);
@@ -342,6 +400,20 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
 
     public CameraOperations getCameraImplementation(){
         return camera1;
+    }
+
+    public List<String> getSupportedVideoResolutions() {
+        if (camera1 instanceof Camera1Manager) {
+            return ((Camera1Manager) camera1).getSupportedVideoResolutions();
+        }
+        Set<String> resolutions = sharedPreferences.getStringSet(Constants.SUPPORT_VIDEO_RESOLUTIONS, null);
+        return resolutions == null ? new java.util.ArrayList<>() : new java.util.ArrayList<>(resolutions);
+    }
+
+    public void applyVideoResolution() {
+        if (camera1 == null || !camera1.isCameraReady() || isRecord()) return;
+        camera1.setResolution();
+        if (!isCamera2()) setLayoutAspectRatio();
     }
 
     public boolean isZoomSupported()
@@ -390,12 +462,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
 
     public boolean isFlashOn()
     {
-        if(camera1.getFlashMode() == null || camera1.getFlashMode().equalsIgnoreCase(camera1.getFlashModeOff())){
-            return false;
-        }
-        else{
-            return true;
-        }
+        if (camera1 == null || !camera1.isCameraReady()) return false;
+        String currentFlashMode = camera1.getFlashMode();
+        return currentFlashMode != null
+                && !currentFlashMode.equalsIgnoreCase(camera1.getFlashModeOff());
     }
 
     public void registerAccelSensor()
@@ -506,7 +576,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             showHr.delete(0, showHr.length());
             showHr.append(hour);
         }
-        timeElapsed.setText(showHr + " : " + showMin + " : " + showSec);
+        timeElapsed.setText(showHr + ":" + showMin + ":" + showSec);
         //This is added for blinking the timer if recording is paused.
         timeElapsed.setVisibility(View.VISIBLE);
     }
@@ -563,9 +633,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         setSwitch(true);
         isFocusModeSupported = false;
         openCameraAndStartPreview();
-        if(this.photoFragment!=null && !this.photoFragment.isContinuousAF()) {
-            registerAccelSensor();
-        }
     }
 
     public void flashOnOff(boolean flashOn)
@@ -596,11 +663,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         this.videoFragment = videoFragment;
     }
 
-    public void setPhotoFragmentInstance(PhotoFragment photoFragment)
-    {
-        this.photoFragment = photoFragment;
-    }
-
     public boolean isBackCamera() {
         return backCamera;
     }
@@ -612,9 +674,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     public boolean isCameraPermissionAvailable(){
         int camerapermission = ContextCompat.checkSelfPermission(getContext(), Manifest.permission.CAMERA);
         int audiopermission = ContextCompat.checkSelfPermission(getContext(), Manifest.permission.RECORD_AUDIO);
-        int storagepermission = ContextCompat.checkSelfPermission(getContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE);
         if (camerapermission != PackageManager.PERMISSION_GRANTED || audiopermission != PackageManager.PERMISSION_GRANTED ||
-                storagepermission != PackageManager.PERMISSION_GRANTED) {
+                (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P && ContextCompat.checkSelfPermission(
+                        getContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)) {
             return false;
         }
         else{
@@ -627,12 +689,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     {
         if(!isCameraPermissionAvailable()){
             if(VERBOSE)Log.d(TAG,"Permission turned off mostly at settings");
-            if(this.videoFragment!=null) {
-                this.videoFragment.askForPermissionAgain();
-            }
-            else{
-                this.photoFragment.askForPermissionAgain();
-            }
+            this.videoFragment.askForPermissionAgain();
             return;
         }
         camera1.setSurfaceView(this);
@@ -643,9 +700,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 Toast.makeText(getContext(),getResources().getString(R.string.noFrontFaceCamera),Toast.LENGTH_SHORT).show();
                 return;
             }
-            //Set the photo resolution as per selection in settings.
-            camera1.getSupportedPictureSizes();
-            camera1.setPictureSize();
             if(VERBOSE)Log.d(TAG, "call getSupportedVideoSizes");
             camera1.getSupportedVideoSizes();
             //Set the video resolution as per selection in settings.
@@ -654,16 +708,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 camera1.setFPS();
             }
             else{
-                //Nokia 7.1 front camera shows slow refresh if FPS is set. So, FPS is not being set for the phone for photos.
-                if(this.videoFragment!=null){
-                    camera1.setFPS();
-                }
-                else{
-                    //Restrict only for Front camera
-                    if(isBackCamera()){
-                        camera1.setFPS();
-                    }
-                }
+                //Nokia 7.1 front camera shows slow refresh if FPS is set, so keep the existing rear-camera behavior.
+                camera1.setFPS();
             }
             //Resize the preview to match the aspect ratio of selected video resolution.
             if(VERBOSE)Log.d(TAG, "call setLayoutAspectRatio");
@@ -678,29 +724,29 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             if (this.videoFragment != null && camera1.isFocusModeSupported(camera1.getFocusModeVideo())) {
                 if (VERBOSE) Log.d(TAG, "Continuous AF Video");
                 camera1.setFocusMode(camera1.getFocusModeVideo());
-            } else if (this.photoFragment != null && camera1.isFocusModeSupported(camera1.getFocusModePicture())) {
-                if (VERBOSE) Log.d(TAG, "Continuous AF Picture");
-                camera1.setFocusMode(camera1.getFocusModePicture());
-                this.photoFragment.setContinuousAF(true);
-            } else if (this.photoFragment != null && !camera1.isFocusModeSupported(camera1.getFocusModePicture())) {
-                if (VERBOSE) Log.d(TAG, "Use Auto AF instead");
-                this.photoFragment.setContinuousAF(false);
             }
         }
-        LinearLayout.LayoutParams flashParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,LinearLayout.LayoutParams.WRAP_CONTENT);
-        if(isRecord()){
-            flashParams.setMargins(0,(int)getResources().getDimension(R.dimen.flashOnLeftMargin),0,0);
-            flashParams.weight=0.3f;
-        }
-        else{
-            flashParams.setMargins((int)getResources().getDimension(R.dimen.flashOnLeftMargin),0,0,0);
-            flashParams.weight=0.5f;
-            flashParams.gravity= Gravity.CENTER;
-        }
-        flashParams.height = (int) getResources().getDimension(R.dimen.flashOnHeight);
-        flashParams.width = (int) getResources().getDimension(R.dimen.flashOnWidth);
+        int flashWidth = (int) getResources().getDimension(R.dimen.flashOnWidth);
+        int flashHeight = (int) getResources().getDimension(R.dimen.flashOnHeight);
         flashBtn.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        flashBtn.setLayoutParams(flashParams);
+        if (flashBtn.getParent() instanceof FrameLayout) {
+            // The preview controls live in equal-width FrameLayout slots.
+            flashBtn.setLayoutParams(new FrameLayout.LayoutParams(
+                    flashWidth, flashHeight, Gravity.CENTER));
+        } else {
+            // Keep the legacy placement when the flash button is in a LinearLayout.
+            LinearLayout.LayoutParams flashParams = new LinearLayout.LayoutParams(flashWidth, flashHeight);
+            if(isRecord()){
+                flashParams.setMargins(0,(int)getResources().getDimension(R.dimen.flashOnLeftMargin),0,0);
+                flashParams.weight=0.3f;
+            }
+            else{
+                flashParams.setMargins((int)getResources().getDimension(R.dimen.flashOnLeftMargin),0,0,0);
+                flashParams.weight=0.5f;
+                flashParams.gravity= Gravity.CENTER;
+            }
+            flashBtn.setLayoutParams(flashParams);
+        }
         if(!isCamera2()){
             switchFlashOnOff();
         }
@@ -713,19 +759,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         if(VERBOSE)Log.d(TAG,"isSwitch = "+isSwitch());
         if(isSwitch()){
             setSwitch(false);
-            if(this.photoFragment!=null) {
-                if (this.photoFragment.isFlashOn()) {
-                    flashMode = camera1.getFlashModeOn();
-                } else {
-                    flashMode = camera1.getFlashModeOff();
-                }
-            }
-            else{
-                if (this.videoFragment.isFlashOn()) {
-                    flashMode = camera1.getFlashModeTorch();
-                } else {
-                    flashMode = camera1.getFlashModeOff();
-                }
+            if (this.videoFragment.isFlashOn()) {
+                flashMode = camera1.getFlashModeTorch();
+            } else {
+                flashMode = camera1.getFlashModeOff();
             }
 
             //Set the flash mode of previous camera
@@ -774,12 +811,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             if(VERBOSE)Log.d(TAG, "SET flashMode TO OFF");
             flashBtn.setImageDrawable(getResources().getDrawable(R.drawable.camera_flash_on));
             flashOnOff(false);
-            if(this.photoFragment!=null) {
-                this.photoFragment.setFlashOn(false);
-            }
-            else{
-                this.videoFragment.setFlashOn(false);
-            }
+            this.videoFragment.setFlashOn(false);
             return true;
         }
     }
@@ -790,8 +822,11 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             determineOrientation();
             if(VERBOSE)Log.d(TAG,"Rot angle == "+rotationAngle+", portrait = "+portrait);
             Matrix.rotateM(RECORD_IDENTITY_MATRIX, 0, rotationAngle , 0, 0, 1);
-            setLayoutAspectRatio();
+            // Mark recording before changing the SurfaceView layout. The ensuing
+            // surfaceChanged callback must retain the stop/pause controls and
+            // immersive recording UI instead of rebuilding the preview controls.
             setRecord(true);
+            setLayoutAspectRatio();
             setKeepScreenOn(true);
             videoTimer = startTimerThread();
             cameraHandler.sendEmptyMessage(Constants.RECORD_START);
@@ -800,6 +835,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         }
         else{
             setRecord(false);
+            // Return to the selected video aspect ratio for the idle preview.
+            // Recording uses the full available display so the live camera
+            // image covers the screen behind the recording controls.
+            setLayoutAspectRatio();
             setKeepScreenOn(false);
             stopTimerThread();
             hidePauseText();
@@ -819,14 +858,20 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     }
 
     public void recordPause(){
+        if (!canChangeRecordingPause() || recorderState != RecorderState.RECORDING) return;
+        pauseActionPending = true;
+        videoFragment.updateRecordingPauseState(false, false);
         cameraHandler.sendEmptyMessage(Constants.RECORD_PAUSE);
     }
 
     public void recordResume(){
+        if (!canChangeRecordingPause() || recorderState != RecorderState.PAUSED) return;
+        pauseActionPending = true;
+        videoFragment.updateRecordingPauseState(true, false);
         cameraHandler.sendEmptyMessage(Constants.RECORD_RESUME);
     }
 
-    //This method is used to calculate the orientation necessary for the photo/video when the device is oriented as per portrait or landscape.
+    //This method calculates video orientation as the device rotates between portrait and landscape.
     public void determineOrientation() {
 
         if(orientation != -1) {
@@ -882,23 +927,15 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
 
     public void setLayoutAspectRatio()
     {
-        // Set the preview aspect ratio.
-        requestLayout();
         ViewGroup.LayoutParams layoutParams = getLayoutParams();
-        VIDEO_WIDTH = camera1.getDisplaySizes()[0];
-        VIDEO_HEIGHT = camera1.getDisplaySizes()[1];
-        int temp = VIDEO_HEIGHT;
-        VIDEO_HEIGHT = VIDEO_WIDTH;
-        VIDEO_WIDTH = temp;
-        layoutParams.height = VIDEO_HEIGHT;
-        layoutParams.width = VIDEO_WIDTH;
-        if(VERBOSE)Log.d(TAG,"LP Height = "+layoutParams.height);
-        if(VERBOSE)Log.d(TAG,"LP Width = "+layoutParams.width);
-        if(!portrait) {
-            temp = VIDEO_HEIGHT;
-            VIDEO_HEIGHT = VIDEO_WIDTH;
-            VIDEO_WIDTH = temp;
+        if (layoutParams != null) {
+            // Keep the view bounded by the screen in both preview and
+            // recording. onMeasure fits it to the selected camera ratio.
+            layoutParams.height = ViewGroup.LayoutParams.MATCH_PARENT;
+            layoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT;
+            setLayoutParams(layoutParams);
         }
+        requestLayout();
         int degree;
         if(VERBOSE)Log.d(TAG, "backCamera = "+backCamera);
         if(backCamera) {
@@ -919,24 +956,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             if (VERBOSE) Log.d(TAG, "Result == " + result);
             camera1.setDisplayOrientation(result);
         }
-    }
-
-    public void capturePhoto()
-    {
-        determineOrientation();
-        if(this.photoFragment.isFlashOn()){
-            camera1.setTorchLight();
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-        if(VERBOSE)Log.d(TAG, "Shutter sound before click? = "+sharedPreferences.getBoolean(Constants.SHUTTER_SOUND, true));
-        camera1.enableShutterSound(sharedPreferences.getBoolean(Constants.SHUTTER_SOUND, true));
-        mNextPhotoAbsolutePath = cameraHandler.getCameraRendererInstance().getFilePath(false);
-        camera1.setPhotoPath(mNextPhotoAbsolutePath);
-        camera1.capturePicture();
     }
 
     private void stopAndReleaseCamera(){
@@ -978,18 +997,13 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         if(VERBOSE)Log.d(TAG,"Width = "+width+", height = "+height);
         if(this.videoFragment!=null) {
             memoryPrefs = this.videoFragment.getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
-            isPhoneMemory = memoryPrefs.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
-            this.videoFragment.showRecordAndThumbnail();
-            this.videoFragment.getLatestFileIfExists();
-            camera1.setPhotoFragmentInstance(null);
-            this.photoFragment = null;
+            // Recording changes the SurfaceView size. Keep the recording overlay
+            // and immersive navigation state instead of rebuilding preview controls.
+            if (!isRecord()) this.videoFragment.showRecordAndThumbnail();
+            // Do not inspect the newest media file on SurfaceView resizes. The
+            // newest file may be the MP4 currently being written, and reading
+            // its incomplete container can interfere with MediaRecorder.stop().
             camera1.setVideoFragmentInstance(this.videoFragment);
-        }
-        else{
-            this.photoFragment.getLatestFileIfExists();
-            camera1.setPhotoFragmentInstance(this.photoFragment);
-            this.videoFragment = null;
-            camera1.setVideoFragmentInstance(null);
         }
         if(!camera1.isCameraReady()) {
             if(VERBOSE)Log.d(TAG, "camera NOT READY. Must Open");
@@ -997,9 +1011,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             measuredHeight = height;
             frameCount=0;
             openCameraAndStartPreview();
-            if(this.photoFragment!=null && !this.photoFragment.isContinuousAF()) {
-                registerAccelSensor();
-            }
         }
         if(GLUtil.getSurfaceTexture()!=null) {
             GLUtil.getSurfaceTexture().setOnFrameAvailableListener(this);
@@ -1015,41 +1026,17 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         if(VERBOSE)Log.d(TAG,"surfaceDestroyed = "+surfaceHolder);
         if(VERBOSE)Log.d(TAG,"cameraHandler = "+cameraHandler);
         orientationEventListener.disable();
-        if(this.photoFragment!=null && !this.photoFragment.isContinuousAF()) {
-            unregisterAccelSensor();
-        }
         mSensorManager.unregisterListener(this);
         if(cameraHandler!=null) {
             //Ensure camera's resources are properly released.
             CameraRenderer cameraRenderer = cameraHandler.getCameraRendererInstance();
             if(camera1.isCameraReady()) {
-                //Switch Off countdown if started for selfie timer
-                if(this.photoFragment != null){
-                    if(this.photoFragment.getCountDown() >= 0 && !isBackCamera()) {
-                        if(VERBOSE)Log.d(TAG, "Switch Off Timer");
-                        this.photoFragment.setCountDown(-1);
-                        this.photoFragment.enableButtons();
-                        this.photoFragment.getSelfieCountdown().setVisibility(View.GONE);
-                    }
-                    //Hide Image highlight and enable buttons, since user can minimize app just before
-                    //photo is taken when using Front camera timer
-                    this.photoFragment.getImageHighlight().setVisibility(View.INVISIBLE);
-                    this.photoFragment.enableButtons();
-                    //Since Mediaplayer is initialized for selfie timer, need to stop and release it here
-                    if(this.photoFragment.getTimerPlayer() != null) {
-                        this.photoFragment.getTimerPlayer().stop();
-                        this.photoFragment.getTimerPlayer().release();
-                        this.photoFragment.setTimerPlayer(null);
-                        if(VERBOSE)Log.d(TAG, "Switch Off TimerPlayer");
-                    }
-                }
                 //Switch off flash light if used during recording.
                 if(isCamera2()) {
                     setStopCamera(true);
                     camera1.setFlashOnOff(false);
                 }
                 else {
-                    camera1.removePreviewCallback();
                     stopAndReleaseCamera();
                 }
             }
@@ -1091,6 +1078,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         SharedPreferences.Editor editor = memoryPrefs.edit();
                         editor.putBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true);
                         editor.commit();
+                        if (videoFragment != null && videoFragment.getActivity() instanceof CameraActivity) {
+                            ((CameraActivity) videoFragment.getActivity()).updateStorageDestinationLabel();
+                        }
                         videoFragment.showToastSDCardUnavailWhileRecordMessage();
                     }
                 }
@@ -1112,6 +1102,23 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             }
         }
     }
+    /** Publish only finalized recordings, independently of thumbnail/UI lifecycle. */
+    private void scanSavedRecording() {
+        final File savedVideo = videoFile;
+        if (savedVideo == null || !savedVideo.isFile() || savedVideo.length() == 0) return;
+        try {
+            MediaScannerConnection.scanFile(getContext().getApplicationContext(),
+                    new String[]{savedVideo.getAbsolutePath()}, new String[]{"video/mp4"},
+                    (path, uri) -> {
+                        if (uri == null) Log.w(TAG, "Recording media scan returned no URI: " + path);
+                        else Log.d(TAG, "Recording indexed: " + path + " -> " + uri);
+                    });
+        } catch (RuntimeException scanError) {
+            // Indexing failure must never interrupt a successfully saved recording.
+            Log.w(TAG, "Unable to request recording media scan", scanError);
+        }
+    }
+
     //This is the class that draws the each camera frame onto the device's screen. It uses OpenGL API to draw the preview frame.
     //It also controls the video recording.
     class CameraRenderer extends Thread
@@ -1125,7 +1132,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             //Empty constructor
         }
 
-        @Override
         public void run()
         {
             Looper.prepare();
@@ -1157,7 +1163,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             }
             mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
             mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-            mNextVideoAbsolutePath = getFilePath(true);
+            mNextVideoAbsolutePath = getFilePath();
             if(VERBOSE)Log.d(TAG, "mNextVideoAbsolutePath ===== "+mNextVideoAbsolutePath);
             videoFile = new File(mNextVideoAbsolutePath);
             if(VERBOSE)Log.d(TAG, "Video file ===== "+videoFile);
@@ -1186,24 +1192,33 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             try {
                 mediaRecorder.prepare();
             } catch (IOException e) {
-                e.printStackTrace();
-                Log.e(TAG, e.getMessage());
+                throw new IllegalStateException("Unable to prepare recorder", e);
             }
+            recorderState = RecorderState.PREPARED;
             encoderSurface = GLUtil.prepareWindowSurface(mediaRecorder.getSurface(), GLUtil.getmEGLDisplay(), GLUtil.getmEGLConfig());
             mediaContent = new ContentValues();
             mediaContent.put("filename", mNextVideoAbsolutePath);
             mediaContent.put("memoryStorage", (memoryPrefs.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true) ? "1" : "0"));
         }
 
-        public String getFilePath(boolean video) {
+        private void releaseEncoderSurface() {
+            if (encoderSurface != null && encoderSurface != EGL14.EGL_NO_SURFACE) {
+                if (GLUtil.getEglSurface() != null
+                        && GLUtil.getEglSurface() != EGL14.EGL_NO_SURFACE) {
+                    GLUtil.makeCurrent(GLUtil.getEglSurface());
+                }
+                EGL14.eglDestroySurface(GLUtil.getmEGLDisplay(), encoderSurface);
+                encoderSurface = EGL14.EGL_NO_SURFACE;
+            }
+        }
+
+        public String getFilePath() {
             StringBuilder path = new StringBuilder(Constants.EMPTY);
-            SharedPreferences sharedPreferences;
-            sharedPreferences = (video ? videoFragment.getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE) :
-                    photoFragment.getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE));
+            SharedPreferences sharedPreferences = videoFragment.getActivity().getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
             if(sharedPreferences.contains(Constants.SAVE_MEDIA_PHONE_MEM))
             {
                 if(sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)){
-                    path.append(fetchPhoneMemoryPath(video));
+                    path.append(fetchPhoneMemoryPath());
                 }
                 else{
                     path.append(sharedPreferences.getString(Constants.SD_CARD_PATH, ""));
@@ -1211,22 +1226,25 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                     String filename = sdf.format(new Date());
                     if(VERBOSE)Log.d(TAG, "sd card filename = " + filename);
                     path.append(getResources().getString(R.string.PATH_SLASH));
-                    path.append(video ? getResources().getString(R.string.FC_VID_PREFIX) + filename + getResources().getString(R.string.VID_EXT) :
-                            getResources().getString(R.string.FC_IMG_PREFIX) + filename + getResources().getString(R.string.IMG_EXT));
+                    path.append(getResources().getString(R.string.FC_VID_PREFIX) + filename + getResources().getString(R.string.VID_EXT));
                     if(VERBOSE)Log.d(TAG, "SD Card Path = "+path);
                 }
             }
             else {
-                path.append(fetchPhoneMemoryPath(video));
+                path.append(fetchPhoneMemoryPath());
             }
             return path.toString();
         }
-        String defaultMediaPath = getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + getResources().getString(R.string.FC_ROOT)).getPath();
-        public String fetchPhoneMemoryPath(boolean video){
+        String defaultMediaPath = MediaStorage.getPhoneMediaDirectory(videoFragment.getApplicationContext()).getPath();
+        public String fetchPhoneMemoryPath(){
             StringBuilder phonePath = new StringBuilder("");
             File dcim;
-            dcim = new File(PreferenceManager.getDefaultSharedPreferences(videoFragment!=null ? videoFragment.getApplicationContext() : photoFragment.getApplicationContext())
-                    .getString(Constants.MEDIA_FILE_PATH, defaultMediaPath));
+            Context context = videoFragment.getApplicationContext();
+            String phoneDirectory = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+                    ? defaultMediaPath
+                    : PreferenceManager.getDefaultSharedPreferences(context)
+                            .getString(Constants.MEDIA_FILE_PATH, defaultMediaPath);
+            dcim = new File(phoneDirectory);
             //Included check for default path only.
             if (!dcim.exists()) {
                 dcim.mkdirs();
@@ -1236,8 +1254,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             if(VERBOSE)Log.d(TAG, "filename = " + filename);
             phonePath.append(dcim.getPath());
             phonePath.append(getResources().getString(R.string.PATH_SLASH));
-            phonePath.append(video ? getResources().getString(R.string.FC_VID_PREFIX) + filename + getResources().getString(R.string.VID_EXT) :
-                    getResources().getString(R.string.FC_IMG_PREFIX) + filename + getResources().getString(R.string.IMG_EXT));
+            phonePath.append(getResources().getString(R.string.FC_VID_PREFIX) + filename + getResources().getString(R.string.VID_EXT));
             if(VERBOSE)Log.d(TAG, "Saving media file at = " + phonePath);
             return phonePath.toString();
         }
@@ -1294,10 +1311,17 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         mainHandler.sendEmptyMessage(Constants.SHOW_MEMORY_CONSUMED);
                     }
 
-                    if (recordStop == -1) {
-                        mediaRecorder.start();
-                        updateTimer = true;
-                        recordStop = 1;
+                    if (recorderState == RecorderState.PREPARED) {
+                        try {
+                            mediaRecorder.start();
+                            recorderState = RecorderState.RECORDING;
+                            updateTimer = true;
+                            recordStop = 1;
+                            publishRecordingPauseState();
+                        } catch (RuntimeException failure) {
+                            failRecording("start", failure);
+                            return;
+                        }
                     }
                     EGLExt.eglPresentationTimeANDROID(GLUtil.getmEGLDisplay(), encoderSurface, getPTSUs());
                     EGL14.eglSwapBuffers(GLUtil.getmEGLDisplay(), encoderSurface);
@@ -1305,7 +1329,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             }
             frameCount++;
             availableStatFs.restat(Environment.getDataDirectory().getPath());
-            if(isRecord() && isPhoneMemory && (availableStatFs.getAvailableBytes() < lowestMemory)) {
+            if(isRecord() && memoryPrefs.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)
+                    && (availableStatFs.getAvailableBytes() < lowestMemory)) {
                 if(FRAME_VERBOSE)Log.d(TAG, "lowestMemory = "+lowestMemory);
                 if(FRAME_VERBOSE)Log.d(TAG, "avail mem = "+availableStatFs.getAvailableBytes());
                 setRecord(false);
@@ -1323,13 +1348,17 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                     }
                     cameraHandler.setRecordIncomplete(true);
                 }
+                recorderState = RecorderState.IDLE;
+                publishRecordingPauseState();
                 mediaRecorder.release();
                 mediaRecorder = null;
+                releaseEncoderSurface();
                 if(isCamera2()){
                     stopAndReleaseCamera();
                 }
                 if(FRAME_VERBOSE)Log.d(TAG,"stop isRecording == "+isRecording);
                 if(!cameraHandler.isRecordIncomplete()){
+                    scanSavedRecording();
                     mainHandler.sendEmptyMessage(Constants.RECORD_COMPLETE);
                 }
                 mainHandler.sendEmptyMessage(Constants.RECORD_STOP_LOW_MEMORY);
@@ -1341,21 +1370,64 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
 
         @TargetApi(Build.VERSION_CODES.N)
         private void pause(){
-            Log.d(TAG, "pauseDelayTime in PAUSE === "+pauseDelayTime);
-            mediaRecorder.pause();
-            oncePauseTime = System.nanoTime() / 1000;
-            Log.d(TAG, "oncePauseTime in PAUSE ==== "+oncePauseTime);
-            isRecording = false;
+            if (!isRecord() || mediaRecorder == null || recorderState != RecorderState.RECORDING) {
+                publishRecordingPauseState();
+                return;
+            }
+            try {
+                mediaRecorder.pause();
+                recorderState = RecorderState.PAUSED;
+                oncePauseTime = System.nanoTime() / 1000;
+                isRecording = false;
+                updateTimer = false;
+                setRecordPaused(true);
+                if (videoTimer != null) videoTimer.interrupt();
+                // Pausing before the first-second frame check must not leave Stop disabled.
+                mainHandler.sendEmptyMessage(Constants.RECORD_STOP_ENABLE);
+                mainHandler.sendEmptyMessage(Constants.SHOW_PAUSE_TEXT);
+                publishRecordingPauseState();
+            } catch (RuntimeException failure) {
+                failRecording("pause", failure);
+            }
         }
 
         @TargetApi(Build.VERSION_CODES.N)
         private void resumeRecord(){
-            mediaRecorder.resume();
-            oncePauseTime = System.nanoTime() / 1000 - oncePauseTime;
-            Log.d(TAG, "oncePauseTime in RESUME ===== "+oncePauseTime);
-            pauseDelayTime += oncePauseTime;
-            Log.d(TAG, "pauseDelayTime ===== "+pauseDelayTime);
-            isRecording = true;
+            if (!isRecord() || mediaRecorder == null || recorderState != RecorderState.PAUSED) {
+                publishRecordingPauseState();
+                return;
+            }
+            try {
+                mediaRecorder.resume();
+                recorderState = RecorderState.RECORDING;
+                pauseDelayTime += System.nanoTime() / 1000 - oncePauseTime;
+                isRecording = true;
+                setRecordPaused(false);
+                updateTimer = true;
+                mainHandler.sendEmptyMessage(Constants.HIDE_PAUSE_TEXT);
+                publishRecordingPauseState();
+            } catch (RuntimeException failure) {
+                failRecording("resume", failure);
+            }
+        }
+
+        private void failRecording(String operation, RuntimeException failure) {
+            Log.e(TAG, "Recorder " + operation + " failed; restoring preview", failure);
+            // Reuse finalization so a recoverable partial recording can still be saved.
+            setRecord(false);
+            stopTimerThread();
+            cameraHandler.removeMessages(Constants.RECORD_PAUSE);
+            cameraHandler.removeMessages(Constants.RECORD_RESUME);
+            cameraHandler.sendEmptyMessage(Constants.RECORD_STOP);
+            mainHandler.post(() -> {
+                setKeepScreenOn(false);
+                orientationEventListener.enable();
+                camera1.disableRecordingHint();
+                System.arraycopy(IDENTITY_MATRIX, 0, RECORD_IDENTITY_MATRIX, 0, IDENTITY_MATRIX.length);
+                rotationAngle = 0f;
+                setLayoutAspectRatio();
+                hidePauseText();
+            });
         }
 
         protected long getPTSUs() {
@@ -1405,49 +1477,64 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         if(FRAME_VERBOSE)Log.d(TAG,"Record = "+isRecord());
                         break;
                     case Constants.RECORD_START:
-                        cameraRenderer.setupMediaRecorder(getRecordVideoWidth(), getRecordVideoHeight(), getCamProfileForRecord());
-                        hour = 0; minute = 0; second = 0;
-                        isRecording = true;
+                        if (!isRecord() || recorderState != RecorderState.IDLE) break;
+                        recorderState = RecorderState.PREPARING;
+                        pauseDelayTime = 0;
+                        setRecordPaused(false);
+                        try {
+                            cameraRenderer.setupMediaRecorder(getRecordVideoWidth(), getRecordVideoHeight(), getCamProfileForRecord());
+                            hour = 0; minute = 0; second = 0;
+                            isRecording = true;
+                        } catch (RuntimeException failure) {
+                            failRecording("prepare", failure);
+                        }
                         break;
                     case Constants.RECORD_STOP:
+                        recordIncomplete = false;
                         try {
+                            if (mediaRecorder == null) {
+                                throw new IllegalStateException("Recorder was not initialized");
+                            }
                             mediaRecorder.stop();
                         }
                         catch(RuntimeException runtime){
-                            if(VERBOSE)Log.d(TAG,"Video data not received... delete file = "+videoFile.getPath());
-                            if(videoFile.delete()){
+                            Log.e(TAG,"Unable to finalize recording", runtime);
+                            if(videoFile != null && videoFile.exists() && videoFile.delete()){
                                 if(VERBOSE)Log.d(TAG,"File deleted");
                             }
                             recordIncomplete = true;
                         }
-                        mediaRecorder.release();
-                        mediaRecorder = null;
+                        recorderState = RecorderState.IDLE;
+                        publishRecordingPauseState();
+                        cameraHandler.removeMessages(Constants.RECORD_PAUSE);
+                        cameraHandler.removeMessages(Constants.RECORD_RESUME);
+                        if (mediaRecorder != null) {
+                            mediaRecorder.release();
+                            mediaRecorder = null;
+                        }
+                        cameraRenderer.releaseEncoderSurface();
                         if(VERBOSE)Log.d(TAG, "RESET PAUSE");
                         pauseDelayTime = 0;
                         videoFragment.setPause(false);
                         isRecording = false;
                         recordStop = -1;
-                        recordIncomplete = false;
                         setRecordPaused(false);
                         if(VERBOSE)Log.d(TAG,"stop isRecording == "+isRecording);
-                        if(!recordIncomplete){
+                        if(!recordIncomplete && videoFile != null && videoFile.isFile() && videoFile.length() > 0){
+                            scanSavedRecording();
                             mainHandler.sendEmptyMessage(Constants.RECORD_COMPLETE);
+                        } else if (!recordIncomplete) {
+                            Log.e(TAG, "Recorder stopped without producing a non-empty file");
                         }
+                        mainHandler.sendEmptyMessage(Constants.RECORD_STOPPED);
                         if(VERBOSE)Log.d(TAG, "Exit recording...");
                         if(VERBOSE)Log.d(TAG,"Orig frame = "+frameCount+" , Rendered frame "+frameCnt);
                         break;
                     case Constants.RECORD_PAUSE:
-                        if(VERBOSE)Log.d(TAG, "Pausing record");
-                        videoTimer.interrupt();
                         pause();
-                        mainHandler.sendEmptyMessage(Constants.SHOW_PAUSE_TEXT);
                         break;
                     case Constants.RECORD_RESUME:
-                        if(VERBOSE)Log.d(TAG, "Resuming record");
-                        mainHandler.sendEmptyMessage(Constants.HIDE_PAUSE_TEXT);
                         resumeRecord();
-                        updateTimer = true;
-                        setRecordPaused(false);
                         break;
                     case Constants.RECORD_STOP_NO_SD_CARD:
                         isRecording = false;
@@ -1455,9 +1542,17 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         videoFragment.setPause(false);
                         recordStop = -1;
                         recordIncomplete = false;
-                        mediaRecorder.release();
-                        mediaRecorder = null;
+                        recorderState = RecorderState.IDLE;
+                        publishRecordingPauseState();
+                        cameraHandler.removeMessages(Constants.RECORD_PAUSE);
+                        cameraHandler.removeMessages(Constants.RECORD_RESUME);
+                        if (mediaRecorder != null) {
+                            mediaRecorder.release();
+                            mediaRecorder = null;
+                        }
+                        cameraRenderer.releaseEncoderSurface();
                         mainHandler.sendEmptyMessage(Constants.HIDE_PAUSE_TEXT);
+                        mainHandler.sendEmptyMessage(Constants.RECORD_STOPPED);
                         if(VERBOSE)Log.d(TAG,"stop no SD Card isRecording == "+isRecording);
                         break;
                     case Constants.GET_CAMERA_RENDERER_INSTANCE:
@@ -1479,6 +1574,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     public void stopTimerThread()
     {
         startTimer = false;
+        updateTimer = false;
+        if (videoTimer != null && videoTimer.isAlive()) videoTimer.stopTimer();
     }
     volatile boolean startTimer = false;
     volatile boolean updateTimer = false;
@@ -1487,6 +1584,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     //and recording each frame, the timer value was incorrect during recording.
     class VideoTimer extends Thread
     {
+        private volatile boolean timerRunning = true;
         long startSleep = 0;
         long endSleep = 0;
         long previousTimeBlink = 0;
@@ -1505,12 +1603,17 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             }
         }
 
+        void stopTimer() {
+            timerRunning = false;
+            interrupt();
+        }
+
         @Override
         public void run() {
             if(VERBOSE)Log.d(TAG,"VideoTimer STARTED");
             sleepTime = 1000;
-            while(startTimer){
-                while (updateTimer) {
+            while(timerRunning){
+                while (updateTimer && timerRunning) {
                     try {
                         startSleep = System.currentTimeMillis();
                         Thread.sleep(sleepTime);
@@ -1520,17 +1623,17 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         updateTime();
                         mainHandler.sendEmptyMessage(Constants.SHOW_ELAPSED_TIME);
                     } catch (InterruptedException e) {
+                        if (!timerRunning) break;
                         endSleep = System.currentTimeMillis();
-                        updateTimer = false;
-                        setRecordPaused(true);
                         //Recalculate sleep time since user has paused recording.
-                        sleepTime = 1000 - (endSleep - startSleep);
+                        sleepTime = Math.max(1, Math.min(1000, 1000 - (endSleep - startSleep)));
                         if(VERBOSE)Log.d(TAG, "PAUSED VIDEO... Sleep incomplete at === "+(endSleep - startSleep) + " milliseconds");
                     }
-                    if (!startTimer) {
+                    if (!timerRunning) {
                         break;
                     }
                 }
+                if (!timerRunning) break;
                 //Add blinking text effect
                 if(isRecordPaused()){
                     if(Math.abs(System.currentTimeMillis() - previousTimeBlink) >= 700){

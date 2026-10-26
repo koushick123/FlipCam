@@ -6,8 +6,6 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
 import android.content.res.Configuration;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Point;
 import android.media.AudioManager;
 import android.media.MediaMetadataRetriever;
@@ -39,7 +37,6 @@ import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
-import com.bumptech.glide.Glide;
 import com.flipcam.ControlVisbilityPreference;
 import com.flipcam.MediaActivity;
 import com.flipcam.R;
@@ -48,7 +45,6 @@ import com.flipcam.media.FileMedia;
 import com.flipcam.media.Media;
 import com.flipcam.util.MediaUtil;
 
-import java.io.File;
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
 import java.util.List;
@@ -83,9 +79,7 @@ MediaPlayer.OnErrorListener, Serializable{
     public int previousPos = 0;
     transient LinearLayout videoControls;
     transient LinearLayout parentMedia;
-    transient FrameLayout frameMedia;
     int framePosition;
-    transient ImageView picture;
     transient FileMedia[] fileMedia=null;
     ControlVisbilityPreference controlVisbilityPreference;
     transient Display display;
@@ -93,16 +87,11 @@ MediaPlayer.OnErrorListener, Serializable{
     transient public Media savedVideo = null;
     transient boolean recreate = false;
     transient ImageView playCircle;
-    transient int imageHeight;
-    transient int imageWidth;
-    transient FrameLayout mediaPlaceholder;
     boolean VERBOSE = true;
     AudioManager audioManager;
-    boolean imageScaled = false;
     boolean fromGallery = false;
     MediaActivity mediaActivity;
     SharedPreferences sharedPreferences;
-    ImageButton pictureRotate;
 
     public static MediaFragment newInstance(int pos,boolean recreate, boolean fromGal){
         MediaFragment mediaFragment = new MediaFragment();
@@ -129,15 +118,12 @@ MediaPlayer.OnErrorListener, Serializable{
         videoSeek = (SeekBar)getActivity().findViewById(R.id.videoSeek);
         if(VERBOSE)Log.d(TAG, "videoSeek = "+videoSeek);
         parentMedia = (LinearLayout)getActivity().findViewById(R.id.parentMedia);
-        frameMedia = (FrameLayout)getActivity().findViewById(R.id.frameMedia);
         controlVisbilityPreference = (ControlVisbilityPreference) getActivity().getApplicationContext();
         playCircle = (ImageView)getActivity().findViewById(R.id.playVideo);
-        pictureRotate = getActivity().findViewById(R.id.imageRotate);
         mediaActivity = (MediaActivity)getActivity();
 
         if(getUserVisibleHint()) {
-            if(!isImage()) {
-                if (isUseFCPlayer()) {
+            if (isUseFCPlayer()) {
                     Media newVideo;
                     if (savedInstanceState != null) {
                         newVideo = savedInstanceState.getParcelable("currentVideo");
@@ -175,15 +161,9 @@ MediaPlayer.OnErrorListener, Serializable{
                     showTimeElapsed();
                     calculateAndDisplayEndTime(Integer.parseInt(duration), true);
                 }
-                else{
+            else{
                     removeVideoControls();
                     setupPlayCircleForExternalPlayer();
-                }
-            }
-            else{
-                pictureRotate.setOnClickListener((view) -> {
-                    rotatePicture();
-                });
             }
         }
         final GestureDetector detector = new GestureDetector(getActivity().getApplicationContext(), new GestureDetector.SimpleOnGestureListener(){
@@ -210,16 +190,7 @@ MediaPlayer.OnErrorListener, Serializable{
                 return false;
             }
         });
-        if(isImage()){
-            picture.setOnTouchListener((view, motionEvent) -> {
-                    return detector.onTouchEvent(motionEvent);
-            });
-        }
-        else{
-            videoView.setOnTouchListener((view, motionEvent)-> {
-                return detector.onTouchEvent(motionEvent);
-            });
-        }
+        videoView.setOnTouchListener((view, motionEvent)-> detector.onTouchEvent(motionEvent));
     }
 
     AudioManager.OnAudioFocusChangeListener onAudioFocusChangeListener = new AudioManager.OnAudioFocusChangeListener(){
@@ -246,7 +217,7 @@ MediaPlayer.OnErrorListener, Serializable{
 
     public void reConstructVideo(Media savedVideo){
         videoSeek.setMax(savedVideo.getSeekDuration());
-        videoSeek.setProgressTintList(ColorStateList.valueOf(getResources().getColor(R.color.turqoise)));
+        videoSeek.setProgressTintList(ColorStateList.valueOf(getResources().getColor(R.color.uiAccent)));
         if(VERBOSE)Log.d(TAG, "Retrieve media completed == " + savedVideo.isMediaCompleted());
         if (savedVideo.isMediaCompleted()) {
             videoSeek.setProgress(0);
@@ -403,31 +374,11 @@ MediaPlayer.OnErrorListener, Serializable{
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_surfaceview_video, container, false);
         videoView = (MediaView) view.findViewById(R.id.recordedVideo);
-        picture = (ImageView)view.findViewById(R.id.recordedImage);
-        mediaPlaceholder = (FrameLayout)view.findViewById(R.id.mediaPlaceholder);
         WindowManager windowManager = (WindowManager)getActivity().getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
         display = windowManager.getDefaultDisplay();
-        Point screenSize=new Point();
-        display.getRealSize(screenSize);
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getContext());
         if(VERBOSE)Log.d(TAG,"onCreateView = "+path);
-        if(isImage()) {
-            if(VERBOSE)Log.d(TAG,"show image");
-            videoView.setData(null,path,this);
-            videoView.setVisibility(View.GONE);
-            Bitmap image = BitmapFactory.decodeFile(path);
-            imageHeight = image.getHeight();
-            imageWidth = image.getWidth();
-            fitPhotoToScreen();
-            Uri uri = Uri.fromFile(new File(path));
-            Glide.with(getContext()).load(uri).into(picture);
-            if(savedInstanceState!=null){
-                imageScaled = savedInstanceState.getBoolean("imageScaled");
-            }
-        }
-        else {
             if(VERBOSE)Log.d(TAG,"show video");
-            picture.setVisibility(View.GONE);
             mediaPlayer = new MediaPlayer();
             mediaPlayer.setOnCompletionListener(this);
             mediaPlayer.setOnPreparedListener(this);
@@ -437,53 +388,7 @@ MediaPlayer.OnErrorListener, Serializable{
             MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
             mediaMetadataRetriever.setDataSource(path);
             duration = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
-        }
         return view;
-    }
-
-    float rotateAngle = 0;
-    Point screenSize=new Point();
-    public void rotatePicture(){
-        if(rotateAngle == 360){
-            rotateAngle = 0;
-        }
-        rotateAngle += 90;
-        picture.setRotation(rotateAngle);
-    }
-
-    public void resetPicture(){
-        rotateAngle = 0;
-        picture.setRotation(rotateAngle);
-    }
-
-    public void fitPhotoToScreen(){
-        display.getRealSize(screenSize);
-        double screenAR = (double)screenSize.x / (double)screenSize.y;
-        if(VERBOSE)Log.d(TAG, "screenSize = "+screenSize.x+" X "+screenSize.y);
-        double imageAR = (double)imageWidth / (double)imageHeight;
-        if(VERBOSE)Log.d(TAG, "imageSize = "+imageWidth+" X "+imageHeight);
-        if(VERBOSE)Log.d(TAG,"imageAR = "+imageAR);
-        if(VERBOSE)Log.d(TAG,"screenAR = "+screenAR);
-        FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
-        if (display.getRotation() == Surface.ROTATION_0) {
-            if(Math.abs(screenAR - imageAR) < 0.01) {
-                if(VERBOSE)Log.d(TAG,"Portrait");
-                layoutParams.width = screenSize.x;
-                layoutParams.height = screenSize.y;
-            }
-            if(VERBOSE)Log.d(TAG,"1111 layoutParams.width = "+layoutParams.width);
-            if(VERBOSE)Log.d(TAG,"layoutParams.height = "+layoutParams.height);
-        }
-        else if (display.getRotation() == Surface.ROTATION_90 || display.getRotation() == Surface.ROTATION_270) {
-            if (Math.abs(screenAR - imageAR) < 0.1) {
-                if(VERBOSE)Log.d(TAG,"Landscape");
-                layoutParams.width = screenSize.x;
-                layoutParams.height = screenSize.y;
-            }
-            if(VERBOSE)Log.d(TAG,"2222 layoutParams.width = "+layoutParams.width);
-            if(VERBOSE)Log.d(TAG,"layoutParams.height = "+layoutParams.height);
-        }
-        picture.setLayoutParams(layoutParams);
     }
 
     public void fitVideoToScreen(){
@@ -545,8 +450,7 @@ MediaPlayer.OnErrorListener, Serializable{
         super.onSaveInstanceState(outState);
         if(VERBOSE)Log.d(TAG,"onSaveInstanceState = "+path+" , "+playInProgress);
         if(VERBOSE)Log.d(TAG,"getUserVisibleHint ? ="+getUserVisibleHint());
-        if(!isImage()) {
-            if (getUserVisibleHint()) {
+        if (getUserVisibleHint()) {
                 if(isUseFCPlayer()) {
                     outState.putBoolean("videoPlayed", playInProgress);
                     Media media = new Media();
@@ -567,21 +471,13 @@ MediaPlayer.OnErrorListener, Serializable{
                         mediaPlayer.pause();
                     }
                 }
-            }
-        }
-        else{
-            outState.putBoolean("imageScaled",imageScaled);
         }
     }
 
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        if (!isImage()) {
-            fitVideoToScreen();
-        } else {
-            fitPhotoToScreen();
-        }
+        fitVideoToScreen();
     }
 
     int mediaPositionForMinimize;
@@ -589,21 +485,7 @@ MediaPlayer.OnErrorListener, Serializable{
 
     public void showMediaControls()
     {
-        if(isImage()) {
-            if(VERBOSE)Log.d(TAG,"hide = "+controlVisbilityPreference.isHideControl());
-            if(VERBOSE)Log.d(TAG, "videoControls = "+videoControls.getVisibility());
-            if (controlVisbilityPreference.isHideControl()) {
-                controlVisbilityPreference.setHideControl(false);
-                topBar.setVisibility(View.GONE);
-                videoControls.setVisibility(View.GONE);
-            } else {
-                controlVisbilityPreference.setHideControl(true);
-                topBar.setVisibility(View.VISIBLE);
-                videoControls.setVisibility(View.VISIBLE);
-            }
-        }
-        else{
-            if(isUseFCPlayer()) {
+        if(isUseFCPlayer()) {
                 if (VERBOSE) Log.d(TAG, "hide = " + controlVisbilityPreference.isHideControl());
                 playCircle.setImageDrawable(getResources().getDrawable(R.drawable.ic_play_circle_outline));
                 if (controlVisbilityPreference.isHideControl()) {
@@ -614,7 +496,7 @@ MediaPlayer.OnErrorListener, Serializable{
                     showAllControls();
                 }
             }
-            else{
+        else{
                 removeVideoControls();
                 setupPlayCircleForExternalPlayer();
                 if (controlVisbilityPreference.isHideControl()) {
@@ -625,7 +507,6 @@ MediaPlayer.OnErrorListener, Serializable{
                     topBar.setVisibility(View.VISIBLE);
                     controlVisbilityPreference.setHideControl(true);
                 }
-            }
         }
     }
 
@@ -651,7 +532,7 @@ MediaPlayer.OnErrorListener, Serializable{
                 showAllControls();
                 showTimeElapsed();
                 calculateAndDisplayEndTime(Integer.parseInt(duration), true);
-                videoSeek.setProgressTintList(ColorStateList.valueOf(getResources().getColor(R.color.turqoise)));
+                videoSeek.setProgressTintList(ColorStateList.valueOf(getResources().getColor(R.color.uiAccent)));
                 videoSeek.setMax(Integer.parseInt(duration));
                 videoSeek.setProgress(0);
                 videoSeek.setOnSeekBarChangeListener(seekBarChangeListener);
@@ -773,14 +654,6 @@ MediaPlayer.OnErrorListener, Serializable{
     public void setIsPlayCompleted(boolean playCompleted){
         isCompleted = playCompleted;
     }
-    public boolean isImage()
-    {
-        if(path.endsWith(getResources().getString(R.string.IMG_EXT)) || path.endsWith(getResources().getString(R.string.ANOTHER_IMG_EXT))){
-            return true;
-        }
-        return false;
-    }
-
     public MediaView getMediaView(){
         return videoView;
     }
@@ -863,33 +736,11 @@ MediaPlayer.OnErrorListener, Serializable{
         super.onResume();
         if(VERBOSE)Log.d(TAG,"onResume, visible? ="+getUserVisibleHint());
         if(VERBOSE)Log.d(TAG,"Path = "+fileMedia[framePosition].getPath());
-        if(!isImage()){
-            previousPos = 0;
-            savedVideo = getActivity().getIntent().getParcelableExtra("saveVideoForMinimize");
-            if(VERBOSE)Log.d(TAG,"SAVED VIDEO = "+savedVideo);
-        }
+        previousPos = 0;
+        savedVideo = getActivity().getIntent().getParcelableExtra("saveVideoForMinimize");
+        if(VERBOSE)Log.d(TAG,"SAVED VIDEO = "+savedVideo);
         if(getUserVisibleHint()){
-            if(isImage()) {
-                if(controlVisbilityPreference.isHideControl()) {
-                    if(VERBOSE)Log.d(TAG, "show controls onResume");
-                    topBar.setVisibility(View.VISIBLE);
-                    videoControls.setVisibility(View.VISIBLE);
-                    //Do NOT remove below method call.
-                    //When user navigates here directly from Gallery,
-                    //this is necessary to hide the video controls for an image,
-                    //since onPageSelected is not called.
-                    removeVideoControls();
-                }
-                else{
-                    if(VERBOSE)Log.d(TAG,"hide controls onResume");
-                    topBar.setVisibility(View.GONE);
-                    videoControls.setVisibility(View.GONE);
-                }
-                pause.setVisibility(View.GONE);
-            }
-            else{
-                videoView.setVisibility(View.VISIBLE);
-            }
+            videoView.setVisibility(View.VISIBLE);
         }
     }
 
@@ -901,11 +752,9 @@ MediaPlayer.OnErrorListener, Serializable{
         if (videoView != null) {
             if(VERBOSE)Log.d(TAG, "Save media state hide = "+controlVisbilityPreference.isHideControl());
         }
-        if(!isImage()) {
-            if (getUserVisibleHint()) {
-                mediaPositionForMinimize = mediaPlayer.getCurrentPosition();
-                isMediaPlayingForMinmize = mediaPlayer.isPlaying();
-            }
+        if (getUserVisibleHint()) {
+            mediaPositionForMinimize = mediaPlayer.getCurrentPosition();
+            isMediaPlayingForMinmize = mediaPlayer.isPlaying();
         }
     }
 

@@ -45,7 +45,7 @@ public class MediaUtil {
         String phoneLoc = appContext.getResources().getString(R.string.phoneLocation);
         String sdcardLoc = appContext.getResources().getString(R.string.sdcardLocation);
         if(sharedPreferences.getString(Constants.MEDIA_LOCATION_VIEW_SELECT, phoneLoc).equalsIgnoreCase(phoneLoc)) {
-            dcimFc = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + appContext.getResources().getString(R.string.FC_ROOT));
+            dcimFc = MediaStorage.getPhoneMediaDirectory(appContext);
             Log.d(TAG, "PHONE For Gallery");
         }
         else if(sharedPreferences.getString(Constants.MEDIA_LOCATION_VIEW_SELECT, phoneLoc).equalsIgnoreCase(sdcardLoc)){
@@ -56,7 +56,7 @@ public class MediaUtil {
         else{
             //Combine ALL media content
             allLoc = true;
-            File phoneMedia = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + appContext.getResources().getString(R.string.FC_ROOT));
+            File phoneMedia = MediaStorage.getPhoneMediaDirectory(appContext);
             File sdcardMedia = new File(sharedPreferences.getString(Constants.SD_CARD_PATH, ""));
             File[] phonemediaFiles;
             File[] sdcardmediaFiles = null;
@@ -136,7 +136,7 @@ public class MediaUtil {
         File dcimFc;
         SharedPreferences sharedPreferences = appContext.getSharedPreferences(Constants.FC_SETTINGS, Context.MODE_PRIVATE);
         if(sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)) {
-            dcimFc = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + appContext.getResources().getString(R.string.FC_ROOT));
+            dcimFc = MediaStorage.getPhoneMediaDirectory(appContext);
             Log.d(TAG, "PHONE");
         }
         else{
@@ -151,7 +151,8 @@ public class MediaUtil {
         File[] mediaFiles = media.listFiles();
         if(media.exists() && media.isDirectory() && mediaFiles != null && mediaFiles.length > 0){
             media.listFiles((file) -> {
-                if (!file.isDirectory()) {
+                if (!file.isDirectory() && file.getName().startsWith(appContext.getResources().getString(R.string.FC_VID_PREFIX))
+                        && file.getName().endsWith(appContext.getResources().getString(R.string.VID_EXT))) {
                     FileMedia fileMedia = new FileMedia();
                     fileMedia.setPath(file.getPath());
                     fileMedia.setLastModified(file.lastModified());
@@ -168,10 +169,9 @@ public class MediaUtil {
         File[] mediaFiles = media.listFiles();
         if(media.exists() && media.isDirectory() && mediaFiles != null && mediaFiles.length > 0){
             mediaFiles = media.listFiles((file) -> {
-                if (!file.isDirectory() && (file.getPath().endsWith(appContext.getResources().getString(R.string.IMG_EXT)) ||
-                        file.getPath().endsWith(appContext.getResources().getString(R.string.ANOTHER_IMG_EXT)) ||
-                        file.getPath().endsWith(appContext.getResources().getString(R.string.VID_EXT)) && (file.getName().startsWith(appContext.getResources().getString(R.string.FC_VID_PREFIX)) ||
-                                file.getName().startsWith(appContext.getResources().getString(R.string.FC_IMG_PREFIX))))) {
+                if (!file.isDirectory()
+                        && file.getName().startsWith(appContext.getResources().getString(R.string.FC_VID_PREFIX))
+                        && file.getName().endsWith(appContext.getResources().getString(R.string.VID_EXT))) {
                     return true;
                 }
                 return false;
@@ -209,19 +209,6 @@ public class MediaUtil {
             }
         }
         return false;
-    }
-
-    public static int getPhotosCount(){
-        int count = 0;
-        if(mediaList != null && mediaList.length > 0){
-            for(int i=0;i<mediaList.length;i++){
-                if(mediaList[i].getPath().endsWith(appContext.getResources().getString(R.string.IMG_EXT)) ||
-                        mediaList[i].getPath().endsWith(appContext.getResources().getString(R.string.ANOTHER_IMG_EXT))){
-                    count++;
-                }
-            }
-        }
-        return count;
     }
 
     public static int getVideosCount() {

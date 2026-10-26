@@ -3,6 +3,7 @@ package com.flipcam;
 import android.app.Dialog;
 import android.app.LoaderManager;
 import android.appwidget.AppWidgetManager;
+import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -10,8 +11,8 @@ import android.content.IntentFilter;
 import android.content.Loader;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
+import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -24,21 +25,19 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.FileProvider;
 
 import com.flipcam.adapter.MediaAdapter;
 import com.flipcam.adapter.MediaLoader;
 import com.flipcam.constants.Constants;
 import com.flipcam.media.FileMedia;
+import com.flipcam.util.MediaStorage;
 import com.flipcam.util.MediaUtil;
 import com.flipcam.util.SDCardUtil;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-
-import butterknife.BindView;
-import butterknife.ButterKnife;
-
-import static android.os.Environment.getExternalStoragePublicDirectory;
 
 public class GalleryActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<FileMedia[]>{
 
@@ -55,17 +54,11 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
     IntentFilter mediaFilters;
     SDCardEventReceiver sdCardEventReceiver;
     boolean sdCardUnavailWarned = false;
-    @BindView(R.id.mediaCount)
     TextView mediaCount;
-    @BindView(R.id.mediaGrid)
     GridView mediaGrid;
-    @BindView(R.id.mediaSource)
     TextView mediaSource;
-    @BindView(R.id.gridHeader)
     LinearLayout gridHeader;
-    @BindView(R.id.videoCapture)
     FloatingActionButton videoCapture;
-    @BindView(R.id.openMediaProgress)
     ProgressBar openMediaProgress;
     ControlVisbilityPreference controlVisbilityPreference;
     FileMedia[] medias;
@@ -79,9 +72,15 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        com.flipcam.util.BackNavigation.register(this);
         if(VERBOSE)Log.d(TAG, "onCreate");
         setContentView(R.layout.activity_media_grid);
-        ButterKnife.bind(this);
+        mediaCount = findViewById(R.id.mediaCount);
+        mediaGrid = findViewById(R.id.mediaGrid);
+        mediaSource = findViewById(R.id.mediaSource);
+        gridHeader = findViewById(R.id.gridHeader);
+        videoCapture = findViewById(R.id.videoCapture);
+        openMediaProgress = findViewById(R.id.openMediaProgress);
         sdCardEventReceiver = new SDCardEventReceiver();
         mediaFilters = new IntentFilter();
         getSupportActionBar().hide();
@@ -136,7 +135,7 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
         if(medias != null && medias.length > 0) {
             noImage.setVisibility(View.GONE);
             noImageText.setVisibility(View.GONE);
-            mediaCount.setText(getResources().getString(R.string.galleryCount, MediaUtil.getPhotosCount(), MediaUtil.getVideosCount()));
+            mediaCount.setText(getResources().getString(R.string.galleryCount, MediaUtil.getVideosCount()));
             MediaAdapter mediaAdapter = new MediaAdapter(getApplicationContext(), medias);
             mediaGrid.setAdapter(mediaAdapter);
             mediaGrid.invalidate();
@@ -153,19 +152,20 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
                 }
             });
             mediaGrid.setOnItemClickListener((adapterView, view, position, l) -> {
-                mediaGrid.setClickable(false);
-                openMediaProgress.setVisibility(View.VISIBLE);
-                if(VERBOSE)Log.d(TAG, "onItemSelected = "+position);
-                Intent mediaAct = new Intent(getApplicationContext(), MediaActivity.class);
-                mediaAct.putExtra("fromGallery",true);
-                mediaAct.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_NEW_TASK);
-                controlVisbilityPreference.setFromGallery(true);
-                controlVisbilityPreference.setMediaSelectedPosition(position);
-                SharedPreferences.Editor mediaLocEdit = sharedPreferences.edit();
-                mediaLocEdit.putString(Constants.MEDIA_LOCATION_VIEW_SELECT, selectedFolder);
-                mediaLocEdit.commit();
-                if(VERBOSE) Log.d(TAG, "SAVE selectedFolder = "+selectedFolder);
-                startActivity(mediaAct);
+                openMediaProgress.setVisibility(View.GONE);
+                if (medias == null || position < 0 || position >= medias.length) return;
+                try {
+                    Uri videoUri = FileProvider.getUriForFile(
+                            this,
+                            BuildConfig.APPLICATION_ID + ".provider",
+                            new java.io.File(medias[position].getPath()));
+                    Intent viewIntent = new Intent(Intent.ACTION_VIEW);
+                    viewIntent.setDataAndType(videoUri, "video/mp4");
+                    viewIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    startActivity(Intent.createChooser(viewIntent, null));
+                } catch (ActivityNotFoundException noVideoApp) {
+                    Toast.makeText(this, "No installed app can open this video", Toast.LENGTH_SHORT).show();
+                }
             });
             if(VERBOSE)Log.d(TAG, "selectedMedia Pos = "+controlVisbilityPreference.getMediaSelectedPosition());
             if(controlVisbilityPreference.getMediaSelectedPosition() != -1 && controlVisbilityPreference.getMediaSelectedPosition() < medias.length){
@@ -173,7 +173,7 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
             }
         }
         else{
-            mediaCount.setText(getResources().getString(R.string.galleryCount, 0, 0));
+            mediaCount.setText(getResources().getString(R.string.galleryCount, 0));
             noImage.setVisibility(View.VISIBLE);
             noImageText.setVisibility(View.VISIBLE);
             //Refresh Media Grid to remove any earlier stored media previews
@@ -181,8 +181,10 @@ public class GalleryActivity extends AppCompatActivity implements LoaderManager.
         }
         //Set Location Info
         if(sharedPreferences.getString(Constants.MEDIA_LOCATION_VIEW_SELECT, phoneLoc).equalsIgnoreCase(phoneLoc)) {
-            String defaultMediaPath = getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + getResources().getString(R.string.FC_ROOT)).getPath();
-            String mediaPath = PreferenceManager.getDefaultSharedPreferences(this).getString(Constants.MEDIA_FILE_PATH, defaultMediaPath);
+            String defaultMediaPath = MediaStorage.getPhoneMediaDirectory(this).getPath();
+            String mediaPath = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q
+                    ? defaultMediaPath
+                    : PreferenceManager.getDefaultSharedPreferences(this).getString(Constants.MEDIA_FILE_PATH, defaultMediaPath);
             mediaSource.setText(mediaPath);
         }
         else{
