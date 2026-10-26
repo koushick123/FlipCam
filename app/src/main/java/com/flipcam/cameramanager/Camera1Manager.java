@@ -182,10 +182,11 @@ public class Camera1Manager implements CameraOperations, Camera.OnZoomChangeList
     public void releaseCamera() {
         previewStarted = false;
         previewSurfaceTexture = null;
-        if (mCamera == null) return;
-        mCamera.release();
+        Camera releasing = mCamera;
         mCamera = null;
+        parameters = null;
         zoomChangeListener = false;
+        if (releasing != null) releasing.release();
     }
 
     @Override

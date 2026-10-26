@@ -254,15 +254,17 @@ public class VideoFragment extends Fragment{
                 thumbnail.setClickable(false);
                 toggleAudio.setClickable(false);
 
-                cameraView.switchCamera();
-                getZoomBar().setProgress(0);
-                cameraActivity.getPinchZoomGestureListener().setProgress(0);
-
-                zoombar.setProgress(0);
-                startRecord.setClickable(true);
-                flash.setClickable(true);
-                thumbnail.setClickable(true);
-                toggleAudio.setClickable(true);
+                try {
+                    cameraView.switchCamera();
+                    getZoomBar().setProgress(0);
+                    cameraActivity.getPinchZoomGestureListener().setProgress(0);
+                    zoombar.setProgress(0);
+                } finally {
+                    startRecord.setClickable(true);
+                    flash.setClickable(true);
+                    thumbnail.setClickable(true);
+                    toggleAudio.setClickable(true);
+                }
             }
         });
         startRecord = (ImageButton)view.findViewById(R.id.cameraRecord);
@@ -270,6 +272,10 @@ public class VideoFragment extends Fragment{
         startRecord.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                if (!cameraView.isCameraReady()) {
+                    cameraView.openCameraAndStartPreview();
+                    return;
+                }
                 startRecord.setClickable(false);
                 switchCamera.setClickable(false);
                 thumbnail.setClickable(false);

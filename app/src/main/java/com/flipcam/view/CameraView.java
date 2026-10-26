@@ -55,6 +55,8 @@ import com.flipcam.cameramanager.Camera1Manager;
 import com.flipcam.cameramanager.Camera2Manager;
 import com.flipcam.constants.Constants;
 import com.flipcam.util.GLUtil;
+import com.flipcam.util.CameraSessionRecovery;
+import androidx.appcompat.app.AlertDialog;
 import com.flipcam.util.MediaStorage;
 import com.flipcam.util.MediaUtil;
 import com.flipcam.util.SDCardUtil;
@@ -617,22 +619,92 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
 
     boolean isSwitch = false;
 
-    public void switchCamera()
-    {
-        if(backCamera)
-        {
-            setBackCamera(false);
+    private boolean cameraTransitionInProgress;
+    private AlertDialog cameraFailureDialog;
+
+    public void switchCamera() {
+        if (cameraTransitionInProgress) return;
+        final boolean previousFacing = backCamera;
+        final String previousResolution = sharedPreferences.getString(Constants.SELECT_VIDEO_RESOLUTION, null);
+        cameraTransitionInProgress = true;
+        try {
+            unregisterAccelSensor();
+            CameraSessionRecovery.Result result = CameraSessionRecovery.switchFacing(previousFacing,
+                    cameraSession(previousFacing, previousResolution));
+            backCamera = result.backFacing;
+            if (!result.available) cameraUnavailable(result.failure);
+            else {
+                dismissCameraFailure();
+                if (result.restored) {
+                    Log.w(TAG, "Camera switch failed; original camera restored", result.failure);
+                    Toast.makeText(getContext(), R.string.cameraSwitchRestored, Toast.LENGTH_LONG).show();
+                }
+            }
+        } finally {
+            cameraTransitionInProgress = false;
         }
-        else
-        {
-            setBackCamera(true);
+    }
+
+    private CameraSessionRecovery.Session cameraSession(boolean previousFacing, String previousResolution) {
+        return new CameraSessionRecovery.Session() {
+            @Override public void close() { stopAndReleaseCamera(); }
+            @Override public boolean isReady() { return camera1.isCameraReady(); }
+            @Override public void open(boolean facing) {
+                backCamera = facing;
+                if (facing == previousFacing && previousResolution != null) {
+                    sharedPreferences.edit().putString(Constants.SELECT_VIDEO_RESOLUTION, previousResolution).apply();
+                }
+                setSwitch(true);
+                isFocusModeSupported = false;
+                configureCameraAndStartPreview();
+                // Drain a pending texture frame that may have arrived while the camera
+                // was closed; otherwise a failed teardown can stall frame notifications.
+                if (cameraHandler != null) cameraHandler.sendEmptyMessage(Constants.FRAME_AVAILABLE);
+            }
+        };
+    }
+
+    private void dismissCameraFailure() {
+        if (cameraFailureDialog != null) {
+            cameraFailureDialog.dismiss();
+            cameraFailureDialog = null;
         }
-        focusMode = camera1.getFocusMode();
-        stopAndReleaseCamera();
-        unregisterAccelSensor();
-        setSwitch(true);
-        isFocusModeSupported = false;
-        openCameraAndStartPreview();
+    }
+
+    private void cameraUnavailable(RuntimeException failure) {
+        Log.e(TAG, "Camera unavailable after recovery", failure);
+        // Preserve the recorder/output long enough to finalize an existing recording.
+        if (isRecord()) {
+            setRecord(false);
+            setKeepScreenOn(false);
+            stopTimerThread();
+            if (orientationEventListener != null) orientationEventListener.enable();
+            System.arraycopy(IDENTITY_MATRIX, 0, RECORD_IDENTITY_MATRIX, 0, IDENTITY_MATRIX.length);
+            rotationAngle = 0f;
+            hidePauseText();
+            audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_UNMUTE, 0);
+            cameraHandler.removeMessages(Constants.RECORD_PAUSE);
+            cameraHandler.removeMessages(Constants.RECORD_RESUME);
+            cameraHandler.sendEmptyMessage(Constants.RECORD_STOP);
+        }
+        mainHandler.post(() -> {
+            if (getWindowToken() == null || !getHolder().getSurface().isValid()
+                    || (cameraFailureDialog != null && cameraFailureDialog.isShowing())) return;
+            cameraFailureDialog = new AlertDialog.Builder(getContext())
+                    .setTitle(R.string.cameraUnavailableTitle)
+                    .setMessage(R.string.cameraUnavailableMessage)
+                    .setCancelable(false)
+                    .setPositiveButton(R.string.cameraRetry, (dialog, which) -> {
+                        cameraFailureDialog = null;
+                        openCameraAndStartPreview();
+                    })
+                    .setNegativeButton(R.string.cameraClose, (dialog, which) -> {
+                        cameraFailureDialog = null;
+                        if (getContext() instanceof android.app.Activity) {
+                            ((android.app.Activity) getContext()).finish();
+                        }
+                    }).show();
+        });
     }
 
     public void flashOnOff(boolean flashOn)
@@ -685,12 +757,24 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     }
 
     //This method sets all the camera parameters and opens the camera. Same is called when you switch the camera.
-    public void openCameraAndStartPreview()
+    public void openCameraAndStartPreview() {
+        if (cameraTransitionInProgress) return;
+        cameraTransitionInProgress = true;
+        try {
+            CameraSessionRecovery.Result result = CameraSessionRecovery.open(backCamera,
+                    cameraSession(backCamera, sharedPreferences.getString(Constants.SELECT_VIDEO_RESOLUTION, null)));
+            if (!result.available) cameraUnavailable(result.failure);
+            else dismissCameraFailure();
+        } finally {
+            cameraTransitionInProgress = false;
+        }
+    }
+
+    private void configureCameraAndStartPreview()
     {
         if(!isCameraPermissionAvailable()){
             if(VERBOSE)Log.d(TAG,"Permission turned off mostly at settings");
-            this.videoFragment.askForPermissionAgain();
-            return;
+            throw new SecurityException("Camera or microphone permission is unavailable");
         }
         camera1.setSurfaceView(this);
         setStopCamera(false);
@@ -958,9 +1042,12 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         }
     }
 
-    private void stopAndReleaseCamera(){
-        camera1.stopPreview();
-        camera1.releaseCamera();
+    private void stopAndReleaseCamera() {
+        // A failing stop must never skip release or leave a partially opened camera behind.
+        try { camera1.stopPreview(); }
+        catch (RuntimeException error) { Log.w(TAG, "Unable to stop camera preview", error); }
+        try { camera1.releaseCamera(); }
+        catch (RuntimeException error) { Log.w(TAG, "Unable to release camera", error); }
     }
 
     @Override
@@ -1023,6 +1110,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
 
     @Override
     public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
+        dismissCameraFailure();
         if(VERBOSE)Log.d(TAG,"surfaceDestroyed = "+surfaceHolder);
         if(VERBOSE)Log.d(TAG,"cameraHandler = "+cameraHandler);
         orientationEventListener.disable();
