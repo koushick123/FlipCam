@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="cameraSwitchRestored">Could not switch cameras. Your previous camera has been restored.</string>
+    <string name="cameraSwitchFrontFailed">Unable to switch to front camera. Please try again later.</string>
+    <string name="cameraSwitchRearFailed">Unable to switch to rear camera. Please try again later.</string>
     <string name="cameraUnavailableTitle">Camera unavailable</string>
     <string name="cameraUnavailableMessage">The camera could not be opened. Close other apps using the camera, check camera and microphone permissions, then retry. If a recording was in progress, FlipCam will try to save it.</string>
     <string name="cameraRetry">Retry</string>

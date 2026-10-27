@@ -105,7 +105,6 @@ public class VideoFragment extends Fragment{
     View settingsMsgRoot;
     Dialog settingsMsgDialog;
     Context mContext;
-    private static VideoFragment fragment = null;
     PinchZoomGestureListener pinchZoomGestureListener;
     int audioSampleRate = -1;
     int audioBitRate = -1;
@@ -114,10 +113,8 @@ public class VideoFragment extends Fragment{
 
     public static VideoFragment newInstance() {
         Log.d(TAG, "NEW INSTANCE");
-        if(fragment == null) {
-            fragment = new VideoFragment();
-        }
-        return fragment;
+        // A fragment belongs to one FragmentManager/activity lifetime.
+        return new VideoFragment();
     }
 
     public interface PermissionInterface{
@@ -177,8 +174,9 @@ public class VideoFragment extends Fragment{
         // Apply the aligned preview controls after the activity's overlay has
         // completed its first layout so they are present on the initial camera
         // preview, not only after a surface or recording transition.
+        final View initializedView = getView();
         settingsBar.post(() -> {
-            if (getView() != null && cameraView != null && !cameraView.isRecord()) {
+            if (getView() == initializedView && cameraView != null && !cameraView.isRecord()) {
                 showRecordAndThumbnail();
                 getLatestFileIfExists();
             }
@@ -186,9 +184,29 @@ public class VideoFragment extends Fragment{
     }
 
     @Override
-    public void onCreate(@androidx.annotation.Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setRetainInstance(true);
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        // This also initializes framework-restored instances.
+        mContext = context.getApplicationContext();
+    }
+
+    @Override
+    public void onDestroyView() {
+        if (cameraView != null) cameraView.clearUiCallbacks();
+        if (orientationEventListener != null) orientationEventListener.disable();
+        if (warningMsg != null) warningMsg.dismiss();
+        if (settingsMsgDialog != null) settingsMsgDialog.dismiss();
+        cameraView = null;
+        cameraActivity = null;
+        zoombar = null; switchCamera = null; startRecord = null; flash = null;
+        substitute = null; thumbnail = null; videoBar = null; settingsBar = null;
+        timeElapsed = null; memoryConsumed = null; stopRecord = null; pauseRecord = null;
+        resInfo = null; modeLayout = null; flashParentLayout = null; thumbnailParent = null;
+        warningMsgRoot = null; warningMsg = null; settingsMsgRoot = null; settingsMsgDialog = null;
+        layoutInflater = null; okButton = null; pauseText = null; toggleAudio = null;
+        permissionInterface = null; lowestThresholdCheckForVideoInterface = null;
+        pinchZoomGestureListener = null; orientationEventListener = null;
+        super.onDestroyView();
     }
 
     public CameraView getCameraView() {
@@ -1167,7 +1185,6 @@ public class VideoFragment extends Fragment{
         if(firstFrame == null){
             Log.e(TAG, "No video frame could be decoded for thumbnail: " + mediaPath
                     + " (" + video.length() + " bytes)");
-            addMediaToDB();
             showRecordSaved();
             setPlaceholderThumbnail();
             thumbnail.setClickable(true);
@@ -1184,7 +1201,6 @@ public class VideoFragment extends Fragment{
             isDetached=true;
         }
         showRecordSaved();
-        addMediaToDB();
         if(!isDetached) {
             thumbnail.setVisibility(View.VISIBLE);
             thumbnailParent.setVisibility(View.VISIBLE);

@@ -127,8 +127,14 @@ VideoFragment.LowestThresholdCheckForVideoInterface
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
             getWindow().setNavigationBarContrastEnforced(false);
         }
-        if(savedInstanceState == null) {
-            //Start with video fragment
+        // FragmentManager restores its fragment before onStart. Rebind the
+        // activity field as well, instead of leaving it null after recreation.
+        androidx.fragment.app.Fragment restored = getSupportFragmentManager()
+                .findFragmentById(R.id.cameraPreview);
+        if (restored instanceof VideoFragment) {
+            videoFragment = (VideoFragment) restored;
+            videoFragment.setApplicationContext(getApplicationContext());
+        } else {
             showVideoFragment();
         }
         layoutInflater = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);

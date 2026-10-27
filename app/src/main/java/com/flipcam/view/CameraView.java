@@ -50,6 +50,9 @@ import androidx.core.content.ContextCompat;
 import com.flipcam.CameraActivity;
 import com.flipcam.R;
 import com.flipcam.VideoFragment;
+import com.flipcam.clip.LatestRecordingStore;
+import com.flipcam.data.MediaTableConstants;
+import android.net.Uri;
 import com.flipcam.camerainterface.CameraOperations;
 import com.flipcam.cameramanager.Camera1Manager;
 import com.flipcam.cameramanager.Camera2Manager;
@@ -138,6 +141,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     CameraOperations camera1;
     boolean isFocusModeSupported=false;
     int orientation = -1;
+    private volatile int transitionOrientation = -1;
     OrientationEventListener orientationEventListener;
     volatile int hour=0;
     volatile int minute=0;
@@ -317,6 +321,11 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         @Override
         public void handleMessage(Message msg) {
             camView = cameraView.get();
+            if (camView == null || !camView.isAttachedToWindow()
+                    || videoFragment == null || videoFragment.getCameraView() != camView
+                    || videoFragment.getView() == null || videoFragment.getActivity() == null
+                    || videoFragment.getActivity().isFinishing()
+                    || videoFragment.getActivity().isDestroyed()) return;
             switch(msg.what)
             {
                 case Constants.SHOW_ELAPSED_TIME:
@@ -366,6 +375,11 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         }
     }
 
+    /** UI callbacks belong to this view, not a later fragment view. */
+    public void clearUiCallbacks() {
+        if (mainHandler != null) mainHandler.removeCallbacksAndMessages(null);
+    }
+
     void waitUntilReady()
     {
         if(VERBOSE)Log.d(TAG,"Waiting....");
@@ -386,6 +400,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     //like this on the main thread.
     @Override
     public void onFrameAvailable(SurfaceTexture surfaceTexture) {
+        // Ignore callbacks already queued by a disconnected camera producer.
+        if (surfaceTexture != GLUtil.getSurfaceTexture() || cameraHandler == null) return;
         if(FRAME_VERBOSE)Log.d(TAG,"FRAME Available now");
         if(FRAME_VERBOSE)Log.d(TAG,"is Record = "+isRecord());
         cameraHandler.sendEmptyMessage(Constants.FRAME_AVAILABLE);
@@ -619,37 +635,95 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
 
     boolean isSwitch = false;
 
-    private boolean cameraTransitionInProgress;
+    private volatile boolean cameraTransitionInProgress;
     private AlertDialog cameraFailureDialog;
+    private Toast switchFailureToast;
+    private boolean switchPreviousFacing;
+    private boolean switchRequestedFacing;
+    private volatile boolean switchMayRollback;
+    private volatile boolean switchSourceReady = true;
+
+    private void showSwitchFailure(boolean requestedBackFacing) {
+        mainHandler.post(() -> {
+            if (switchFailureToast != null) switchFailureToast.cancel();
+            switchFailureToast = Toast.makeText(getContext(), requestedBackFacing
+                    ? R.string.cameraSwitchRearFailed : R.string.cameraSwitchFrontFailed,
+                    Toast.LENGTH_LONG);
+            switchFailureToast.show();
+        });
+    }
+
+    /** A camera can open successfully yet never deliver frames. Roll back once. */
+    private void restoreCameraAfterMissingFrames() {
+        if (getWindowToken() == null || cameraTransitionInProgress) return;
+        cameraTransitionInProgress = true;
+        try {
+            CameraSessionRecovery.Result result = CameraSessionRecovery.open(switchPreviousFacing,
+                    cameraSession(switchPreviousFacing,
+                            sharedPreferences.getString(Constants.SELECT_VIDEO_RESOLUTION, null)));
+            backCamera = result.backFacing;
+            showSwitchFailure(switchRequestedFacing);
+            if (!result.available) cameraUnavailable(result.failure);
+        } finally {
+            cameraTransitionInProgress = false;
+            if (cameraHandler != null && camera1.isCameraReady()) {
+                cameraHandler.sendEmptyMessage(Constants.FRAME_AVAILABLE);
+            }
+        }
+    }
 
     public void switchCamera() {
         if (cameraTransitionInProgress) return;
+        CameraRenderer activeRenderer = cameraHandler == null ? null : cameraHandler.getCameraRendererInstance();
+        if (activeRenderer != null && activeRenderer.switchAnimationActive) return;
         final boolean previousFacing = backCamera;
         final String previousResolution = sharedPreferences.getString(Constants.SELECT_VIDEO_RESOLUTION, null);
+        switchPreviousFacing = previousFacing;
+        switchRequestedFacing = !previousFacing;
+        switchMayRollback = true;
         cameraTransitionInProgress = true;
+        if (cameraHandler != null) {
+            cameraHandler.post(() -> {
+                CameraRenderer renderer = cameraHandler.getCameraRendererInstance();
+                if (renderer != null) renderer.beginSwitchAnimation();
+            });
+        }
         try {
             unregisterAccelSensor();
             CameraSessionRecovery.Result result = CameraSessionRecovery.switchFacing(previousFacing,
                     cameraSession(previousFacing, previousResolution));
             backCamera = result.backFacing;
+            if (result.restored || !result.available) {
+                switchMayRollback = false;
+                showSwitchFailure(!previousFacing);
+            }
             if (!result.available) cameraUnavailable(result.failure);
             else {
                 dismissCameraFailure();
                 if (result.restored) {
                     Log.w(TAG, "Camera switch failed; original camera restored", result.failure);
-                    Toast.makeText(getContext(), R.string.cameraSwitchRestored, Toast.LENGTH_LONG).show();
                 }
             }
         } finally {
             cameraTransitionInProgress = false;
+            // Drain a queued producer buffer only after drawing is allowed again.
+            // A full SurfaceTexture queue can otherwise suppress the next notification
+            // when Retry reopens a camera without a running switch animation.
+            if (cameraHandler != null && camera1.isCameraReady()) {
+                cameraHandler.sendEmptyMessage(Constants.FRAME_AVAILABLE);
+            }
         }
     }
 
     private CameraSessionRecovery.Session cameraSession(boolean previousFacing, String previousResolution) {
         return new CameraSessionRecovery.Session() {
-            @Override public void close() { stopAndReleaseCamera(); }
+            @Override public void close() {
+                stopAndReleaseCamera();
+                replaceClosedCameraSource();
+            }
             @Override public boolean isReady() { return camera1.isCameraReady(); }
             @Override public void open(boolean facing) {
+                if (!switchSourceReady) throw new IllegalStateException("New camera texture could not be prepared");
                 backCamera = facing;
                 if (facing == previousFacing && previousResolution != null) {
                     sharedPreferences.edit().putString(Constants.SELECT_VIDEO_RESOLUTION, previousResolution).apply();
@@ -662,6 +736,50 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 if (cameraHandler != null) cameraHandler.sendEmptyMessage(Constants.FRAME_AVAILABLE);
             }
         };
+    }
+
+    /** Give the next producer its own queue; keep the frozen 2D snapshot untouched. */
+    private void replaceClosedCameraSource() {
+        CameraRenderer.CameraHandler handler = cameraHandler;
+        CameraRenderer renderer = handler == null ? null : handler.getCameraRendererInstance();
+        if (renderer == null || (!switchMayRollback && !renderer.switchAnimationActive)) {
+            switchSourceReady = true;
+            return;
+        }
+        switchSourceReady = false;
+        java.util.concurrent.CountDownLatch drained = new java.util.concurrent.CountDownLatch(1);
+        Runnable work = () -> {
+            try {
+                // A new/lifecycle-restored renderer has no frozen frame to preserve.
+                // Let its normal startup path attach the producer instead.
+                if (!renderer.switchAnimationActive) {
+                    switchSourceReady = true;
+                    return;
+                }
+                if (GLUtil.getmEGLConfig() != null && GLUtil.getSurfaceTexture() != null) {
+                    GLUtil.makeCurrent(GLUtil.getEglSurface());
+                    GLUtil.replaceCameraSurfaceTexture();
+                    GLUtil.getSurfaceTexture().setOnFrameAvailableListener(CameraView.this);
+                    renderer.lastCameraTimestampNs = 0;
+                    renderer.pendingCameraFrame = false;
+                    switchSourceReady = true;
+                }
+            } catch (RuntimeException error) {
+                Log.w(TAG, "Unable to prepare camera texture", error);
+            } finally {
+                drained.countDown();
+            }
+        };
+        if (android.os.Looper.myLooper() == handler.getLooper()) work.run();
+        else if (handler.post(work)) {
+            try {
+                if (!drained.await(1, java.util.concurrent.TimeUnit.SECONDS)) {
+                    Log.w(TAG, "Timed out preparing camera texture");
+                }
+            } catch (InterruptedException error) {
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 
     private void dismissCameraFailure() {
@@ -767,6 +885,12 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             else dismissCameraFailure();
         } finally {
             cameraTransitionInProgress = false;
+            // Drain a queued producer buffer only after drawing is allowed again.
+            // A full SurfaceTexture queue can otherwise suppress the next notification
+            // when Retry reopens a camera without a running switch animation.
+            if (cameraHandler != null && camera1.isCameraReady()) {
+                cameraHandler.sendEmptyMessage(Constants.FRAME_AVAILABLE);
+            }
         }
     }
 
@@ -914,7 +1038,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             setKeepScreenOn(true);
             videoTimer = startTimerThread();
             cameraHandler.sendEmptyMessage(Constants.RECORD_START);
-            orientationEventListener.disable();
+            // Keep observing posture for switch animation; the recording matrix stays locked.
             camera1.setRecordingHint();
         }
         else{
@@ -1062,6 +1186,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         orientationEventListener = new OrientationEventListener(getContext(), SensorManager.SENSOR_DELAY_UI){
             @Override
             public void onOrientationChanged(int i) {
+                if (i != OrientationEventListener.ORIENTATION_UNKNOWN) transitionOrientation = i;
+                // Sensor updates during capture must not change recording orientation.
+                if (isRecord()) return;
                 if(orientationEventListener.canDetectOrientation()) {
                     if(previousOrientation == -1) {
                         previousOrientation = orientation = i;
@@ -1111,6 +1238,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     @Override
     public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
         dismissCameraFailure();
+        if (cameraHandler != null) {
+            CameraRenderer renderer = cameraHandler.getCameraRendererInstance();
+            if (renderer != null) renderer.cancelSwitchAnimation();
+        }
         if(VERBOSE)Log.d(TAG,"surfaceDestroyed = "+surfaceHolder);
         if(VERBOSE)Log.d(TAG,"cameraHandler = "+cameraHandler);
         orientationEventListener.disable();
@@ -1194,6 +1325,17 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     private void scanSavedRecording() {
         final File savedVideo = videoFile;
         if (savedVideo == null || !savedVideo.isFile() || savedVideo.length() == 0) return;
+        Context appContext = getContext().getApplicationContext();
+        try {
+            LatestRecordingStore.recorded(appContext, savedVideo);
+            ContentValues saved = new ContentValues();
+            saved.put("filename", savedVideo.getAbsolutePath());
+            saved.put("memoryStorage", memoryPrefs.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true) ? "1" : "0");
+            appContext.getContentResolver().insert(
+                    Uri.parse(MediaTableConstants.BASE_CONTENT_URI + "/addMedia"), saved);
+        } catch (RuntimeException publicationError) {
+            Log.w(TAG, "Unable to publish finalized recording", publicationError);
+        }
         try {
             MediaScannerConnection.scanFile(getContext().getApplicationContext(),
                     new String[]{savedVideo.getAbsolutePath()}, new String[]{"video/mp4"},
@@ -1215,6 +1357,56 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         boolean isRecording = false;
         int viewWidth = 0;
         int viewHeight = 0;
+        private boolean hasCameraFrame;
+        private boolean pendingCameraFrame;
+        private long lastCameraTimestampNs;
+        private volatile boolean switchAnimationActive;
+        private long switchStartedNs;
+        private boolean switchLandscape;
+        private static final long SWITCH_FLIP_NS = 440_000_000L;
+        private long newCameraFrameNs;
+        private long lastSwitchRenderNs;
+        private int switchWarmupFrames;
+        private static final long SWITCH_BLUR_NS = 120_000_000L;
+        private static final long SWITCH_REVEAL_NS = 220_000_000L;
+        private static final long SWITCH_FRAME_NS = 33_333_333L;
+        private final Runnable switchAnimationTick = new Runnable() {
+            @Override public void run() {
+                if (!switchAnimationActive) return;
+                drawFrame(true);
+                if (switchAnimationActive) cameraHandler.postDelayed(this, 16);
+            }
+        };
+
+        void beginSwitchAnimation() {
+            if (!hasCameraFrame || GLUtil.getmEGLConfig() == null) return;
+            cameraHandler.removeCallbacks(switchAnimationTick);
+            GLUtil.makeCurrent(GLUtil.getEglSurface());
+            if (!GLUtil.freezeCameraFrame(Math.max(1, getWidth()), Math.max(1, getHeight()), mTmpMatrix)) {
+                Log.w(TAG, "Snapshot unavailable; retaining the last camera texture during switch");
+            }
+            switchAnimationActive = true;
+            switchStartedNs = System.nanoTime();
+            int posture = transitionOrientation;
+            if (posture < 0) posture = portrait ? 0 : 90;
+            int quadrant = ((posture + 45) / 90) % 4;
+            switchLandscape = quadrant == 1 || quadrant == 3;
+            newCameraFrameNs = 0;
+            lastSwitchRenderNs = 0;
+            switchWarmupFrames = 0;
+            pendingCameraFrame = false;
+            cameraHandler.post(switchAnimationTick);
+        }
+
+        void cancelSwitchAnimation() {
+            switchAnimationActive = false;
+            switchMayRollback = false;
+            switchSourceReady = true;
+            cameraHandler.removeCallbacks(switchAnimationTick);
+            GLUtil.setFrameOpacity(1f);
+            GLUtil.endFrameTransition();
+        }
+
         public CameraRenderer()
         {
             //Empty constructor
@@ -1347,14 +1539,79 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             return phonePath.toString();
         }
 
-        void drawFrame()
+        void drawFrame() { drawFrame(false); }
+
+        private void drawFrame(boolean animationTick)
         {
-            if(GLUtil.getmEGLConfig()!=null && camera1.isCameraReady()) {
+            long nowNs = System.nanoTime();
+            boolean ready = !cameraTransitionInProgress && camera1.isCameraReady();
+            if (!animationTick) pendingCameraFrame = true;
+            if (switchAnimationActive && !cameraTransitionInProgress && !camera1.isCameraReady()) {
+                cancelSwitchAnimation();
+            }
+            if (switchAnimationActive && newCameraFrameNs == 0
+                    && nowNs - switchStartedNs > 5_000_000_000L) {
+                if (switchMayRollback) {
+                    switchMayRollback = false;
+                    // Keep the frozen image blurred while restoring the prior camera.
+                    switchStartedNs = nowNs;
+                    switchWarmupFrames = 0;
+                    mainHandler.post(() -> restoreCameraAfterMissingFrames());
+                } else {
+                    cancelSwitchAnimation();
+                    mainHandler.post(() -> cameraUnavailable(
+                            new IllegalStateException("No frames after camera switch recovery")));
+                    return;
+                }
+            }
+            if (GLUtil.getmEGLConfig()!=null && (ready || switchAnimationActive) &&
+                    (hasCameraFrame || pendingCameraFrame)) {
                 GLUtil.makeCurrent(GLUtil.getEglSurface());
-                if(FRAME_VERBOSE) Log.d(TAG,"made current");
-                //Get next frame from camera
-                GLUtil.getSurfaceTexture().updateTexImage();
-                GLUtil.getSurfaceTexture().getTransformMatrix(mTmpMatrix);
+                boolean acquired = false;
+                if (ready && pendingCameraFrame && (!switchAnimationActive
+                        || nowNs - switchStartedNs >= SWITCH_BLUR_NS)) {
+                    GLUtil.getSurfaceTexture().updateTexImage();
+                    GLUtil.getSurfaceTexture().getTransformMatrix(mTmpMatrix);
+                    pendingCameraFrame = false;
+                    long cameraTimestampNs = GLUtil.getSurfaceTexture().getTimestamp();
+                    // Multiple notifications (including recovery's explicit queue drain)
+                    // can refer to one buffer. Do not finish the transition or count a
+                    // live preview frame until a genuinely new camera image is acquired.
+                    if (cameraTimestampNs > 0 && cameraTimestampNs != lastCameraTimestampNs) {
+                        lastCameraTimestampNs = cameraTimestampNs;
+                        hasCameraFrame = true;
+                        acquired = true;
+                        frameCount++;
+                        if (switchAnimationActive && newCameraFrameNs == 0 && ++switchWarmupFrames >= 2) {
+                            newCameraFrameNs = Math.max(nowNs, switchStartedNs + SWITCH_FLIP_NS);
+                        }
+                    }
+                }
+                if (!hasCameraFrame) return;
+                if (switchAnimationActive) {
+                    if (lastSwitchRenderNs != 0 && nowNs - lastSwitchRenderNs < SWITCH_FRAME_NS) return;
+                    lastSwitchRenderNs = nowNs;
+                    float progress = newCameraFrameNs == 0 ? 0f
+                            : Math.max(0f, Math.min(1f, (float)(nowNs - newCameraFrameNs) / SWITCH_REVEAL_NS));
+                    float mix = progress * progress * (3f - 2f * progress);
+                    float blur = newCameraFrameNs == 0
+                            ? Math.min(1f, (float)(nowNs - switchStartedNs) / SWITCH_BLUR_NS)
+                            : 1f - mix;
+                    float flip = Math.min(1f, (float)(nowNs - switchStartedNs) / SWITCH_FLIP_NS);
+                    GLUtil.setFrameTransition(blur, mix, flip, switchLandscape);
+                    if (newCameraFrameNs != 0 && progress >= 1f) {
+                        switchAnimationActive = false;
+                        switchMayRollback = false;
+                        cameraHandler.removeCallbacks(switchAnimationTick);
+                        GLUtil.endFrameTransition();
+                    }
+                } else {
+                    // Preserve the existing normal camera/recorder submission path.
+                    // Fresh capture timestamps gate the transition, not normal callback
+                    // delivery. Only discard a synthetic tick after its animation ends.
+                    if (animationTick && !acquired) return;
+                    GLUtil.setFrameOpacity(1f);
+                }
 
                 //Fill the surfaceview with Camera frame
                 viewWidth = getWidth();
@@ -1415,7 +1672,6 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                     EGL14.eglSwapBuffers(GLUtil.getmEGLDisplay(), encoderSurface);
                 }
             }
-            frameCount++;
             availableStatFs.restat(Environment.getDataDirectory().getPath());
             if(isRecord() && memoryPrefs.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)
                     && (availableStatFs.getAvailableBytes() < lowestMemory)) {
@@ -1522,6 +1778,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
 
         void shutdown()
         {
+            cancelSwitchAnimation();
             Looper.myLooper().quit();
         }
 
@@ -1540,6 +1797,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             }
 
             public CameraHandler(CameraRenderer cameraRenderer){
+                this.cameraRenderer = cameraRenderer;
                 cameraRender = new WeakReference<>(cameraRenderer);
             }
 

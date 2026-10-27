@@ -32,31 +32,75 @@ public class GLUtil {
     // Simple vertex shader, used for all programs.
     public static final String VERTEX_SHADER =
             "uniform mat4 uMVPMatrix;\n" +
-                    "uniform mat4 uTexMatrix;\n" +
+                    "uniform mediump mat4 uTexMatrix;\n" +
                     "attribute vec4 aPosition;\n" +
                     "attribute vec4 aTextureCoord;\n" +
                     "varying vec2 vTextureCoord;\n" +
+                    "varying vec2 vSnapshotCoord;\n" +
                     "void main() {\n" +
                     "    gl_Position = uMVPMatrix * aPosition;\n" +
                     "    vTextureCoord = (uTexMatrix * aTextureCoord).xy;\n" +
+                    "    vSnapshotCoord = aTextureCoord.xy;\n" +
                     "}\n";
 
     // Simple fragment shader for use with external 2D textures (e.g. what we get from
     // SurfaceTexture).
     public static final String FRAGMENT_SHADER_EXT =
             "#extension GL_OES_EGL_image_external : require\n" +
-                    "precision mediump float;\n" +
-                    "varying vec2 vTextureCoord;\n" +
-                    "uniform samplerExternalOES sTexture;\n" +
-                    "uniform float changer;\n" +
-                    "float r, g, b;\n" +
-                    "void main() {\n" +
-                    "    vec4 tex = texture2D(sTexture, vTextureCoord);\n" +
-                    "    r = clamp(tex.r + changer, 0.0, 1.0);\n" +
-                    "    g = clamp(tex.g + changer, 0.0, 1.0);\n" +
-                    "    b = clamp(tex.b + changer, 0.0, 1.0);\n" +
-                    "    gl_FragColor = vec4(r, g, b, tex.a);\n" +
-                    "}\n";
+            "precision mediump float;\n" +
+            "varying vec2 vTextureCoord;\n" +
+            "varying vec2 vSnapshotCoord;\n" +
+            "uniform samplerExternalOES sTexture;\n" +
+            "uniform sampler2D frozenTexture;\n" +
+            "uniform float changer;\n" +
+            "uniform float frameOpacity;\n" +
+            "uniform float transitionActive;\n" +
+            "uniform float transitionMix;\n" +
+            "uniform float blurAmount;\n" +
+            "uniform vec2 blurStep;\n" +
+            "uniform float flipScale;\n" +
+            "uniform vec2 flipAxis;\n" +
+            "uniform mediump mat4 uTexMatrix;\n" +
+            // Offsets are fractions of the image, transformed into the camera's
+            // coordinates as vectors (no translation). Clamp at the frame edges.
+            "vec4 sampleLive(vec2 delta) {\n" +
+            "    vec2 uv = vTextureCoord + (uTexMatrix * vec4(delta, 0.0, 0.0)).xy;\n" +
+            "    return texture2D(sTexture, clamp(uv, 0.0, 1.0));\n" +
+            "}\n" +
+            "vec4 sampleFrozen(vec2 delta) {\n" +
+            "    vec2 centered = vSnapshotCoord - vec2(0.5);\n" +
+            "    float span = max(abs(flipScale), 0.025);\n" +
+            "    vec2 card = centered + flipAxis * centered * (1.0 / span - 1.0);\n" +
+            "    card *= vec2(1.0) - flipAxis + flipAxis * (flipScale < 0.0 ? -1.0 : 1.0);\n" +
+            "    float distanceFromAxis = abs(dot(centered, flipAxis));\n" +
+            "    float inside = 1.0 - smoothstep(span * 0.5 - 0.008, span * 0.5, distanceFromAxis);\n" +
+            // Fill behind the rotating card with the same blurred snapshot, never black.
+            "    vec4 background = texture2D(frozenTexture, clamp(vSnapshotCoord + delta, 0.0, 1.0));\n" +
+            "    vec4 face = texture2D(frozenTexture, clamp(card + vec2(0.5) + delta, 0.0, 1.0));\n" +
+            "    return mix(background, face, inside);\n" +
+            "}\n" +
+            "void main() {\n" +
+            "    vec4 image = texture2D(sTexture, vTextureCoord);\n" +
+            "    if (transitionActive > 0.5) {\n" +
+            "        vec2 stepSize = blurStep * blurAmount;\n" +
+            "        vec4 oldImage = vec4(0.0);\n" +
+            "        vec4 newImage = vec4(0.0);\n" +
+            // A normalized separable binomial kernel evaluated in one pass.
+            // Bounded 25 taps per image, only while switching (GLES 2 compatible).
+            "        for (int y = -2; y <= 2; y++) {\n" +
+            "            float wy = y == 0 ? 6.0 : (abs(float(y)) == 1.0 ? 4.0 : 1.0);\n" +
+            "            for (int x = -2; x <= 2; x++) {\n" +
+            "                float wx = x == 0 ? 6.0 : (abs(float(x)) == 1.0 ? 4.0 : 1.0);\n" +
+            "                vec2 delta = vec2(float(x), float(y)) * stepSize;\n" +
+            "                float weight = wx * wy / 256.0;\n" +
+            "                oldImage += sampleFrozen(delta) * weight;\n" +
+            "                if (transitionMix > 0.0) newImage += sampleLive(delta) * weight;\n" +
+            "            }\n" +
+            "        }\n" +
+            "        image = mix(oldImage, newImage, transitionMix);\n" +
+            "    }\n" +
+            "    gl_FragColor = vec4(clamp(image.rgb + changer, 0.0, 1.0) * frameOpacity, image.a);\n" +
+            "}\n";
     /**
      * A "full" square, extending from -1 to +1 in both dimensions.  When the model/view/projection
      * matrix is identity, this will exactly cover the viewport.
@@ -243,6 +287,100 @@ public class GLUtil {
     }
 
     private static int changer;
+    private static int frameOpacityUniform;
+    private static volatile float frameOpacity = 1f;
+
+    public static void setFrameOpacity(float opacity) {
+        frameOpacity = Math.max(0f, Math.min(1f, opacity));
+    }
+    private static int frozenSamplerUniform, transitionActiveUniform, transitionMixUniform;
+    private static int blurAmountUniform, blurStepUniform, flipScaleUniform, flipAxisUniform;
+    private static float flipScale = 1f;
+    private static boolean flipLandscape;
+    private static int frozenTexture;
+    private static boolean transitionActive;
+    private static boolean capturingSnapshot;
+    private static float transitionMix, blurAmount;
+    private static float blurStepX, blurStepY;
+
+    /** Capture before acquiring any target-camera buffer; GPU-only, no readback. */
+    public static boolean freezeCameraFrame(int width, int height, float[] texMatrix) {
+        endFrameTransition();
+        if (frozenTexture != 0) {
+            GLES20.glDeleteTextures(1, new int[]{frozenTexture}, 0);
+            frozenTexture = 0;
+        }
+        int[] oldFramebuffer = new int[1];
+        int[] oldViewport = new int[4];
+        GLES20.glGetIntegerv(GLES20.GL_FRAMEBUFFER_BINDING, oldFramebuffer, 0);
+        GLES20.glGetIntegerv(GLES20.GL_VIEWPORT, oldViewport, 0);
+        // Keep snapshot memory bounded on 4K cameras and large displays. Aspect
+        // and blur radius are image-relative, independent of screen pixel count.
+        float scale = Math.min(1f, 1280f / Math.max(1, Math.max(width, height)));
+        int w = Math.max(1, Math.round(width * scale));
+        int h = Math.max(1, Math.round(height * scale));
+        int[] texture = new int[1], framebuffer = new int[1];
+        GLES20.glGenTextures(1, texture, 0);
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture[0]);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
+        GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, w, h, 0,
+                GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, null);
+        GLES20.glGenFramebuffers(1, framebuffer, 0);
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, framebuffer[0]);
+        GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER, GLES20.GL_COLOR_ATTACHMENT0,
+                GLES20.GL_TEXTURE_2D, texture[0], 0);
+        boolean complete = GLES20.glCheckFramebufferStatus(GLES20.GL_FRAMEBUFFER)
+                == GLES20.GL_FRAMEBUFFER_COMPLETE;
+        try {
+            if (complete) {
+                GLES20.glViewport(0, 0, w, h);
+                capturingSnapshot = true;
+                float[] identity = new float[16];
+                android.opengl.Matrix.setIdentityM(identity, 0);
+                draw(identity, createFloatBuffer(FULL_RECTANGLE_COORDS), 0, 4, 2,
+                        2 * SIZEOF_FLOAT, texMatrix, createFloatBuffer(FULL_RECTANGLE_TEX_COORDS),
+                        2 * SIZEOF_FLOAT);
+            }
+        } finally {
+            capturingSnapshot = false;
+            GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, oldFramebuffer[0]);
+            GLES20.glViewport(oldViewport[0], oldViewport[1], oldViewport[2], oldViewport[3]);
+            GLES20.glDeleteFramebuffers(1, framebuffer, 0);
+        }
+        if (!complete) {
+            GLES20.glDeleteTextures(1, texture, 0);
+            return false;
+        }
+        frozenTexture = texture[0];
+        transitionActive = true;
+        transitionMix = 0f;
+        blurAmount = 0f;
+        // Each kernel step is 0.8% of the shorter image dimension.
+        float radius = 0.008f * Math.min(w, h);
+        blurStepX = radius / w;
+        blurStepY = radius / h;
+        return true;
+    }
+
+    public static void setFrameTransition(float blur, float mix, float flipProgress, boolean landscape) {
+        flipScale = (float) Math.cos(Math.PI * Math.max(0f, Math.min(1f, flipProgress)));
+        flipLandscape = landscape;
+        blurAmount = Math.max(0f, Math.min(1f, blur));
+        transitionMix = Math.max(0f, Math.min(1f, mix));
+    }
+
+    public static void endFrameTransition() {
+        transitionActive = false;
+        flipScale = 1f;
+        transitionMix = 0f;
+        blurAmount = 0f;
+        // Texture lifetime is owned by the renderer's EGL context. Keep storage
+        // until the next snapshot/context teardown; cancellation may be on UI.
+    }
+
     private static int tex;
     public static float colorVal = 0.0f;
 
@@ -260,6 +398,17 @@ public class GLUtil {
          and has an Open Source license.
          https://github.com/google/grafika
          */
+    /** GL thread only, after the old camera has disconnected. Snapshot is a separate 2D texture. */
+    public static void replaceCameraSurfaceTexture() {
+        if (surfaceTexture != null) {
+            surfaceTexture.setOnFrameAvailableListener(null);
+            surfaceTexture.release();
+        }
+        if (mTextureId != 0) GLES20.glDeleteTextures(1, new int[]{mTextureId}, 0);
+        mTextureId = createGLTextureObject(mTextureTarget);
+        surfaceTexture = new SurfaceTexture(mTextureId);
+    }
+
     public static void createSurfaceTexture(SurfaceHolder surfaceHolder, EGLDisplay mEGLDisplay, EGLConfig mEGLConfig)
     {
         eglSurface = prepareWindowSurface(surfaceHolder.getSurface(), mEGLDisplay, mEGLConfig);
@@ -275,6 +424,18 @@ public class GLUtil {
         checkLocation(muTexMatrixLoc, "uTexMatrix");
         changer = GLES20.glGetUniformLocation(mProgramHandle, "changer");
         checkLocation(changer, "changer");
+        frameOpacityUniform = GLES20.glGetUniformLocation(mProgramHandle, "frameOpacity");
+        checkLocation(frameOpacityUniform, "frameOpacity");
+        frameOpacity = 1f;
+        frozenTexture = 0;
+        endFrameTransition();
+        frozenSamplerUniform = GLES20.glGetUniformLocation(mProgramHandle, "frozenTexture");
+        transitionActiveUniform = GLES20.glGetUniformLocation(mProgramHandle, "transitionActive");
+        transitionMixUniform = GLES20.glGetUniformLocation(mProgramHandle, "transitionMix");
+        flipScaleUniform = GLES20.glGetUniformLocation(mProgramHandle, "flipScale");
+        flipAxisUniform = GLES20.glGetUniformLocation(mProgramHandle, "flipAxis");
+        blurAmountUniform = GLES20.glGetUniformLocation(mProgramHandle, "blurAmount");
+        blurStepUniform = GLES20.glGetUniformLocation(mProgramHandle, "blurStep");
         tex = GLES20.glGetUniformLocation(mProgramHandle, "sTexture");
         checkLocation(tex, "sTexture");
         mTextureTarget = GLES11Ext.GL_TEXTURE_EXTERNAL_OES;
@@ -324,8 +485,20 @@ public class GLUtil {
         // Copy the texture transformation matrix over.
         GLES20.glUniformMatrix4fv(muTexMatrixLoc, 1, false, texMatrix, 0);
         checkGlError("glUniformMatrix4fv");
+        GLES20.glActiveTexture(GLES20.GL_TEXTURE1);
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, frozenTexture);
+        GLES20.glUniform1i(frozenSamplerUniform, 1);
+        GLES20.glUniform1f(transitionActiveUniform, transitionActive ? 1f : 0f);
+        GLES20.glUniform1f(transitionMixUniform, transitionMix);
+        GLES20.glUniform1f(blurAmountUniform, blurAmount);
+        GLES20.glUniform1f(flipScaleUniform, flipScale);
+        GLES20.glUniform2f(flipAxisUniform, flipLandscape ? 0f : 1f, flipLandscape ? 1f : 0f);
+        GLES20.glUniform2f(blurStepUniform, blurStepX, blurStepY);
+        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
         GLES20.glUniform1i(tex, 0);
-        GLES20.glUniform1f(changer, colorVal);
+        // Apply the user adjustment once, when compositing, not into the snapshot too.
+        GLES20.glUniform1f(changer, capturingSnapshot ? 0f : colorVal);
+        GLES20.glUniform1f(frameOpacityUniform, frameOpacity);
         // Enable the "aPosition" vertex attribute.
         GLES20.glEnableVertexAttribArray(maPositionLoc);
         checkGlError("glEnableVertexAttribArray");
@@ -455,6 +628,11 @@ public class GLUtil {
     }
 
     public static void releaseProgram(){
+        endFrameTransition();
+        if (frozenTexture != 0) {
+            GLES20.glDeleteTextures(1, new int[]{frozenTexture}, 0);
+            frozenTexture = 0;
+        }
         GLES20.glDeleteProgram(getmProgramHandle());
     }
 
