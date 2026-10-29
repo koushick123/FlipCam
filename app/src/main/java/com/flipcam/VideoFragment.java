@@ -16,8 +16,6 @@ import android.graphics.Color;
 import android.graphics.Typeface;
 import android.hardware.SensorManager;
 import android.media.AudioManager;
-import android.media.MediaCodecInfo;
-import android.media.MediaCodecList;
 import android.media.MediaMetadataRetriever;
 import android.media.ThumbnailUtils;
 import android.net.Uri;
@@ -28,7 +26,6 @@ import android.os.StatFs;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.util.Log;
-import android.util.Range;
 import android.util.Size;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -62,7 +59,6 @@ import com.flipcam.view.PinchZoomGestureListener;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
 
 import static android.widget.Toast.makeText;
 
@@ -106,9 +102,6 @@ public class VideoFragment extends Fragment{
     Dialog settingsMsgDialog;
     Context mContext;
     PinchZoomGestureListener pinchZoomGestureListener;
-    int audioSampleRate = -1;
-    int audioBitRate = -1;
-    int audioChannelInput = -1;
     ControlVisbilityPreference controlVisbilityPreference;
 
     public static VideoFragment newInstance() {
@@ -374,62 +367,12 @@ public class VideoFragment extends Fragment{
             }
         };
         flashParentLayout = new LinearLayout(getActivity());
-        MediaCodecList mediaCodecList = new MediaCodecList(MediaCodecList.ALL_CODECS);
-        MediaCodecInfo[] mediaCodecInfos = mediaCodecList.getCodecInfos();
-        if(getAudioBitRate() == -1 || getAudioChannelInput() == -1 || getAudioSampleRate() == -1) {
-            for (MediaCodecInfo info : mediaCodecInfos) {
-                if(VERBOSE)Log.d(TAG, "Name = " + info.getName());
-                if (info.getName().contains("aac")) {
-                    String[] medTypes = info.getSupportedTypes();
-                    for (String medType : medTypes) {
-                        if(VERBOSE)Log.d(TAG, "media types = " + medType);
-                        if (medType.contains("mp4a") || medType.contains("mp4") || medType.contains("mpeg4")) {
-                            MediaCodecInfo.AudioCapabilities audioCapabilities = info.getCapabilitiesForType(medType).getAudioCapabilities();
-                            Range<Integer> bitRates = audioCapabilities.getBitrateRange();
-                            if(VERBOSE)Log.d(TAG, "Bit rate range = " + bitRates.getLower() + " , " + bitRates.getUpper());
-                            setAudioBitRate(bitRates.getUpper());
-                            int[] sampleRates = audioCapabilities.getSupportedSampleRates();
-                            Arrays.sort(sampleRates);
-                            if(VERBOSE)Log.d(TAG, "Sample rate = " + sampleRates[sampleRates.length - 1]);
-                            setAudioSampleRate(sampleRates[sampleRates.length - 1]);
-                            setAudioChannelInput(audioCapabilities.getMaxInputChannelCount() > 1 ? 2 : 1);
-                            break;
-                        }
-                    }
-                    break;
-                }
-            }
-        }
         controlVisbilityPreference = (ControlVisbilityPreference)getApplicationContext();
         return view;
     }
 
     public TextView getPauseText() {
         return pauseText;
-    }
-
-    public int getAudioSampleRate() {
-        return audioSampleRate;
-    }
-
-    public void setAudioSampleRate(int audioSampleRate) {
-        this.audioSampleRate = audioSampleRate;
-    }
-
-    public int getAudioBitRate() {
-        return audioBitRate;
-    }
-
-    public void setAudioBitRate(int audioBitRate) {
-        this.audioBitRate = audioBitRate;
-    }
-
-    public int getAudioChannelInput() {
-        return audioChannelInput;
-    }
-
-    public void setAudioChannelInput(int audioChannelInput) {
-        this.audioChannelInput = audioChannelInput;
     }
 
     class SDCardEventReceiver extends BroadcastReceiver {
@@ -501,15 +444,11 @@ public class VideoFragment extends Fragment{
     }
 
     public void prepareAndStartRecord(){
-        AudioManager audioManager = cameraView.getAudioManager();
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && Build.VERSION.SDK_INT < Build.VERSION_CODES.M){
-            if(VERBOSE)Log.d(TAG, "setStreamMute");
-            audioManager.setStreamMute(AudioManager.STREAM_MUSIC, true);
+        if (!cameraView.canStartRecording()) {
+            Toast.makeText(getContext(), "Finishing recording. Please wait.", Toast.LENGTH_SHORT).show();
+            return;
         }
-        else{
-            if(VERBOSE)Log.d(TAG, "adjustStreamVolume");
-            audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_MUTE, 0);
-        }
+        cameraView.beginRecordingAudioPolicy();
         startRecord.setEnabled(false);
         thumbnail.setClickable(true);
         switchCamera.setClickable(true);
@@ -521,7 +460,7 @@ public class VideoFragment extends Fragment{
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putBoolean("videoCapture", true);
         editor.commit();
-        cameraView.record(false);
+        cameraView.startRecording();
         // Camera size changes can trigger surfaceChanged(), so set recording UI
         // after the camera transition has queued its layout updates.
         hideSettingsBarAndIcon();
@@ -591,6 +530,7 @@ public class VideoFragment extends Fragment{
             pauseText.setRotation(rotationAngle);
         }
         thumbnail.setRotation(rotationAngle);
+        if (cameraActivity != null) cameraActivity.rotateSpeedDialIcons(rotationAngle);
     }
 
     public SeekBar getZoomBar()
@@ -682,14 +622,7 @@ public class VideoFragment extends Fragment{
         stopRecord.setClickable(false);
         switchCamera.setClickable(false);
         if(VERBOSE)Log.d(TAG, "Unmute audio stopRec");
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && Build.VERSION.SDK_INT < Build.VERSION_CODES.M){
-            if(VERBOSE)Log.d(TAG, "setStreamUnMute");
-            cameraView.getAudioManager().setStreamMute(AudioManager.STREAM_MUSIC, false);
-        }
-        else{
-            if(VERBOSE)Log.d(TAG, "adjustStreamVolumeUnMute");
-            cameraView.getAudioManager().adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_UNMUTE, 0);
-        }
+        cameraView.endRecordingAudioPolicy();
         if(lowMemory){
             LayoutInflater layoutInflater = (LayoutInflater)getActivity().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
             View thresholdExceededRoot = layoutInflater.inflate(R.layout.threshold_exceeded, null);
@@ -740,7 +673,7 @@ public class VideoFragment extends Fragment{
             else{
                 noSdCard = false;
             }
-            cameraView.record(noSdCard);
+            cameraView.stopRecording(noSdCard);
         }
         showRecordAndThumbnail();
         stopRecord.setClickable(true);
@@ -860,6 +793,11 @@ public class VideoFragment extends Fragment{
         addBottomControlSlot(startRecord, centerSize, centerSize);
         addBottomControlSlot(left ? switchCamera : thumbnailParent,
                 left ? sideSize : thumbnailWidth, sideSize);
+        // SurfaceChanged can rebuild these weighted slots during a layout pass.
+        // Measure them again outside that pass: otherwise a restored row can
+        // retain zero-sized slots even though its buttons still have old bounds.
+        LinearLayout controls = videoBar;
+        controls.post(controls::requestLayout);
     }
 
     private void populatePreviewTopControls() {

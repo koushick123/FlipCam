@@ -155,4 +155,7 @@
     <dimen name="galleryMediaTopMargin">25dp</dimen>
     <dimen name="galleryMediaLeftMargin">25dp</dimen>
     <dimen name="galleryMediaRightMargin">25dp</dimen>
+    <!-- Thumbnail action menu spacing: density-independent, not display pixels. -->
+    <dimen name="thumbnailActionsGap">12dp</dimen>
+    <dimen name="thumbnailActionsEdge">16dp</dimen>
 </resources>

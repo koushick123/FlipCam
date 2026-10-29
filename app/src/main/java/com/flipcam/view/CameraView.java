@@ -59,6 +59,8 @@ import com.flipcam.cameramanager.Camera2Manager;
 import com.flipcam.constants.Constants;
 import com.flipcam.util.GLUtil;
 import com.flipcam.util.CameraSessionRecovery;
+import com.flipcam.util.AudioRecordingPolicy;
+import com.flipcam.util.AudioRecordingProfiles;
 import androidx.appcompat.app.AlertDialog;
 import com.flipcam.util.MediaStorage;
 import com.flipcam.util.MediaUtil;
@@ -90,6 +92,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     private int recordVideoWidth = 640;
     private int recordVideoHeight = 480;
     CamcorderProfile camcorderProfile;
+    private volatile String selectedAudioConfiguration = "not-prepared";
     private static final int SIZEOF_FLOAT = 4;
     //Surface to which camera frames are sent for encoding to mp4 format
     EGLSurface encoderSurface=null;
@@ -105,6 +108,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     }
     CameraRenderer.CameraHandler cameraHandler;
     MainHandler mainHandler;
+    private volatile boolean finalizingSuspendedRecording;
+    private boolean recordingMusicPolicyActive;
+    private boolean musicWasMutedBeforeRecording;
     Object renderObj = new Object();
     volatile boolean isReady=false;
     boolean VERBOSE = false;
@@ -182,9 +188,11 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
 
         int sourceWidth = Math.max(recordVideoWidth, 1);
         int sourceHeight = Math.max(recordVideoHeight, 1);
-        float cameraAspectRatio = portrait
-                ? (float) sourceHeight / sourceWidth
-                : (float) sourceWidth / sourceHeight;
+        // The camera activity keeps a fixed display orientation (nosensor).
+        // Rotating the handset changes the encoder orientation, not the axes of
+        // this SurfaceView. Using the encoder's portrait flag here swaps the
+        // preview bounds at Record and squeezes a landscape scene into a strip.
+        float cameraAspectRatio = (float) sourceHeight / sourceWidth;
         float screenAspectRatio = (float) availableWidth / availableHeight;
 
         int fittedWidth = availableWidth;
@@ -273,7 +281,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         if(Math.abs(System.currentTimeMillis() - focusPreviousTime) >= 240){
             diff[0] = Math.abs(sensorEvent.values[0]-sensorValues[0]);
             diff[1] = Math.abs(sensorEvent.values[1]-sensorValues[1]);
-            determineOrientation();
+            if (!isRecord()) determineOrientation();
             if(rotationAngle == 90 || rotationAngle == 270){
                 if(diff[1] > 0.35){
                     if(VERBOSE)Log.d(TAG,"diff y ="+diff[1]);
@@ -345,7 +353,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 case Constants.RECORD_COMPLETE:
                     mediaContent = null;
                     if(VERBOSE)Log.d(TAG,"Update thumbnail now");
-                    videoFragment.createAndShowThumbnail(getMediaPath());
+                    if (!isRecord()) videoFragment.createAndShowThumbnail(msg.obj instanceof String ? (String) msg.obj : getMediaPath());
                     break;
                 case Constants.RECORD_STOP_ENABLE:
                     if(VERBOSE)Log.d(TAG,"Enable stop record");
@@ -363,7 +371,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                     videoFragment.onRecordingStopped();
                     break;
                 case Constants.RECORD_STOPPED:
-                    if (videoFragment != null) {
+                    if (videoFragment != null && !isRecord() && recorderState == RecorderState.IDLE) {
                         // Rebuild the idle preview controls after recorder and
                         // surface transitions have completed. The synchronous
                         // stop path can run before SurfaceView relayout finishes.
@@ -377,6 +385,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
 
     /** UI callbacks belong to this view, not a later fragment view. */
     public void clearUiCallbacks() {
+        stopForNavigation();
         if (mainHandler != null) mainHandler.removeCallbacksAndMessages(null);
     }
 
@@ -1024,9 +1033,83 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         }
     }
 
+    public synchronized void beginRecordingAudioPolicy() {
+        if (recordingMusicPolicyActive) return;
+        musicWasMutedBeforeRecording = audioManager.isStreamMute(AudioManager.STREAM_MUSIC);
+        recordingMusicPolicyActive = true;
+        if (!musicWasMutedBeforeRecording) audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_MUTE, 0);
+    }
+
+    public synchronized void endRecordingAudioPolicy() {
+        if (!recordingMusicPolicyActive) return;
+        recordingMusicPolicyActive = false;
+        if (!musicWasMutedBeforeRecording) audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_UNMUTE, 0);
+    }
+
+    public boolean canStartRecording() {
+        return recorderState == RecorderState.IDLE && !finalizingSuspendedRecording;
+    }
+
+    private boolean hasRecorderThread() {
+        return cameraHandler != null && cameraHandler.getLooper().getThread().isAlive();
+    }
+
+    public boolean isCallInterruption() {
+        int mode = audioManager.getMode();
+        return mode == AudioManager.MODE_IN_CALL || mode == AudioManager.MODE_IN_COMMUNICATION;
+    }
+
+    public void stopForNavigation() {
+        if (!isRecord() || finalizingSuspendedRecording) return;
+        if (hasRecorderThread()) record(false);
+        else finalizeSuspendedRecording();
+    }
+
+    /** A paused recorder can outlive its preview thread, but never a destroyed view. */
+    private synchronized void finalizeSuspendedRecording() {
+        if (finalizingSuspendedRecording || mediaRecorder == null) return;
+        finalizingSuspendedRecording = true;
+        endRecordingAudioPolicy();
+        setRecord(false);
+        stopTimerThread();
+        final MediaRecorder suspended = mediaRecorder;
+        final File saved = videoFile;
+        new Thread(() -> {
+            boolean valid = false;
+            try { suspended.stop(); valid = saved != null && saved.isFile() && saved.length() > 0; }
+            catch (RuntimeException failure) { Log.e(TAG, "Unable to finalize suspended recording", failure); }
+            finally {
+                try { suspended.release(); } catch (RuntimeException failure) { Log.w(TAG, "Recorder release failed", failure); }
+                if (mediaRecorder == suspended) mediaRecorder = null;
+                recorderState = RecorderState.IDLE;
+                setRecordPaused(false);
+                if (valid) scanSavedRecording();
+                finalizingSuspendedRecording = false;
+                if (mainHandler != null) {
+                    if (valid) mainHandler.obtainMessage(Constants.RECORD_COMPLETE, saved.getAbsolutePath()).sendToTarget();
+                    mainHandler.sendEmptyMessage(Constants.RECORD_STOPPED);
+                }
+            }
+        }, "FlipCam-finalize-paused").start();
+    }
+
+    public void startRecording() {
+        if (!isRecord() && canStartRecording()) record(false);
+    }
+
+    public void stopRecording(boolean noSDCard) {
+        if (isRecord()) record(noSDCard);
+    }
+
     public void record(boolean noSDCard)
     {
+        if (finalizingSuspendedRecording) return;
+        if (isRecord() && !hasRecorderThread()) { finalizeSuspendedRecording(); return; }
         if(!isRecord()) {
+            if (!canStartRecording()) return;
+            // A canceled queued start must never refer to the last saved file.
+            videoFile = null;
+            mNextVideoAbsolutePath = null;
             determineOrientation();
             if(VERBOSE)Log.d(TAG,"Rot angle == "+rotationAngle+", portrait = "+portrait);
             Matrix.rotateM(RECORD_IDENTITY_MATRIX, 0, rotationAngle , 0, 0, 1);
@@ -1042,6 +1125,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             camera1.setRecordingHint();
         }
         else{
+            cameraHandler.removeMessages(Constants.RECORD_START);
+            cameraHandler.removeMessages(Constants.RECORD_PAUSE);
+            cameraHandler.removeMessages(Constants.RECORD_RESUME);
+            endRecordingAudioPolicy();
             setRecord(false);
             // Return to the selected video aspect ratio for the idle preview.
             // Recording uses the full available display so the live camera
@@ -1051,10 +1138,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             stopTimerThread();
             hidePauseText();
             if(noSDCard) {
-                cameraHandler.sendEmptyMessage(Constants.RECORD_STOP_NO_SD_CARD);
+                cameraHandler.sendMessageAtFrontOfQueue(cameraHandler.obtainMessage(Constants.RECORD_STOP_NO_SD_CARD));
             }
             else{
-                cameraHandler.sendEmptyMessage(Constants.RECORD_STOP);
+                cameraHandler.sendMessageAtFrontOfQueue(cameraHandler.obtainMessage(Constants.RECORD_STOP));
             }
             orientationEventListener.enable();
             camera1.disableRecordingHint();
@@ -1073,6 +1160,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
     }
 
     public void recordResume(){
+        if (!hasWindowFocus() || isCallInterruption() || !camera1.isCameraReady()) return;
         if (!canChangeRecordingPause() || recorderState != RecorderState.PAUSED) return;
         pauseActionPending = true;
         videoFragment.updateRecordingPauseState(true, false);
@@ -1180,6 +1268,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         camSurfHolder = surfaceHolder;
         mainHandler = new MainHandler(this);
         GLUtil.prepareEGLDisplayandContext();
+        isReady = false;
         CameraRenderer cameraRenderer = new CameraRenderer();
         cameraRenderer.start();
         waitUntilReady();
@@ -1249,37 +1338,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         if(cameraHandler!=null) {
             //Ensure camera's resources are properly released.
             CameraRenderer cameraRenderer = cameraHandler.getCameraRendererInstance();
-            if(camera1.isCameraReady()) {
-                //Switch off flash light if used during recording.
-                if(isCamera2()) {
-                    setStopCamera(true);
-                    camera1.setFlashOnOff(false);
-                }
-                else {
-                    stopAndReleaseCamera();
-                }
-            }
-            if(VERBOSE)Log.d(TAG, "stopped and released Camera");
-            cameraHandler.removeMessages(Constants.FRAME_AVAILABLE);
-            if(GLUtil.getSurfaceTexture()!=null){
-                GLUtil.getSurfaceTexture().release();
-                GLUtil.setSurfaceTexture(null);
-            }
-            frameCount=0;
-            GLUtil.releaseEGLSurface();
-            GLUtil.releaseProgram();
-            GLUtil.releaseEGLContext();
-            if(isRecord()) {
+            if (isRecord()) {
                 //If video recording was in progress, ensure recording is stopped and saved, before exiting.
                 if(VERBOSE)Log.d(TAG, "Unmute audio");
-                if(Build.VERSION.SDK_INT < Build.VERSION_CODES.M){
-                    if(VERBOSE)Log.d(TAG, "setStreamUnMute");
-                    audioManager.setStreamMute(AudioManager.STREAM_MUSIC, false);
-                }
-                else{
-                    if(VERBOSE)Log.d(TAG, "adjustStreamVolumeUnMute");
-                    audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_UNMUTE, 0);
-                }
+                endRecordingAudioPolicy();
                 if(VERBOSE)Log.d(TAG,"Recording in progress.... Stop now");
                 setRecord(false);
                 //Reset the RECORD Matrix GLUtil.getSurfaceTexture()to be portrait.
@@ -1319,6 +1381,30 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+            // Finalize the recorder on its owning thread before removing its video
+            // producer or EGL resources. Audio must not outlive video teardown.
+            if(camera1.isCameraReady()) {
+                //Switch off flash light if used during recording.
+                if(isCamera2()) {
+                    setStopCamera(true);
+                    camera1.setFlashOnOff(false);
+                }
+                else {
+                    stopAndReleaseCamera();
+                }
+            }
+            if(VERBOSE)Log.d(TAG, "stopped and released Camera");
+            cameraHandler.removeMessages(Constants.FRAME_AVAILABLE);
+            GLUtil.makeCurrent(GLUtil.getEglSurface());
+            if(GLUtil.getSurfaceTexture()!=null){
+                GLUtil.getSurfaceTexture().setOnFrameAvailableListener(null);
+                GLUtil.getSurfaceTexture().release();
+                GLUtil.setSurfaceTexture(null);
+            }
+            frameCount=0;
+            GLUtil.releaseProgram();
+            GLUtil.releaseEGLSurface();
+            GLUtil.releaseEGLContext();
         }
     }
     /** Publish only finalized recordings, independently of thumbnail/UI lifecycle. */
@@ -1426,59 +1512,95 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             if(VERBOSE)Log.d(TAG,"Camera Renderer STOPPED");
         }
 
-        public void setupMediaRecorder(int width, int height, int camcorderProf)
-        {
+        public void setupMediaRecorder(int width, int height, int camcorderProf) {
+            // A failed new preparation must never delete a prior saved recording.
+            videoFile = null;
+            mNextVideoAbsolutePath = null;
+            selectedAudioConfiguration = "not-prepared";
             camcorderProfile = CamcorderProfile.get(camera1.getCameraId(), camcorderProf);
             boolean noAudio = sharedPreferences.getBoolean(Constants.NO_AUDIO_MSG, false);
-            if(VERBOSE)Log.d(TAG, "No Audio Pref = "+noAudio);
-            mediaRecorder = new MediaRecorder();
-            if(!noAudio) {
-                try {
-                    mediaRecorder.setAudioSource(MediaRecorder.AudioSource.CAMCORDER);
-                } catch (Exception e) {
-                    if (VERBOSE)
-                        Log.e(TAG, "Camera not having a mic oriented in the same way. Use the default microphone");
-                    mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-                }
-            }
-            mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
-            mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-            mNextVideoAbsolutePath = getFilePath();
-            if(VERBOSE)Log.d(TAG, "mNextVideoAbsolutePath ===== "+mNextVideoAbsolutePath);
-            videoFile = new File(mNextVideoAbsolutePath);
-            if(VERBOSE)Log.d(TAG, "Video file ===== "+videoFile);
-            mediaRecorder.setOutputFile(mNextVideoAbsolutePath);
-            mediaRecorder.setVideoEncodingBitRate(camcorderProfile.videoBitRate);
-            mediaRecorder.setVideoFrameRate(camcorderProfile.videoFrameRate);
-            if(!portrait){
-                if(VERBOSE)Log.d(TAG, "LS videoWidth = "+width);
-                if(VERBOSE)Log.d(TAG, "LS videoHeight = "+height);
-            }
-            else{
-                int temp = width;
-                width = height;
-                height = temp;
-                if(VERBOSE)Log.d(TAG, "PR videoWidth = "+width);
-                if(VERBOSE)Log.d(TAG, "PR videoHeight = "+height);
-            }
-            mediaRecorder.setVideoSize(width, height);
-            mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
-            if(!noAudio) {
-                mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
-                mediaRecorder.setAudioEncodingBitRate(videoFragment.getAudioBitRate());
-                mediaRecorder.setAudioSamplingRate(videoFragment.getAudioSampleRate());
-                mediaRecorder.setAudioChannels(videoFragment.getAudioChannelInput());
-            }
             try {
-                mediaRecorder.prepare();
-            } catch (IOException e) {
-                throw new IllegalStateException("Unable to prepare recorder", e);
+                File requested = new File(getFilePath());
+                File reserved = requested;
+                while (!reserved.createNewFile()) {
+                    String name = requested.getName();
+                    int dot = name.lastIndexOf('.');
+                    reserved = new File(requested.getParentFile(), name.substring(0, dot)
+                            + "-" + java.util.UUID.randomUUID() + name.substring(dot));
+                }
+                videoFile = reserved;
+                mNextVideoAbsolutePath = reserved.getAbsolutePath();
+            } catch (IOException failure) {
+                throw new IllegalStateException("Unable to reserve recording output", failure);
             }
+            final int encodedWidth = portrait ? height : width;
+            final int encodedHeight = portrait ? width : height;
+            if (noAudio) {
+                try {
+                    mediaRecorder = prepareRecorder(null, encodedWidth, encodedHeight);
+                    selectedAudioConfiguration = "microphone-disabled";
+                } catch (IOException failure) {
+                    throw new IllegalStateException("Unable to prepare muted recorder", failure);
+                }
+            } else {
+                AudioRecordingPolicy.Prepared<MediaRecorder> prepared = AudioRecordingPolicy.prepare(
+                        AudioRecordingPolicy.candidates(camcorderProfile.audioCodec,
+                                camcorderProfile.audioSampleRate, camcorderProfile.audioBitRate,
+                                camcorderProfile.audioChannels),
+                        new AudioRecordingPolicy.Attempt<MediaRecorder>() {
+                            @Override public boolean supports(AudioRecordingPolicy.Config config) {
+                                return AudioRecordingProfiles.supports(config);
+                            }
+                            @Override public MediaRecorder prepare(AudioRecordingPolicy.Config config) throws IOException {
+                                return prepareRecorder(config, encodedWidth, encodedHeight);
+                            }
+                        });
+                mediaRecorder = prepared.recorder;
+                selectedAudioConfiguration = prepared.config.toString();
+            }
+            Log.i(TAG, "Prepared recording audio: " + selectedAudioConfiguration);
             recorderState = RecorderState.PREPARED;
             encoderSurface = GLUtil.prepareWindowSurface(mediaRecorder.getSurface(), GLUtil.getmEGLDisplay(), GLUtil.getmEGLConfig());
             mediaContent = new ContentValues();
             mediaContent.put("filename", mNextVideoAbsolutePath);
-            mediaContent.put("memoryStorage", (memoryPrefs.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true) ? "1" : "0"));
+            mediaContent.put("memoryStorage", memoryPrefs.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true) ? "1" : "0");
+        }
+
+        private MediaRecorder prepareRecorder(AudioRecordingPolicy.Config audio, int width, int height) throws IOException {
+            MediaRecorder candidate = new MediaRecorder();
+            try {
+                if (audio != null) {
+                    try {
+                        candidate.setAudioSource(MediaRecorder.AudioSource.CAMCORDER);
+                    } catch (RuntimeException unavailable) {
+                        candidate.setAudioSource(MediaRecorder.AudioSource.MIC);
+                    }
+                }
+                candidate.setVideoSource(MediaRecorder.VideoSource.SURFACE);
+                candidate.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+                // Every attempt uses only the fresh output reserved by this recording.
+                candidate.setOutputFile(mNextVideoAbsolutePath);
+                candidate.setVideoEncodingBitRate(camcorderProfile.videoBitRate);
+                candidate.setVideoFrameRate(camcorderProfile.videoFrameRate);
+                candidate.setVideoSize(width, height);
+                candidate.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
+                if (audio != null) {
+                    candidate.setAudioEncoder(audio.encoder);
+                    candidate.setAudioEncodingBitRate(audio.bitRate);
+                    candidate.setAudioSamplingRate(audio.sampleRate);
+                    candidate.setAudioChannels(audio.channels);
+                }
+                candidate.prepare();
+                return candidate;
+            } catch (IOException | RuntimeException rejected) {
+                try { candidate.release(); }
+                catch (RuntimeException cleanup) {
+                    rejected.addSuppressed(cleanup);
+                    throw new AudioRecordingPolicy.CleanupFailure(rejected);
+                }
+                Log.w(TAG, "Recorder configuration rejected: " + audio, rejected);
+                throw rejected;
+            }
         }
 
         private void releaseEncoderSurface() {
@@ -1628,7 +1750,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 //Calls eglSwapBuffers.  Use this to "publish" the current frame.
                 EGL14.eglSwapBuffers(GLUtil.getmEGLDisplay(), GLUtil.getEglSurface());
 
-                if(isRecording) {
+                // MediaRecorder owns pause filtering and the common A/V timeline.
+                // Keep its surface producer flowing while paused, like a camera
+                // session still targeting the recorder, instead of starving resume.
+                if(isRecording || (isRecord() && recorderState == RecorderState.PAUSED)) {
                     GLUtil.makeCurrent(encoderSurface);
                     if (FRAME_VERBOSE) Log.d(TAG, "Made encoder surface current");
                     if(!portrait) {
@@ -1678,6 +1803,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 if(FRAME_VERBOSE)Log.d(TAG, "lowestMemory = "+lowestMemory);
                 if(FRAME_VERBOSE)Log.d(TAG, "avail mem = "+availableStatFs.getAvailableBytes());
                 setRecord(false);
+                endRecordingAudioPolicy();
                 stopTimerThread();
                 isRecording = false;
                 recordStop = -1;
@@ -1717,6 +1843,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
             }
             try {
                 mediaRecorder.pause();
+                endRecordingAudioPolicy();
                 recorderState = RecorderState.PAUSED;
                 isRecording = false;
                 updateTimer = false;
@@ -1738,6 +1865,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                 return;
             }
             try {
+                beginRecordingAudioPolicy();
                 mediaRecorder.resume();
                 recorderState = RecorderState.RECORDING;
                 isRecording = true;
@@ -1752,6 +1880,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
 
         private void failRecording(String operation, RuntimeException failure) {
             Log.e(TAG, "Recorder " + operation + " failed; restoring preview", failure);
+            endRecordingAudioPolicy();
             // Reuse finalization so a recoverable partial recording can still be saved.
             setRecord(false);
             stopTimerThread();
@@ -1779,6 +1908,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
         void shutdown()
         {
             cancelSwitchAnimation();
+            EGL14.eglMakeCurrent(GLUtil.getmEGLDisplay(), EGL14.EGL_NO_SURFACE,
+                    EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT);
             Looper.myLooper().quit();
         }
 
@@ -1821,6 +1952,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         if(FRAME_VERBOSE)Log.d(TAG,"Record = "+isRecord());
                         break;
                     case Constants.RECORD_START:
+                        if (!isRecord()) break;
                         if (!isRecord() || recorderState != RecorderState.IDLE) break;
                         recorderState = RecorderState.PREPARING;
                         setRecordPaused(false);
@@ -1833,12 +1965,17 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                         }
                         break;
                     case Constants.RECORD_STOP:
+                        cameraHandler.removeMessages(Constants.RECORD_START);
+                        endRecordingAudioPolicy();
                         recordIncomplete = false;
                         try {
                             if (mediaRecorder == null) {
-                                throw new IllegalStateException("Recorder was not initialized");
+                                // Start was canceled before preparation. There is no
+                                // new output to finalize or previous file to delete.
+                                recordIncomplete = true;
+                            } else {
+                                mediaRecorder.stop();
                             }
-                            mediaRecorder.stop();
                         }
                         catch(RuntimeException runtime){
                             Log.e(TAG,"Unable to finalize recording", runtime);
@@ -1975,6 +2112,10 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, S
                     }
                 }
                 if (!timerRunning) break;
+                // Paused sessions can remain in the background; do not busy-spin.
+                if (!updateTimer) {
+                    try { Thread.sleep(50); } catch (InterruptedException ignored) { }
+                }
                 //Add blinking text effect
                 if(isRecordPaused()){
                     if(Math.abs(System.currentTimeMillis() - previousTimeBlink) >= 700){

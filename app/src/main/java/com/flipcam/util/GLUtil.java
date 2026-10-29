@@ -82,17 +82,18 @@ public class GLUtil {
             "void main() {\n" +
             "    vec4 image = texture2D(sTexture, vTextureCoord);\n" +
             "    if (transitionActive > 0.5) {\n" +
-            "        vec2 stepSize = blurStep * blurAmount;\n" +
+            "        vec2 stepSize = blurStep * blurAmount * 1.41421356;\n" +
             "        vec4 oldImage = vec4(0.0);\n" +
             "        vec4 newImage = vec4(0.0);\n" +
-            // A normalized separable binomial kernel evaluated in one pass.
-            // Bounded 25 taps per image, only while switching (GLES 2 compatible).
-            "        for (int y = -2; y <= 2; y++) {\n" +
-            "            float wy = y == 0 ? 6.0 : (abs(float(y)) == 1.0 ? 4.0 : 1.0);\n" +
-            "            for (int x = -2; x <= 2; x++) {\n" +
-            "                float wx = x == 0 ? 6.0 : (abs(float(x)) == 1.0 ? 4.0 : 1.0);\n" +
+            // A normalized 3x3 binomial kernel. The old 5x5 kernel sampled
+            // up to 75 textures per pixel, twice (preview and encoder).
+            // Keep blur variance with a sqrt(2) wider step, at 9 taps per image.
+            "        for (int y = -1; y <= 1; y++) {\n" +
+            "            float wy = y == 0 ? 2.0 : 1.0;\n" +
+            "            for (int x = -1; x <= 1; x++) {\n" +
+            "                float wx = x == 0 ? 2.0 : 1.0;\n" +
             "                vec2 delta = vec2(float(x), float(y)) * stepSize;\n" +
-            "                float weight = wx * wy / 256.0;\n" +
+            "                float weight = wx * wy / 16.0;\n" +
             "                oldImage += sampleFrozen(delta) * weight;\n" +
             "                if (transitionMix > 0.0) newImage += sampleLive(delta) * weight;\n" +
             "            }\n" +

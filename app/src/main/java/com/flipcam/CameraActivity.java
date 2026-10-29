@@ -59,6 +59,69 @@ VideoFragment.LowestThresholdCheckForVideoInterface
 {
 
     private static final String TAG = "CameraActivity";
+    private boolean debugReceiverRegistered;
+    private final android.content.BroadcastReceiver debugUiReceiver = new android.content.BroadcastReceiver() {
+        @Override public void onReceive(Context context, Intent intent) {
+            try {
+                org.json.JSONObject state = new org.json.JSONObject();
+                state.put("tree", debugViewState(findViewById(R.id.parentCamera), 0));
+                if (videoFragment != null) {
+                    for (String name : new String[]{"videoBar","startRecord","switchCamera","thumbnailParent"}) {
+                        java.lang.reflect.Field field = VideoFragment.class.getDeclaredField(name);field.setAccessible(true);
+                        state.put(name, debugViewState((View)field.get(videoFragment),0));
+                    }
+                    CameraView camera = currentCameraView();
+                    state.put("isRecord", camera != null && camera.isRecord());
+                    if (camera != null) {java.lang.reflect.Field field = CameraView.class.getDeclaredField("recorderState");field.setAccessible(true);state.put("recorderState",String.valueOf(field.get(camera)));}
+                }
+                try (java.io.FileWriter writer = new java.io.FileWriter(new File(getFilesDir(),"debug-ui-state.json"))) {writer.write(state.toString(2));}
+            } catch (Exception error) {Log.e("FlipCamControls","Debug dump failed",error);}
+        }
+    };
+    private org.json.JSONObject debugViewState(View view,int depth)throws org.json.JSONException {
+        org.json.JSONObject node = new org.json.JSONObject();if(view==null)return node.put("null",true);
+        String id;try{id=getResources().getResourceEntryName(view.getId());}catch(Exception ignored){id="none";}
+        node.put("id",id).put("class",view.getClass().getSimpleName()).put("visibility",view.getVisibility()).put("alpha",view.getAlpha()).put("attached",view.isAttachedToWindow()).put("width",view.getWidth()).put("height",view.getHeight()).put("measuredWidth",view.getMeasuredWidth()).put("measuredHeight",view.getMeasuredHeight());
+        if(view instanceof ViewGroup&&depth<8){org.json.JSONArray children=new org.json.JSONArray();ViewGroup group=(ViewGroup)view;for(int i=0;i<group.getChildCount();i++)children.put(debugViewState(group.getChildAt(i),depth+1));node.put("children",children);}
+        return node;
+    }
+    private final android.os.Handler interruptionHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private boolean resumedForInterruption;
+    private boolean navigationReceiverRegistered;
+    private final android.content.BroadcastReceiver navigationReceiver = new android.content.BroadcastReceiver() {
+        @Override public void onReceive(Context context, Intent intent) {
+            String reason = intent.getStringExtra("reason");
+            Log.d("FlipCamInterruption", "system navigation=" + reason);
+            if ("homekey".equals(reason) || "recentapps".equals(reason)) stopForNavigation();
+        }
+    };
+    private CameraView currentCameraView() { return videoFragment == null ? null : videoFragment.getCameraView(); }
+    private void stopForNavigation() {
+        CameraView view = currentCameraView();
+        if (view != null) view.stopForNavigation();
+    }
+    private final Runnable callModeMonitor = new Runnable() {
+        @Override public void run() {
+            if (!resumedForInterruption) return;
+            CameraView view = currentCameraView();
+            // Ringing alone is not an interruption. An active voice session may
+            // take over audio without launching a full-screen activity.
+            if (view != null && view.isRecord() && view.isCallInterruption()) view.stopForNavigation();
+            interruptionHandler.postDelayed(this, 250);
+        }
+    };
+    @Override public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        Log.d("FlipCamInterruption", "window focus=" + hasFocus);
+        // A banner, shade or dismissed ringing alert can take focus without
+        // leaving the camera activity. Keep recording until actual takeover.
+    }
+    @Override protected void onUserLeaveHint() {
+        super.onUserLeaveHint();
+        // This callback also occurs for notification/system activity launches.
+        // Only explicit Back or trusted system Home/Recents signals finalize.
+        Log.d("FlipCamInterruption", "user leave hint; awaiting explicit navigation signal");
+    }
     VideoFragment videoFragment = null;
     View warningMsgRoot;
     Dialog warningMsg;
@@ -78,10 +141,14 @@ VideoFragment.LowestThresholdCheckForVideoInterface
     private TextView microphoneActionLabel;
     private ImageView speedDialFlashIcon;
     private boolean speedDialExpanded;
+    private float speedDialIconRotation;
     private FrameLayout thumbnailMenuOverlay;
     private View thumbnailMenuAnchor;
     private LinearLayout thumbnailActions;
     private int thumbnailActionGap;
+    private int thumbnailActionWidth = -1;
+    private final android.graphics.Matrix thumbnailAnchorTransform = new android.graphics.Matrix();
+    private final android.graphics.RectF thumbnailAnchorBounds = new android.graphics.RectF();
     private static final String LEFT_HANDED_PREVIEW = "LeftHandedPreview";
     private float settingsX = Float.NaN, settingsY = Float.NaN;
     private float dragDownX, dragDownY, dragStartX, dragStartY;
@@ -223,6 +290,7 @@ VideoFragment.LowestThresholdCheckForVideoInterface
 
         speedDialToggle = new ImageButton(this);
         speedDialToggle.setImageResource(R.drawable.ic_speed_dial_settings);
+        speedDialToggle.setRotation(speedDialIconRotation);
         speedDialToggle.setColorFilter(Color.WHITE);
         speedDialToggle.setScaleType(ImageView.ScaleType.FIT_CENTER);
         speedDialToggle.setPadding(dp(14), dp(14), dp(14), dp(14));
@@ -252,7 +320,8 @@ VideoFragment.LowestThresholdCheckForVideoInterface
             if (thumbnailMenuOverlay != null) {
                 instantSettingsParent.setVisibility(View.INVISIBLE);
                 positionThumbnailActions();
-                return true;
+                // Apply changed margins before drawing the overlay at its new anchor.
+                return thumbnailActions == null || !thumbnailActions.isLayoutRequested();
             }
             int left = cameraRoot.getPaddingLeft(), top = cameraRoot.getPaddingTop();
             int right = cameraRoot.getWidth() - cameraRoot.getPaddingRight();
@@ -413,6 +482,7 @@ VideoFragment.LowestThresholdCheckForVideoInterface
         icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
         icon.setColorFilter(Color.WHITE);
         if (existingIcon == null) icon.setImageResource(iconResource);
+        icon.setRotation(speedDialIconRotation);
         iconHolder.addView(icon, new FrameLayout.LayoutParams(dp(24), dp(24), Gravity.CENTER));
 
         row.setOnClickListener(view -> {
@@ -461,6 +531,25 @@ VideoFragment.LowestThresholdCheckForVideoInterface
         positionSettingsMenu();
     }
 
+    /** Rotate glyphs around their centers; containers keep their layout and touch bounds. */
+    public void rotateSpeedDialIcons(float rotation) {
+        speedDialIconRotation = rotation;
+        if (speedDialToggle != null) speedDialToggle.setRotation(rotation);
+        rotateActionIcons(speedDialMenu, rotation);
+        rotateActionIcons(thumbnailActions, rotation);
+    }
+
+    private void rotateActionIcons(View view, float rotation) {
+        if (view instanceof ImageView) {
+            view.setRotation(rotation);
+        } else if (view instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup) view;
+            for (int i = 0; i < group.getChildCount(); i++) {
+                rotateActionIcons(group.getChildAt(i), rotation);
+            }
+        }
+    }
+
     public void closeCameraSpeedDial() {
         closeThumbnailActions();
         setCameraSpeedDialExpanded(false);
@@ -494,17 +583,19 @@ VideoFragment.LowestThresholdCheckForVideoInterface
     }
 
     private void positionThumbnailActions() {
-        FrameLayout root = findViewById(R.id.parentCamera);
-        if (thumbnailMenuAnchor == null || root.getWidth() == 0 || root.getHeight() == 0) return;
-        // Root padding already includes navigation-bar/cutout insets. All positions below
-        // are relative to that usable viewport, never to display pixels or an OS version.
-        int width = root.getWidth() - root.getPaddingLeft() - root.getPaddingRight();
-        int height = root.getHeight() - root.getPaddingTop() - root.getPaddingBottom();
-        int edge = Math.round(Math.min(width, height) * 0.025f);
-        int gap = Math.round(Math.min(width, height) * 0.02f);
+        FrameLayout viewport = thumbnailMenuOverlay;
+        if (viewport == null || thumbnailActions == null || thumbnailMenuAnchor == null
+                || viewport.getWidth() == 0 || viewport.getHeight() == 0) return;
+        // The overlay fills the root's inset-safe content area. Work entirely in
+        // its coordinate space; density-independent spacing remains consistent
+        // across phone sizes, cutouts, system bars and multi-window layouts.
+        int width = viewport.getWidth(), height = viewport.getHeight();
+        int edge = getResources().getDimensionPixelSize(R.dimen.thumbnailActionsEdge);
+        int gap = getResources().getDimensionPixelSize(R.dimen.thumbnailActionsGap);
         int availableWidth = Math.max(1, width - 2 * edge);
-        if (thumbnailActionGap != gap) {
+        if (thumbnailActionGap != gap || thumbnailActionWidth != availableWidth) {
             thumbnailActionGap = gap;
+            thumbnailActionWidth = availableWidth;
             for (int i = 0; i < thumbnailActions.getChildCount(); i++) {
                 LinearLayout row = (LinearLayout) thumbnailActions.getChildAt(i);
                 LinearLayout.LayoutParams rowParams = (LinearLayout.LayoutParams) row.getLayoutParams();
@@ -525,24 +616,25 @@ VideoFragment.LowestThresholdCheckForVideoInterface
         }
         thumbnailActions.measure(View.MeasureSpec.makeMeasureSpec(availableWidth, View.MeasureSpec.AT_MOST),
                 View.MeasureSpec.makeMeasureSpec(Math.max(1, height - 2 * edge), View.MeasureSpec.AT_MOST));
-        int[] anchor = new int[2], origin = new int[2];
-        thumbnailMenuAnchor.getLocationOnScreen(anchor);
-        root.getLocationOnScreen(origin);
+        // getLocationOnScreen() returns a transformed origin, not a rotated
+        // view's bounding rectangle. Map the full thumbnail into the overlay so
+        // its center and top stay correct at 90/180/270 degrees too.
+        thumbnailAnchorTransform.reset();
+        thumbnailMenuAnchor.transformMatrixToGlobal(thumbnailAnchorTransform);
+        viewport.transformMatrixToLocal(thumbnailAnchorTransform);
+        thumbnailAnchorBounds.set(0, 0, thumbnailMenuAnchor.getWidth(), thumbnailMenuAnchor.getHeight());
+        thumbnailAnchorTransform.mapRect(thumbnailAnchorBounds);
         int menuWidth = thumbnailActions.getMeasuredWidth();
         int menuHeight = thumbnailActions.getMeasuredHeight();
-        int center = anchor[0] - origin[0] + thumbnailMenuAnchor.getWidth() / 2;
+        int center = Math.round(thumbnailAnchorBounds.centerX());
         int x = isLeftHandedPreview() ? center - dp(48) / 2 : center + dp(48) / 2 - menuWidth;
-        int y = anchor[1] - origin[1] - gap - menuHeight;
+        int y = Math.round(thumbnailAnchorBounds.top) - gap - menuHeight;
+        x = Math.max(edge, Math.min(x, width - edge - menuWidth));
+        y = Math.max(edge, Math.min(y, height - edge - menuHeight));
         FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) thumbnailActions.getLayoutParams();
-        // FrameLayout margins start inside its padding; compensate for root padding once.
-        x = Math.max(root.getPaddingLeft() + edge,
-                Math.min(x, root.getWidth() - root.getPaddingRight() - edge - menuWidth));
-        y = Math.max(root.getPaddingTop() + edge,
-                Math.min(y, root.getHeight() - root.getPaddingBottom() - edge - menuHeight));
-        int localX = x - root.getPaddingLeft(), localY = y - root.getPaddingTop();
-        if (params.leftMargin != localX || params.topMargin != localY) {
-            params.leftMargin = localX;
-            params.topMargin = localY;
+        if (params.leftMargin != x || params.topMargin != y) {
+            params.leftMargin = x;
+            params.topMargin = y;
             thumbnailActions.setLayoutParams(params);
         }
     }
@@ -559,6 +651,7 @@ VideoFragment.LowestThresholdCheckForVideoInterface
         holder.setBackground(createSpeedDialCircleBackground(false));
         ImageView icon = new ImageView(this);
         icon.setImageResource(iconResource); icon.setColorFilter(Color.WHITE);
+        icon.setRotation(speedDialIconRotation);
         holder.addView(icon, new FrameLayout.LayoutParams(dp(24), dp(24), Gravity.CENTER));
         LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(dp(48), dp(48));
         iconParams.setMargins(left ? 0 : dp(8), 0, left ? dp(8) : 0, 0);
@@ -579,6 +672,7 @@ VideoFragment.LowestThresholdCheckForVideoInterface
         thumbnailMenuAnchor = null;
         thumbnailActions = null;
         thumbnailActionGap = -1;
+        thumbnailActionWidth = -1;
         if (videoFragment != null && !videoFragment.getCameraView().isRecord()) {
             instantSettingsParent.setVisibility(View.VISIBLE);
             videoFragment.getZoomBar().setVisibility(View.VISIBLE);
@@ -588,6 +682,7 @@ VideoFragment.LowestThresholdCheckForVideoInterface
     @Override public void onBackPressed() {
         if (thumbnailMenuOverlay != null) { closeThumbnailActions(); return; }
         if (speedDialExpanded) { closeCameraSpeedDial(); return; }
+        stopForNavigation();
         super.onBackPressed();
     }
 
@@ -912,6 +1007,19 @@ VideoFragment.LowestThresholdCheckForVideoInterface
     @Override
     protected void onStart() {
         super.onStart();
+        if (!navigationReceiverRegistered) {
+            android.content.IntentFilter filter = new android.content.IntentFilter(Intent.ACTION_CLOSE_SYSTEM_DIALOGS);
+            if (android.os.Build.VERSION.SDK_INT >= 33) registerReceiver(navigationReceiver, filter,
+                    "android.permission.BROADCAST_CLOSE_SYSTEM_DIALOGS", null, Context.RECEIVER_EXPORTED);
+            else registerReceiver(navigationReceiver, filter, "android.permission.BROADCAST_CLOSE_SYSTEM_DIALOGS", null);
+            navigationReceiverRegistered = true;
+        }
+        if (!debugReceiverRegistered && (getApplicationInfo().flags & android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
+            android.content.IntentFilter debugFilter=new android.content.IntentFilter("com.flipcam.DEBUG_UI_STATE");
+            if(android.os.Build.VERSION.SDK_INT>=33)registerReceiver(debugUiReceiver,debugFilter,"android.permission.DUMP",null,Context.RECEIVER_EXPORTED);
+            else registerReceiver(debugUiReceiver,debugFilter,"android.permission.DUMP",null);
+            debugReceiverRegistered=true;
+        }
         if(VERBOSE)Log.d(TAG,"onStart");
     }
 
@@ -923,6 +1031,9 @@ VideoFragment.LowestThresholdCheckForVideoInterface
 
     @Override
     protected void onDestroy() {
+        interruptionHandler.removeCallbacksAndMessages(null);
+        if (debugReceiverRegistered) {unregisterReceiver(debugUiReceiver);debugReceiverRegistered=false;}
+        if (navigationReceiverRegistered) { unregisterReceiver(navigationReceiver); navigationReceiverRegistered = false; }
         super.onDestroy();
         //Reset No Audio switch to enable audio by default when user exits the app.
         SharedPreferences.Editor defaultSharedPrefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).edit();
@@ -934,6 +1045,9 @@ VideoFragment.LowestThresholdCheckForVideoInterface
     @Override
     protected void onResume() {
         super.onResume();
+        resumedForInterruption = true;
+        interruptionHandler.removeCallbacks(callModeMonitor);
+        interruptionHandler.post(callModeMonitor);
         if(VERBOSE)Log.d(TAG,"onResume");
         if (sharedPreferences != null
                 && !sharedPreferences.getBoolean(Constants.SAVE_MEDIA_PHONE_MEM, true)) {
@@ -951,6 +1065,12 @@ VideoFragment.LowestThresholdCheckForVideoInterface
 
     @Override
     protected void onPause() {
+        resumedForInterruption = false;
+        interruptionHandler.removeCallbacks(callModeMonitor);
+        CameraView interruptedView = currentCameraView();
+        // Opening another screen (including a full-screen incoming call)
+        // finalizes before Fragment.onPause removes the preview surface.
+        if (interruptedView != null) interruptedView.stopForNavigation();
         super.onPause();
         if(VERBOSE)Log.d(TAG,"onPause");
         if(this.videoFragment!=null) {
